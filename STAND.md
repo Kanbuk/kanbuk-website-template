@@ -43,6 +43,37 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 
 - *(keine)*
 
+## Vorgemerkt: Sanity-Anschluss (noch NICHT gebaut)
+
+Recherchiert und entworfen am 2026-07-27, bewusst **nicht umgesetzt**. Auslöser
+zum Bauen: sobald ein **zweiter** Kunde eine Liste pflegt, die sich **wöchentlich
+oder öfter** ändert **und Bilder enthält** (Fahrzeugbestand, Immobilien, Blog,
+Kursplan). Bis dahin gilt: Kunde schickt die Änderung, ein Chat pflegt sie ein.
+
+**Warum nicht jetzt** (Zahlen aus der Recherche):
+- Einrichtung ~3,5 h pro Kunde, Chat-Pflege ~8 min pro Änderung →
+  Break-even bei ~26 Änderungen. Ein Beisl ändert 2–4× im Jahr.
+- Sanity Free kennt nur „Administrator" oder „Nur-Lesen" – der Kunde bekäme
+  Löschrechte auf seine Inhalte. Die Rolle „darf nur bearbeiten" kostet
+  ~165 €/Jahr pro Kunde.
+- Drei Hauptversionen in elf Monaten. Das widerspricht dem Klon-Gedanken
+  (ein Klon von heute muss in fünf Jahren noch bauen).
+
+**Der Entwurf, falls es so weit ist** – Kernsatz: *Sanity wird nie zur Bauzeit
+von Astro angefragt. Sanity schreibt Dateien, der Motor baut aus Dateien* –
+genau das Muster, das `npm run preisliste` schon hat.
+- Ein Vorlauf-Skript (`inhalt-holen`) holt die Daten, prüft sie gegen das
+  Motor-Schema, lädt Bilder nach `fotos/` und schreibt `daten/inhalt.ts` plus
+  einen Schnappschuss ins Repo. Danach baut Astro komplett offline.
+- Der Schnappschuss ist die Versicherung: Die Seite bleibt baubar, auch wenn
+  das Sanity-Projekt Jahre später gelöscht ist.
+- Bilder dürfen NIE vom Sanity-CDN kommen (fremder Server beim Besucher →
+  das Prüf-Tor blockt es zu Recht, und die Seite wäre nicht mehr cookiefrei).
+- In Sanity gehören nur: Preisliste, Öffnungszeiten, Team, Galerie, Aktuelles.
+  Niemals: Rechtstexte, SEO-Titel, Design-Tokens, Formulare.
+- Im Standard-Klon existiert davon **nichts** – kein Paket, kein Code, keine
+  Verzweigung. Nur ein Rezept, das liest, wer es braucht.
+
 ## Verlauf
 
 <!-- Eine Zeile pro Arbeitssitzung: Datum – was passiert ist. Neueste oben. -->
