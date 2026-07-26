@@ -45,8 +45,23 @@ const seitenTitel = titel ?? seite!.metaTitel;
 const vollerTitel =
   pfad === '/' ? `${site.betrieb.name} – ${site.betrieb.claim}` : `${seitenTitel} | ${site.betrieb.name}`;
 const desc = beschreibung ?? seite?.metaBeschreibung ?? site.betrieb.kurzbeschreibung;
-const canonical = new URL(pfad, site.domain).href;
-const ogBild = new URL(seite?.ogBild ? `/${seite.ogBild}` : site.ogBild, site.domain).href;
+/**
+ * Basis für alle absoluten Adressen im Seitenkopf.
+ *
+ * In der Vorschau ist das NICHT die Kundendomain: Die existiert noch nicht,
+ * und WhatsApp holte das Vorschaubild dort vergeblich ab – der Lead bekam eine
+ * graue Zeile ohne Foto. Reihenfolge: ausdrücklich gesetzte `vorschauDomain`,
+ * sonst die Adresse, unter der Vercel gerade baut, sonst als letzter Ausweg
+ * die Kundendomain. Im live-Modus zählt immer die Kundendomain.
+ */
+const vercelAdresse = import.meta.env.VERCEL_PROJECT_PRODUCTION_URL;
+const basisAdresse =
+  istDemo
+    ? (site.vorschauDomain ?? (vercelAdresse ? `https://${vercelAdresse}` : site.domain))
+    : site.domain;
+
+const canonical = new URL(pfad, basisAdresse).href;
+const ogBild = new URL(seite?.ogBild ? `/${seite.ogBild}` : site.ogBild, basisAdresse).href;
 const rootStyle = `:root { ${cssVariablen(site)} }`;
 
 const mehrsprachig = site.sprachen.length > 1;
@@ -118,7 +133,7 @@ const menuLd = (() => {
     hasMenu: {
       '@type': 'Menu',
       name: 'Karte',
-      ...(liste.pdfDatei && { url: `${site.domain.replace(/\/$/, '')}/${liste.pdfDatei}` }),
+      ...(liste.pdfDatei && { url: `${basisAdresse.replace(/\/$/, '')}/${liste.pdfDatei}` }),
       hasMenuSection: liste.kategorien.map((kat) => ({
         '@type': 'MenuSection',
         name: kat.titel,
@@ -145,10 +160,10 @@ const menuLd = (() => {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': jsonLdTyp(site.branche),
-  '@id': site.domain,
+  '@id': basisAdresse,
   name: site.betrieb.name,
   description: site.betrieb.kurzbeschreibung,
-  url: site.domain,
+  url: basisAdresse,
   telephone: site.betrieb.telefon,
   email: site.betrieb.email,
   image: ogBild,
@@ -194,7 +209,7 @@ const jsonLd = {
       <link
         rel="alternate"
         hreflang={s}
-        href={new URL(s === 'de' ? pfad : `/${s}${pfad}`, site.domain).href}
+        href={new URL(s === 'de' ? pfad : `/${s}${pfad}`, basisAdresse).href}
       />
     ))}
     {mehrsprachig && <link rel="alternate" hreflang="x-default" href={canonical} />}

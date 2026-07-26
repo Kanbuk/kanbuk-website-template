@@ -265,6 +265,8 @@ die fertige Seite – mit gezogenem Stecker.
 - `noindex, nofollow` als Meta **und** als HTTP-Header (`X-Robots-Tag`)
 - `robots.txt` sperrt alles, keine Sitemap
 - **Braucht keinen Resend-Schlüssel, keine echte Domain, keine echten Rechtstexte**
+- `vorschauDomain` setzen (die Adresse, unter der die Vorschau wirklich liegt) –
+  sonst zeigt WhatsApp beim Verschicken kein Vorschaubild
 
 **Adress-Stufen (Kanbuk-Konvention):** Verkaufs-Demo auf
 `demo-<kunde>.kanbuk.com` (setzt `npm run demo` automatisch) → Abnahme-Vorschau

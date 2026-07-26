@@ -199,6 +199,11 @@ wird dabei ersetzt.
   keine Icon-Dateien erfinden, keine Icons aus dem Design-Export kopieren.
   Zeigt das Design Icon-Kreise o. Ä., den Baustein per `:global(.social-links…)`
   in diese Optik kleiden – nie Buchstaben („IG") als Icon-Ersatz stehen lassen.
+- **`vorschauDomain` in der Config setzen**, sobald die Vorschau-Adresse
+  feststeht (z. B. `https://<kunde>.kanbuk.com`). Ohne sie holt WhatsApp das
+  Vorschaubild von der künftigen Kundendomain, die es noch gar nicht gibt – der
+  Lead sieht beim Verschicken eine graue Zeile ohne Foto. Das Prüf-Tor meldet
+  es, wenn Bild und Seite auf verschiedenen Servern liegen.
 - **PDFs werden GEÖFFNET, nicht heruntergeladen.** Speisekarte, Preisliste,
   Kursplan: Der Gast will kurz hineinschauen, nicht eine Datei sammeln. Also
   `<a href="/karte.pdf" target="_blank" rel="noopener">Karte als PDF öffnen</a>`

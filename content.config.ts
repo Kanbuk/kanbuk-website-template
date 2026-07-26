@@ -393,6 +393,18 @@ export interface SiteConfig {
   /** Volle URL ohne abschließenden Schrägstrich, z. B. 'https://ihr-betrieb.at'. */
   domain: string;
   /**
+   * Adresse, unter der die VORSCHAU tatsächlich liegt, z. B.
+   * 'https://muster-betrieb.kanbuk.com'. Nur im `demo`-Modus wirksam.
+   *
+   * WARUM: `domain` ist die spätere Kundendomain – die existiert während der
+   * Vorschau noch gar nicht. Trotzdem baute der Motor daraus die Adressen im
+   * Seitenkopf: Beim Verschicken einer Demo holte WhatsApp das Vorschaubild
+   * von der künftigen Kundendomain und bekam eine Fehlermeldung – der Lead sah
+   * eine nackte graue Zeile statt eines Fotos. Steht hier die Vorschau-Adresse,
+   * stimmt das Bild sofort. Beim Live-Gang wird das Feld schlicht ignoriert.
+   */
+  vorschauDomain?: string;
+  /**
    * Cookielose Besucherzählung. 'vercel' = Vercel Web Analytics – wird im
    * Vercel-Dashboard des Projekts aktiviert (Analytics → Enable), läuft über
    * die eigene Domain, setzt keine Cookies, braucht keinen Banner.

@@ -201,6 +201,48 @@ for (const f of htmlDateien) {
   }
 }
 
+// ---------------------------------------------------------------------------
+//  2b. RECHTSSEITEN – die beiden einzigen Seiten, die in Österreich zwingend sind
+//
+//  Sie waren bis 2026-07-27 die EINZIGEN Seiten, die niemand kontrolliert hat:
+//  Ein Build ohne Impressum und ohne Datenschutzerklärung lief grün durch, auch
+//  mit --live. Beim Portieren passiert genau das leicht – das Design liefert
+//  eine eigene Fußzeile, die Rechtslinks fallen dabei weg, und niemandem fällt
+//  es auf, weil die Seite ja funktioniert. Haftbar ist dann der Kunde
+//  (§ 5 ECG, § 25 MedienG), nicht das Werkzeug.
+// ---------------------------------------------------------------------------
+{
+  const seiteDa = (name) =>
+    htmlDateien.some((f) => kurz(f) === `${name}/index.html` || kurz(f) === `${name}.html`);
+
+  for (const pflicht of ['impressum', 'datenschutz']) {
+    if (!seiteDa(pflicht)) {
+      fehler(
+        `Die Seite /${pflicht} fehlt im Build – in Österreich ist sie Pflicht (§ 5 ECG, § 25 MedienG).\n` +
+          `    Vorlage: src/pages/${pflicht}.astro aus dem Motor.`,
+      );
+    }
+  }
+
+  // Erreichbar heißt: von jeder normalen Seite aus verlinkt. Ausgenommen ist
+  // NUR die 404-Seite – sie ist eine technische Hilfsseite ohne Fußzeile
+  // (nachgemessen: sowohl Template als auch Klon liefern dort keine
+  // Rechtslinks; das als Fehler zu werten würde jeden Build rot machen).
+  for (const f of htmlDateien) {
+    const name = kurz(f);
+    if (name === '404.html') continue;
+    const html = readFileSync(f, 'utf-8');
+    for (const pflicht of ['impressum', 'datenschutz']) {
+      if (!new RegExp(`href=["']/${pflicht}/?["']`).test(html)) {
+        fehler(
+          `${name}: kein Link auf /${pflicht} – die Rechtsseiten müssen von JEDER Seite erreichbar sein.\n` +
+            `    Gehört in die Fußzeile des Kunden-Designs.`,
+        );
+      }
+    }
+  }
+}
+
 // Dienste ohne Datenschutz-Angaben = rechtlich unvollständig.
 if (hatDienste) {
   const ds = htmlDateien.find((f) => kurz(f).startsWith('datenschutz'));
@@ -256,6 +298,21 @@ for (const f of htmlDateien) {
     const ogPfad = ogBild.replace(/^https?:\/\/[^/]+/, '');
     if (ogPfad.startsWith('/') && !existsSync(join(DIST, ogPfad.slice(1)))) {
       fehler(`${name}: og:image zeigt auf ${ogPfad}, aber die Datei fehlt im Build`);
+    }
+    /* … und der SERVERNAME muss stimmen. Diese Prüfung schnitt ihn früher
+       einfach weg und sah deshalb nicht, dass die Vorschau ihr Bild von einer
+       Domain anforderte, die es noch gar nicht gibt (die künftige Kunden-
+       domain). Ergebnis: WhatsApp zeigte beim Verschicken der Demo eine graue
+       Zeile ohne Foto – auf dem einzigen Weg, über den verkauft wird.
+       Der Host muss zu canonical passen; das Feld `vorschauDomain` in der
+       Config setzt beides im demo-Modus auf die echte Vorschau-Adresse. */
+    const ogHost = ogBild.match(/^https?:\/\/([^/]+)/)?.[1];
+    const canonicalHost = canonical?.match(/^https?:\/\/([^/]+)/)?.[1];
+    if (ogHost && canonicalHost && ogHost !== canonicalHost) {
+      fehler(
+        `${name}: og:image liegt auf ${ogHost}, die Seite bezeichnet sich aber als ${canonicalHost}.\n` +
+          `    WhatsApp holt das Vorschaubild vom falschen Server – Link ohne Bild.`,
+      );
     }
   }
 
@@ -613,6 +670,115 @@ if (istTemplate) {
 }
 
 // ---------------------------------------------------------------------------
+//  8a. FORMULAR-ENDPUNKT – die Türsteher-Schicht muss dranbleiben
+//
+//  api/contact.ts weist fremde Ursprünge ab, erzwingt JSON, begrenzt die Größe
+//  und bremst Fluten. Wird eine dieser Schranken beim Umbauen entfernt, kann
+//  jede fremde Website das Postfach des Betriebs fluten und das Mail-Kontingent
+//  leerlaufen lassen – ohne dass es jemandem auffällt. Deshalb hier verankert.
+// ---------------------------------------------------------------------------
+{
+  const endpunkt = join(WURZEL, 'api', 'contact.ts');
+  if (existsSync(endpunkt)) {
+    const quelle = readFileSync(endpunkt, 'utf-8');
+    const schranken = [
+      [/content-type/i, 'Format-Prüfung (nur application/json)'],
+      [/origin/i, 'Ursprungs-Prüfung (keine fremden Websites)'],
+      [/413|zu lang/i, 'Größenbegrenzung'],
+      [/429|zuVieleAnfragen/i, 'Bremse gegen Anfrage-Fluten'],
+    ];
+    for (const [muster, was] of schranken) {
+      if (!muster.test(quelle)) {
+        fehler(
+          `api/contact.ts: Die ${was} fehlt.\n` +
+            `    Ohne sie kann jede fremde Seite über das Formular E-Mails auslösen.`,
+        );
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  8b. INTERNE LINKS – führt jeder Verweis wirklich irgendwohin?
+//
+//  Bis 2026-07-27 prüfte das NIEMAND. Kaputte BILDER fielen auf (die
+//  Sichtprüfung fragt jede Ressource wirklich ab), ein <a href="/gibtsnicht">
+//  dagegen nie – Werkzeuge folgen keinem Link. Typische Fälle: Tippfehler in
+//  der Navigation, eine im Design geplante aber nie gebaute Unterseite, ein
+//  PDF, das nie nach public/ kopiert wurde, ein Weiterleitungsziel aus der
+//  alten Website. Alles rein statisch prüfbar.
+// ---------------------------------------------------------------------------
+{
+  /** Löst einen absoluten Pfad gegen dist/ auf (Datei, /index.html oder .html). */
+  const findetZiel = (pfad) => {
+    const rein = decodeURIComponent(pfad.replace(/\/+$/, '')) || '/';
+    if (rein === '/') return existsSync(join(DIST, 'index.html'));
+    const ohneSlash = rein.replace(/^\//, '');
+    return (
+      existsSync(join(DIST, ohneSlash)) ||
+      existsSync(join(DIST, ohneSlash, 'index.html')) ||
+      existsSync(join(DIST, `${ohneSlash}.html`))
+    );
+  };
+
+  /** Sprungmarken: echte id/name – ODER die Kennungen der Verhaltens-Bausteine
+      (Tabs springen über data-tab/data-tabpanel, nicht über eine id). */
+  const ankerDa = (html, anker) =>
+    new RegExp(`(?:id|name|data-tab|data-tabpanel)=["']${anker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`).test(html);
+
+  const htmlNach = (pfad) => {
+    const rein = pfad.replace(/\/+$/, '') || '/';
+    for (const k of [rein === '/' ? 'index.html' : `${rein.slice(1)}/index.html`, `${rein.slice(1)}.html`]) {
+      const p = join(DIST, k);
+      if (existsSync(p)) return readFileSync(p, 'utf-8');
+    }
+    return null;
+  };
+
+  for (const f of htmlDateien) {
+    const html = readFileSync(f, 'utf-8');
+    const name = kurz(f);
+    const gesehen = new Set();
+    for (const m of html.matchAll(/<a\b[^>]*\bhref=["']([^"']+)["']/gi)) {
+      const ziel = m[1].trim();
+      if (gesehen.has(ziel)) continue;
+      gesehen.add(ziel);
+      if (/^(https?:|mailto:|tel:|data:|javascript:)/i.test(ziel)) continue;
+      if (!ziel.startsWith('/') && !ziel.startsWith('#')) continue; // relative Links kommen im Motor nicht vor
+
+      const [pfad, anker] = ziel.split('#');
+      if (pfad && !findetZiel(pfad)) {
+        fehler(`${name}: Link ins Leere -> ${ziel}  (im Build gibt es dafür keine Seite und keine Datei)`);
+        continue;
+      }
+      if (anker) {
+        const zielHtml = pfad ? htmlNach(pfad) : html;
+        if (zielHtml && !ankerDa(zielHtml, anker)) {
+          fehler(`${name}: Sprungmarke fehlt -> ${ziel}  (auf der Zielseite gibt es „${anker}" nicht)`);
+        }
+      }
+    }
+  }
+
+  // Weiterleitungen der Vorgänger-Website: das ZIEL muss existieren, sonst
+  // landet der alte Google-Treffer auf einer 404 statt auf der neuen Seite.
+  const vj = join(WURZEL, 'vercel.json');
+  if (existsSync(vj)) {
+    try {
+      for (const w of JSON.parse(readFileSync(vj, 'utf-8')).redirects ?? []) {
+        const zielPfad = String(w.destination || '').split('#')[0];
+        if (zielPfad.startsWith('/') && !findetZiel(zielPfad)) {
+          fehler(
+            `Weiterleitung ${w.source} zeigt auf ${w.destination} – diese Seite gibt es im Build nicht.\n` +
+              `    Der alte Google-Treffer würde auf einer Fehlerseite landen.`,
+          );
+        }
+      }
+    } catch { /* JSON-Fehler meldet bereits die vercel.json-Regel */ }
+  }
+}
+
+// ---------------------------------------------------------------------------
 //  9. LIVE-PFLICHTEN (nur bei mode: 'live' oder --live)
 // ---------------------------------------------------------------------------
 if (istLive || nurLive) {
@@ -620,6 +786,38 @@ if (istLive || nurLive) {
   // (Kleingeschrieben würde das Schema-Feld `platzhalter` jeden Live-Gang blockieren.)
   if (/PLATZHALTER|TODO|XXX/.test(configText)) {
     fehler('content.config.ts enthält noch Marker (PLATZHALTER/TODO) – vor dem Live-Gang ersetzen');
+  }
+
+  /* … und dasselbe auf der FERTIGEN Seite.
+     Bis 2026-07-27 wurde nur content.config.ts durchsucht. Beim Portieren
+     liefert aber das Design die sichtbaren Texte – ein „PLATZHALTER: Öffnungs-
+     zeiten" in einer Komponente ging deshalb ungebremst live, ebenso stehen-
+     gebliebene Musterdaten. Geprüft wird der SICHTBARE Text (Tags entfernt),
+     damit Klassennamen und data-Attribute keine Fehlalarme auslösen. */
+  const musterFunde = new Map(); // Marker -> Seiten (gebündelt, sonst 20 Zeilen Lärm)
+  for (const f of htmlDateien) {
+    const sichtbar = readFileSync(f, 'utf-8')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&[a-z]+;/gi, ' ');
+    const marker = (sichtbar.match(/\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/g) ?? [])[0];
+    if (marker) {
+      fehler(`${kurz(f)}: Der Marker „${marker}" steht im fertigen Text – vor dem Live-Gang ersetzen.`);
+    }
+    if (!istTemplate) {
+      for (const m of REFERENZ_MARKER) {
+        if (sichtbar.includes(m)) {
+          if (!musterFunde.has(m)) musterFunde.set(m, []);
+          musterFunde.get(m).push(kurz(f));
+        }
+      }
+    }
+  }
+  for (const [m, seiten] of musterFunde) {
+    fehler(
+      `Musterdaten „${m}" stehen noch auf der fertigen Seite (${seiten.length === 1 ? seiten[0] : `${seiten.length} Seiten, u. a. ${seiten[0]}`}) – durch echte Kundendaten ersetzen.`,
+    );
   }
   // STAND.md ist das Gedächtnis des Projekts: Offene Punkte im Lücken-Inventar
   // ([ ]) blockieren den Live-Gang – erledigt wird mit [x] abgehakt.
