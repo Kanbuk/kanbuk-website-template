@@ -3,15 +3,19 @@
  * Layout für die Rechts-Unterseiten (/impressum, /datenschutz).
  *
  * INHALTLICH Motor-Gebiet (automatisch erzeugt, immer formal) – aber OPTISCH
- * Teil der Website. BEIM PORT PFLICHT (siehe /port, Etappe 4): Kopf- und
- * Fußzeile des Kunden hier einbinden und den Zurück-Link samt Mini-Footer
- * entfernen – Impressum & Datenschutz dürfen kein Sonderbereich sein. Der
- * Zurück-Link unten ist nur der Notbehelf, solange es noch keinen Kunden-Kopf
- * gibt (Template-Referenzseite).
+ * Teil der Website: Es benutzt DIESELBE Kopf- und Fußzeile wie jede andere
+ * Seite. Früher hatte es ein eigenes Minimal-Layout mit „← Zur Startseite",
+ * und jeder Port musste es von Hand umbauen; wer das vergaß, lieferte dem
+ * Kunden ein Impressum, das aussah, als gehöre es nicht zur Website – genau
+ * dort, wo auch prüfende Blicke landen.
+ *
+ * Baut das Design eine eigene Kopfleiste, tauscht der Port hier <Kopf/> und
+ * <Fuss/> gegen die Kunden-Bausteine – das ist ein Zweizeiler statt eines
+ * Umbaus.
  */
 import BaseLayout from './BaseLayout.astro';
-import Signatur from '../components/Signatur.astro';
-import { site } from '../../content.config';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
 
 interface Props {
   titel: string;
@@ -23,36 +27,21 @@ const { titel, pfad, beschreibung } = Astro.props;
 ---
 
 <BaseLayout pfad={pfad} titel={titel} beschreibung={beschreibung}>
+  <Kopf aktuell={pfad} />
   <main id="inhalt" class="rechtsseite">
     <div class="container container--schmal">
-      <a class="rechtsseite__zurueck" href="/">← Zur Startseite</a>
       <h1>{titel}</h1>
       <div class="prose">
         <slot />
       </div>
     </div>
   </main>
-
-  <footer class="rechtsseite__footer">
-    <div class="container container--schmal">
-      <p>© {new Date().getFullYear()} {site.betrieb.name}</p>
-      <nav aria-label="Rechtliches">
-        <a href="/impressum">Impressum</a>
-        <a href="/datenschutz">Datenschutz</a>
-      </nav>
-      <Signatur />
-    </div>
-  </footer>
+  <Fuss />
 </BaseLayout>
 
 <style>
   .rechtsseite {
     padding-block: var(--raum-xl);
-  }
-  .rechtsseite__zurueck {
-    display: inline-block;
-    margin-bottom: var(--raum-m);
-    font-size: var(--schrift-s);
   }
   .rechtsseite h1 {
     font-size: var(--schrift-2xl);
@@ -81,21 +70,5 @@ const { titel, pfad, beschreibung } = Astro.props;
   /* Lange URLs/E-Mails dürfen schmale Screens nicht sprengen. */
   .prose :global(a) {
     word-break: break-word;
-  }
-
-  .rechtsseite__footer {
-    padding-block: var(--raum-m);
-    border-top: 1px solid color-mix(in srgb, var(--farbe-text) 15%, transparent);
-    font-size: var(--schrift-s);
-  }
-  .rechtsseite__footer .container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--raum-xs) var(--raum-m);
-    justify-content: space-between;
-  }
-  .rechtsseite__footer nav {
-    display: flex;
-    gap: var(--raum-s);
   }
 </style>

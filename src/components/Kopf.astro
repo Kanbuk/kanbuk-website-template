@@ -1,0 +1,82 @@
+---
+/**
+ * Kopf – MOTOR-Baustein: die Kopfleiste mit Marke und Navigation.
+ *
+ * WARUM ES DEN BAUSTEIN GIBT: Bis 2026-07-27 baute jeder Klon Kopf und Fuß von
+ * Hand nach – rund 150 Zeilen pro Kunde, jedes Mal neu, jedes Mal ungeprüft.
+ * Das war der größte wiederkehrende Block im Port und zugleich die Stelle, an
+ * der ein vergessener Rechtslink oder eine fehlende Handy-Navigation entsteht.
+ *
+ * Der Baustein liefert die MECHANIK: klebende Leiste, Marke (Logo oder Name),
+ * Navigation samt funktionierendem Handy-Menü, `--kopf-hoehe` für Sprungmarken.
+ * Das Design malt an – jede Klasse ist per `:global(.kopf…)` überschreibbar,
+ * und wer eine völlig andere Leiste braucht, baut sie weiterhin selbst.
+ *
+ * Verwendung:  <Kopf aktuell={pfad} />
+ */
+import { Image } from 'astro:assets';
+import { site } from '../../content.config';
+import { bild } from '../lib/bilder';
+import Navigation from './Navigation.astro';
+
+interface Props {
+  /** Aktueller Pfad – für den aktiven Navigationspunkt. */
+  aktuell?: string;
+  class?: string;
+}
+const { aktuell = '/', class: klasse } = Astro.props;
+
+const logo = site.betrieb.logo ? bild(site.betrieb.logo) : null;
+---
+
+<header class:list={['kopf', klasse]}>
+  <div class="container kopf__inner">
+    <a class="kopf__marke" href="/" aria-label={`${site.betrieb.name} – zur Startseite`}>
+      {logo ? (
+        <Image src={logo} alt={site.betrieb.name} height={36} densities={[1, 2]} class="kopf__logo" />
+      ) : (
+        <span class="kopf__name">{site.betrieb.name}</span>
+      )}
+    </a>
+    <Navigation aktuell={aktuell} />
+  </div>
+</header>
+
+<style>
+  .kopf {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--farbe-hintergrund) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
+  }
+  .kopf__inner {
+    /* position: relative ist PFLICHT – das Handy-Panel hängt sich mit
+       `top: 100%` daran. Ohne das klappt es am oberen Seitenrand auf. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--raum-s);
+    padding-block: var(--raum-xs);
+  }
+  .kopf__marke {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .kopf__logo {
+    height: 36px;
+    width: auto;
+    display: block;
+  }
+  .kopf__name {
+    font-family: var(--font-ueberschrift);
+    font-size: var(--schrift-l);
+    /* Ein langer Betriebsname darf die Leiste nicht sprengen. */
+    overflow-wrap: anywhere;
+  }
+</style>

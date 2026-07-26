@@ -127,6 +127,16 @@ export interface Seite {
   metaBeschreibung: string;
   /** In der Hauptnavigation zeigen? Default: true. */
   inNavigation?: boolean;
+  /**
+   * Steht die Preisliste/Speisekarte auf DIESER Seite?
+   *
+   * Steuert, wo die strukturierten Speisekarten-Daten für Google ausgegeben
+   * werden. Ohne die Angabe hingen sie an jeder Seite – auch am Impressum und
+   * an der Datenschutzerklärung, wo kein einziges Gericht sichtbar ist. Google
+   * verlangt, dass eine Auszeichnung den auf dieser Seite sichtbaren Inhalt
+   * beschreibt. Ist bei keiner Seite gesetzt, gilt die Startseite.
+   */
+  zeigtPreisliste?: boolean;
   /** Eigenes OG-Bild für DIESE Seite – Dateiname in **public/** (nicht fotos/!),
       z. B. 'og-speisekarte.jpg'. Erzeugen mit:
       npm run og -- --bild fotos/<foto>.jpg --ziel public/og-<seite>.jpg
@@ -404,6 +414,18 @@ export interface SiteConfig {
    * stimmt das Bild sofort. Beim Live-Gang wird das Feld schlicht ignoriert.
    */
   vorschauDomain?: string;
+  /**
+   * Wird auf der Seite eine BEDIENTE Karte per 2-Klick eingebettet
+   * (`<Einbettung>` mit Google Maps)? Standard: false – dann zeigt die Anfahrt
+   * nur das statische Kartenbild.
+   *
+   * WARUM ES DAS FELD GIBT: Die Datenschutzerklärung behauptete fest verdrahtet
+   * „Es wird keine Karte eingebettet". Auf einer Seite mit 2-Klick-Karte war das
+   * schlicht falsch – die Erklärung sagte das Gegenteil dessen, was die Seite
+   * tut, und die Übermittlung an Google wurde nirgends erwähnt. Steht das Feld
+   * auf true, beschreibt die Erklärung die Einbettung samt Rechtsgrundlage.
+   */
+  karteEingebettet?: boolean;
   /**
    * Cookielose Besucherzählung. 'vercel' = Vercel Web Analytics – wird im
    * Vercel-Dashboard des Projekts aktiviert (Analytics → Enable), läuft über

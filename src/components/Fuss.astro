@@ -1,0 +1,73 @@
+---
+/**
+ * Fuss – MOTOR-Baustein: die Fußzeile mit allem, was auf JEDER Seite stehen muss.
+ *
+ * Enthält bewusst die Pflichtteile, die beim Handbau am ehesten verlorengehen:
+ *   – Links auf /impressum und /datenschutz (Pflicht in Österreich; das
+ *     Prüf-Tor blockt jede Seite ohne sie)
+ *   – die Kanbuk-Signatur (Live-Pflicht)
+ *   – die Social-Icons, sobald welche in der Config stehen
+ *
+ * Das Design malt an (`:global(.fuss…)`), die Reihenfolge lässt sich per Slot
+ * ergänzen: Alles, was zwischen die Marke und die Rechtslinks gehört (Adresse,
+ * Öffnungszeiten, Spalten), kommt als Kindelement herein.
+ *
+ * Verwendung:  <Fuss />           oder mit eigenem Inhalt:
+ *              <Fuss><div class="…">…</div></Fuss>
+ */
+import { site } from '../../content.config';
+import SocialLinks from './SocialLinks.astro';
+import Signatur from './Signatur.astro';
+
+interface Props {
+  class?: string;
+}
+const { class: klasse } = Astro.props;
+
+const jahr = new Date().getFullYear();
+const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
+---
+
+<footer class:list={['fuss', klasse]}>
+  <div class="container">
+    <slot />
+
+    <div class="fuss__unten">
+      <p class="fuss__recht-inhaber">© {jahr} {rechtsname}</p>
+      <SocialLinks />
+      <nav class="fuss__rechtslinks" aria-label="Rechtliches">
+        <a href="/impressum">Impressum</a>
+        <a href="/datenschutz">Datenschutz</a>
+      </nav>
+      <Signatur />
+    </div>
+  </div>
+</footer>
+
+<style>
+  .fuss {
+    border-top: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
+    padding-block: var(--raum-l) var(--raum-m);
+    font-size: var(--schrift-s);
+  }
+  .fuss__unten {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--raum-2xs) var(--raum-m);
+  }
+  .fuss__rechtslinks {
+    display: flex;
+    gap: var(--raum-s);
+  }
+  .fuss__rechtslinks a {
+    /* 44px Fingerfläche – die Rechtslinks sind am Handy sonst kaum zu treffen. */
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .fuss__recht-inhaber {
+    margin: 0;
+  }
+</style>

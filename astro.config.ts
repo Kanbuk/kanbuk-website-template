@@ -105,6 +105,11 @@ function auslieferungsRegeln() {
            * fra1 = Frankfurt, der nächste EU-Standort zu Österreich.
            */
           regions: ['fra1'],
+          /* Eine Seite, eine Adresse: /speisekarte/ wird per 308 auf
+             /speisekarte umgeleitet. Ohne das antworten beide Schreibweisen
+             mit 200, und Google zählt sie als zwei Seiten mit gleichem Inhalt
+             (siehe trailingSlash weiter unten). */
+          trailingSlash: false,
           headers: [
             { source: '/(.*)', headers: kopfzeilen },
             { source: '/fonts/(.*)', headers: [schriftCache] },
@@ -132,8 +137,36 @@ export default defineConfig({
   site: site.domain,
   // Rein statischer Build – kein SSR-Adapter, kein CMS, keine Datenbank.
   output: 'static',
+  /**
+   * Adressen OHNE abschließenden Schrägstrich – und zwar überall gleich.
+   *
+   * Vorher widersprachen sich zwei Stellen: Die Sitemap meldete Google
+   * `…/speisekarte/`, die Seite selbst bezeichnete sich per canonical als
+   * `…/speisekarte`. Beide Adressen antworteten mit 200. Google muss dann
+   * raten, welche gilt – das kostet Crawl-Budget, verzögert die Indexierung
+   * neuer Seiten und verteilt eingehende Links auf zwei Adressen. Genau in der
+   * Phase, in der ein Betrieb seine alte Website ablöst, ist das teuer.
+   *
+   * Wichtig: Die Vercel-Regel `trailingSlash: false` in der erzeugten
+   * vercel.json gehört dazu – sie leitet /x/ per 308 auf /x um, damit die
+   * Doppel-Adresse gar nicht erst erreichbar bleibt.
+   */
+  trailingSlash: 'never',
   // Sitemap nur im live-Modus (im demo-Modus wird ohnehin nicht indexiert).
-  integrations: [...(istLive ? [sitemap()] : []), auslieferungsRegeln()],
+  integrations: [
+    // Sitemap nur im live-Modus (im demo-Modus wird ohnehin nicht indexiert).
+    /* Sitemap nur im live-Modus (im demo-Modus wird ohnehin nicht indexiert).
+       Bekannter Sonderfall: Die Sitemap meldet die Startseite als
+       „https://kunde.at" ohne Schrägstrich, das canonical im Seitenkopf
+       schreibt „https://kunde.at/". Das ist unkritisch – bei einer Adresse
+       OHNE Pfad behandeln Browser und Google beide Formen als dieselbe Seite
+       (anders als bei /speisekarte vs. /speisekarte/, wo echte Doppel-
+       Adressen entstehen). Ein Angleichen über `serialize` ist nicht möglich:
+       die Sitemap-Erweiterung entfernt den Schrägstrich danach wieder.
+       Die Prüf-Regel in scripts/check.mjs kennt diesen Fall. */
+    ...(istLive ? [sitemap()] : []),
+    auslieferungsRegeln(),
+  ],
   /**
    * Vorschau-Server fest auf IPv4-localhost.
    *

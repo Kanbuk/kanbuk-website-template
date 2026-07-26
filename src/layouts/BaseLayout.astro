@@ -123,6 +123,23 @@ const schriftenVorladen = (() => {
 const menuLd = (() => {
   const liste = site.preisliste;
   if (!liste || liste.kategorien.length === 0) return {};
+
+  /* NUR auf der Seite, auf der die Karte auch WIRKLICH STEHT.
+     Vorher hing die komplette Speisekarte (bei einem Piloten 178 Positionen,
+     27 KB) an jeder einzelnen Seite – auch am Impressum, an der Datenschutz-
+     erklärung und an der Fehlerseite. Google verlangt ausdrücklich, dass eine
+     Auszeichnung den auf DIESER Seite sichtbaren Inhalt beschreibt; 178
+     Gerichte auf der Datenschutzerklärung sind genau der Verstoß, den die
+     Richtlinie „Markup, das den Nutzer nicht sieht" meint. Nebeneffekt: jede
+     andere Seite wird um 27 KB leichter. */
+  const kartenSeite = site.seiten.find((s) => s.zeigtPreisliste)?.pfad;
+  if (kartenSeite ? pfad !== kartenSeite : pfad !== '/') return {};
+
+  /* hasMenu ist eine Speisekarte – bei einem Friseur oder einer Werkstatt wäre
+     das schlicht falsches Markup. Für alle anderen Branchen wird die Preisliste
+     nicht als Menu ausgezeichnet (ein passendes Schema für Leistungen gibt es
+     in schema.org nicht in vergleichbarer Form). */
+  if (!['gastro', 'cafe', 'bar'].includes(site.branche)) return {};
   const zahl = (p?: string) => {
     if (!p) return undefined;
     const t = p.replace(/[^0-9,.]/g, '').replace(',', '.');

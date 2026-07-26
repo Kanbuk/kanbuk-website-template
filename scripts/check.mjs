@@ -836,8 +836,38 @@ if (istLive || nurLive) {
   if (!/uid:\s*'AT[UO]\d/.test(configText)) {
     warnung('Rechtstexte: UID-Nummer sieht nicht nach einer echten österreichischen UID aus');
   }
-  if (!existsSync(join(DIST, 'sitemap-index.xml')) && !existsSync(join(DIST, 'sitemap-0.xml'))) {
+  const sitemapDatei = join(DIST, 'sitemap-0.xml');
+  if (!existsSync(join(DIST, 'sitemap-index.xml')) && !existsSync(sitemapDatei)) {
     warnung('Keine Sitemap gefunden, obwohl die Seite live geht');
+  } else if (existsSync(sitemapDatei)) {
+    /* Sitemap und canonical müssen ZEICHENGLEICH sein.
+       Sie widersprachen sich: Die Sitemap bot Google „…/speisekarte/" an, die
+       Seite selbst bezeichnete sich als „…/speisekarte". Beide antworteten mit
+       200 – Google muss dann raten, welche gilt, verteilt eingehende Links auf
+       zwei Adressen und braucht länger, bis eine neue Seite im Index steht.
+       Für Lighthouse ist dieser Widerspruch unsichtbar. */
+    /* Einzige erlaubte Abweichung: die Startseite. Die Sitemap-Erweiterung
+       schreibt sie ohne Schrägstrich („https://kunde.at"), das canonical mit
+       („https://kunde.at/"). Bei einer Adresse ohne Pfad sind beide Formen
+       nach RFC dieselbe Seite – anders als bei /speisekarte vs.
+       /speisekarte/, wo wirklich zwei Adressen entstehen. Deshalb hier
+       normalisiert statt eine unübliche Kanonisierung zu erzwingen. */
+    const wurzelGleich = (u) => u.replace(/^(https?:\/\/[^/]+)\/$/, '$1');
+    const gemeldet = [...readFileSync(sitemapDatei, 'utf-8').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    const canonicals = new Set(
+      htmlDateien
+        .map((f) => readFileSync(f, 'utf-8').match(/rel="canonical"\s+href="([^"]+)"/)?.[1])
+        .filter(Boolean)
+        .map(wurzelGleich),
+    );
+    for (const url of gemeldet.map(wurzelGleich)) {
+      if (!canonicals.has(url)) {
+        fehler(
+          `Sitemap meldet ${url}, aber keine Seite bezeichnet sich selbst so.\n` +
+            `    Sitemap und canonical müssen zeichengleich sein – sonst zählt Google zwei Adressen für eine Seite.`,
+        );
+      }
+    }
   }
 
   // Kanbuk-Signatur: Der dezente Footer-Backlink auf kanbuk.com ist Teil des

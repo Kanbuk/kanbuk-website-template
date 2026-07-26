@@ -17,10 +17,9 @@
  */
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Navigation from '../components/Navigation.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
 import Formular from '../components/Formular.astro';
-import SocialLinks from '../components/SocialLinks.astro';
-import Signatur from '../components/Signatur.astro';
 import { site } from '../../content.config';
 import { bild } from '../lib/bilder';
 
@@ -31,12 +30,7 @@ const heroBild = bild('hero.jpg');
 ---
 
 <BaseLayout pfad="/">
-  <header class="kopf">
-    <div class="container kopf__inner">
-      <a class="kopf__marke" href="/">{site.betrieb.name}</a>
-      <Navigation aktuell="/" />
-    </div>
-  </header>
+  <Kopf aktuell="/" />
 
   <main id="inhalt">
     <section class="hero">
@@ -108,55 +102,12 @@ const heroBild = bild('hero.jpg');
     </section>
   </main>
 
-  <footer class="fuss">
-    <div class="container fuss__inner">
-      <p>© {new Date().getFullYear()} {site.betrieb.name}</p>
-      <SocialLinks />
-      <nav aria-label="Rechtliches">
-        <a href="/impressum">Impressum</a>
-        <a href="/datenschutz">Datenschutz</a>
-      </nav>
-      <Signatur />
-    </div>
-  </footer>
+  <Fuss />
 </BaseLayout>
 
 <style>
   /* So sieht portierter Code aus: NUR Tokens, keine festen Pixel, keine Farbwerte. */
 
-  .kopf {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: color-mix(in srgb, var(--farbe-hintergrund) 92%, transparent);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
-  }
-  .kopf__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--raum-s);
-    padding-block: var(--raum-xs);
-  }
-  .kopf__marke {
-    font-family: var(--font-ueberschrift);
-    font-size: var(--schrift-l);
-    text-decoration: none;
-  }
-  /* Die Navigation kommt unstyled aus dem Motor – hier ihr Referenz-Anstrich. */
-  .kopf :global(.navi__liste) {
-    list-style: none;
-    display: flex;
-    gap: var(--raum-s);
-  }
-  .kopf :global(.navi__link) {
-    text-decoration: none;
-    font-size: var(--schrift-s);
-  }
-  .kopf :global(.navi-schalter) {
-    display: none;
-  }
 
   .hero {
     padding-block: var(--raum-3xl) var(--raum-2xl);
@@ -237,19 +188,4 @@ const heroBild = bild('hero.jpg');
     max-width: 40rem;
   }
 
-  .fuss {
-    padding-block: var(--raum-m);
-    border-top: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
-    font-size: var(--schrift-s);
-  }
-  .fuss__inner {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: var(--raum-xs) var(--raum-m);
-  }
-  .fuss nav {
-    display: flex;
-    gap: var(--raum-s);
-  }
 </style>

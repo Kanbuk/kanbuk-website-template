@@ -1,10 +1,23 @@
 ---
 /**
- * Navigation – MOTOR-Baustein: liefert Struktur, Routen und aktiven Zustand.
- * Das AUSSEHEN kommt aus dem Design (Klassen unten sind nur Haken zum Anmalen).
+ * Navigation – MOTOR-Baustein: Struktur, Routen, aktiver Zustand UND eine
+ * funktionierende Handy-Navigation.
+ *
+ * WARUM AUSSEHEN HIER MITKOMMT (Ausnahme von „Design liefert den Lack"):
+ * Bis 2026-07-27 lieferte dieser Baustein nur nacktes Markup, der Hamburger war
+ * in der Referenz sogar hart ausgeblendet. Ergebnis: JEDER Port musste die
+ * komplette Handy-Kopfleiste neu erfinden – ohne Vorlage, ohne Prüfung, und
+ * genau an der Stelle, die am Handy alles entscheidet. Ein Aufklapp-Menü, das
+ * nicht aufklappt, ist keine Geschmacksfrage, sondern kaputte Mechanik.
+ *
+ * Deshalb: Der Baustein bringt das MINIMUM mit, das funktioniert – Umschalten
+ * bei `--navi-umbruch` (Standard 900px), Panel mit Höhenbegrenzung und eigenem
+ * Scrollen (sonst sind Punkte im Querformat unerreichbar), Hamburger, der zum
+ * X wird. Farben, Schriften und Abstände kommen weiterhin aus den Tokens; das
+ * Design überschreibt jede Klasse per `:global(.navi…)`.
  *
  * Die Einträge kommen aus content.config.ts -> seiten (inNavigation).
- * Der Mobil-Schalter wird von src/lib/verhalten/mobilmenue.ts bedient.
+ * Bedient wird es von src/lib/verhalten/mobilmenue.ts.
  */
 import { site } from '../../content.config';
 
@@ -36,3 +49,100 @@ const eintraege = site.seiten.filter((s) => s.inNavigation !== false);
     ))}
   </ul>
 </nav>
+
+<style>
+  /* --- Ab Tablet: normale Leiste, Schalter weg ------------------------- */
+  .navi__liste {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--raum-s);
+    margin: 0;
+    padding: 0;
+  }
+  .navi__link {
+    display: inline-flex;
+    align-items: center;
+    /* 44px Mindesthöhe: die Fingerfläche, unter der man danebentippt. */
+    min-height: 44px;
+    text-decoration: none;
+    font-size: var(--schrift-s);
+  }
+  .navi-schalter {
+    display: none;
+  }
+
+  /* --- Am Handy: Hamburger + aufklappendes Panel ------------------------
+     Umschaltpunkt 900px – dasselbe Maß, auf das mobilmenue.ts beim Wechsel
+     auf Desktop zurücksetzt. Ein Design mit vielen oder langen Menüpunkten
+     verschiebt ihn, indem es diesen Block überschreibt (dann auch den Wert
+     in mobilmenue.ts mitziehen). */
+  @media (max-width: 899.98px) {
+    .navi-schalter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: 0;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+      /* Der Schalter liegt über dem Panel, damit er zum Schließen erreichbar bleibt. */
+      position: relative;
+      z-index: 2;
+    }
+    /* Drei Striche aus einem Element: der mittlere ist echt, die anderen zwei
+       sind seine Pseudo-Elemente. Beim Öffnen wird daraus ein X. */
+    .navi-schalter__strich,
+    .navi-schalter__strich::before,
+    .navi-schalter__strich::after {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+      transition: transform var(--uebergang, 0.2s ease), opacity var(--uebergang, 0.2s ease);
+    }
+    .navi-schalter__strich::before,
+    .navi-schalter__strich::after {
+      content: '';
+      position: absolute;
+    }
+    .navi-schalter__strich::before { transform: translateY(-7px); }
+    .navi-schalter__strich::after  { transform: translateY(7px); }
+
+    .navi-schalter.ist-offen .navi-schalter__strich { background: transparent; }
+    .navi-schalter.ist-offen .navi-schalter__strich::before { transform: rotate(45deg); }
+    .navi-schalter.ist-offen .navi-schalter__strich::after  { transform: rotate(-45deg); }
+
+    .navi {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      display: none;
+      background: var(--farbe-hintergrund);
+      border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
+      padding: var(--raum-xs) var(--gutter) var(--raum-s);
+      /* PFLICHT, nicht Kosmetik: Ohne Höhenbegrenzung und eigenes Scrollen
+         sind im Querformat (Handy quer, kurzer Bildschirm) die unteren
+         Menüpunkte unerreichbar – im Piloten live nachgemessen. */
+      max-height: calc(100dvh - 100%);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .navi.ist-offen {
+      display: block;
+    }
+    .navi__liste {
+      flex-direction: column;
+      gap: 0;
+    }
+    .navi__link {
+      display: flex;
+      padding-block: var(--raum-2xs);
+      font-size: var(--schrift-m);
+    }
+  }
+</style>

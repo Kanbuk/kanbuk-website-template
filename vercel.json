@@ -3,6 +3,7 @@
   "regions": [
     "fra1"
   ],
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",

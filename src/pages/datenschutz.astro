@@ -88,14 +88,32 @@ const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategor
     </>
   )}
 
+  {/* Der Text richtet sich danach, was die Seite WIRKLICH tut. Vorher stand
+      hier fest verdrahtet „Es wird keine Karte eingebettet" – auf einer Seite
+      mit 2-Klick-Karte war das schlicht falsch, und die Übermittlung an Google
+      wurde nirgends erwähnt. `karteEingebettet` in der Config schaltet um. */}
   <h2>Karte / Anfahrt</h2>
-  <p>
-    Für die Anfahrt zeigen wir ein <strong>statisches Bild</strong> (Kartendaten von
-    OpenStreetMap, beim Erstellen der Seite eingebunden). Es wird keine Karte
-    eingebettet, es werden also keine Daten übertragen, solange Sie nicht selbst auf
-    den Link „In Google Maps öffnen“ klicken. Erst dann gelangen Sie zu Google Maps,
-    wo die Datenschutzbestimmungen von Google gelten.
-  </p>
+  {site.karteEingebettet ? (
+    <p>
+      Für die Anfahrt zeigen wir zunächst ein <strong>statisches Bild</strong>
+      (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden). Erst wenn
+      Sie ausdrücklich auf „Google Maps laden“ klicken, wird eine Karte von Google
+      geladen. Dabei werden Ihre <strong>IP-Adresse</strong> und Angaben zu Ihrem
+      Browser an Google übertragen (Google Ireland Limited; eine Übermittlung in die
+      USA an Google LLC ist möglich, abgesichert über die EU-Standardvertragsklauseln
+      und den EU-US Data Privacy Framework). Rechtsgrundlage ist Ihre Einwilligung
+      durch diesen Klick (Art. 6 Abs. 1 lit. a DSGVO). Solange Sie nicht klicken, wird
+      nichts an Google übertragen.
+    </p>
+  ) : (
+    <p>
+      Für die Anfahrt zeigen wir ein <strong>statisches Bild</strong> (Kartendaten von
+      OpenStreetMap, beim Erstellen der Seite eingebunden). Es wird keine Karte
+      eingebettet, es werden also keine Daten übertragen, solange Sie nicht selbst auf
+      den Link „In Google Maps öffnen“ klicken. Erst dann gelangen Sie zu Google Maps,
+      wo die Datenschutzbestimmungen von Google gelten.
+    </p>
+  )}
 
   {site.besucherzaehlung === 'vercel' && (
     <>
@@ -119,15 +137,45 @@ const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategor
     (Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden nicht mit anderen Quellen zusammengeführt.
   </p>
 
-  <h2>Kontaktformular</h2>
+  {/* Die aufgezählten Daten kommen aus den ECHTEN Formularfeldern. Vorher stand
+      hier eine feste Liste (Name, E-Mail, Telefon, Nachricht) – bei einem
+      Reservierungsformular mit Datum, Uhrzeit und Personenzahl nannte die
+      Erklärung also weniger Daten, als tatsächlich erhoben werden. */}
+  {site.formulare.length > 0 && (
+    <>
+      <h2>{site.formulare.length > 1 ? 'Formulare' : 'Kontaktformular'}</h2>
+      <p>
+        Wenn Sie uns über {site.formulare.length > 1 ? 'eines unserer Formulare' : 'das Kontaktformular'}
+        {' '}schreiben, verarbeiten wir die von Ihnen angegebenen Daten, um Ihre Anfrage zu
+        beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Der Versand an unser Postfach
+        erfolgt über den Dienst <strong>Resend</strong> (Resend, Inc., USA – abgesichert
+        über die EU-Standardvertragsklauseln). Wir geben Ihre Daten nicht ohne Ihre
+        Einwilligung an weitere Dritte weiter und speichern sie nur so lange, wie es zur
+        Bearbeitung Ihrer Anfrage erforderlich ist.
+      </p>
+      <ul>
+        {site.formulare.map((f) => (
+          <li>
+            <strong>{f.betreff}:</strong>{' '}
+            {f.felder.map((feld) => feld.label).join(', ')}
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  {/* Auftragsverarbeiter, die bei JEDEM Klon mitlaufen. Sie fehlten komplett –
+      dabei verarbeitet der Hosting-Anbieter bei jedem Seitenaufruf die
+      IP-Adresse des Besuchers. */}
+  <h2>Hosting</h2>
   <p>
-    Wenn Sie uns über das Kontaktformular schreiben, verarbeiten wir die von Ihnen
-    angegebenen Daten (Name, E-Mail-Adresse, ggf. Telefonnummer und Ihre Nachricht),
-    um Ihre Anfrage zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Der Versand der
-    Nachricht an unser Postfach erfolgt über den Dienst <strong>Resend</strong>
-    (Resend, Inc.). Wir geben Ihre Daten nicht ohne Ihre Einwilligung an weitere Dritte
-    weiter und speichern sie nur so lange, wie es zur Bearbeitung Ihrer Anfrage
-    erforderlich ist.
+    Diese Website wird bei <strong>Vercel Inc.</strong> (340 S Lemon Ave #4133, Walnut,
+    CA 91789, USA) gehostet. Beim Aufruf der Seite verarbeitet Vercel technisch
+    notwendige Verbindungsdaten (u. a. IP-Adresse, Zeitpunkt, aufgerufene Adresse,
+    Browsertyp) in Server-Protokollen. Rechtsgrundlage ist unser berechtigtes Interesse
+    an einem sicheren und zuverlässigen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Mit Vercel
+    besteht ein Auftragsverarbeitungsvertrag; die Übermittlung in die USA ist über die
+    EU-Standardvertragsklauseln und den EU-US Data Privacy Framework abgesichert.
   </p>
 
   <h2>Ihre Rechte</h2>

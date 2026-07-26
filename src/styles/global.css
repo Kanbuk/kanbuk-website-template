@@ -71,8 +71,26 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  /* verhindert horizontales Scrollen auf schmalen Geräten */
-  overflow-x: hidden;
+  /* Sprungmarken landen sonst UNTER einer klebenden Kopfleiste: Der Skip-Link
+     „Zum Inhalt" und jeder Anker springen an eine Stelle, die von der Leiste
+     verdeckt ist. Das Design setzt --kopf-hoehe auf seine echte Leistenhöhe. */
+  scroll-padding-top: calc(var(--kopf-hoehe, 0px) + var(--raum-xs));
+}
+
+/* Hier stand früher `overflow-x: hidden` auf html – „verhindert horizontales
+   Scrollen auf schmalen Geräten". Das war ein Pflaster mit zwei Nebenwirkungen:
+   Es beseitigt einen Überlauf nicht, es SCHNEIDET ihn ab (ein überstehender
+   Knopf wird unerreichbar, weil man nicht mehr seitwärts scrollen kann) – und
+   es machte die Sichtprüfung blind, weil scrollWidth dann nie größer wird als
+   clientWidth. Der Motor darf seine eigenen Fehler nicht verstecken: Läuft
+   etwas über, soll es auffallen und behoben werden (Token-Skala, Abschnitt 4). */
+
+/* Solange das Handy-Menü offen ist, darf der Hintergrund nicht mitscrollen –
+   sonst rutscht die Seite unter dem Panel weg. Die Klasse setzt
+   src/lib/verhalten/mobilmenue.ts. */
+html.menue-offen,
+html.menue-offen body {
+  overflow: hidden;
 }
 
 body {

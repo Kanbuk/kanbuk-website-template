@@ -212,6 +212,18 @@ wird dabei ersetzt.
   behalten will (ausfüllbares Formular, Angebot). Das Prüf-Tor meldet jeden
   PDF-Link, dessen Text etwas anderes verspricht als er tut. Bei großen Dateien
   die Größe danebenschreiben („PDF, 2 MB") – am Handy zählt das.
+- **Kopf und Fuß kommen aus dem Motor:** `<Kopf aktuell={pfad} />` und `<Fuss />`
+  (src/components/). Sie bringen Handy-Navigation, Rechtslinks, Social-Icons und
+  Signatur fertig mit – das Design malt sie per `:global(.kopf…)` / `:global(.fuss…)`
+  an. Nur wenn das Design eine grundlegend andere Leiste verlangt, wird sie eigen
+  gebaut; dann aber Rechtslinks und Signatur NICHT vergessen (das Prüf-Tor blockt).
+  Eigene Inhalte in der Fußzeile (Adresse, Öffnungszeiten, Spalten) kommen als
+  Kindelemente in `<Fuss>…</Fuss>`.
+- **`zeigtPreisliste: true`** bei der Seite setzen, auf der die Karte steht – sonst
+  landen die strukturierten Speisekarten-Daten auf der Startseite statt dort.
+- **`karteEingebettet: true`** setzen, wenn eine 2-Klick-Karte eingebaut wird. Dann
+  beschreibt die Datenschutzerklärung die Google-Übermittlung; ohne das Feld
+  behauptet sie, es werde keine Karte eingebettet.
 - **Die Fußzeile bekommt `<Signatur />`** (dezenter Kanbuk-Backlink, neben © und
   Rechtslinks). Das ist Geschäftsmodell, keine Deko – das Prüf-Tor blockt bei
   `--live` jede Seite ohne Signatur. Den Ankertext wählt der Baustein selbst
