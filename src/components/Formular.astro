@@ -18,8 +18,14 @@ interface Props {
   /** ID aus content.config.ts -> formulare */
   id: string;
   class?: string;
+  /**
+   * Worauf bezieht sich die Anfrage? Etwa der Titel eines Katalog-Eintrags.
+   * Wird als verdecktes Feld mitgeschickt und steht so in der E-Mail –
+   * der Interessent muss nicht abtippen, worum es geht.
+   */
+  bezug?: string;
 }
-const { id, class: klasse } = Astro.props;
+const { id, class: klasse, bezug } = Astro.props;
 
 const formular = site.formulare.find((f) => f.id === id);
 if (!formular) {
@@ -30,6 +36,27 @@ if (!formular) {
 
 const t = motorTexte(site.ansprache);
 const istDemo = site.mode === 'demo';
+
+/* Mehrstufig? Dann die Felder auf die Schritte verteilen. Ein Feld ohne
+   `schritt` landet in Schritt 1 – so wird aus einem bestehenden Formular durch
+   Ergänzen von `schritte` kein leerer erster Schritt. */
+const schritte = formular.schritte ?? [];
+const istAssistent = schritte.length > 1;
+const gruppen = istAssistent
+  ? schritte.map((titel, i) => ({
+      titel,
+      nr: i + 1,
+      felder: formular.felder.filter((f) => (f.schritt ?? 1) === i + 1),
+    }))
+  : [{ titel: '', nr: 1, felder: formular.felder }];
+
+// Ein leerer Schritt wäre eine Sackgasse – lieber beim Bauen auffallen.
+const leer = gruppen.find((g) => g.felder.length === 0);
+if (leer) {
+  throw new Error(
+    `Formular "${formular.id}": Schritt ${leer.nr} („${leer.titel}") hat kein einziges Feld. Setze bei den betreffenden Feldern in content.config.ts \`schritt: ${leer.nr}\`.`,
+  );
+}
 ---
 
 {istDemo ? (
@@ -39,71 +66,96 @@ const istDemo = site.mode === 'demo';
   </div>
 ) : (
   <form
-    class:list={['formular', klasse]}
+    class:list={['formular', klasse, istAssistent && 'formular--assistent']}
     method="post"
     action="/api/contact"
     novalidate
     data-formular
     data-formular-id={formular.id}
+    data-assistent={istAssistent ? '' : undefined}
     data-text-sendet={t.sendet}
     data-text-erfolg={t.erfolg}
     data-text-fehler={t.fehler}
     data-text-verbindungsfehler={t.verbindungsfehler}
   >
     <input type="hidden" name="formular" value={formular.id} />
+    {bezug && <input type="hidden" name="bezug" value={bezug} />}
 
-    {formular.felder.map((f) => (
-      <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
-        <span class="formular__label">
-          {f.label}
-          {!f.pflicht && <em class="formular__optional">(optional)</em>}
-        </span>
+    {istAssistent && (
+      <div class="formular__fortschritt">
+        {/* Sichtbar UND vorgelesen: Ohne die Angabe weiß niemand, wie lange
+            es noch dauert – und genau das entscheidet über das Abbrechen. */}
+        <p class="formular__schrittzahl" data-assistent-fortschritt aria-live="polite"></p>
+        <div class="formular__balken" data-assistent-balken aria-hidden="true"></div>
+        <ol class="formular__punkte">
+          {gruppen.map((g) => (
+            <li class="formular__punkt" data-assistent-punkt={g.nr}>{g.titel}</li>
+          ))}
+        </ol>
+      </div>
+    )}
 
-        {f.typ === 'textarea' ? (
-          <textarea
-            name={f.name}
-            rows="5"
-            required={f.pflicht}
-            placeholder={f.platzhalter}
-          />
-        ) : f.typ === 'auswahl' ? (
-          <select name={f.name} required={f.pflicht}>
-            <option value="">Bitte wählen</option>
-            {(f.optionen ?? []).map((o) => <option value={o}>{o}</option>)}
-          </select>
-        ) : f.typ === 'haekchen' ? (
-          /* Einzelnes Ankreuzfeld – typisch die Datenschutz-Zustimmung.
-             Der Wert landet als „ja"/„–" in der E-Mail. */
-          <input type="checkbox" name={f.name} value="ja" required={f.pflicht} class="formular__haekchen" />
-        ) : f.typ === 'mehrfach' ? (
-          /* Mehrfachauswahl: mehrere Kästchen mit demselben Feldnamen.
-             Der Browser sendet sie als wiederholten Schlüssel; der
-             Formular-Baustein fasst sie zu „A, B" zusammen. */
-          <span class="formular__mehrfach" role="group" aria-label={f.label}>
-            {(f.optionen ?? []).map((o) => (
-              <label class="formular__mehrfach-option">
-                <input type="checkbox" name={f.name} value={o} />
-                <span>{o}</span>
-              </label>
-            ))}
-          </span>
-        ) : (
-          <input
-            type={
-              f.typ === 'datum' ? 'date'
-              : f.typ === 'zeit' ? 'time'
-              : f.typ === 'zahl' ? 'number'
-              : f.typ
-            }
-            name={f.name}
-            required={f.pflicht}
-            autocomplete={f.autocomplete}
-            placeholder={f.platzhalter}
-            min={f.typ === 'datum' && f.minDatum === 'heute' ? new Date().toISOString().slice(0, 10) : (f.minDatum ?? f.min)}
-            max={f.max}
-          />
-        )}
-      </label>
+    {gruppen.map((gruppe) => (
+      <fieldset
+        class="formular__schritt"
+        data-assistent-schritt={istAssistent ? gruppe.nr : undefined}
+      >
+        {istAssistent && <legend class="formular__schritt-titel">{gruppe.titel}</legend>}
+
+        {gruppe.felder.map((f) => (
+          <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
+            <span class="formular__label">
+              {f.label}
+              {!f.pflicht && <em class="formular__optional">(optional)</em>}
+            </span>
+
+            {f.typ === 'textarea' ? (
+              <textarea
+                name={f.name}
+                rows="5"
+                required={f.pflicht}
+                placeholder={f.platzhalter}
+              />
+            ) : f.typ === 'auswahl' ? (
+              <select name={f.name} required={f.pflicht}>
+                <option value="">Bitte wählen</option>
+                {(f.optionen ?? []).map((o) => <option value={o}>{o}</option>)}
+              </select>
+            ) : f.typ === 'haekchen' ? (
+              /* Einzelnes Ankreuzfeld – typisch die Datenschutz-Zustimmung.
+                 Der Wert landet als „ja"/„–" in der E-Mail. */
+              <input type="checkbox" name={f.name} value="ja" required={f.pflicht} class="formular__haekchen" />
+            ) : f.typ === 'mehrfach' ? (
+              /* Mehrfachauswahl: mehrere Kästchen mit demselben Feldnamen.
+                 Der Browser sendet sie als wiederholten Schlüssel; der
+                 Formular-Baustein fasst sie zu „A, B" zusammen. */
+              <span class="formular__mehrfach" role="group" aria-label={f.label}>
+                {(f.optionen ?? []).map((o) => (
+                  <label class="formular__mehrfach-option">
+                    <input type="checkbox" name={f.name} value={o} />
+                    <span>{o}</span>
+                  </label>
+                ))}
+              </span>
+            ) : (
+              <input
+                type={
+                  f.typ === 'datum' ? 'date'
+                  : f.typ === 'zeit' ? 'time'
+                  : f.typ === 'zahl' ? 'number'
+                  : f.typ
+                }
+                name={f.name}
+                required={f.pflicht}
+                autocomplete={f.autocomplete}
+                placeholder={f.platzhalter}
+                min={f.typ === 'datum' && f.minDatum === 'heute' ? new Date().toISOString().slice(0, 10) : (f.minDatum ?? f.min)}
+                max={f.max}
+              />
+            )}
+          </label>
+        ))}
+      </fieldset>
     ))}
 
     {/* Zeitfalle gegen Spam: wird per JS mit der Ladezeit befüllt. Absenden
@@ -118,6 +170,13 @@ const istDemo = site.mode === 'demo';
         <input type="text" name="webseite" tabindex="-1" autocomplete="off" />
       </label>
     </div>
+
+    {istAssistent && (
+      <div class="formular__navigation">
+        <button type="button" class="formular__zurueck" data-assistent-zurueck hidden>Zurück</button>
+        <button type="button" class="formular__weiter" data-assistent-weiter>Weiter</button>
+      </div>
+    )}
 
     <button type="submit" class="formular__absenden" data-formular-absenden>
       Senden
@@ -146,5 +205,51 @@ const istDemo = site.mode === 'demo';
   }
   .formular__optional {
     font-style: normal;
+  }
+
+  /* Der <fieldset> bringt vom Browser einen Rahmen und Innenabstand mit, die
+     jedes Design sonst erst wegräumen müsste. */
+  .formular__schritt {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--raum-s, 1rem);
+  }
+
+  /* Ohne JavaScript stehen alle Schritte untereinander – dann sind die
+     Weiter-/Zurück-Knöpfe sinnlos und die Schrittzahl irreführend. Das Skript
+     setzt die Klasse `hat-js` auf <html>. */
+  html:not(.hat-js) .formular__navigation,
+  html:not(.hat-js) .formular__fortschritt {
+    display: none;
+  }
+
+  .formular__punkte {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--raum-xs, 0.75rem);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Nur die Mechanik: ein Balken, dessen Breite der Assistent setzt.
+     Farbe, Höhe und Rundung bestimmt das Design. */
+  .formular__balken::before {
+    content: '';
+    display: block;
+    width: var(--fortschritt, 0%);
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .formular__balken::before { transition: none; }
+  }
+
+  .formular__navigation {
+    display: flex;
+    gap: var(--raum-xs, 0.75rem);
+    flex-wrap: wrap;
   }
 </style>

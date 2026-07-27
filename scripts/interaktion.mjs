@@ -14,6 +14,12 @@
  *   • Lightbox    – Bild klicken: Dialog offen? Escape schließt?
  *   • Vergleich   – Regler auf 25: sitzt die CSS-Variable --vergleich-pos?
  *   • Slider      – Vor-Knopf: wandert der aktive Punkt bzw. die Spur?
+ *   • Katalog-Filter – jede Merkmalsgruppe, jeder Schieberegler, jede
+ *                   Sortierrichtung, Zurücksetzen und der Trefferzähler
+ *   • Merkliste   – merken, „nur Vorgemerkte“, wieder lösen
+ *   • Dialog      – öffnet, übernimmt den Bezug des Auslösers, schließt
+ *   • Assistent   – erster Schritt offen, Senden versteckt, leeres
+ *                   Pflichtfeld hält den Schritt
  *   • Formular    – demo-Modus MUSS den Hinweis zeigen statt eines scharfen
  *                   Formulars; ein Live-Formular wird nur strukturell geprüft
  *                   (Absende-Knopf + Status-Element) und NIE abgesendet.
@@ -170,6 +176,226 @@ for (const seite of seiten) {
           if (versteckt > 0) fehler.push(`"alle" lässt ${versteckt} Element(e) versteckt`);
         }
         raus.push({ baustein: nr > 0 ? `Filter #${nr + 1}` : 'Filter', ok: fehler.length === 0, detail: fehler.join('; ') });
+      });
+      return raus;
+    }));
+
+    // --- Kombi-Filter: Gruppen, Regler, Sortierung, Zuruecksetzen -----------
+    /* Der einfache Filtertest oben greift nur bei [data-kategorie]. Ein
+       Katalog (Fahrzeuge, Objekte, Kurse) filtert ueber mehrere Merkmale
+       zugleich - der blieb bis 2026-07-27 voellig ungeprueft, obwohl er das
+       komplizierteste Bedienteil des Motors ist. */
+    ergebnisse.push(...await page.evaluate(() => {
+      const raus = [];
+      document.querySelectorAll('[data-filter-kombi]').forEach((box, nr) => {
+        const ziel = box.querySelector('[data-filter-ziel]') ?? box;
+        const elemente = [...ziel.querySelectorAll('[data-katalog-eintrag]')];
+        if (elemente.length === 0) return;
+        const fehler = [];
+        /* Frisch aus dem Seitenbaum lesen, nicht aus der oben eingesammelten
+           Liste: Beim Sortieren werden die Einträge umgehängt. Wer die alte
+           Liste filtert, bekommt die ALTE Reihenfolge zurück – die Prüfung
+           hätte dann jede Sortierung für richtig gehalten, solange die
+           Ausgangsreihenfolge zufällig passte (genau so beim ersten Lauf
+           passiert: „aufsteigend" grün, „absteigend" rot, beides zu Unrecht). */
+        const sichtbare = () =>
+          [...ziel.querySelectorAll('[data-katalog-eintrag]')].filter((el) => !el.hidden);
+        const zuruecksetzen = () => box.querySelector('[data-filter-zuruecksetzen]')?.click();
+
+        // 1. Jede Gruppe, jeder Wert: stimmt die Auswahl?
+        for (const gruppe of box.querySelectorAll('[data-filter-gruppe]')) {
+          const merkmal = gruppe.dataset.filterGruppe;
+          for (const knopf of gruppe.querySelectorAll('[data-filter-wert]')) {
+            const wert = knopf.dataset.filterWert;
+            if (wert === 'alle') continue;
+            zuruecksetzen();
+            if (knopf.type === 'checkbox') {
+              knopf.checked = true;
+              knopf.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+              knopf.click();
+            }
+            const erwartet = elemente.filter((el) =>
+              (el.dataset[merkmal] ?? '').split(/\s+/).includes(wert),
+            );
+            if (erwartet.length === 0) {
+              fehler.push(`Auswahl "${merkmal}: ${wert}" fuehrt ins Leere - kein Eintrag hat diesen Wert`);
+              continue;
+            }
+            const s = sichtbare();
+            if (s.length !== erwartet.length || s.some((el) => !erwartet.includes(el))) {
+              fehler.push(`"${merkmal}: ${wert}": ${s.length} sichtbar, erwartet ${erwartet.length}`);
+            }
+          }
+        }
+
+        // 2. Zuruecksetzen muss ALLES zurueckholen
+        zuruecksetzen();
+        if (sichtbare().length !== elemente.length) {
+          fehler.push(`Zuruecksetzen laesst ${elemente.length - sichtbare().length} Eintrag/Eintraege versteckt`);
+        }
+
+        // 3. Schieberegler auf das Minimum stellen
+        for (const regler of box.querySelectorAll('[data-filter-max]')) {
+          const merkmal = regler.dataset.filterMax;
+          zuruecksetzen();
+          regler.value = regler.min;
+          regler.dispatchEvent(new Event('input', { bubbles: true }));
+          const grenze = Number(regler.min);
+          const drueber = sichtbare().filter((el) => {
+            const w = Number.parseFloat((el.dataset[merkmal] ?? '').replace(/[^0-9.-]/g, ''));
+            return Number.isFinite(w) && w > grenze;
+          });
+          if (drueber.length > 0) {
+            fehler.push(`Regler "${merkmal}" auf ${grenze}: ${drueber.length} Eintrag/Eintraege ueber der Grenze noch sichtbar`);
+          }
+          const anzeige = box.querySelector(`[data-filter-max-anzeige="${merkmal}"]`);
+          if (anzeige && !anzeige.textContent.trim()) {
+            fehler.push(`Regler "${merkmal}" zeigt keinen Wert an - der Besucher sieht nicht, was er eingestellt hat`);
+          }
+          zuruecksetzen();
+        }
+
+        // 4. Sortierung: steht die Reihenfolge danach wirklich?
+        const sortierung = box.querySelector('[data-filter-sortierung]');
+        if (sortierung) {
+          for (const option of [...sortierung.options].filter((o) => o.value)) {
+            zuruecksetzen();
+            sortierung.value = option.value;
+            sortierung.dispatchEvent(new Event('change', { bubbles: true }));
+            const [merkmal, richtung] = option.value.split('-');
+            const werte = sichtbare()
+              .map((el) => Number.parseFloat((el.dataset[merkmal] ?? '').replace(/[^0-9.-]/g, '')))
+              .filter((n) => Number.isFinite(n));
+            const geordnet = werte.every((w, i) =>
+              i === 0 || (richtung === 'ab' ? werte[i - 1] >= w : werte[i - 1] <= w),
+            );
+            if (!geordnet) fehler.push(`Sortierung "${option.value}" ordnet nicht: ${werte.join(', ')}`);
+          }
+          zuruecksetzen();
+        }
+
+        // 5. Trefferzaehler muss zur Wirklichkeit passen
+        const anzahl = box.querySelector('[data-filter-anzahl]');
+        if (anzahl && Number(anzahl.textContent) !== sichtbare().length) {
+          fehler.push(`Trefferzaehler sagt ${anzahl.textContent}, sichtbar sind ${sichtbare().length}`);
+        }
+
+        raus.push({
+          baustein: nr > 0 ? `Katalog-Filter #${nr + 1}` : 'Katalog-Filter',
+          ok: fehler.length === 0,
+          detail: fehler.join('; '),
+        });
+      });
+      return raus;
+    }));
+
+    // --- Merkliste: merken, nur Vorgemerkte, wieder loesen -------------------
+    ergebnisse.push(...await page.evaluate(() => {
+      const knoepfe = [...document.querySelectorAll('[data-merken]')];
+      if (knoepfe.length === 0) return [];
+      const fehler = [];
+      const zaehler = document.querySelector('[data-merkliste-anzahl]');
+      const eintragVon = (k) => k.closest('[data-katalog-eintrag]') ?? k.parentElement;
+
+      /* Sauber starten: Die Merkliste ueberlebt im Geraetespeicher auch den
+         Seitenwechsel - ohne Aufraeumen faelschte ein frueherer Durchlauf das
+         Ergebnis dieses Tests. */
+      knoepfe.filter((k) => k.getAttribute('aria-pressed') === 'true').forEach((k) => k.click());
+
+      knoepfe[0].click();
+      if (knoepfe[0].getAttribute('aria-pressed') !== 'true') {
+        fehler.push('Merken-Knopf meldet sich nicht als gedrueckt (aria-pressed)');
+      }
+      if (zaehler && zaehler.textContent.trim() !== '1') {
+        fehler.push(`Zaehler zeigt "${zaehler.textContent.trim()}" statt 1`);
+      }
+
+      const nurKnopf = document.querySelector('[data-merkliste-nur]');
+      if (nurKnopf) {
+        nurKnopf.click();
+        const sichtbar = knoepfe.filter((k) => !eintragVon(k).hidden);
+        if (sichtbar.length !== 1) {
+          fehler.push(`"Nur Vorgemerkte" zeigt ${sichtbar.length} Eintraege statt 1`);
+        }
+        nurKnopf.click();
+        const wiederAlle = knoepfe.filter((k) => !eintragVon(k).hidden).length;
+        if (wiederAlle !== knoepfe.length) {
+          fehler.push(`Nach dem Zurueckschalten fehlen ${knoepfe.length - wiederAlle} Eintraege`);
+        }
+      }
+
+      knoepfe[0].click(); // wieder loesen - der naechste Durchlauf startet sauber
+      try { localStorage.removeItem('kanbuk-merkliste'); } catch { /* egal */ }
+
+      return [{ baustein: 'Merkliste', ok: fehler.length === 0, detail: fehler.join('; ') }];
+    }));
+
+    // --- Dialog: oeffnet, uebernimmt den Bezug, laesst sich schliessen -------
+    ergebnisse.push(...await page.evaluate(async () => {
+      const ausloeser = [...document.querySelectorAll('[data-dialog-oeffnen]')];
+      if (ausloeser.length === 0) return [];
+      const fehler = [];
+      const a = ausloeser[0];
+      const ziel = document.getElementById(a.dataset.dialogOeffnen ?? '');
+      if (!ziel) {
+        fehler.push(`Ausloeser zeigt auf "${a.dataset.dialogOeffnen}" - dieses Element gibt es nicht`);
+      } else {
+        a.click();
+        await new Promise((r) => setTimeout(r, 120));
+        if (!ziel.open) fehler.push('Dialog bleibt beim Klick zu');
+        const bezug = a.dataset.dialogBezug;
+        if (bezug) {
+          const ok = [...ziel.querySelectorAll('[data-dialog-bezug-ziel]')].every(
+            (el) => (el.value ?? el.textContent) === bezug,
+          );
+          if (!ok) fehler.push('Der Bezug des Ausloesers kommt im Dialog nicht an');
+        }
+        ziel.close();
+        await new Promise((r) => setTimeout(r, 80));
+        if (ziel.open) fehler.push('Dialog laesst sich nicht schliessen');
+      }
+      return [{ baustein: 'Dialog', ok: fehler.length === 0, detail: fehler.join('; ') }];
+    }));
+
+    // --- Assistent: Schritte, Senden-Knopf, Pflichtfeld-Sperre ---------------
+    ergebnisse.push(...await page.evaluate(() => {
+      const formulare = [...document.querySelectorAll('[data-assistent]')];
+      if (formulare.length === 0) return [];
+      const raus = [];
+      formulare.forEach((form, nr) => {
+        const schritte = [...form.querySelectorAll('[data-assistent-schritt]')];
+        if (schritte.length < 2) return;
+        const fehler = [];
+        const sichtbare = () => schritte.filter((s) => !s.hidden);
+        const weiter = form.querySelector('[data-assistent-weiter]');
+        const senden = form.querySelector('[data-formular-absenden]');
+
+        if (sichtbare().length !== 1 || sichtbare()[0] !== schritte[0]) {
+          fehler.push('Es steht nicht genau der erste Schritt offen');
+        }
+        if (senden && !senden.hidden) {
+          fehler.push('Der Senden-Knopf ist schon im ersten Schritt sichtbar - ein ungeduldiger Klick schickt ein halbes Formular ab');
+        }
+
+        /* Der wichtigste Fall: Ein leeres Pflichtfeld darf nicht durchlassen.
+           Hat der erste Schritt keins, pruefen wir stattdessen, dass "Weiter"
+           ueberhaupt weiterschaltet. */
+        const pflicht = [...schritte[0].querySelectorAll('[required]')].find((f) => !f.value);
+        weiter?.click();
+        if (pflicht) {
+          if (sichtbare()[0] !== schritte[0]) {
+            fehler.push('Leeres Pflichtfeld haelt den Schritt nicht - der Besucher kommt ohne Angabe weiter');
+          }
+        } else if (sichtbare()[0] !== schritte[1]) {
+          fehler.push('"Weiter" schaltet nicht zum naechsten Schritt');
+        }
+
+        raus.push({
+          baustein: nr > 0 ? `Assistent #${nr + 1}` : 'Assistent',
+          ok: fehler.length === 0,
+          detail: fehler.join('; '),
+        });
       });
       return raus;
     }));

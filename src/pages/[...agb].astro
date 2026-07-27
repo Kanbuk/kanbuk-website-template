@@ -1,0 +1,57 @@
+---
+/**
+ * AGB – die Seite entsteht NUR, wenn `rechtstexte.agb` gefüllt ist.
+ *
+ * Deshalb steht sie in einer Sammel-Route statt in `agb.astro`: Eine normale
+ * Seitendatei erzeugt IMMER eine Seite. Ohne Text wäre das eine leere Adresse
+ * unter /agb – in der Sitemap, im Google-Index, ohne Inhalt. Über
+ * `getStaticPaths` entsteht sie gar nicht erst.
+ *
+ * Der Motor liefert die Seite (Adresse, Meta-Angaben, Kopf und Fuß wie
+ * überall). Den TEXT liefert der Betrieb: AGB sind Vertragsrecht, keine
+ * Textbausteine – wir erfinden hier keine Klausel. Steht im Text noch
+ * `PLATZHALTER: …`, hält das Prüf-Tor den Live-Gang an.
+ */
+import RechtsLayout from '../layouts/RechtsLayout.astro';
+import { site, type AgbAbschnitt } from '../../content.config';
+
+export async function getStaticPaths() {
+  const { site } = await import('../../content.config');
+  const abschnitte = site.rechtstexte.agb ?? [];
+  if (abschnitte.length === 0) return [];
+  return [{ params: { agb: 'agb' } }];
+}
+
+const abschnitte: AgbAbschnitt[] = site.rechtstexte.agb ?? [];
+---
+
+<RechtsLayout
+  titel="Allgemeine Geschäftsbedingungen"
+  pfad="/agb"
+  beschreibung={`Allgemeine Geschäftsbedingungen von ${site.betrieb.name}: Vertragsabschluss, Leistungen, Preise, Zahlung, Storno und Gewährleistung – vollständig zum Nachlesen.`}
+>
+  <p>
+    Diese Bedingungen gelten für alle Verträge, die über diese Website oder in
+    deren Zusammenhang mit {site.rechtstexte.firmenwortlaut} geschlossen werden.
+  </p>
+
+  {abschnitte.map((a, i) => (
+    <>
+      <h2>{i + 1}. {a.titel}</h2>
+      {a.absaetze.map((p) => <p>{p}</p>)}
+    </>
+  ))}
+
+  <h2>Anwendbares Recht</h2>
+  <p>
+    Es gilt österreichisches Recht unter Ausschluss der Verweisungsnormen des
+    internationalen Privatrechts. Zwingende Verbraucherschutzbestimmungen des
+    Staates, in dem eine Verbraucherin oder ein Verbraucher den gewöhnlichen
+    Aufenthalt hat, bleiben davon unberührt.
+  </p>
+
+  <p>
+    Fragen zu diesen Bedingungen:{' '}
+    <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
+  </p>
+</RechtsLayout>

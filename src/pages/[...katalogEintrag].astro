@@ -1,0 +1,302 @@
+---
+/**
+ * =============================================================================
+ *  KATALOG-DETAILSEITE – eine echte Adresse je Eintrag
+ * =============================================================================
+ *  Erzeugt aus `content.config.ts -> katalog` für JEDEN Eintrag eine eigene
+ *  Seite: `/fahrzeuge/bmw-320d`, `/objekte/dachgeschoss-1070`, …
+ *
+ *  WARUM DAS IM MOTOR STEHT UND NICHT IM DESIGN:
+ *  Ohne eigene Adresse je Eintrag findet Google eine Seite statt zweihundert.
+ *  Jede dieser Seiten braucht eigenen Titel, eigene Description, eigene
+ *  Canonical, eigenes Vorschaubild und ein Produkt-Schema – das ist Mechanik,
+ *  keine Gestaltung. Ein Klon, der das selbst baut, baut es jedes Mal anders
+ *  und meist unvollständig.
+ *
+ *  Ist kein Katalog konfiguriert, entsteht hier KEINE einzige Seite – die
+ *  Datei kostet dann nichts.
+ *
+ *  DAS AUSSEHEN: Diese Seite bringt bewusst nur ein schlichtes, tokenbasiertes
+ *  Gerüst mit. Beim Portieren wird der Rumpf (zwischen <BaseLayout>) durch die
+ *  Detailansicht aus dem Design ersetzt – Meta-Angaben, Schema und Bildlogik
+ *  bleiben stehen.
+ * =============================================================================
+ */
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import Formular from '../components/Formular.astro';
+import { site, type KatalogEintrag } from '../../content.config';
+import { bild } from '../lib/bilder';
+import { katalogAdresse, preisText, katalogEintraege } from '../lib/katalog';
+import KatalogListe from '../components/KatalogListe.astro';
+
+export async function getStaticPaths() {
+  const { site } = await import('../../content.config');
+  const katalog = site.katalog;
+  if (!katalog) return [];
+
+  /* Zuerst prüfen, dann bauen: Doppelte Kennungen, unbrauchbare Adressen und
+     ein fehlendes Anfrageformular würden sonst still durchgehen und erst beim
+     Kunden auffallen. */
+  const { katalogPruefen } = await import('../lib/katalog');
+  katalogPruefen();
+
+  const basis = katalog.pfad.replace(/^\//, '').replace(/\/$/, '');
+
+  /* Die ÜBERSICHT entsteht aus derselben Datei. Zwei getrennte Sammel-Routen
+     würden sich gegenseitig überdecken – und ohne Übersicht zeigten der
+     Zurück-Link jeder Detailseite und die Navigation ins Leere. */
+  const seiten: { params: { katalogEintrag: string }; props: { eintrag?: unknown } }[] = [
+    { params: { katalogEintrag: basis }, props: {} },
+  ];
+
+  /* ALLE Einträge bekommen eine Seite – auch verkaufte. Verschwände die Seite,
+     liefe jeder alte Google-Treffer und jeder geteilte Link auf einen Fehler.
+     Aus der Liste ist der Eintrag draußen, die Seite sagt „bereits verkauft". */
+  for (const eintrag of katalog.eintraege) {
+    seiten.push({ params: { katalogEintrag: `${basis}/${eintrag.id}` }, props: { eintrag } });
+  }
+  return seiten;
+}
+
+interface Props {
+  /** Fehlt bei der Übersichtsseite. */
+  eintrag?: KatalogEintrag;
+}
+const { eintrag } = Astro.props;
+const katalog = site.katalog!;
+
+/* Steht die Übersicht in `seiten`, kommen Titel und Description von dort –
+   sonst erzeugt der Motor beides, damit die Seite nie ohne Meta-Angaben
+   dasteht (das ließe das Prüf-Tor ohnehin nicht durch). */
+const listenSeite = site.seiten.find((s) => s.pfad === katalog.pfad);
+
+const bilder = (eintrag?.bilder ?? []).map((datei, i) => ({
+  quelle: bild(datei),
+  alt: eintrag?.bildAlt?.[i] ?? eintrag?.titel ?? '',
+}));
+const hauptbild = bilder.find((b) => b.quelle)?.quelle;
+
+/* Eigenes Vorschaubild fuer WhatsApp & Co.: Wer einen einzelnen Eintrag teilt,
+   soll DIESEN Eintrag sehen, nicht das allgemeine Betriebsbild. Auf exakt
+   1200x630 zugeschnitten - die Masse stehen im Seitenkopf und duerfen nicht luegen. */
+const ogBild = hauptbild
+  ? await getImage({ src: hauptbild, width: 1200, height: 630, fit: 'cover', format: 'jpeg' })
+  : undefined;
+
+const verfuegbar = eintrag?.verfuegbar !== false;
+const preis = eintrag ? preisText(eintrag) : '';
+
+/* Description: eigener Satz je Eintrag statt einer fuer alle. Google wirft
+   doppelte Descriptions weg - bei 200 Fahrzeugen waere das der ganze Vorteil. */
+const beschreibung = eintrag
+  ? (
+      eintrag.kurz ??
+      eintrag.beschreibung?.split(/\n/)[0] ??
+      `${eintrag.titel} bei ${site.betrieb.name}.`
+    )
+      .replace(/\s+/g, ' ')
+      .slice(0, 158)
+  : (listenSeite?.metaBeschreibung ??
+      `Alle ${katalog.mehrzahl} von ${site.betrieb.name} auf einen Blick - mit Filter, Preis und Details.`);
+
+const absolut = (pfad: string) => new URL(pfad, site.domain).href;
+
+/* Produkt-Schema: So erscheinen Preis und Verfuegbarkeit direkt im Google-
+   Treffer. `Vehicle` u. a. sind Unterklassen von Product - deshalb steht das
+   Angebot immer unter `offers`. */
+const zusatzLd: Record<string, unknown> | undefined = eintrag
+  ? {
+      '@context': 'https://schema.org',
+      '@type': katalog.schema ?? 'Product',
+      name: eintrag.titel,
+      description: beschreibung,
+      ...(hauptbild ? { image: absolut(hauptbild.src) } : {}),
+      ...(eintrag.merkmale?.length
+        ? {
+            additionalProperty: eintrag.merkmale.map((m) => ({
+              '@type': 'PropertyValue',
+              name: m.name,
+              value: m.wert,
+            })),
+          }
+        : {}),
+      ...(eintrag.preis !== undefined
+        ? {
+            offers: {
+              '@type': 'Offer',
+              price: eintrag.preis,
+              priceCurrency: katalog.waehrung ?? 'EUR',
+              availability: verfuegbar
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/SoldOut',
+              url: absolut(katalogAdresse(eintrag)),
+              seller: { '@type': 'Organization', name: site.betrieb.name },
+            },
+          }
+        : {}),
+    }
+  : /* Auf der Uebersicht die Liste selbst auszeichnen - Google versteht dann,
+       dass es sich um eine Sammlung handelt, und nicht um ein Einzelangebot. */
+    {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: katalog.mehrzahl,
+      numberOfItems: katalogEintraege().length,
+      itemListElement: katalogEintraege()
+        // Auf 50 begrenzt: Bei einem grossen Bestand blaeht die Liste sonst
+        // jede Uebersichtsseite auf, ohne dass Google mehr davon haette.
+        .slice(0, 50)
+        .map((e, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          name: e.titel,
+          url: absolut(katalogAdresse(e)),
+        })),
+    };
+
+const anfrage = katalog.anfrageFormular
+  ? site.formulare.find((f) => f.id === katalog.anfrageFormular)
+  : undefined;
+
+/** Leerzeile = neuer Absatz. */
+const absatzTrenner = /\n\s*\n/;
+---
+
+<BaseLayout
+  pfad={eintrag ? katalogAdresse(eintrag) : katalog.pfad}
+  titel={eintrag ? eintrag.titel : (listenSeite ? undefined : katalog.mehrzahl)}
+  beschreibung={eintrag ? beschreibung : (listenSeite ? undefined : beschreibung)}
+  ogBildUrl={ogBild?.src}
+  ogBildAlt={eintrag ? `${eintrag.titel} – ${site.betrieb.name}` : undefined}
+  zusatzLd={zusatzLd}
+>
+  <Kopf aktuell={katalog.pfad} />
+
+  <main id="inhalt">
+    <div class="container katalog-detail">
+      {eintrag ? (
+        <>
+          {/* Brotkrumen: fuer den Besucher der Weg zurueck, fuer Google die
+              Einordnung in die Seitenstruktur. */}
+          <nav class="katalog-detail__weg" aria-label="Sie sind hier">
+            <a href="/">Start</a>
+            <span aria-hidden="true"> › </span>
+            <a href={katalog.pfad}>{katalog.mehrzahl}</a>
+            <span aria-hidden="true"> › </span>
+            <span aria-current="page">{eintrag.titel}</span>
+          </nav>
+
+          <h1>{eintrag.titel}</h1>
+
+          <p class="katalog-detail__preis">
+            {preis}
+            {!verfuegbar && <span class="katalog-detail__status">Nicht mehr verfügbar</span>}
+          </p>
+
+          {bilder.some((b) => b.quelle) && (
+            <div class="katalog-detail__bilder" data-lightbox>
+              {bilder.map((b, i) =>
+                b.quelle ? (
+                  <figure>
+                    <Image
+                      src={b.quelle}
+                      alt={b.alt}
+                      widths={[400, 800, 1280, 1600]}
+                      {/* Die Bildbreite hängt davon ab, WIE VIELE Bilder es
+                          gibt: Bei mehreren stehen sie nebeneinander (halbe
+                          Breite), bei einem einzigen füllt es die ganze Spalte.
+                          Ohne diese Unterscheidung lud der Browser für ein
+                          Einzelbild die halb so große Datei und zeigte sie
+                          hochskaliert – die Sichtprüfung meldete „verpixelt". */}
+                      sizes={
+                        bilder.filter((x) => x.quelle).length > 1
+                          ? '(min-width: 800px) 50vw, 100vw'
+                          : '(min-width: 1360px) 1280px, 94vw'
+                      }
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      fetchpriority={i === 0 ? 'high' : undefined}
+                    />
+                  </figure>
+                ) : null,
+              )}
+            </div>
+          )}
+
+          {eintrag.beschreibung && (
+            <div class="katalog-detail__text">
+              {eintrag.beschreibung.split(absatzTrenner).map((absatz) => <p>{absatz}</p>)}
+            </div>
+          )}
+
+          {eintrag.merkmale?.length ? (
+            <table class="katalog-detail__merkmale">
+              <caption>Daten zu {eintrag.titel}</caption>
+              <tbody>
+                {eintrag.merkmale.map((m) => (
+                  <tr>
+                    <th scope="row">{m.name}</th>
+                    <td>{m.wert}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+
+          {anfrage && verfuegbar && (
+            <section class="katalog-detail__anfrage" aria-labelledby="anfrage-titel">
+              <h2 id="anfrage-titel">{katalog.einzahl} anfragen</h2>
+              {/* `bezug` traegt den Eintrag verdeckt mit: In der E-Mail steht
+                  sofort, um welchen es ging - ohne dass jemand abtippen muss. */}
+              <Formular id={anfrage.id} bezug={eintrag.titel} />
+            </section>
+          )}
+
+          <p class="katalog-detail__zurueck">
+            <a href={katalog.pfad}>Alle {katalog.mehrzahl} ansehen</a>
+          </p>
+        </>
+      ) : (
+        <>
+          <h1>{katalog.mehrzahl}</h1>
+          <KatalogListe />
+        </>
+      )}
+    </div>
+  </main>
+
+  <Fuss />
+</BaseLayout>
+
+<style>
+  /* Nur so viel, dass die Seite ohne Design lesbar ist und bei 350 px nicht
+     überläuft. Alles Weitere gestaltet das Design. */
+  .katalog-detail {
+    display: grid;
+    gap: var(--raum-m);
+    padding-block: var(--raum-l);
+  }
+  .katalog-detail__bilder {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--raum-s);
+  }
+  .katalog-detail__bilder :global(img) {
+    width: 100%;
+    height: auto;
+  }
+  /* Eine Tabelle ist der klassische Überläufer am Handy. */
+  .katalog-detail__merkmale {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: start;
+  }
+  .katalog-detail__merkmale th,
+  .katalog-detail__merkmale td {
+    text-align: start;
+    padding-block: var(--raum-2xs);
+    vertical-align: top;
+  }
+</style>

@@ -26,6 +26,11 @@ const { class: klasse } = Astro.props;
 
 const jahr = new Date().getFullYear();
 const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
+
+/* Der AGB-Link erscheint nur, wenn es die Seite wirklich gibt. Ein Link auf
+   eine nicht gebaute Adresse wäre ein toter Link in JEDER Fußzeile – und damit
+   auf jeder einzelnen Seite der Website. */
+const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
 ---
 
 <footer class:list={['fuss', klasse]}>
@@ -38,6 +43,7 @@ const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
       <nav class="fuss__rechtslinks" aria-label="Rechtliches">
         <a href="/impressum">Impressum</a>
         <a href="/datenschutz">Datenschutz</a>
+        {hatAgb && <a href="/agb">AGB</a>}
       </nav>
       <Signatur />
     </div>

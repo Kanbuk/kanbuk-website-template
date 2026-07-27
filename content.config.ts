@@ -305,6 +305,11 @@ export interface FormularFeld {
   /** Nur für typ 'zahl'. */
   min?: number;
   max?: number;
+  /**
+   * Nur bei mehrstufigen Formularen (siehe `Formular.schritte`): In welchem
+   * Schritt steht das Feld? 1-basiert, fehlt = Schritt 1.
+   */
+  schritt?: number;
 }
 
 /**
@@ -320,6 +325,137 @@ export interface Formular {
   /** Betreff der E-Mail an den Betrieb. */
   betreff: string;
   felder: FormularFeld[];
+  /**
+   * MEHRSTUFIG (Assistent) – optional. Titel der Schritte, z. B.
+   * `['Ihr Anliegen', 'Termin', 'Kontakt']`. Jedes Feld bekommt dann
+   * `schritt: 1|2|3`. Der Motor zeigt immer nur einen Schritt, prüft ihn vor
+   * dem Weiterklicken und blendet einen Fortschritt ein.
+   *
+   * WANN SINNVOLL: ab etwa acht Feldern, oder wenn die ersten Fragen leicht
+   * sind und die persönlichen Daten erst zum Schluss kommen (Ankauf-Anfrage,
+   * Angebotsassistent, Erstberatung). Ein langes Formular am Stück schreckt
+   * ab; drei kurze Schritte werden deutlich häufiger fertig ausgefüllt.
+   *
+   * WANN NICHT: bei vier Feldern. Da ist ein Assistent nur ein Umweg.
+   *
+   * Ohne JavaScript sind alle Schritte untereinander sichtbar und absendbar –
+   * es geht also nichts verloren.
+   */
+  schritte?: string[];
+}
+
+// ---------------------------------------------------------------------------
+//  KATALOG – viele gleichartige Einträge, jeder mit eigener Unterseite
+//
+//  Branchenneutral: Fahrzeuge (KFZ-Händler), Objekte (Immobilien), Maschinen
+//  (Handel), Kurse (Studio), Projekte (Handwerk), Zimmer (Pension).
+//
+//  ABGRENZUNG ZUR PREISLISTE: Die Preisliste ist eine TABELLE auf einer Seite
+//  (Speisekarte, Behandlungen). Der Katalog ist eine LISTE mit Detailseiten –
+//  jeder Eintrag bekommt eine eigene Adresse, eigene Meta-Angaben und eigene
+//  Bilder. Faustregel: Würde man einen einzelnen Eintrag per WhatsApp
+//  verschicken wollen? Dann Katalog.
+//
+//  WARUM DAS IM MOTOR STEHT: Ohne eigene Adresse je Eintrag findet Google
+//  genau eine Seite statt zweihundert – der größte SEO-Hebel überhaupt bei
+//  einem Händler. Und ein Klon, der die Routen selbst bauen müsste, baut sie
+//  jedes Mal anders und meist ohne saubere Meta-Angaben.
+// ---------------------------------------------------------------------------
+
+/** Eine Zeile in der Merkmalstabelle der Detailseite („Baujahr | 2019"). */
+export interface KatalogMerkmal {
+  name: string;
+  wert: string;
+}
+
+export interface KatalogEintrag {
+  /**
+   * Adress-Baustein, klein und mit Bindestrichen: 'bmw-320d-touring-2019'.
+   * Ergibt zusammen mit `Katalog.pfad` die Adresse der Detailseite.
+   * **Nach dem Live-Gang nicht mehr ändern** – sonst ist der Google-Treffer tot
+   * (und wenn doch, gehört eine Weiterleitung in `weiterleitungen`).
+   */
+  id: string;
+  titel: string;
+  /** Ein Satz für die Übersichtskarte. */
+  kurz?: string;
+  /** Fließtext für die Detailseite. Absätze mit Leerzeile trennen. */
+  beschreibung?: string;
+  /** Zahl ohne Währung, z. B. 18900. Weglassen = „auf Anfrage". */
+  preis?: number;
+  /** Zusatz beim Preis, z. B. 'inkl. USt.' oder 'zzgl. Überstellung'. */
+  preisHinweis?: string;
+  /** Dateinamen aus `fotos/`. Das erste Bild ist das Hauptbild. */
+  bilder?: string[];
+  /** Alt-Texte zu `bilder`, gleiche Reihenfolge. Fehlt einer, nimmt der Motor
+      den Titel – besser als gar kein Alt-Text, aber schlechter als ein echter. */
+  bildAlt?: string[];
+  /** Tabelle auf der Detailseite. */
+  merkmale?: KatalogMerkmal[];
+  /**
+   * Merkmale zum FILTERN (Text). Werden zu `data-<name>` auf der Karte, damit
+   * der Filter-Baustein sie kennt: `{ marke: 'bmw', kraftstoff: 'diesel' }`.
+   * Kleinschreibung ohne Umlaute – es sind Schlüssel, keine Anzeigetexte.
+   */
+  filter?: Record<string, string>;
+  /**
+   * Merkmale zum SORTIEREN und für Schieberegler (Zahlen):
+   * `{ preis: 18900, km: 84000, baujahr: 2019 }`.
+   */
+  zahlen?: Record<string, number>;
+  /** false blendet den Eintrag aus der Liste aus, die Detailseite bleibt
+      erreichbar (verkauft/vergeben – der Google-Treffer soll nicht ins Leere
+      laufen). Weglassen = verfügbar. */
+  verfuegbar?: boolean;
+  /** Hinweis statt Preis, wenn nicht verfügbar, z. B. 'bereits verkauft'. */
+  statusText?: string;
+}
+
+/** Wie Google die Detailseiten lesen soll. Bestimmt den JSON-LD-Typ. */
+export type KatalogSchema =
+  | 'Product'
+  | 'Vehicle'
+  | 'Course'
+  | 'Apartment'
+  | 'House'
+  | 'Service';
+
+export interface Katalog {
+  /** Basispfad OHNE abschließenden Schrägstrich, z. B. '/fahrzeuge'.
+      Ergibt Detailseiten unter '/fahrzeuge/<id>'. */
+  pfad: string;
+  /** Für Überschriften und Brotkrumen: 'Fahrzeug' / 'Fahrzeuge'. */
+  einzahl: string;
+  mehrzahl: string;
+  /** Siehe KatalogSchema. Weglassen = 'Product'. */
+  schema?: KatalogSchema;
+  /** ISO-Währung, Standard 'EUR'. */
+  waehrung?: string;
+  /**
+   * ID eines Formulars aus `formulare`. Steht sie hier, blendet die
+   * Detailseite eine Anfrage ein, in der der Eintrag schon eingetragen ist –
+   * der Interessent muss nicht abtippen, worum es geht.
+   */
+  anfrageFormular?: string;
+  /**
+   * Sichtbare Beschriftungen für Filtermerkmale und deren Werte.
+   *
+   * WARUM ES DAS BRAUCHT: Die Schlüssel unter `filter` und `zahlen` sind
+   * Adressbausteine – klein, ohne Umlaute (`gruen`, `kraftstoff`, `km`).
+   * Ohne diese Zuordnung stünde genau das auf der Seite: „Gruen" statt „Grün",
+   * „Km" statt „Kilometerstand". Das fiel erst in der Sichtprüfung auf, weil
+   * technisch alles richtig war – es las sich nur falsch.
+   *
+   *   beschriftungen: {
+   *     kraftstoff: 'Kraftstoff', gruen: 'Grün', km: 'Kilometerstand',
+   *   }
+   *
+   * Was hier fehlt, wird schlicht großgeschrieben – für `alpha`, `beta` oder
+   * `bmw` reicht das.
+   */
+  beschriftungen?: Record<string, string>;
+  /** Die Einträge. Bei mehr als ~30 in `daten/katalog.ts` auslagern. */
+  eintraege: KatalogEintrag[];
 }
 
 // ---------------------------------------------------------------------------
@@ -522,6 +658,31 @@ export interface Rechtstexte {
   gewerbe: string;
   firmenbuchnummer: string;
   firmenbuchgericht: string;
+  /**
+   * ALLGEMEINE GESCHÄFTSBEDINGUNGEN – optional.
+   *
+   * Steht hier etwas, entsteht automatisch die Seite `/agb` samt Fußzeilen-Link
+   * und Meta-Angaben. Fehlt das Feld, gibt es die Seite nicht.
+   *
+   * WANN GEBRAUCHT: sobald über die Website verkauft, verbindlich gebucht oder
+   * bestellt wird (Shop, Kursanmeldung, Reservierung mit Stornoregel,
+   * Fahrzeug-Reservierung). Ein reines Kontaktformular braucht keine AGB.
+   *
+   * WICHTIG – NICHT SELBST TEXTEN: AGB sind Vertragsrecht. Der Motor liefert
+   * die Seite, den Text liefert der Betrieb (Anwalt, WKO-Muster, Steuerberater).
+   * Fehlt er noch, hier ausdrücklich `PLATZHALTER: AGB-Text vom Kunden` stehen
+   * lassen – das Prüf-Tor hält den Live-Gang dann an, statt eine erfundene
+   * Klausel online gehen zu lassen.
+   *
+   * Aufbau: je Eintrag eine Überschrift und ein oder mehrere Absätze.
+   */
+  agb?: AgbAbschnitt[];
+}
+
+/** Ein Abschnitt der AGB: Überschrift plus Absätze. */
+export interface AgbAbschnitt {
+  titel: string;
+  absaetze: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -534,6 +695,11 @@ export interface SiteConfig {
   seiten: Seite[];
   formulare: Formular[];
   preisliste?: Preisliste;
+  /**
+   * Viele gleichartige Einträge mit je eigener Unterseite – siehe Katalog.
+   * Weglassen = kein Katalog, es entstehen keine zusätzlichen Adressen.
+   */
+  katalog?: Katalog;
   /** Mitarbeiter – siehe TeamMitglied. */
   team?: TeamMitglied[];
   /** Häufige Fragen – erscheinen zusätzlich als FAQ-Schema bei Google. */
@@ -689,7 +855,99 @@ const konfig = {
       metaBeschreibung:
         'Referenz-Seite des Kanbuk-Motors: zeigt Token-System, Meta-Struktur und Prüf-Tor. Wird beim Kunden durch das Design ersetzt.',
     },
+    {
+      pfad: '/muster-katalog',
+      navTitel: 'Katalog',
+      metaTitel: 'Muster-Katalog',
+      metaBeschreibung:
+        'Muster-Katalog des Kanbuk-Motors: zeigt Filter, Sortierung, Merkliste und Detailseiten. Wird beim Kunden ersetzt oder gelöscht.',
+    },
   ],
+
+  /* ------------------------------------------------------------------------
+     MUSTER-KATALOG – beim Kunden ersetzen oder ersatzlos löschen.
+
+     Er steht hier aus demselben Grund wie das Referenzfoto: So läuft die
+     Katalog-Mechanik (Detailseiten, Filter, Produkt-Schema, Vorschaubilder)
+     bei JEDEM Build durch. Ohne ihn bliebe ein Fehler in dieser Kette still,
+     bis er beim ersten Kunden auffällt – und dort fällt er teuer auf.
+
+     Beim Kunden: `katalog` mit den echten Einträgen füllen (Fahrzeuge,
+     Objekte, Maschinen, Kurse …) oder den ganzen Block entfernen. Das
+     Prüf-Tor meldet die Muster-Einträge, solange sie stehen.
+     ------------------------------------------------------------------------ */
+  katalog: {
+    pfad: '/muster-katalog',
+    einzahl: 'Muster-Eintrag',
+    mehrzahl: 'Muster-Katalog',
+    schema: 'Product',
+    anfrageFormular: 'kontakt',
+    /* Sichtbare Beschriftungen: Ohne sie stuende auf der Seite „Gruen" statt
+       „Grün" - der Schluessel ist ein Adressbaustein, kein Anzeigetext. */
+    beschriftungen: {
+      art: 'Art',
+      farbe: 'Farbe',
+      blau: 'Blau',
+      gruen: 'Grün',
+      preis: 'Preis',
+      baujahr: 'Baujahr',
+    },
+    eintraege: [
+      {
+        id: 'muster-eintrag-eins',
+        titel: 'Muster-Eintrag Eins',
+        kurz:
+          'Muster-Eintrag des Kanbuk-Motors: zeigt Filter nach Art und Farbe, Preis-Regler, Sortierung, Merkliste und eine eigene Detailseite mit Bildern.',
+        beschreibung:
+          'Dieser Eintrag ist ein Muster des Kanbuk-Motors.\n\nEr belegt, dass jede Position eine eigene Adresse, eigene Meta-Angaben und ein eigenes Vorschaubild bekommt.',
+        preis: 1200,
+        preisHinweis: 'inkl. USt.',
+        bilder: ['galerie-1.jpg', 'galerie-2.jpg'],
+        bildAlt: ['Muster-Eintrag Eins, Ansicht von vorn', 'Muster-Eintrag Eins, Detailansicht'],
+        merkmale: [
+          { name: 'Art', wert: 'Alpha' },
+          { name: 'Farbe', wert: 'Blau' },
+          { name: 'Baujahr', wert: '2022' },
+        ],
+        filter: { art: 'alpha', farbe: 'blau' },
+        zahlen: { baujahr: 2022 },
+      },
+      {
+        id: 'muster-eintrag-zwei',
+        titel: 'Muster-Eintrag Zwei',
+        kurz:
+          'Zweiter Muster-Eintrag des Kanbuk-Motors: Er belegt, dass Filtergruppen, Schieberegler und Sortierung automatisch aus den gepflegten Daten entstehen.',
+        preis: 3400,
+        bilder: ['galerie-3.jpg'],
+        bildAlt: ['Muster-Eintrag Zwei'],
+        merkmale: [
+          { name: 'Art', wert: 'Beta' },
+          { name: 'Farbe', wert: 'Grün' },
+          { name: 'Baujahr', wert: '2024' },
+        ],
+        filter: { art: 'beta', farbe: 'gruen' },
+        zahlen: { baujahr: 2024 },
+      },
+      {
+        id: 'muster-eintrag-drei',
+        titel: 'Muster-Eintrag Drei',
+        kurz:
+          'Muster-Eintrag des Kanbuk-Motors, nicht mehr verfügbar: Er verschwindet aus der Liste, seine Seite bleibt aber erreichbar – der Google-Treffer läuft nicht ins Leere.',
+        preis: 890,
+        verfuegbar: false,
+        statusText: 'bereits vergeben',
+        bilder: ['galerie-4.jpg'],
+        bildAlt: ['Muster-Eintrag Drei'],
+        merkmale: [
+          { name: 'Art', wert: 'Alpha' },
+          { name: 'Farbe', wert: 'Grün' },
+          { name: 'Baujahr', wert: '2019' },
+        ],
+        filter: { art: 'alpha', farbe: 'gruen' },
+        zahlen: { baujahr: 2019 },
+      },
+    ],
+  },
 
   formulare: [
     {

@@ -76,6 +76,55 @@ genau das Muster, das `npm run preisliste` schon hat.
 
 ## Verlauf
 
+- **2026-07-27** – **Der Motor kann jetzt Kataloge.** Bisher konnte er Seiten mit
+  Inhalt, aber keine Betriebe abbilden, die *viele gleichartige Dinge* zeigen –
+  Fahrzeuge, Immobilien, Maschinen, Kurse, Zimmer. Genau daran wäre eine
+  Autohaus-Seite gescheitert. Neu, alles branchenneutral:
+  - **Katalog** (`katalog` in der Config): eine Übersicht **und je Eintrag eine
+    eigene Adresse** mit eigenem Titel, eigener Description, eigenem
+    Vorschaubild (1200×630 aus dem ersten Foto) und Produkt-Schema samt Preis
+    und Verfügbarkeit. Ohne das findet Google eine Seite statt zweihundert.
+    Verkauftes verschwindet aus der Liste, die Seite bleibt erreichbar –
+    sonst liefe jeder alte Google-Treffer ins Leere.
+  - **Kombinierter Filter**: mehrere Merkmale gleichzeitig (innerhalb einer
+    Gruppe ODER, zwischen den Gruppen UND), Preisregler, Sortierung,
+    Trefferzähler, Zurücksetzen. Filtergruppen und Regler entstehen
+    **automatisch aus den Daten** – ein neues Merkmal ist sofort filterbar,
+    und es steht nie eine Auswahl da, die null Treffer hätte.
+  - **Merkliste** (Vormerken/Favoriten) – bleibt auf dem Gerät, kein Server,
+    kein Banner; gehört aber in die Datenschutzerklärung.
+  - **Dialog** als Baustein (natives `<dialog>`, trägt den Eintrag mit in die
+    Anfrage) und **Lightbox mit Blättern** (Pfeile, Tastatur, Wischen, Zähler).
+  - **Assistent**: langes Formular in Schritten mit Fortschritt. Gelöst ist
+    dabei die Falle, an der solche Formulare üblicherweise scheitern – ein
+    Pflichtfeld in einem *ausgeblendeten* Schritt bricht das Absenden ab, ohne
+    dass der Besucher etwas sieht. Der Assistent springt zuerst dorthin zurück.
+  - **AGB-Seite** (`rechtstexte.agb`), nur wenn wirklich verkauft wird. Den
+    Text erfindet der Motor nicht – das ist Vertragsrecht.
+
+  **Zwei Fehler in den Wächtern selbst gefunden und behoben:**
+  - Das Prüf-Tor meldete `@media (min-width: 800px)` und das `sizes`-Attribut
+    responsiver Bilder als „feste Breite" – also genau das Muster, das
+    CLAUDE.md Abschnitt 4 vorschreibt. Ein Wachhund, der den Briefträger
+    durchlässt und den Hausherrn beißt.
+  - Die Bedien-Prüfung übersah den Katalog-Filter vollständig (sie kannte nur
+    `data-kategorie`). Jetzt fährt sie jede Merkmalsgruppe, jeden Regler, jede
+    Sortierrichtung, Zurücksetzen, Trefferzähler, Merkliste, Dialog und
+    Assistent – und jede dieser Prüfungen wurde absichtlich zum Anschlagen
+    gebracht, bevor sie als fertig galt.
+
+  Die Sichtprüfung fand zwei echte Fehler in den neuen Komponenten (das
+  Listenbild lud verzögert, obwohl es den ersten Eindruck bestimmt; ein
+  Einzelbild wurde hochskaliert angezeigt). Mit eigenen Augen fielen zusätzlich
+  drei Textfehler auf, die keine Messung findet: „2 von2" ohne Leerzeichen,
+  „Gruen" statt „Grün" (die Filterschlüssel sind Adressbausteine, keine
+  Anzeigetexte – dafür gibt es jetzt `katalog.beschriftungen`) und eine schief
+  gebeugte Zählzeile.
+
+  Ein **Muster-Katalog** steht bewusst im Template: So läuft die ganze Kette
+  bei jedem Build durch – aus demselben Grund, aus dem die Referenzseite ein
+  echtes Bild einbindet. Beim Kunden meldet ihn das Prüf-Tor als zu ersetzen.
+
 - **2026-07-27** – **Motor-Vollprüfung umgesetzt.** 73 Prüfer hatten den Motor auf
   SEO, Sicherheit, Responsiveness, Recht, Vollständigkeit, Prüf-Tor-Qualität und
   Wartbarkeit untersucht; 63 Befunde wurden gegengeprüft bestätigt. In vier Blöcken

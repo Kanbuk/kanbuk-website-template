@@ -49,9 +49,33 @@ interface Props {
    * hreflang automatisch.
    */
   sprache?: 'de' | 'en';
+  /**
+   * Eigenes Vorschaubild fuer DIESE Seite als fertige Adresse (z. B. das Bild
+   * eines Katalog-Eintrags). Muss 1200x630 sein - die Masse stehen als
+   * og:image:width/height im Kopf und duerfen nicht luegen. Erzeugen mit
+   * `getImage({ src, width: 1200, height: 630, fit: 'cover' })`.
+   * Weglassen = Seiten- bzw. globales OG-Bild.
+   */
+  ogBildUrl?: string;
+  /** Alt-Text zum eigenen Vorschaubild. */
+  ogBildAlt?: string;
+  /**
+   * Zusaetzliche strukturierte Daten fuer Google, z. B. das Produkt-Schema
+   * einer Katalog-Detailseite. Wird als eigener JSON-LD-Block ausgegeben.
+   */
+  zusatzLd?: Record<string, unknown>;
 }
 
-const { pfad = '/', titel, beschreibung, noindex = false, sprache = 'de' } = Astro.props;
+const {
+  pfad = '/',
+  titel,
+  beschreibung,
+  noindex = false,
+  sprache = 'de',
+  ogBildUrl,
+  ogBildAlt,
+  zusatzLd,
+} = Astro.props;
 
 const seite = site.seiten.find((s) => s.pfad === pfad);
 if (!seite && !titel) {
@@ -92,7 +116,10 @@ const basisAdresse =
    aus derselben Config-Zeile kommen. */
 const eigenerPfad = sprache === 'de' ? pfad : `/${sprache}${pfad === '/' ? '' : pfad}`;
 const canonical = new URL(eigenerPfad, basisAdresse).href;
-const ogBild = new URL(seite?.ogBild ? `/${seite.ogBild}` : site.ogBild, basisAdresse).href;
+const ogBild = new URL(
+  ogBildUrl ?? (seite?.ogBild ? `/${seite.ogBild}` : site.ogBild),
+  basisAdresse,
+).href;
 const rootStyle = `:root { ${cssVariablen(site)} }`;
 
 const mehrsprachig = site.sprachen.length > 1;
@@ -377,7 +404,7 @@ const jsonLd = {
         X/Twitter wertet og:image:alt NICHT aus – dort braucht es die
         eigene Angabe, sonst bleibt das Bild dort unbeschriftet. */}
     <meta property="og:site_name" content={site.betrieb.name} />
-    <meta property="og:image:alt" content={`${site.betrieb.name} – ${site.betrieb.kurzbeschreibung}`} />
+    <meta property="og:image:alt" content={ogBildAlt ?? `${site.betrieb.name} – ${site.betrieb.kurzbeschreibung}`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={vollerTitel} />
     <meta name="twitter:description" content={desc} />
@@ -397,6 +424,17 @@ const jsonLd = {
       type="application/ld+json"
       set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003C')}
     />
+
+    {/* Seiteneigene strukturierte Daten (z. B. das Produkt-Schema einer
+        Katalog-Detailseite). Bewusst ein EIGENER Block neben dem Betriebs-
+        Schema: Google liest beide, aber nur so bleibt erkennbar, welche
+        Angabe zum Betrieb und welche zum einzelnen Eintrag gehoert. */}
+    {zusatzLd && (
+      <script
+        type="application/ld+json"
+        set:html={JSON.stringify(zusatzLd).replace(/</g, '\\u003C')}
+      />
+    )}
 
     {/* FAQ-Schema: Google zeigt die Fragen aufklappbar direkt im Suchergebnis –
         das vergrößert den eigenen Platz in der Trefferliste spürbar. Nur auf

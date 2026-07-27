@@ -115,6 +115,26 @@ for (const f of htmlDateien) {
    stehen. */
 const trackingMusterGlobal = /google-analytics|googletagmanager|gtag\(|fbq\(|_paq\.push|hotjar|clarity\.ms|matomo|plausible\.io|segment\.(?:io|com)|mixpanel|amplitude|tiktok.*pixel|snap.*pixel|linkedin.*insight/i;
 
+/**
+ * Feste Breite über 400px – der häufigste Portier-Fehler.
+ *
+ * Das `(?<!\()` ist der eigentliche Kniff: In `@media (min-width: 800px)` und
+ * im `sizes`-Attribut eines Bildes (`sizes="(min-width: 800px) 50vw, 100vw"`)
+ * steht `min-width` in RUNDEN KLAMMERN. Das ist keine feste Breite, sondern
+ * genau die Umschaltstelle, die eine Seite erst responsiv macht. Ohne diese
+ * Ausnahme meldete die Regel als Fehler, was CLAUDE.md Abschnitt 4
+ * ausdrücklich vorschreibt – ein Wachhund, der den Briefträger durchlässt und
+ * den Hausherrn beißt.
+ *
+ * `max-width` bleibt ebenfalls erlaubt: es begrenzt nur nach oben.
+ *
+ * Der Bindestrich in der Ausnahmeliste ist nicht schmückend: Ohne ihn fand der
+ * Ausdruck das `width` MITTEN IN `min-width` – die Klammer stand dann zwei
+ * Zeichen zu weit links, und die Ausnahme lief ins Leere. Genau so ist es beim
+ * ersten Versuch passiert.
+ */
+const FESTE_BREITE = /(?<![-(\w])(?:min-)?width:\s*(\d{3,})px/gi;
+
 for (const f of dateien.filter((f) => extname(f) === '.css')) {
   const css = readFileSync(f, 'utf-8');
   const name = kurz(f);
@@ -123,7 +143,7 @@ for (const f of dateien.filter((f) => extname(f) === '.css')) {
   }
   // Feste Breiten – hier liegt der Großteil des Stils eines echten Designs.
   const breiten = new Set();
-  for (const m of css.matchAll(/(?<!max-)\b(?:min-)?width:\s*(\d{3,})px/gi)) {
+  for (const m of css.matchAll(FESTE_BREITE)) {
     if (Number(m[1]) > 400) breiten.add(m[1]);
   }
   if (breiten.size > 0) {
@@ -449,7 +469,7 @@ for (const f of htmlDateien) {
 
   // width/min-width mit festem px-Wert über 400px sprengt schmale Screens.
   // max-width ist erlaubt (begrenzt nur nach oben).
-  for (const m of html.matchAll(/(?<!max-)\b(?:min-)?width:\s*(\d{3,})px/gi)) {
+  for (const m of html.matchAll(FESTE_BREITE)) {
     if (Number(m[1]) > 400) {
       fehler(`${name}: feste Breite ${m[1]}px – am Handy bricht das. Token verwenden (siehe CLAUDE.md)`);
     }
@@ -705,6 +725,11 @@ const REFERENZ_MARKER = [
   'FN 000000a',
   '+43 1 000 00 00',
   'Referenz-Seite des Kanbuk-Motors',
+  // Der Muster-Katalog haelt die Katalog-Mechanik bei jedem Build in Betrieb.
+  // Beim Kunden gehoert er ersetzt oder geloescht - sonst stehen drei erfundene
+  // Eintraege samt eigener Adresse in der Sitemap und irgendwann bei Google.
+  'Muster-Katalog',
+  'Muster-Eintrag',
 ];
 const referenzReste = REFERENZ_MARKER.filter((m) => configText.includes(m));
 if (referenzReste.length > 0) {
@@ -790,6 +815,42 @@ if (istTemplate) {
         );
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  8c. ASSISTENT – ein mehrstufiges Formular ohne Weg nach vorn ist eine Falle
+//
+//  Der Assistent versteckt alle Schritte bis auf einen. Fehlt der Weiter-Knopf,
+//  sieht der Besucher nur den ersten Schritt und kommt nie zum Absenden – die
+//  Seite wirkt fertig, nimmt aber keine einzige Anfrage mehr entgegen. Genau
+//  solche Fehler fallen ohne Prüfung erst auf, wenn wochenlang nichts kommt.
+// ---------------------------------------------------------------------------
+for (const f of htmlDateien) {
+  const html = readFileSync(f, 'utf-8');
+  const name = kurz(f);
+  if (!/data-assistent(?:[\s=>"'])/.test(html)) continue;
+
+  const schritte = (html.match(/data-assistent-schritt=/g) ?? []).length;
+  if (schritte < 2) {
+    fehler(
+      `${name}: Formular als Assistent ausgezeichnet, hat aber ${schritte} Schritt(e).\n` +
+        `    Entweder \`schritte\` in content.config.ts füllen oder ganz weglassen.`,
+    );
+    continue;
+  }
+  if (!/data-assistent-weiter/.test(html)) {
+    fehler(
+      `${name}: Assistent mit ${schritte} Schritten, aber ohne „Weiter"-Knopf – der Besucher kommt nie zum Absenden.`,
+    );
+  }
+  if (!/data-formular-absenden/.test(html)) {
+    fehler(`${name}: Assistent ohne Absende-Knopf – die Anfrage lässt sich nicht abschicken.`);
+  }
+  if (!/data-assistent-fortschritt/.test(html)) {
+    warnung(
+      `${name}: Assistent ohne Fortschrittsanzeige. Wer nicht sieht, wie lange es noch dauert, bricht eher ab.`,
+    );
   }
 }
 

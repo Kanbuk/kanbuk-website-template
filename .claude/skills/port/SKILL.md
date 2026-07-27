@@ -85,8 +85,20 @@ in den Kontext zu laden.
   echten Routen. Liste alle → daraus werden echte Unterseiten.
 - **Design-Tokens:** Farben (Hex), Schriften (Familien + Schnitte), Radius.
 - **Externe Ressourcen:** CDN-Schriften, Maps-Rahmen, Fremdbilder → Entgiftungsliste.
-- **Verhalten:** Tabs? Filter? Slider? Sprachumschalter? Vergleich? → Bausteine
-  anschließen, **nie neu bauen** (CLAUDE.md Abschnitt 5).
+- **Verhalten:** Tabs? Filter? Slider? Sprachumschalter? Vergleich? Anfrage-Fenster?
+  Vormerken/Favoriten? → Bausteine anschließen, **nie neu bauen** (CLAUDE.md Abschnitt 5).
+- **Katalog?** Zeigt das Design eine Liste gleichartiger Dinge, die man einzeln
+  ansieht (Fahrzeuge, Objekte, Maschinen, Kurse, Zimmer)? Dann gehört das in
+  `katalog` – nicht in die Preisliste. Der Motor baut daraus die Übersicht **und
+  je Eintrag eine eigene Seite** (CLAUDE.md Abschnitt 6a). Notiere: nach welchen
+  Merkmalen wird gefiltert, was steht in der Merkmalstabelle, gibt es mehrere Fotos
+  je Eintrag.
+- **Langes Formular?** Ab etwa acht Feldern `formulare[].schritte` setzen und die
+  Felder auf Schritte verteilen – der Motor macht daraus einen Assistenten mit
+  Fortschritt. Persönliche Daten gehören in den letzten Schritt.
+- **Verkauf/Buchung?** Wird über die Seite verbindlich bestellt oder gebucht,
+  braucht es AGB (`rechtstexte.agb`, CLAUDE.md Abschnitt 6b). **Text nie selbst
+  schreiben** – Platzhalter setzen und ins Lücken-Inventar.
 - **Daten:** Speisekarte/Preisliste (oft eigene Datei wie `data/menu.js`), Allergene,
   Öffnungszeiten, Adresse, Telefon, E-Mail.
 - **Lücken:** Platzhalterbilder? Fehlende Preise? Fehlende Rechtsdaten?

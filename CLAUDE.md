@@ -214,13 +214,18 @@ bauen – anschließen und im Design anmalen.
 | Baustein | Aktiviert durch | Typischer Einsatz |
 | --- | --- | --- |
 | **Tabs** | `data-tabs` + `data-tab` / `data-tabpanel` | Speisekarte, Kursplan, Leistungen |
-| **Filter** | `data-filter` + `data-kategorie` | Galerie, Referenzen |
+| **Filter (einfach)** | `data-filter` + `data-kategorie` | Galerie, Referenzen |
+| **Filter (kombiniert)** | `data-filter-kombi` + `data-filter-gruppe` / `data-filter-max` | Katalog: mehrere Merkmale, Preisregler, Sortierung, Trefferzähler |
 | **Slider** | `data-slider` + `data-slider-spur` | Galerie, Stimmen |
 | **Akkordeon** | `data-akkordeon` (nativ `<details>`) | FAQ, Preisgruppen |
-| **Lightbox** | `data-lightbox` (nativ `<dialog>`) | Galerie |
+| **Lightbox** | `data-lightbox` (nativ `<dialog>`) | Galerie – blättert mit Pfeilen, Tastatur und Wischen |
 | **Mobilmenü** | `data-menue-schalter` + `data-menue` | Navigation |
 | **Vergleich** | `data-vergleich` | Vorher/Nachher |
 | **Formular** | `<Formular id="…" />` | Kontakt, Reservierung, Termin |
+| **Assistent** | `formulare[].schritte` + `felder[].schritt` | Langes Formular in Schritten, mit Fortschritt – ab ca. 8 Feldern |
+| **Dialog** | `data-dialog` + `data-dialog-oeffnen` (nativ `<dialog>`) | Anfrage-Fenster, Hinweis; `data-dialog-bezug` trägt den Eintrag mit |
+| **Merkliste** | `data-merken="id"` | Vormerken/Favoriten – bleibt auf dem Gerät (Abschnitt 6a) |
+| **Katalog** | `katalog` in der Config | Fahrzeuge, Objekte, Maschinen, Kurse – Übersicht **und je Eintrag eine eigene Seite** (Abschnitt 6a) |
 | **Social-Icons** | `<SocialLinks />` (liest `betrieb.socialLinks`) | Fußzeile, Kontaktseite |
 | **Signatur** | `<Signatur />` | Fußzeile – Kanbuk-Backlink (**Live-Pflicht**, Prüf-Tor erzwingt sie) |
 | **Kopf / Fuß** | `<Kopf aktuell={pfad} />`, `<Fuss />` | Kopfleiste mit Handy-Navigation, Fußzeile mit Rechtslinks |
@@ -254,6 +259,71 @@ Bei sehr großen Karten (mehrere Kategorien, hunderte Positionen) in
 
 **Allergene sind in der Gastronomie Pflicht** (österreichische Kennzeichnung A–R),
 sobald Speisen gelistet sind. Feld: `PreisPosition.allergene`.
+
+---
+
+## 6a. Katalog – viele Einträge, jeder mit eigener Seite
+
+**Wann:** Ein Betrieb zeigt viele gleichartige Dinge, die man einzeln ansieht und
+verschickt – Fahrzeuge, Immobilien, Maschinen, Kurse, Projekte, Zimmer.
+
+**Abgrenzung zur Preisliste:** Die Preisliste ist eine *Tabelle auf einer Seite*
+(Speisekarte, Behandlungen). Der Katalog ist eine *Liste mit Detailseiten*.
+Faustregel: Würde jemand einen einzelnen Eintrag per WhatsApp verschicken wollen?
+Dann Katalog.
+
+**Was der Motor daraus macht** (`katalog` in `content.config.ts` füllen – fertig):
+
+- eine Übersicht unter `katalog.pfad` mit Filter, Preisregler, Sortierung,
+  Trefferzähler und Merkliste. **Filtergruppen und Regler entstehen automatisch
+  aus den Daten** – ein neues Merkmal in der Config ist sofort filterbar, und es
+  steht nie eine Auswahl da, die null Treffer hätte.
+- je Eintrag eine **echte Adresse** (`/fahrzeuge/bmw-320d`) mit eigenem Titel,
+  eigener Description, eigener Canonical, eigenem Vorschaubild (1200×630 aus dem
+  ersten Foto) und Produkt-Schema samt Preis und Verfügbarkeit.
+
+**Warum das der größte SEO-Hebel bei einem Händler ist:** Ohne eigene Adresse je
+Eintrag findet Google *eine* Seite statt zweihundert.
+
+**Verkauft ≠ gelöscht.** `verfuegbar: false` nimmt den Eintrag aus der Liste, die
+Seite bleibt erreichbar. Sonst liefe jeder alte Google-Treffer ins Leere.
+
+**Die Kennung (`id`) ist die Adresse.** Nach dem Live-Gang nicht mehr ändern –
+sonst ist der Google-Treffer tot. Muss es doch sein: Eintrag in `weiterleitungen`
+(Abschnitt 7b). Der Build bricht ab bei doppelten Kennungen, bei Kennungen mit
+Leerzeichen/Umlauten und bei einem `anfrageFormular`, das es nicht gibt.
+
+**Beschriftungen.** Die Schlüssel unter `filter`/`zahlen` sind Adressbausteine
+(`gruen`, `km`). Was auf der Seite stehen soll, gehört nach
+`katalog.beschriftungen` (`{ gruen: 'Grün', km: 'Kilometerstand' }`) – sonst liest
+der Besucher „Gruen".
+
+**Beim Portieren:** Die Karte aus dem Design ersetzt die Motor-Karte. Dabei
+`{...katalogAttribute(e)}` an die Karte weitergeben – daran hängen Filter,
+Sortierung und Merkliste. Fehlt es, filtert nichts mehr.
+
+### Merkliste und Datenschutz
+
+Die Merkliste liegt im Speicher des Geräts, geht an keinen Server und braucht
+**kein Banner** – sie ist funktional und wird vom Besucher selbst ausgelöst.
+Zwei Pflichten bleiben: Sie **muss** in der Datenschutzerklärung stehen, und die
+Aussage „wir speichern nichts" stimmt dann nicht mehr wörtlich. Richtig ist:
+„keine Cookies, kein Tracking – die Merkliste bleibt auf Ihrem Gerät."
+
+---
+
+## 6b. AGB – nur wenn wirklich verkauft wird
+
+`rechtstexte.agb` füllen → die Seite `/agb` samt Fußzeilen-Link entsteht.
+Feld weglassen → es gibt sie nicht.
+
+**Nötig**, sobald über die Website verkauft, verbindlich gebucht oder bestellt
+wird. Ein reines Kontaktformular braucht keine AGB.
+
+**Den Text erfindet der Motor nicht.** AGB sind Vertragsrecht; er kommt vom
+Betrieb (Anwalt, WKO-Muster, Steuerberater). Fehlt er noch:
+`PLATZHALTER: AGB-Text vom Kunden` eintragen – das Prüf-Tor hält den Live-Gang
+dann an, statt eine erfundene Klausel online gehen zu lassen.
 
 ---
 

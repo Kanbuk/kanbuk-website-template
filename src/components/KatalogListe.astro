@@ -1,0 +1,198 @@
+---
+/**
+ * KATALOG-LISTE – die Übersicht mit Filter, Sortierung und Merkliste.
+ *
+ * Die Filtergruppen und Schieberegler entstehen AUTOMATISCH aus den Daten:
+ * Jeder Schlüssel unter `filter` wird eine Knopfgruppe, jeder unter `zahlen`
+ * ein Regler. Kommt ein neues Merkmal in die Config, ist es sofort filterbar –
+ * ohne dass jemand die Seite anfassen muss. Und es steht nie eine Auswahl da,
+ * die null Treffer hätte, weil die Werte aus den Einträgen selbst kommen.
+ *
+ * Das AUSSEHEN kommt aus dem Design. Beim Portieren wird die Karte hier durch
+ * die Karte aus dem Design ersetzt – die data-Attribute (`katalogAttribute`)
+ * müssen dabei erhalten bleiben, sonst filtert nichts mehr.
+ */
+import { Image } from 'astro:assets';
+import { site } from '../../content.config';
+import { bild } from '../lib/bilder';
+import {
+  katalogEintraege,
+  katalogAdresse,
+  katalogAttribute,
+  preisText,
+  filterWerte,
+  zahlenBereich,
+  beschriftung,
+} from '../lib/katalog';
+
+const katalog = site.katalog!;
+const eintraege = katalogEintraege();
+
+/* Merkmale einsammeln – in der Reihenfolge ihres ersten Auftretens, damit die
+   Filterleiste der Pflege-Reihenfolge folgt und nicht dem Alphabet. */
+const merkmale: string[] = [];
+for (const e of eintraege) {
+  for (const k of Object.keys(e.filter ?? {})) if (!merkmale.includes(k)) merkmale.push(k);
+}
+const gruppen = merkmale
+  .map((name) => ({ name, werte: filterWerte(name) }))
+  // Eine Gruppe mit nur einem Wert kann nichts einschränken – sie wäre nur
+  // ein Knopf, der immer alles zeigt.
+  .filter((g) => g.werte.length > 1);
+
+const zahlenNamen: string[] = [];
+for (const e of eintraege) {
+  for (const k of Object.keys(e.zahlen ?? {})) if (!zahlenNamen.includes(k)) zahlenNamen.push(k);
+}
+if (eintraege.some((e) => e.preis !== undefined) && !zahlenNamen.includes('preis')) {
+  zahlenNamen.unshift('preis');
+}
+const regler = zahlenNamen
+  .map((name) => ({ name, bereich: zahlenBereich(name) }))
+  .filter((r): r is { name: string; bereich: { min: number; max: number } } =>
+    // Sind alle Werte gleich, gäbe es nichts zu schieben.
+    !!r.bereich && r.bereich.max > r.bereich.min,
+  );
+
+/* Beschriftungen kommen aus `katalog.beschriftungen` (siehe dort), sonst
+   grossgeschrieben. Nie den rohen Schluessel anzeigen - der ist ein
+   Adressbaustein und liest sich als "Gruen". */
+---
+
+<div class="katalog" data-filter data-filter-kombi>
+  <div class="katalog__steuerung">
+    {gruppen.map((g) => (
+      <fieldset class="katalog__gruppe" data-filter-gruppe={g.name}>
+        <legend>{beschriftung(g.name)}</legend>
+        <button type="button" data-filter-wert="alle" aria-pressed="true">Alle</button>
+        {g.werte.map((w) => (
+          <button type="button" data-filter-wert={w}>{beschriftung(w)}</button>
+        ))}
+      </fieldset>
+    ))}
+
+    {regler.map((r) => (
+      <p class="katalog__regler">
+        <label for={`regler-${r.name}`}>{beschriftung(r.name)} bis</label>
+        <input
+          type="range"
+          id={`regler-${r.name}`}
+          data-filter-max={r.name}
+          min={r.bereich.min}
+          max={r.bereich.max}
+          step={Math.max(1, Math.round((r.bereich.max - r.bereich.min) / 50))}
+          value={r.bereich.max}
+        />
+        <output data-filter-max-anzeige={r.name}></output>
+      </p>
+    ))}
+
+    <p class="katalog__ordnen">
+      <label for="katalog-sortierung">Sortierung</label>
+      <select id="katalog-sortierung" data-filter-sortierung>
+        <option value="">Wie gepflegt</option>
+        {regler.map((r) => (
+          <>
+            <option value={`${r.name}-auf`}>{beschriftung(r.name)} aufsteigend</option>
+            <option value={`${r.name}-ab`}>{beschriftung(r.name)} absteigend</option>
+          </>
+        ))}
+      </select>
+      <button type="button" data-filter-zuruecksetzen>Zurücksetzen</button>
+      <button type="button" data-merkliste-nur>Nur Vorgemerkte</button>
+    </p>
+
+    {/* Erst der Gegenstand, dann die Zahlen: "Fahrzeuge: 3 von 12" geht in
+        jeder Branche auf. "3 von 12 Fahrzeuge" waere falsch gebeugt, und die
+        richtige Beugung kann der Motor nicht raten. Die Leerzeichen stehen
+        ausdruecklich da - ohne sie las die Zeile "3 von12". */}
+    <p class="katalog__zahl" aria-live="polite">
+      {katalog.mehrzahl}: <span data-filter-anzahl>{eintraege.length}</span>
+      {' von '}
+      <span data-filter-gesamt>{eintraege.length}</span>
+    </p>
+  </div>
+
+  <p class="katalog__leer" data-filter-leer hidden>
+    Zu dieser Auswahl gibt es gerade nichts. Bitte einen Filter zurücknehmen.
+  </p>
+
+  <div class="katalog__liste" data-filter-ziel>
+    {eintraege.map((e, i) => {
+      const foto = e.bilder?.[0] ? bild(e.bilder[0]) : undefined;
+      return (
+        <article class="katalog__karte" {...katalogAttribute(e)}>
+          {foto && (
+            <a href={katalogAdresse(e)} tabindex="-1" aria-hidden="true">
+              <Image
+                src={foto}
+                alt=""
+                widths={[300, 600, 900]}
+                sizes="(min-width: 800px) 33vw, 100vw"
+                {/* Das erste Bild ist auf einer Katalogseite fast immer das,
+                    was den ersten Eindruck bestimmt (LCP). Mit `lazy` startet
+                    es erst spät und die Seite wirkt träge – die Sichtprüfung
+                    schlug genau deshalb an. */}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchpriority={i === 0 ? 'high' : undefined}
+              />
+            </a>
+          )}
+          <h3>
+            {/* Der Titel ist der Link – so ist das Ziel auch beim Vorlesen der
+                Linkliste eindeutig („BMW 320d" statt „hier"). */}
+            <a href={katalogAdresse(e)}>{e.titel}</a>
+          </h3>
+          {e.kurz && <p class="katalog__kurz">{e.kurz}</p>}
+          <p class="katalog__preis">{preisText(e)}</p>
+          <button type="button" data-merken={e.id} aria-label={`${e.titel} vormerken`}>
+            Merken
+          </button>
+        </article>
+      );
+    })}
+  </div>
+</div>
+
+<style>
+  /* Nur das Nötige, damit die Liste ohne Design brauchbar ist und bei 350 px
+     nicht überläuft. min() ist Pflicht – sonst schiebt die Spaltenbreite. */
+  .katalog {
+    display: grid;
+    gap: var(--raum-m);
+  }
+  .katalog__liste {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--raum-s);
+  }
+  .katalog__karte {
+    display: grid;
+    gap: var(--raum-2xs);
+    align-content: start;
+  }
+  .katalog__karte :global(img) {
+    width: 100%;
+    height: auto;
+  }
+  .katalog__steuerung {
+    display: grid;
+    gap: var(--raum-s);
+  }
+  .katalog__gruppe {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--raum-2xs);
+    align-items: baseline;
+  }
+  .katalog__regler,
+  .katalog__ordnen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--raum-2xs);
+    align-items: center;
+  }
+</style>
