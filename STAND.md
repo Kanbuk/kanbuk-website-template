@@ -28,6 +28,38 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 
 - [ ] *(wird beim Port gefüllt – z. B.: „hero.jpg ist ein Stock-Platzhalter, echtes Foto nötig")*
 
+**Am Motor selbst offen (betrifft JEDE Kundenseite, geprüft am 2026-07-27):**
+
+- [ ] **Bestätigungsmail schickt alle Angaben zurück** (`src/lib/kontakt.ts:137`,
+      `...zeilen.slice(2)`). Zwei Probleme: Der Inhalt steht in keiner
+      Datenschutzerklärung, und die Empfängeradresse wird nie geprüft – jeder
+      kann über die Domain des Kunden beliebigen selbst geschriebenen Text an
+      eine fremde Adresse schicken lassen. Der teure Ausgang ist eine
+      Absender-Domain auf einer Spam-Liste; ab dann kommt keine Anfrage mehr an.
+- [ ] **Zwei sich widersprechende Rechtsgrundlagen.** Der Text über dem
+      Senden-Knopf (`src/lib/texte.ts:26`) sagt „Mit dem Absenden stimmen Sie …
+      zu" – das ist eine Einwilligung. Die Datenschutzerklärung
+      (`src/pages/datenschutz.astro:150`) nennt Art. 6 Abs. 1 lit. b und f, also
+      etwas anderes. Beides zugleich geht nicht.
+- [ ] **Merkliste fehlt in der Datenschutzerklärung.** Kommt dort 0-mal vor,
+      während die Seite „keine Cookies" behauptet. CLAUDE.md Abschnitt 6a
+      verlangt den Absatz ausdrücklich – die Lücke ist am 2026-07-27 mit dem
+      Katalog selbst entstanden.
+- [ ] **`besucherzaehlung: 'vercel'` schreibt einen Absatz über
+      Reichweitenmessung, lädt aber nirgends ein Skript.** Die Erklärung würde
+      eine Verarbeitung behaupten, die gar nicht stattfindet.
+- [ ] **Ohne JavaScript landen Feldbeschriftungen in der Adresszeile.**
+      `kontakt.ts:69` baut „Bitte ausfüllen: <Feldnamen>", `api/contact.ts:153`
+      hängt das an die Adresse. Bei einer Praxis stünde dort „Ihre Beschwerden"
+      im Browserverlauf und im Protokoll des Hosters.
+- [ ] **Formular ist in der Vorschau unsichtbar** (`Formular.astro:62`). Der Port
+      schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
+      nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
+      Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
+- [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
+      deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
+      nach Art. 28 DSGVO. Noch nirgends vorgesehen.
+
 ## Getroffene Entscheidungen
 
 <!-- Improvisationen und Abweichungen vom Design, mit kurzer Begründung. -->
@@ -42,6 +74,54 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
      Punkte ins Master-Template zurück – NICHT selbst am Template arbeiten. -->
 
 - *(keine)*
+
+## Vorgemerkt: Gesundheitsberufe (Praxis, Zahnarzt, Physio, Psychotherapie)
+
+Geprüft am 2026-07-27, **bewusst nicht gebaut**. Auslöser zum Bauen: eine echte
+Anfrage aus einem Gesundheitsberuf. Aufwand dann ~3–4 Arbeitstage.
+
+**Der harte Befund, selbst nachgelesen:** Resends eigener
+Auftragsverarbeitungsvertrag sagt in § 6.1 „Customer acknowledges that Company's
+primary processing operations take place in the United States" und führt in
+Anhang A besondere Datenkategorien als **„Not applicable"**. Der Vertrag mit dem
+heutigen Versanddienst deckt Gesundheitsdaten also ausdrücklich nicht ab. Das ist
+kein Auslegungsspielraum, sondern eine Vertragsaussage.
+
+**Was fehlt, bevor eine Praxis möglich ist:**
+
+1. **Impressum für Freie Berufe.** § 5 ECG verlangt zusätzlich Kammer,
+   Berufsbezeichnung, Verleihungsstaat und einen Link auf die Berufsvorschriften;
+   das Mediengesetz zusätzlich den Unternehmensgegenstand. Keines dieser Felder
+   existiert. Und `impressum.astro` beschriftet ein Feld mit „Gewerbe" – der
+   ärztliche Beruf ist von der Gewerbeordnung ausgenommen. Das nützt auch
+   Anwälten, Steuerberatern und Ziviltechnikern. ~½ Tag.
+2. **Europäischer E-Mail-Weg** statt Resend, Bestätigungsmail ohne Inhalt,
+   Name des Versanddienstes aus der Config statt fest im Datenschutztext. ~1 Tag,
+   **betrifft alle Kunden, nicht nur Praxen.**
+3. **Gesundheits-Weiche:** eigenes Pflicht-Ankreuzfeld mit Nachweis (der Satz
+   über dem Senden-Knopf genügt für Gesundheitsdaten nicht), Datenschutz-Absatz,
+   branchenabhängige Prüfregeln. ~2 Tage.
+4. **Terminbuchung** nur als beschrifteter Link auf den Anbieter des Kunden –
+   nie ein eigenes Buchungssystem im Motor. ~1 Tag, erst bei Bedarf.
+
+**Berufsrechtliche Fallen, die heute grün durchlaufen** (das Prüf-Tor kennt das
+Wort „branche" 0-mal): der Vorher-Nachher-Schieber nennt selbst „Physio" als
+Einsatzfall; der Katalog würde Behandlungen als Produkte samt Verfügbarkeit an
+Google melden; das Preisniveau-Symbol (€–€€€€) wandert ungefiltert in den
+Google-Eintrag; beim **Zahnarzt** gilt ein Preisnennungsverbot für
+Privatleistungen (bei Ärzten nicht – die Regel darf nicht pauschal gelten).
+
+**Nicht annehmen:** Formulare, in denen der Patient beschreibt, was ihm fehlt;
+Vorher-Nachher-Bilder von Behandlungen; Patientenstimmen ohne schriftliche
+Zustimmung; ästhetische Behandlungen (eigenes Gesetz, Strafen bis 25.000 €,
+verbietet u. a. „kostenloses Erstgespräch" – ausgerechnet der Knopf, den ein
+Design typischerweise liefert).
+
+**Drei Fragen gehören zu einem Anwalt, nicht in eine Einschätzung:** der Wortlaut
+der Einwilligung, ob eine Datenschutz-Folgenabschätzung nötig ist, und ob der
+Zustellweg mit der ärztlichen Verschwiegenheitspflicht vereinbar ist (§ 54
+ÄrzteG kennt – anders als Deutschland – keine allgemeine Ausnahme für
+IT-Dienstleister; die Ausnahme in Abs. 3 gilt nur der Honorarabrechnung).
 
 ## Vorgemerkt: Sanity-Anschluss (noch NICHT gebaut)
 
