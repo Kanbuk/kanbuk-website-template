@@ -148,9 +148,14 @@ export async function POST(request: Request): Promise<Response> {
      das Ziel danach per GET, ein Neuladen schickt das Formular nicht erneut. */
   if (istFormular) {
     const ok = status === 200;
-    const ziel = ok
-      ? '/danke'
-      : `/danke?fehler=${encodeURIComponent(String(json.fehler ?? 'Unbekannter Fehler'))}`;
+    /* NUR EIN KURZZEICHEN, KEIN TEXT.
+       Früher stand die volle Fehlermeldung in der Adresse – bei fehlenden
+       Pflichtfeldern also die FELDBESCHRIFTUNGEN („Bitte ausfüllen: Ihr
+       Anliegen"). Eine Adresse landet im Browserverlauf, im Protokoll des
+       Hosters und in jedem geteilten Link. Bei einem Wirt ist das harmlos, bei
+       einer Praxis stünde dort das Thema der Anfrage. Die Danke-Seite macht
+       aus dem Zeichen wieder einen Satz. */
+    const ziel = ok ? '/danke' : `/danke?fehler=${status === 400 ? 'eingabe' : 'versand'}`;
     return new Response(null, { status: 303, headers: { Location: ziel } });
   }
 

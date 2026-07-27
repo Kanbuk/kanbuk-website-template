@@ -119,11 +119,30 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     }
 
     /* Bestätigung an den ABSENDER – nur wenn eine E-Mail-Adresse vorliegt.
-       Ohne sie hat der Gast nach einer Reservierungsanfrage nichts in der
-       Hand: kein Beleg, keine Zusammenfassung, keine Nummer für Rückfragen.
-       Genau daraus entstehen die Nachtelefonate, die das Formular sparen
-       sollte. Ein Fehlschlag hier darf die Hauptmeldung NICHT gefährden –
-       die ist beim Betrieb ja bereits angekommen. */
+       Ohne sie weiß der Gast nach einer Reservierungsanfrage nicht, ob sie
+       angekommen ist. Ein Fehlschlag hier darf die Hauptmeldung NICHT
+       gefährden – die ist beim Betrieb ja bereits angekommen.
+
+       OHNE INHALT, UND DAS MIT ABSICHT (geändert 2026-07-27):
+       Bis hierher standen in dieser Mail ALLE ausgefüllten Felder noch einmal
+       drin. Zwei Gründe, warum das weg musste:
+
+       1. MISSBRAUCH. Die Empfängeradresse kommt aus dem Formular und wird nie
+          überprüft. Wer den Endpunkt direkt anspricht – der Ursprungs-Kopf
+          lässt sich weglassen, Honeypot und Zeitfalle sind trivial zu
+          umgehen –, ließ die Domain des Kunden beliebigen selbst geschriebenen
+          Text an eine beliebige Adresse schicken. Der teure Ausgang ist nicht
+          Datendiebstahl, sondern eine Absender-Domain auf einer Sperrliste:
+          Ab dann kommen die ECHTEN Anfragen des Betriebs nirgends mehr an.
+          Ohne Inhalt bleibt bestenfalls ein harmloser deutscher Satz übrig.
+
+       2. VERTRAULICHKEIT. Der Inhalt ging an eine Adresse, die niemand geprüft
+          hat, und stand in keiner Datenschutzerklärung. Bei einem Tischler ist
+          das lästig; bei einem Gesundheitsberuf wäre es der Punkt, an dem es
+          teuer wird.
+
+       Der Betrieb bekommt die Angaben unverändert – nur der Absender bekommt
+       eine Empfangsbestätigung statt einer Kopie. */
     if (antwortAdresse) {
       const duzen = site.ansprache === 'du';
       const bestaetigung = [
@@ -133,8 +152,9 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
           ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
           : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.',
         '',
-        duzen ? 'Deine Angaben zur Übersicht:' : 'Ihre Angaben zur Übersicht:',
-        ...zeilen.slice(2),
+        duzen
+          ? 'Aus Datenschutzgründen wiederholen wir deine Angaben hier nicht. Bei Rückfragen erreichst du uns direkt:'
+          : 'Aus Datenschutzgründen wiederholen wir Ihre Angaben hier nicht. Bei Rückfragen erreichen Sie uns direkt:',
         '',
         `${site.betrieb.name}`,
         `${site.betrieb.adresse.strasse}, ${site.betrieb.adresse.plz} ${site.betrieb.adresse.ort}`,

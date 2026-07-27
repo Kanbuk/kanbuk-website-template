@@ -674,6 +674,57 @@ if (istLive && /Disallow:\s*\/\s*$/m.test(robots)) {
   fehler('robots.txt sperrt alles, obwohl mode auf "live" steht');
 }
 
+/* MERKLISTE: Sie speichert auf dem Gerät des Besuchers – das MUSS in der
+   Datenschutzerklärung stehen (§ 165 TKG / ePrivacy erfassen jede Speicherung
+   auf dem Endgerät, auch ohne Cookie). Daneben behauptet dieselbe Seite
+   „keine Cookies"; ohne den Absatz wirkt das wie „wir speichern nichts", und
+   das stimmt dann nicht mehr. Die Lücke entstand am 2026-07-27 mit dem
+   Katalog selbst – deshalb bewacht sie ab jetzt eine Regel. */
+{
+  const nutztMerkliste = htmlDateien.some((f) => /data-merken=/.test(readFileSync(f, 'utf-8')));
+  const datenschutz = htmlDateien.find((f) => /datenschutz/.test(kurz(f)));
+  if (nutztMerkliste && datenschutz && !/Merkliste/i.test(readFileSync(datenschutz, 'utf-8'))) {
+    fehler(
+      'Die Seite hat eine Merkliste, die Datenschutzerklärung erwähnt sie aber nicht.\n' +
+        '    Sie speichert auf dem Gerät des Besuchers – das gehört dort hinein (CLAUDE.md Abschnitt 6a).',
+    );
+  }
+}
+
+/* VORSCHAU: Das Formular ist sichtbar, darf aber kein Versandziel haben.
+   Seit 2026-07-27 rendert die Vorschau ein echtes, bedienbares Formular –
+   sonst schreibt der Port sein Aussehen blind und der Kunde sieht bei der
+   Abnahme nichts. Die Sperre muss deshalb STRUKTURELL sein und nicht nur im
+   JavaScript hängen: kein `action`, kein `data-formular`. Sonst schickt ein
+   Browser ohne laufendes Skript die Anfrage doch ab – ins Leere, weil in der
+   Vorschau kein Schlüssel gesetzt ist, und ohne dass es jemand merkt. */
+for (const f of htmlDateien) {
+  const html = readFileSync(f, 'utf-8');
+  const name = kurz(f);
+  for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
+    const tag = m[0];
+    const istVorschau = /data-formular-vorschau/.test(tag);
+    if (!istLive) {
+      if (/action=["'][^"']*\/api\/contact/.test(tag)) {
+        fehler(
+          `${name}: Vorschau-Modus, aber ein Formular zeigt auf /api/contact.\n` +
+            `    In der Vorschau darf kein Versandziel im Markup stehen (auch nicht für Browser ohne JavaScript).`,
+        );
+      }
+      if (/data-formular(?![-\w])/.test(tag)) {
+        fehler(
+          `${name}: Vorschau-Modus, aber ein Formular trägt data-formular (scharf).\n` +
+            `    In der Vorschau gehört data-formular-vorschau dorthin – sonst verdrahtet der Motor den echten Versand.`,
+        );
+      }
+    } else if (istVorschau) {
+      fehler(
+        `${name}: live-Modus, aber ein Formular ist noch als Vorschau markiert – es würde nichts verschicken.`,
+      );
+    }
+  }
+}
+
 // Sicherheits-Header-Selbstkontrolle. Geprüft wird vercel.json – die Datei, die
 // beim einzigen Host des Motors tatsächlich ausgeliefert wird. (Früher stand
 // hier dist/_headers für Cloudflare/Netlify: eine Datei, die auf Vercel
@@ -813,6 +864,39 @@ if (istTemplate) {
           `api/contact.ts: Die ${was} fehlt.\n` +
             `    Ohne sie kann jede fremde Seite über das Formular E-Mails auslösen.`,
         );
+      }
+    }
+  }
+
+  /* Die Bestätigung an den ABSENDER darf keine Formularinhalte enthalten.
+     Die Empfängeradresse kommt aus dem Formular und wird nie überprüft – mit
+     Inhalt darin lässt sich die Domain des Betriebs missbrauchen, um fremden
+     Text an fremde Adressen zu schicken. Der Schaden ist keine gestohlene
+     Datei, sondern eine Absender-Domain auf einer Sperrliste: Ab dann kommt
+     KEINE echte Anfrage mehr an, und niemand merkt, warum.
+     Die Regel schaut in genau den Block, der die zweite Mail baut. */
+  const kontaktDatei = join(WURZEL, 'src', 'lib', 'kontakt.ts');
+  if (existsSync(kontaktDatei)) {
+    const quelle = readFileSync(kontaktDatei, 'utf-8');
+    const start = quelle.indexOf('if (antwortAdresse) {');
+    if (start > 0) {
+      const block = quelle.slice(start);
+      // Nur der Rumpf bis zum Ende der Bestätigungs-Anfrage interessiert.
+      const ende = block.indexOf('return { status: 200');
+      const rumpf = ende > 0 ? block.slice(0, ende) : block;
+      // Kommentare weg – dort steht die Begründung und darf „zeilen" vorkommen.
+      const code = rumpf.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
+      for (const [muster, was] of [
+        [/\bzeilen\b/, 'die gesammelten Formularzeilen'],
+        [/\bdaten\s*\[/, 'einzelne Formularfelder'],
+      ]) {
+        if (muster.test(code)) {
+          fehler(
+            `src/lib/kontakt.ts: Die Bestätigung an den Absender enthält wieder ${was}.\n` +
+              `    Sie geht an eine ungeprüfte Adresse – mit Inhalt darin wird daraus ein Versandkanal\n` +
+              `    für fremden Text über die Domain des Betriebs. Nur Empfangsbestätigung, keine Kopie.`,
+          );
+        }
       }
     }
   }

@@ -6,8 +6,21 @@
  * setzt die Motor-Texte in der gewählten Ansprache und verdrahtet den
  * Datenschutz-Hinweis. Das AUSSEHEN kommt aus dem Design.
  *
- * Im demo-Modus wird bewusst KEIN Formular gerendert, sondern ein Hinweis:
- * Ohne Resend-Schlüssel würde ein Absenden ins Leere laufen.
+ * IN DER VORSCHAU (demo) IST DAS FORMULAR SICHTBAR, ABER TOT.
+ * Bis 2026-07-27 wurde in der Vorschau gar kein Formular gerendert, nur ein
+ * grauer Hinweis. Das kostete an drei Stellen:
+ *   – Der Kunde sah bei der Abnahme ausgerechnet dort nichts, wo seine
+ *     Anfragen herkommen sollen.
+ *   – Der Port schrieb das gesamte Formular-Aussehen BLIND; Sichtprüfung und
+ *     Bedien-Prüfung bekamen es nie zu Gesicht.
+ *   – Beim Umschalten auf live erschien plötzlich ein nie geprüftes
+ *     Bedienelement – genau in dem Moment, in dem laut Ablauf „nur noch drei
+ *     Dinge" zu tun sind und niemand mehr an der Technik arbeitet.
+ * Jetzt: Felder sichtbar und bedienbar, Absenden gesperrt, Hinweis darüber.
+ * Die Sperre ist strukturell, nicht kosmetisch – das Formular trägt in der
+ * Vorschau `data-formular-vorschau` statt `data-formular` und hat KEIN
+ * `action`. Ohne Ziel und ohne Versand-Baustein kann nichts hinausgehen,
+ * auch nicht ohne JavaScript. Das Prüf-Tor kontrolliert genau das.
  *
  * Verwendung:  <Formular id="kontakt" />
  */
@@ -59,24 +72,28 @@ if (leer) {
 }
 ---
 
-{istDemo ? (
+{istDemo && (
   <div class:list={['formular-demo', klasse]} role="note" data-formular-demo>
-    <strong>Formular in der Vorschau deaktiviert</strong>
+    <strong>Vorschau: Es wird nichts verschickt</strong>
     <p>{t.formularDemo}</p>
   </div>
-) : (
+)}
+
+{(
   <form
-    class:list={['formular', klasse, istAssistent && 'formular--assistent']}
+    class:list={['formular', klasse, istAssistent && 'formular--assistent', istDemo && 'formular--vorschau']}
     method="post"
-    action="/api/contact"
+    action={istDemo ? undefined : '/api/contact'}
     novalidate
-    data-formular
+    data-formular={istDemo ? undefined : ''}
+    data-formular-vorschau={istDemo ? '' : undefined}
     data-formular-id={formular.id}
     data-assistent={istAssistent ? '' : undefined}
     data-text-sendet={t.sendet}
     data-text-erfolg={t.erfolg}
     data-text-fehler={t.fehler}
     data-text-verbindungsfehler={t.verbindungsfehler}
+    data-text-vorschau={t.formularDemo}
   >
     <input type="hidden" name="formular" value={formular.id} />
     {bezug && <input type="hidden" name="bezug" value={bezug} />}
@@ -106,7 +123,10 @@ if (leer) {
           <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
             <span class="formular__label">
               {f.label}
-              {!f.pflicht && <em class="formular__optional">(optional)</em>}
+              {/* Das Leerzeichen ausdrücklich setzen: Zwischen zwei Ausdrücken
+                  fällt der Zeilenumbruch weg, und auf der Seite stand
+                  „Telefon(optional)". */}
+              {!f.pflicht && <> <em class="formular__optional">(optional)</em></>}
             </span>
 
             {f.typ === 'textarea' ? (

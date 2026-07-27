@@ -58,13 +58,20 @@ const duzen = site.ansprache === 'du';
 </BaseLayout>
 
 <script>
-  // Kam die Weiterleitung mit einem Fehler, ehrlich benennen statt zu danken.
+  /* Kam die Weiterleitung mit einem Fehler, ehrlich benennen statt zu danken.
+     Die Adresse trägt nur ein Kurzzeichen – der Text entsteht hier. So steht
+     nie eine Feldbeschriftung im Browserverlauf oder im Server-Protokoll. */
+  const codes = {
+    eingabe: 'Es hat eine Angabe gefehlt oder war unvollständig.',
+    versand: 'Die Nachricht konnte gerade nicht gesendet werden.',
+  };
   const fehler = new URLSearchParams(location.search).get('fehler');
   if (fehler) {
     const titel = document.querySelector('.danke__titel');
     const text = document.querySelector('[data-danke-text]');
     if (titel) titel.textContent = 'Das hat leider nicht geklappt';
-    if (text) text.textContent = `${fehler} Bitte versuchen Sie es erneut oder rufen Sie uns an.`;
+    const satz = codes[fehler] ?? 'Die Anfrage konnte nicht entgegengenommen werden.';
+    if (text) text.textContent = `${satz} Bitte versuchen Sie es erneut oder rufen Sie uns an.`;
   }
 </script>
 

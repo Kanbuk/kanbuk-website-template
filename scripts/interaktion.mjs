@@ -20,8 +20,9 @@
  *   • Dialog      – öffnet, übernimmt den Bezug des Auslösers, schließt
  *   • Assistent   – erster Schritt offen, Senden versteckt, leeres
  *                   Pflichtfeld hält den Schritt
- *   • Formular    – demo-Modus MUSS den Hinweis zeigen statt eines scharfen
- *                   Formulars; ein Live-Formular wird nur strukturell geprüft
+ *   • Formular    – in der Vorschau sichtbar und bedienbar, aber ohne
+ *                   Versandziel; ein Klick auf Senden wird beantwortet und
+ *                   verlässt die Seite nicht. Live nur strukturell geprüft
  *                   (Absende-Knopf + Status-Element) und NIE abgesendet.
  *
  *  Die Bausteine sind über data-Attribute standardisiert (src/lib/verhalten/) –
@@ -552,34 +553,92 @@ for (const seite of seiten) {
       }
     }
 
-    // --- Formular: im demo-Modus MUSS der Hinweis stehen, nie ein scharfes ---
-    // Formular. Live nur Struktur prüfen – NIE absenden (würde echte Mails
-    // auslösen bzw. als Spam-Versuch in der Zeitfalle landen).
-    ergebnisse.push(...await page.evaluate(() => {
+    // --- Formular ------------------------------------------------------------
+    /* VORSCHAU (seit 2026-07-27): Das Formular ist sichtbar und bedienbar,
+       aber es darf nichts hinausgehen. Geprüft wird beides – dass die Felder
+       wirklich da sind (sonst schreibt der Port sie blind) UND dass die Sperre
+       strukturell hält: kein Versandziel, kein scharfer Baustein.
+       LIVE: nur Struktur prüfen, NIE absenden – das würde echte Mails
+       auslösen bzw. als Spam-Versuch in der Zeitfalle landen. */
+    ergebnisse.push(...await page.evaluate(async () => {
       const raus = [];
       // Den Modus verrät die gebaute Seite selbst: demo trägt noindex im Kopf.
       const istDemo = !!document.querySelector('meta[name="robots"][content*="noindex"]');
       const hinweise = document.querySelectorAll('[data-formular-demo]');
-      const formulare = document.querySelectorAll('[data-formular]');
+      const scharfe = document.querySelectorAll('[data-formular]');
+      const vorschauen = document.querySelectorAll('[data-formular-vorschau]');
 
       if (istDemo) {
-        if (formulare.length > 0) {
+        if (scharfe.length > 0) {
           raus.push({
             baustein: 'Formular',
             ok: false,
-            detail: 'demo-Modus, aber ein scharfes Formular ist gerendert – es würde ins Leere senden. mode in content.config.ts prüfen und neu bauen (npm run check).',
+            detail: 'Vorschau, aber ein scharfes Formular ist verdrahtet – es würde ins Leere senden. mode in content.config.ts prüfen und neu bauen (npm run check).',
           });
         }
-        hinweise.forEach((_, i) => raus.push({ baustein: i > 0 ? `Formular (Demo-Hinweis) #${i + 1}` : 'Formular (Demo-Hinweis)', ok: true, detail: '' }));
+        if (vorschauen.length > 0 && hinweise.length === 0) {
+          raus.push({
+            baustein: 'Formular',
+            ok: false,
+            detail: 'Vorschau-Formular ohne Hinweis darüber – der Kunde hält es für scharf und wundert sich, dass nichts ankommt.',
+          });
+        }
+
+        for (const [i, form] of [...vorschauen].entries()) {
+          const fehler = [];
+          const felder = form.querySelectorAll('input:not([type=hidden]), select, textarea');
+          if (felder.length === 0) {
+            fehler.push('kein einziges sichtbares Feld – dann ist das Formular in der Vorschau wertlos');
+          }
+          if (!form.querySelector('[data-formular-absenden]')) {
+            fehler.push('Absende-Knopf fehlt – der Kunde kann den Ablauf nicht durchspielen');
+          }
+          // Die Sperre muss im Markup sitzen, nicht nur im Skript.
+          const ziel = form.getAttribute('action');
+          if (ziel) {
+            fehler.push(`Versandziel "${ziel}" steht im Markup – ohne JavaScript ginge die Anfrage doch hinaus`);
+          }
+          const status = form.querySelector('[data-formular-status]');
+          if (!status) {
+            fehler.push('Status-Element fehlt – ein Klick auf Senden bliebe unbeantwortet');
+          } else {
+            /* Wirklich draufklicken: Ein Formular, das beim Absenden gar nichts
+               tut, sieht für den Kunden kaputt aus. Pflichtfelder vorher
+               füllen, sonst hält die Browser-Prüfung den Klick auf. */
+            for (const feld of form.querySelectorAll('[required]')) {
+              if (feld.type === 'checkbox' || feld.type === 'radio') feld.checked = true;
+              else if (feld.type === 'email') feld.value = 'probe@example.org';
+              else if (feld.tagName === 'SELECT') feld.selectedIndex = feld.options.length - 1;
+              else feld.value = 'Probe';
+            }
+            const vorher = location.href;
+            form.querySelector('[data-formular-absenden]').click();
+            await new Promise((r) => setTimeout(r, 200));
+            if (location.href !== vorher) {
+              fehler.push('Der Klick auf Senden hat die Seite verlassen – in der Vorschau darf nichts abgeschickt werden');
+            } else if (!status.textContent.trim()) {
+              fehler.push('Klick auf Senden bleibt ohne jede Rückmeldung – das sieht kaputt aus, nicht nach Vorschau');
+            }
+          }
+          raus.push({
+            baustein: i > 0 ? `Formular (Vorschau) #${i + 1}` : 'Formular (Vorschau)',
+            ok: fehler.length === 0,
+            detail: fehler.join('; '),
+          });
+        }
+
+        if (vorschauen.length === 0) {
+          hinweise.forEach((_, i) => raus.push({ baustein: i > 0 ? `Formular (Demo-Hinweis) #${i + 1}` : 'Formular (Demo-Hinweis)', ok: true, detail: '' }));
+        }
       } else {
-        if (hinweise.length > 0) {
+        if (hinweise.length > 0 || vorschauen.length > 0) {
           raus.push({
             baustein: 'Formular',
             ok: false,
-            detail: 'live-Modus, aber der Demo-Hinweis steht noch da – niemand kann etwas absenden. Neu bauen (npm run check).',
+            detail: 'live-Modus, aber das Formular ist noch als Vorschau markiert – niemand kann etwas absenden. Neu bauen (npm run check).',
           });
         }
-        formulare.forEach((form, i) => {
+        scharfe.forEach((form, i) => {
           const fehler = [];
           if (!form.querySelector('[data-formular-absenden]')) fehler.push('Absende-Knopf [data-formular-absenden] fehlt');
           if (!form.querySelector('[data-formular-status]')) fehler.push('Status-Element [data-formular-status] fehlt (keine Rückmeldung nach dem Senden)');

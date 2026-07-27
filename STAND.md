@@ -30,29 +30,29 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 
 **Am Motor selbst offen (betrifft JEDE Kundenseite, geprüft am 2026-07-27):**
 
-- [ ] **Bestätigungsmail schickt alle Angaben zurück** (`src/lib/kontakt.ts:137`,
+- [x] **Bestätigungsmail schickt alle Angaben zurück** (`src/lib/kontakt.ts:137`,
       `...zeilen.slice(2)`). Zwei Probleme: Der Inhalt steht in keiner
       Datenschutzerklärung, und die Empfängeradresse wird nie geprüft – jeder
       kann über die Domain des Kunden beliebigen selbst geschriebenen Text an
       eine fremde Adresse schicken lassen. Der teure Ausgang ist eine
       Absender-Domain auf einer Spam-Liste; ab dann kommt keine Anfrage mehr an.
-- [ ] **Zwei sich widersprechende Rechtsgrundlagen.** Der Text über dem
+- [x] **Zwei sich widersprechende Rechtsgrundlagen.** Der Text über dem
       Senden-Knopf (`src/lib/texte.ts:26`) sagt „Mit dem Absenden stimmen Sie …
       zu" – das ist eine Einwilligung. Die Datenschutzerklärung
       (`src/pages/datenschutz.astro:150`) nennt Art. 6 Abs. 1 lit. b und f, also
       etwas anderes. Beides zugleich geht nicht.
-- [ ] **Merkliste fehlt in der Datenschutzerklärung.** Kommt dort 0-mal vor,
+- [x] **Merkliste fehlt in der Datenschutzerklärung.** Kommt dort 0-mal vor,
       während die Seite „keine Cookies" behauptet. CLAUDE.md Abschnitt 6a
       verlangt den Absatz ausdrücklich – die Lücke ist am 2026-07-27 mit dem
       Katalog selbst entstanden.
-- [ ] **`besucherzaehlung: 'vercel'` schreibt einen Absatz über
+- [x] **`besucherzaehlung: 'vercel'` schreibt einen Absatz über
       Reichweitenmessung, lädt aber nirgends ein Skript.** Die Erklärung würde
       eine Verarbeitung behaupten, die gar nicht stattfindet.
-- [ ] **Ohne JavaScript landen Feldbeschriftungen in der Adresszeile.**
+- [x] **Ohne JavaScript landen Feldbeschriftungen in der Adresszeile.**
       `kontakt.ts:69` baut „Bitte ausfüllen: <Feldnamen>", `api/contact.ts:153`
       hängt das an die Adresse. Bei einer Praxis stünde dort „Ihre Beschwerden"
       im Browserverlauf und im Protokoll des Hosters.
-- [ ] **Formular ist in der Vorschau unsichtbar** (`Formular.astro:62`). Der Port
+- [x] **Formular ist in der Vorschau unsichtbar** (`Formular.astro:62`). Der Port
       schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
       nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
       Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
@@ -155,6 +155,42 @@ genau das Muster, das `npm run preisliste` schon hat.
   Verzweigung. Nur ein Rezept, das liest, wer es braucht.
 
 ## Verlauf
+
+- **2026-07-27** – **Vorarbeit für den ersten Zeittest.** Sechs Befunde aus der
+  Praxis-Prüfung abgearbeitet, damit die gemessene Zahl etwas wert ist:
+  - **Bestätigungsmail entschärft.** Sie schickte dem Absender alle Angaben
+    zurück – an eine Adresse, die niemand überprüft. Wer den Endpunkt direkt
+    anspricht (der Ursprungs-Kopf lässt sich weglassen, Honeypot und Zeitfalle
+    sind trivial zu umgehen), ließ damit die Domain des Kunden beliebigen Text
+    an beliebige Adressen schicken. Der teure Ausgang wäre keine gestohlene
+    Datei, sondern die Absender-Domain auf einer Sperrliste – ab dann kommt
+    KEINE echte Anfrage mehr an. Jetzt nur noch Empfangsbestätigung, und eine
+    Prüf-Tor-Regel schaut in genau diesen Block.
+    **Vorher geprüft: Auf keinem der drei Motor-Projekte ist ein Schlüssel
+    gesetzt** (`vercel env ls` → „No Environment Variables found"), es war also
+    nie ausnutzbar. Scharf geworden wäre es beim ersten Live-Gang.
+  - **Formular ist in der Vorschau sichtbar und bedienbar**, Versand
+    strukturell gesperrt (kein `action`, `data-formular-vorschau` statt
+    `data-formular`). Ein Klick auf Senden wird ehrlich beantwortet. Vorher
+    schrieb der Port das Formular-Aussehen blind, beide Prüfungen sahen es nie,
+    und beim Live-Gang erschien ein nie geprüftes Bedienelement.
+  - **Vier Datenschutz-Lücken:** Merklisten-Absatz ergänzt (die Lücke war mit
+    dem Katalog selbst entstanden); der Satz über dem Senden-Knopf behauptete
+    eine Einwilligung, während die Erklärung eine andere Rechtsgrundlage nennt –
+    vereinheitlicht; `besucherzaehlung` schrieb einen Absatz über eine Messung,
+    die nirgends stattfindet – Feld und Absatz entfernt; ohne JavaScript
+    landeten Feldbeschriftungen in der Adresszeile – jetzt nur noch ein
+    Kurzzeichen, den Satz baut die Danke-Seite.
+  - **Messregel im Port-Ablauf:** Start, Ende, Nachbesserungsrunden und die
+    grobe Aufteilung der Zeit sind ab jetzt Pflicht im Bericht und in STAND.md.
+    Ohne festen Schlussstrich sind zwei Ports nicht vergleichbar.
+
+  Drei neue Schutzregeln, alle absichtlich zum Anschlagen gebracht. Die
+  Sichtprüfung mit eigenen Augen fand danach noch zwei Textfehler, die keine
+  Messung findet: „Telefon(optional)" ohne Leerzeichen und einen Hinweis, der
+  weiter „deaktiviert" behauptete, obwohl das Formular jetzt da ist.
+
+  **Nächster Schritt: der Zeittest an einem Nagelstudio (Relaunch).**
 
 - **2026-07-27** – **Der Motor kann jetzt Kataloge.** Bisher konnte er Seiten mit
   Inhalt, aber keine Betriebe abbilden, die *viele gleichartige Dinge* zeigen –

@@ -333,7 +333,10 @@ Der Unterschied ist **nicht die Qualität, sondern nur die Zugänge**. Die Vorsc
 die fertige Seite – mit gezogenem Stecker.
 
 **`demo` (Vorschau für einen Lead):**
-- Kanbuk-Balken oben, Formular zeigt „In der Live-Version aktiv"
+- Kanbuk-Balken oben; das Formular ist **sichtbar und bedienbar**, mit einem Hinweis
+  darüber und ohne Versandziel im Markup (`data-formular-vorschau`, kein `action`).
+  So sieht der Kunde bei der Abnahme, was er bekommt, der Port schreibt das
+  Formular-Aussehen nicht blind, und beide Prüfungen fahren es wirklich an.
 - Telefonnummer **nicht** als `tel:`-Link
 - `noindex, nofollow` als Meta **und** als HTTP-Header (`X-Robots-Tag`)
 - `robots.txt` sperrt alles, keine Sitemap

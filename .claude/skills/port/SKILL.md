@@ -300,6 +300,28 @@ ist. Erst dann gilt die Seite als launch-fertig.
 
 ---
 
+## Zeit messen (Pflicht bei jedem Port)
+
+Ohne festen Start- und Schlussstrich sind zwei Ports nicht vergleichbar, und
+jede Ausbau-Entscheidung am Motor ist geraten. Deshalb bei JEDEM Port:
+
+| | |
+| --- | --- |
+| **Start** | Sekunde, in der der Port-Prompt abgeschickt wurde |
+| **Ende** | `npm run check`, `npm run sicht` und `npm run interaktion` sind grün **und** STAND.md ist gefüllt |
+| **Nachbesserungsrunden** | Wie oft musste der Nutzer nachbessern lassen, nachdem du „fertig" gemeldet hattest? |
+| **Wo die Zeit hinging** | Grobe Aufteilung: Inventar / Assets / Config / Seiten bauen / Prüfen |
+
+Die vier Werte gehören in den Abschlussbericht **und** in die Verlaufszeile in
+STAND.md. Nicht schätzen – tatsächliche Uhrzeiten nennen. Wenn du die Startzeit
+nicht kennst, frag sie einmal ab; das ist die Ausnahme vom Ein-Rutsch-Grundsatz.
+
+**Zielwert: 30–40 Minuten.** Liegt der Wert deutlich darüber, gehört in die
+Motor-Meldung, WO die Zeit hingegangen ist – das ist die einzige belastbare
+Grundlage dafür, was als Nächstes in den Motor gebaut wird.
+
+---
+
 ## Etappe 6 – STAND.md + Bericht
 
 **Zuerst STAND.md ausfüllen (Pflicht):** Kunde, Phase („Portiert (Vorschau)"),

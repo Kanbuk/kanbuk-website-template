@@ -23,24 +23,34 @@ export interface MotorTexte {
 
 const SIE: MotorTexte = {
   einwilligung:
-    'Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Angaben zur Bearbeitung der Anfrage zu. Details in der ',
+    /* KEINE Einwilligungs-Formel. Der frühere Satz „Mit dem Absenden stimmen
+       Sie … zu" behauptete eine Einwilligung als Rechtsgrundlage, während die
+       Datenschutzerklärung Art. 6 Abs. 1 lit. b und f nennt. Zwei sich
+       widersprechende Angaben auf jeder Kundenseite – und die Einwilligung
+       wäre ohnehin die schwächere Grundlage (jederzeit widerrufbar). */
+    'Ihre Angaben verwenden wir ausschließlich, um diese Anfrage zu beantworten. Mehr dazu in der ',
   sendet: 'Wird gesendet …',
   erfolg: 'Vielen Dank! Ihre Nachricht wurde gesendet.',
   fehler: 'Das hat leider nicht geklappt. Bitte versuchen Sie es per E-Mail.',
   verbindungsfehler: 'Verbindung fehlgeschlagen. Bitte versuchen Sie es per E-Mail.',
   pflichtfelder: 'Bitte füllen Sie die Pflichtfelder aus.',
-  formularDemo: 'In der Live-Version aktiv.',
+  /* Seit 2026-07-27 ist das Formular in der Vorschau SICHTBAR und bedienbar –
+     nur der Versand ist gesperrt. „In der Live-Version aktiv" wäre jetzt
+     irreführend: Der Kunde soll es ausprobieren, nicht davor stehen bleiben. */
+  formularDemo:
+    'Sie können es ausprobieren – abgeschickt wird in der Vorschau nichts. In der Live-Version geht die Anfrage direkt an uns.',
 };
 
 const DU: MotorTexte = {
   einwilligung:
-    'Mit dem Absenden stimmst du der Verarbeitung deiner Angaben zur Bearbeitung der Anfrage zu. Details in der ',
+    'Deine Angaben verwenden wir ausschließlich, um diese Anfrage zu beantworten. Mehr dazu in der ',
   sendet: 'Wird gesendet …',
   erfolg: 'Danke! Deine Nachricht wurde gesendet.',
   fehler: 'Das hat leider nicht geklappt. Bitte versuch es per E-Mail.',
   verbindungsfehler: 'Verbindung fehlgeschlagen. Bitte versuch es per E-Mail.',
   pflichtfelder: 'Bitte füll die Pflichtfelder aus.',
-  formularDemo: 'In der Live-Version aktiv.',
+  formularDemo:
+    'Du kannst es ausprobieren – abgeschickt wird in der Vorschau nichts. In der Live-Version geht die Anfrage direkt an uns.',
 };
 
 /** Liefert die Motor-Texte in der gewählten Ansprache. */

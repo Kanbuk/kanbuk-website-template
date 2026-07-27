@@ -749,14 +749,6 @@ export interface SiteConfig {
    * auf true, beschreibt die Erklärung die Einbettung samt Rechtsgrundlage.
    */
   karteEingebettet?: boolean;
-  /**
-   * Cookielose Besucherzählung. 'vercel' = Vercel Web Analytics – wird im
-   * Vercel-Dashboard des Projekts aktiviert (Analytics → Enable), läuft über
-   * die eigene Domain, setzt keine Cookies, braucht keinen Banner.
-   * Dieses Feld sorgt nur dafür, dass die Datenschutzerklärung den passenden
-   * Absatz bekommt. Weglassen = keine Zählung, kein Absatz.
-   */
-  besucherzaehlung?: 'vercel';
   /** Globales OG-Bild (in public/), Standard: '/og.jpg'. */
   ogBild: string;
 }

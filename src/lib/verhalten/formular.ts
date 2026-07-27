@@ -19,6 +19,28 @@
  * Zustandsklassen fürs Design: .ist-erfolg / .ist-fehler auf dem Status-Element.
  */
 export function formulareStarten(): void {
+  /* VORSCHAU (demo): Das Formular ist sichtbar und bedienbar, aber es darf
+     nichts hinausgehen. Die Sperre sitzt strukturell im Markup – kein
+     `action`, kein `data-formular` –, hier kommt nur die ehrliche Antwort
+     dazu. Ohne sie klickte der Kunde bei der Abnahme auf „Senden" und es
+     passierte sichtbar gar nichts; das sieht nach kaputt aus, nicht nach
+     Vorschau. */
+  document.querySelectorAll<HTMLFormElement>('[data-formular-vorschau]').forEach((form) => {
+    const status = form.querySelector<HTMLElement>('[data-formular-status]');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      if (status) {
+        status.textContent =
+          form.dataset.textVorschau ?? 'In der Live-Version wird diese Anfrage wirklich verschickt.';
+        status.classList.add('ist-erfolg');
+      }
+    });
+  });
+
   document.querySelectorAll<HTMLFormElement>('[data-formular]').forEach((form) => {
     const status = form.querySelector<HTMLElement>('[data-formular-status]');
     const absenden = form.querySelector<HTMLButtonElement>('[data-formular-absenden]');
