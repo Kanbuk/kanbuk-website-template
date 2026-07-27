@@ -33,9 +33,25 @@ interface Props {
    * Im demo-Modus ist ohnehin alles gesperrt – das hier wirkt zusätzlich live.
    */
   noindex?: boolean;
+  /**
+   * Sprache DIESER Seite. Standard 'de'.
+   *
+   * WARUM ES DAS BRAUCHT: Ohne die Angabe war der dokumentierte Mehrsprachen-
+   * Weg eine Sackgasse. Eine Seite unter /en/… hätte sich per `lang="de-AT"`
+   * als deutsch ausgewiesen UND per canonical auf die deutsche Fassung
+   * gezeigt – Google entfernt eine so ausgezeichnete Seite aus dem Index und
+   * ignoriert wegen des Widerspruchs die hreflang-Angaben gleich mit. Die
+   * englische Version hätte also nie ranken können.
+   *
+   * Eine englische Seite ruft auf:
+   *   <BaseLayout pfad="/kontakt" sprache="en" titel="Contact" beschreibung="…">
+   * `pfad` bleibt dabei der DEUTSCHE Pfad – daraus entstehen Adresse und
+   * hreflang automatisch.
+   */
+  sprache?: 'de' | 'en';
 }
 
-const { pfad = '/', titel, beschreibung, noindex = false } = Astro.props;
+const { pfad = '/', titel, beschreibung, noindex = false, sprache = 'de' } = Astro.props;
 
 const seite = site.seiten.find((s) => s.pfad === pfad);
 if (!seite && !titel) {
@@ -47,8 +63,14 @@ if (!seite && !titel) {
 const istDemo = site.mode === 'demo';
 
 const seitenTitel = titel ?? seite!.metaTitel;
+/* Die Startseite trägt normalerweise „Name – Claim" statt „Seite | Name".
+   Ein ausdrücklich übergebener Titel gewinnt aber – sonst bekäme die englische
+   Startseite den deutschen Titel und wäre für Google eine Dublette der
+   deutschen (im Zweisprachen-Test genau so aufgetreten). */
 const vollerTitel =
-  pfad === '/' ? `${site.betrieb.name} – ${site.betrieb.claim}` : `${seitenTitel} | ${site.betrieb.name}`;
+  pfad === '/' && !titel
+    ? `${site.betrieb.name} – ${site.betrieb.claim}`
+    : `${seitenTitel} | ${site.betrieb.name}`;
 const desc = beschreibung ?? seite?.metaBeschreibung ?? site.betrieb.kurzbeschreibung;
 /**
  * Basis für alle absoluten Adressen im Seitenkopf.
@@ -65,7 +87,11 @@ const basisAdresse =
     ? (site.vorschauDomain ?? (vercelAdresse ? `https://${vercelAdresse}` : site.domain))
     : site.domain;
 
-const canonical = new URL(pfad, basisAdresse).href;
+/* Der tatsächliche Pfad DIESER Seite – bei Englisch mit Sprach-Präfix.
+   `pfad` bleibt der deutsche Pfad, damit die Meta-Angaben und hreflang-Ziele
+   aus derselben Config-Zeile kommen. */
+const eigenerPfad = sprache === 'de' ? pfad : `/${sprache}${pfad === '/' ? '' : pfad}`;
+const canonical = new URL(eigenerPfad, basisAdresse).href;
 const ogBild = new URL(seite?.ogBild ? `/${seite.ogBild}` : site.ogBild, basisAdresse).href;
 const rootStyle = `:root { ${cssVariablen(site)} }`;
 
@@ -297,7 +323,7 @@ const jsonLd = {
 ---
 
 <!doctype html>
-<html lang="de-AT" data-animation={site.design.animation ?? 'dezent'}>
+<html lang={sprache === 'de' ? 'de-AT' : sprache} data-animation={site.design.animation ?? 'dezent'}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -319,20 +345,30 @@ const jsonLd = {
       content={istDemo || noindex || pfad === '/404' ? 'noindex, nofollow' : 'index, follow'}
     />
 
-    {mehrsprachig && site.sprachen.map((s) => (
+    {/* Sprachverweise NUR für Seiten, die es wirklich in beiden Sprachen gibt.
+        Hilfsseiten wie /danke oder /404 stehen nicht in der Seiten-Config und
+        werden nicht übersetzt – für sie hreflang auszugeben hieße, Google eine
+        englische Fassung zu versprechen, die es nicht gibt (das Prüf-Tor
+        blockt das zu Recht).
+        x-default zeigt auf die HAUPTSPRACHE, nicht auf die aktuelle Seite:
+        Es beantwortet die Frage „welche Fassung, wenn keine passt?" – bisher
+        zeigte jede Sprachfassung auf sich selbst, was die Angabe wertlos macht. */}
+    {mehrsprachig && seite && site.sprachen.map((s) => (
       <link
         rel="alternate"
         hreflang={s}
-        href={new URL(s === 'de' ? pfad : `/${s}${pfad}`, basisAdresse).href}
+        href={new URL(s === 'de' ? pfad : `/${s}${pfad === '/' ? '' : pfad}`, basisAdresse).href}
       />
     ))}
-    {mehrsprachig && <link rel="alternate" hreflang="x-default" href={canonical} />}
+    {mehrsprachig && seite && (
+      <link rel="alternate" hreflang="x-default" href={new URL(pfad, basisAdresse).href} />
+    )}
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content={vollerTitel} />
     <meta property="og:description" content={desc} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content="de_AT" />
+    <meta property="og:locale" content={sprache === 'de' ? 'de_AT' : 'en_US'} />
     <meta property="og:image" content={ogBild} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />

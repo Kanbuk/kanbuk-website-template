@@ -76,6 +76,32 @@ genau das Muster, das `npm run preisliste` schon hat.
 
 ## Verlauf
 
+- **2026-07-27** – **Motor-Vollprüfung umgesetzt.** 73 Prüfer hatten den Motor auf
+  SEO, Sicherheit, Responsiveness, Recht, Vollständigkeit, Prüf-Tor-Qualität und
+  Wartbarkeit untersucht; 63 Befunde wurden gegengeprüft bestätigt. In vier Blöcken
+  abgearbeitet:
+  - **Recht & Prüf-Tor:** Impressum/Datenschutz sind jetzt Pflicht (waren die
+    EINZIGEN Seiten ohne Kontrolle), Platzhalter und Musterdaten werden im fertigen
+    HTML gesucht, tote interne Links und Weiterleitungsziele fallen auf,
+    Kartenlizenz wird erzwungen.
+  - **Verkauf:** Das WhatsApp-Vorschaubild funktioniert (zeigte auf eine Domain,
+    die es noch nicht gab – Leads sahen eine graue Zeile).
+  - **Sicherheit:** 0 statt 4 hohe Lücken (sharp, svgo, Astro 5→7), Formular mit
+    fünf Schranken gegen Missbrauch, Clickjacking-Schutz, JSON-LD maskiert.
+  - **Bausteine:** Kopf/Fuß mit funktionierender Handy-Navigation (jeder Klon baute
+    ~150 Zeilen von Hand nach), Öffnungszeiten mit Feiertagen/Betriebsurlaub,
+    „Jetzt geöffnet"-Anzeige, Team/FAQ/Referenzen/Stellen als Datenmodelle,
+    Formularfelder für Mehrfachauswahl und Zustimmung, Danke-Seite.
+  - **Blinde Prüfungen geschärft:** Das Prüf-Tor las kein JavaScript und 80 % des
+    CSS nicht; Kontrast wurde an zwei Config-Werten statt am echten Text gerechnet;
+    die Filter-Prüfung war ein Zirkelschluss. Alles behoben und je einmal
+    absichtlich zum Anschlagen gebracht.
+  - **Zweisprachigkeit** funktioniert jetzt (war eine Sackgasse: englische Seiten
+    hätten sich als deutsch ausgewiesen und auf die deutsche Fassung kanonisiert).
+
+  Version 2026.7.27. Verifikation je Änderung: Positiv- und Negativprobe, dazu
+  build/check/sicht/interaktion grün und ein live geschalteter Nachbau.
+
 <!-- Eine Zeile pro Arbeitssitzung: Datum – was passiert ist. Neueste oben. -->
 
 - **2026-07-21** – Signatur-Baustein (Kanbuk-Backlink) samt Anker-Rotation je Kunde

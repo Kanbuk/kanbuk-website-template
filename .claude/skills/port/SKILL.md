@@ -234,11 +234,18 @@ wird dabei ersetzt.
   gebaut sind, beide in `src/layouts/RechtsLayout.astro` einbinden (Kopf + Fuss
   um den Textblock, Zurück-Link und Mini-Footer entfernen). Impressum und
   Datenschutz müssen aussehen wie jede andere Unterseite der Website.
-- **Zweisprachiges Design?** Entweder die englischen Seiten als ECHTE Routen bauen
-  (`src/pages/en/…`, dann `sprachen: ['de','en']`) – oder für die Demo bei
-  `sprachen: ['de']` bleiben und die zweite Sprache in STAND.md als offenen Punkt
-  eintragen. Niemals `'en'` setzen, ohne die Seiten zu bauen (das Prüf-Tor blockt
-  hreflang-Verweise ins Leere).
+- **Zweisprachiges Design?** So geht es (seit 2026-07-27 durchgetestet):
+  1. Je Seite eine Datei unter `src/pages/en/…` anlegen.
+  2. Darin `<BaseLayout pfad="/kontakt" sprache="en" titel="Contact" beschreibung="…">`
+     – `pfad` bleibt der DEUTSCHE Pfad (daraus entstehen Adresse und
+     Sprachverweise automatisch), `sprache="en"` setzt Sprachauszeichnung,
+     Adresse und Teilen-Angaben richtig. **`titel` und `beschreibung` immer
+     mitgeben** – ohne sie erbt die englische Seite die deutschen Meta-Texte
+     und ist für Google eine Dublette.
+  3. Erst danach `sprachen: ['de','en']` setzen.
+  Niemals `'en'` setzen, ohne die Seiten zu bauen – das Prüf-Tor blockt
+  Sprachverweise ins Leere. Für eine Demo reicht `['de']`; die zweite Sprache
+  kommt dann als offener Punkt in STAND.md.
 
 ---
 

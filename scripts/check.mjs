@@ -635,7 +635,12 @@ const robots = existsSync(join(DIST, 'robots.txt')) ? readFileSync(join(DIST, 'r
 for (const f of htmlDateien) {
   const html = readFileSync(f, 'utf-8');
   const noindex = /content=["']noindex/i.test(html);
-  if (istLive && noindex && !kurz(f).startsWith('404')) {
+  /* Hilfsseiten dürfen bewusst gesperrt sein: die Fehlerseite und die
+     Danke-Seite. Beide stehen nicht in der Seiten-Config, gehören also gar
+     nicht in Googles Index – eine Danke-Seite im Suchergebnis nützt niemandem
+     und erscheint ohne Zusammenhang. */
+  const istHilfsseite = /^(404|danke)/.test(kurz(f));
+  if (istLive && noindex && !istHilfsseite) {
     fehler(`${kurz(f)}: mode ist 'live', aber die Seite steht auf noindex`);
   }
   if (!istLive && !noindex) {
