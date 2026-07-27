@@ -130,17 +130,38 @@ for (const seite of seiten) {
         if (knoepfe.length === 0 || elemente.length === 0) return;
 
         const fehler = [];
-        const kategorieKnopf = knoepfe.find((k) => k.dataset.filterWert !== 'alle');
-        if (kategorieKnopf) {
-          const kat = kategorieKnopf.dataset.filterWert;
-          kategorieKnopf.click();
-          // Erwartung aus dem Markup selbst ableiten: Elemente, deren
-          // data-kategorie-Liste den Wert enthält, müssen sichtbar sein – genau die.
+        /* JEDE Kategorie fahren, nicht nur die erste – und zusätzlich prüfen,
+           dass hinter dem Knopf überhaupt etwas steckt.
+           WARUM DAS ZWEITE NÖTIG IST: Die Erwartung wird aus demselben Markup
+           abgeleitet, das der Filter benutzt. Zeigt ein Knopf auf eine
+           Kategorie, die kein einziges Element hat, ist erwartet = 0 und
+           sichtbar = 0 – die Prüfung war zufrieden, obwohl der Besucher auf
+           „Cocktails" klickt und eine leere Seite bekommt. Genau der Fehler,
+           den ein Filtertest finden muss, konnte ihn nicht auslösen. */
+        for (const knopf of knoepfe.filter((k) => k.dataset.filterWert !== 'alle')) {
+          const kat = knopf.dataset.filterWert;
+          knopf.click();
           const erwartet = elemente.filter((el) => (el.dataset.kategorie ?? '').split(/\s+/).includes(kat));
           const sichtbar = elemente.filter((el) => !el.hidden);
+          if (erwartet.length === 0) {
+            fehler.push(`Filter "${kat}" führt ins Leere – kein einziges Element trägt diese Kategorie`);
+            continue;
+          }
           if (sichtbar.length !== erwartet.length || sichtbar.some((el) => !erwartet.includes(el))) {
             fehler.push(`Filter "${kat}": ${sichtbar.length} Element(e) sichtbar, erwartet ${erwartet.length}`);
           }
+        }
+        /* Umgekehrt: eine Kategorie, die an Elementen steht, aber keinen Knopf
+           hat – dann sind diese Elemente über den Filter nie erreichbar. */
+        const knopfWerte = new Set(knoepfe.map((k) => k.dataset.filterWert));
+        const ohneKnopf = new Set();
+        for (const el of elemente) {
+          for (const k of (el.dataset.kategorie ?? '').split(/\s+/).filter(Boolean)) {
+            if (!knopfWerte.has(k)) ohneKnopf.add(k);
+          }
+        }
+        if (ohneKnopf.size > 0) {
+          fehler.push(`Kategorie(n) ohne Filter-Knopf: ${[...ohneKnopf].join(', ')} – diese Einträge sind nicht filterbar`);
         }
         const alleKnopf = knoepfe.find((k) => k.dataset.filterWert === 'alle');
         if (alleKnopf) {

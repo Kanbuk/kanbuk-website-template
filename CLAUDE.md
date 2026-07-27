@@ -223,6 +223,9 @@ bauen – anschließen und im Design anmalen.
 | **Formular** | `<Formular id="…" />` | Kontakt, Reservierung, Termin |
 | **Social-Icons** | `<SocialLinks />` (liest `betrieb.socialLinks`) | Fußzeile, Kontaktseite |
 | **Signatur** | `<Signatur />` | Fußzeile – Kanbuk-Backlink (**Live-Pflicht**, Prüf-Tor erzwingt sie) |
+| **Kopf / Fuß** | `<Kopf aktuell={pfad} />`, `<Fuss />` | Kopfleiste mit Handy-Navigation, Fußzeile mit Rechtslinks |
+| **Öffnungszeiten** | `<Oeffnungszeiten />` | Wochenzeiten + Feiertage/Betriebsurlaub (`betrieb.sonderzeiten`) |
+| **Öffnungs-Status** | `<Oeffnungsstatus />` | „Jetzt geöffnet · bis 22:00" – rechnet in der Zeitzone des Betriebs |
 | **Einwilligung** | automatisch, wenn `dienste` gefüllt | Pixel/Tracking (Abschnitt 7a) |
 | **Einbettung** | `<Einbettung url=… />` | Maps/YouTube per 2-Klick (Abschnitt 7a) |
 

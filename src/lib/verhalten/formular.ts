@@ -47,7 +47,16 @@ export function formulareStarten(): void {
       absenden.textContent = t.textSendet ?? 'Wird gesendet …';
 
       try {
-        const daten = Object.fromEntries(new FormData(form).entries());
+        /* Object.fromEntries() behält bei mehrfach vergebenem Namen nur den
+           LETZTEN Wert – bei einer Mehrfachauswahl („Welche Leistungen?")
+           käme also nur ein einziges Kreuz an. Deshalb pro Feld sammeln und
+           mit Komma verbinden; die E-Mail liest sich dann als „Reifen, Service". */
+        const formDaten = new FormData(form);
+        const daten: Record<string, string> = {};
+        for (const schluessel of new Set(formDaten.keys())) {
+          const werte = formDaten.getAll(schluessel).map((w) => String(w)).filter((w) => w !== '');
+          daten[schluessel] = werte.join(', ');
+        }
         const antwort = await fetch(form.action, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

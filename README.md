@@ -44,14 +44,14 @@ sind egal. Das wird beim Portieren umgebaut.
 ### 2 · Technisch umsetzen — *Claude Code, ~30–45 min*
 
 ```bash
-# Das Template liegt im GitHub-Konto joheki – zieht es je um, nur diese Zeile anpassen.
-npx degit joheki/kanbuk-website-template kanbuk-kunden/<kunde>
+# Das Template liegt in der GitHub-Organisation Kanbuk – zieht es je um, nur diese Zeile anpassen.
+npx degit Kanbuk/kanbuk-website-template kanbuk-kunden/<kunde>
 cd kanbuk-kunden/<kunde>
 npm install
 ```
 
 **Ohne Terminal geht es auch:** leeren Kundenordner in VS Code öffnen, Claude Code
-starten und schreiben: „Hol dir das Template von joheki/kanbuk-website-template und
+starten und schreiben: „Hol dir das Template von Kanbuk/kanbuk-website-template und
 setze dann dieses Design um: <Claude-Design-Link>" – Claude erledigt den Rest und
 stellt am Anfang einmal gebündelt die nötigen Fragen (Kundendaten, Zusätze).
 

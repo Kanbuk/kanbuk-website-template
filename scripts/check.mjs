@@ -105,11 +105,61 @@ for (const f of htmlDateien) {
   }
 }
 
-// CSS-Dateien ebenfalls prüfen
+/* CSS- UND JS-DATEIEN – bis 2026-07-27 der größte blinde Fleck.
+   Geprüft wurde fast nur das HTML. Astro lagert aber ab einer gewissen Größe
+   den allermeisten Stil in eigene .css-Dateien aus (bei einem echten Kunden-
+   design rund 80 % davon) und bündelt alles Verhalten in .js – beides war für
+   die Regeln unsichtbar. Ergebnis: Das zentrale Verkaufsargument „cookiefrei,
+   kein Tracking, keine fremden Server" war nur auf dem HTML durchgesetzt, und
+   feste Pixelbreiten fielen ausgerechnet dort nicht auf, wo die meisten davon
+   stehen. */
+const trackingMusterGlobal = /google-analytics|googletagmanager|gtag\(|fbq\(|_paq\.push|hotjar|clarity\.ms|matomo|plausible\.io|segment\.(?:io|com)|mixpanel|amplitude|tiktok.*pixel|snap.*pixel|linkedin.*insight/i;
+
 for (const f of dateien.filter((f) => extname(f) === '.css')) {
   const css = readFileSync(f, 'utf-8');
+  const name = kurz(f);
   for (const m of css.matchAll(/(?:@import\s+(?:url\()?|url\()\s*["']?(https?:\/\/[^"')]+)/gi)) {
-    fehler(`${kurz(f)}: lädt von extern -> ${m[1].slice(0, 90)}`);
+    fehler(`${name}: lädt von extern -> ${m[1].slice(0, 90)}`);
+  }
+  // Feste Breiten – hier liegt der Großteil des Stils eines echten Designs.
+  const breiten = new Set();
+  for (const m of css.matchAll(/(?<!max-)\b(?:min-)?width:\s*(\d{3,})px/gi)) {
+    if (Number(m[1]) > 400) breiten.add(m[1]);
+  }
+  if (breiten.size > 0) {
+    fehler(
+      `${name}: feste Breite(n) ${[...breiten].join('px, ')}px im ausgelieferten CSS – am Handy bricht das.\n` +
+        `    Auf die Token-Skala umstellen (CLAUDE.md Abschnitt 4) oder min()/clamp() verwenden.`,
+    );
+  }
+}
+
+for (const f of dateien.filter((f) => extname(f) === '.js')) {
+  const js = readFileSync(f, 'utf-8');
+  const name = kurz(f);
+  if (trackingMusterGlobal.test(js)) {
+    fehler(
+      `${name}: Tracking-Code im ausgelieferten JavaScript.\n` +
+        `    Tracking darf nur über content.config.ts -> dienste laufen (dann bleibt es bis zur Einwilligung geparkt).`,
+    );
+  }
+  if (/document\.cookie\s*=/.test(js)) {
+    fehler(`${name}: setzt ein Cookie im JavaScript – die Seite muss cookiefrei bleiben (sonst Banner-Pflicht).`);
+  }
+  /* Fremde Server, die erst zur Laufzeit angefragt werden. Der eigene Host und
+     bekannte Nicht-Ladeadressen (schema.org als JSON-LD-Kontext, w3.org als
+     SVG-Namensraum) sind erlaubt; Kartenlinks stehen als href im HTML, nicht hier. */
+  for (const m of js.matchAll(/["'`](https?:\/\/[^"'`\s]+)["'`]/g)) {
+    let host;
+    try { host = new URL(m[1]).host; } catch { continue; }
+    if (ERLAUBTE_HOSTS.includes(host)) continue;
+    // Google Maps taucht als Ziel der 2-Klick-Einbettung auf – die lädt erst
+    // nach ausdrücklichem Klick und ist genau dafür gebaut.
+    if (/^(www\.)?google\.[a-z.]+$/.test(host) && /maps/.test(m[1])) continue;
+    fehler(
+      `${name}: JavaScript spricht einen fremden Server an -> ${host}\n` +
+        `    Externe Requests sind verboten (DSGVO + Ladezeit). Über <Einbettung> oder dienste lösen.`,
+    );
   }
 }
 
@@ -391,6 +441,14 @@ for (const f of htmlDateien) {
       fehler(`${name}: feste Breite ${m[1]}px – am Handy bricht das. Token verwenden (siehe CLAUDE.md)`);
     }
   }
+  /* Feste Höhen sind derselbe Fehler eine Achse weiter: Ein Block mit
+     `height: 600px` schneidet seinen Inhalt ab, sobald die Schrift größer ist
+     oder der Text länger wird. `min-height` ist erlaubt (wächst mit). */
+  for (const m of html.matchAll(/(?<!max-)(?<!min-)\bheight:\s*(\d{3,})px/gi)) {
+    if (Number(m[1]) > 400) {
+      warnung(`${name}: feste Höhe ${m[1]}px – schneidet Inhalt ab, sobald der Text länger wird. min-height oder Token verwenden.`);
+    }
+  }
   // Inline-Styles mit festem padding sind ein Zeichen für ungetokenisierten Design-Code
   const inlinePadding = [...html.matchAll(/style=["'][^"']*padding:\s*(\d{2,})px/gi)];
   if (inlinePadding.length > 3) {
@@ -533,6 +591,25 @@ for (const b of bilder) {
   if (name === 'og.jpg') continue; // OG-Bild darf größer sein
   if (kb > 300) fehler(`${name}: ${Math.round(kb)} KB – zu schwer (Richtwert: max. 200 KB, Hero ~200 KB)`);
   else if (kb > 200) warnung(`${name}: ${Math.round(kb)} KB – grenzwertig`);
+}
+
+/* ALLE übrigen ausgelieferten Dateien wiegen – bisher galt die Grenze NUR für
+   Bilder. Ein 2,3-MB-PDF (Speisekarte aus dem Scan) passierte deshalb
+   unbemerkt und wurde prominent verlinkt: Wer es am Handy antippt, zieht 2,3 MB
+   über Mobilfunk. Auch Videos und Schriften gehören gewogen. */
+const SCHWER = { '.pdf': 1500, '.mp4': 3000, '.webm': 3000, '.woff2': 120, '.woff': 200, '.zip': 2000 };
+for (const f of dateien) {
+  const endung = extname(f).toLowerCase();
+  const grenze = SCHWER[endung];
+  if (!grenze) continue;
+  const kb = statSync(f).size / 1024;
+  if (kb > grenze) {
+    const mb = (kb / 1024).toFixed(1);
+    warnung(
+      `${kurz(f)}: ${mb} MB – schwer für einen Mobilfunk-Besucher (Richtwert ${(grenze / 1024).toFixed(1)} MB).\n` +
+        `    PDFs verkleinern (Bilder auf ~150 dpi) oder die Größe am Link nennen.`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -833,6 +910,19 @@ if (istLive || nurLive) {
   } else {
     warnung('STAND.md fehlt – das Lücken-Inventar dieses Projekts ist nirgends festgehalten.');
   }
+  /* Beim Live-Gang muss `domain` die ECHTE Kundendomain sein.
+     Bleibt dort die Vorschau-Adresse stehen (…kanbuk.com) oder ein Musterwert,
+     zeigen sämtliche Canonicals, die Sitemap und das Vorschaubild auf einen
+     fremden Host – die Seite bewirbt dann dauerhaft die Vorschau statt sich
+     selbst, und Google indexiert sie unter der falschen Adresse. */
+  const domain = configText.match(/domain:\s*['"]([^'"]+)['"]/)?.[1] ?? '';
+  if (/kanbuk\.com|\.vercel\.app|\.example(\/|$)/.test(domain)) {
+    fehler(
+      `content.config.ts: domain steht beim Live-Gang noch auf „${domain}".\n` +
+        `    Hier gehört die eigene Domain des Kunden hin – sonst zeigen alle Adressen im Seitenkopf auf die Vorschau.`,
+    );
+  }
+
   if (!/uid:\s*'AT[UO]\d/.test(configText)) {
     warnung('Rechtstexte: UID-Nummer sieht nicht nach einer echten österreichischen UID aus');
   }

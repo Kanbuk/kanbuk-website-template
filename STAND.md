@@ -18,7 +18,7 @@
 | **Design-Quelle** | – (Claude-Design-Link hier eintragen) |
 | **Vorschau-URL** | – |
 | **Live-Domain** | – |
-| **Motor-Stand** | 2026.7.17 *(= package.json → version; Stand des Templates beim Klonen)* |
+| **Motor-Stand** | siehe `package.json → version` *(bei jeder Änderung dort hochgezogen; ein Klon erbt den Stand seines Klon-Zeitpunkts)* |
 
 Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht → Live`
 

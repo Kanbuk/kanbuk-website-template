@@ -1,0 +1,90 @@
+---
+/**
+ * Oeffnungsstatus – MOTOR-Baustein: „Jetzt geöffnet · bis 22:00".
+ *
+ * Steht in fast jedem Design im Kopfbereich. Als fester Text ist er falsch,
+ * sobald jemand nachts auf die Seite kommt – und an einem Feiertag den ganzen
+ * Tag. Bisher baute ihn jeder Klon von Hand nach, ohne Feiertags-Logik.
+ *
+ * Rechnet in der ZEITZONE DES BETRIEBS (nicht der des Besuchers) und kennt die
+ * Sonderzeiten aus der Config. Ohne JavaScript bleibt der beim Bauen
+ * geschriebene Stand stehen – nie eine leere Fläche.
+ *
+ * Verwendung:  <Oeffnungsstatus />
+ *              <Oeffnungsstatus class="hero__status" />
+ */
+import { site } from '../../content.config';
+
+interface Props {
+  class?: string;
+  /** Zeitzone des Betriebs. Standard: Wien. */
+  zeitzone?: string;
+}
+const { class: klasse, zeitzone = 'Europe/Vienna' } = Astro.props;
+
+const TAG_NR: Record<string, number> = { Su: 0, Mo: 1, Tu: 2, We: 3, Th: 4, Fr: 5, Sa: 6 };
+
+/* Wochenfenster aus den Öffnungszeiten – nur vollständig maschinenlesbare
+   Einträge zählen (tageISO + vonISO + bisISO). Ohne die bleibt der Baustein
+   still, statt etwas zu raten. */
+const fenster = site.betrieb.oeffnungszeiten
+  .filter((o) => o.tageISO?.length && o.vonISO && o.bisISO)
+  .flatMap((o) => o.tageISO!.map((t) => ({ tag: TAG_NR[t] ?? 0, von: o.vonISO!, bis: o.bisISO! })));
+
+const sonder = (site.betrieb.sonderzeiten ?? []).map((s) => ({
+  von: s.von ?? s.datum ?? '',
+  bis: s.bis ?? s.datum ?? '',
+  zeit: s.zeit,
+  ...(s.anlass && { anlass: s.anlass }),
+  ...(s.vonISO && { vonISO: s.vonISO }),
+  ...(s.bisISO && { bisISO: s.bisISO }),
+})).filter((s) => s.von && s.bis);
+
+const texte = { offen: 'Jetzt geöffnet', geschlossen: 'Geschlossen', oeffnet: 'öffnet', heute: 'bis' };
+const plan = { zeitzone, fenster, sonder, texte };
+
+/* Stand zum BAUZEITPUNKT – damit ohne JavaScript nichts Leeres dasteht und die
+   Seite sofort etwas Sinnvolles zeigt, bevor das Skript übernimmt. */
+const jetzt = new Date();
+const teile = new Intl.DateTimeFormat('en-CA', {
+  timeZone: zeitzone, year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', weekday: 'short', hour12: false,
+}).formatToParts(jetzt);
+const hol = (t: string) => teile.find((p) => p.type === t)?.value ?? '';
+const WOCHE: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+const datumHeute = `${hol('year')}-${hol('month')}-${hol('day')}`;
+const tagHeute = WOCHE[hol('weekday')] ?? 0;
+const minutenJetzt = Number(hol('hour')) * 60 + Number(hol('minute'));
+const min = (s: string) => Number(s.split(':')[0]) * 60 + Number(s.split(':')[1] ?? 0);
+
+const sonderHeute = sonder.find((s) => datumHeute >= s.von && datumHeute <= s.bis);
+const offenJetzt = sonderHeute
+  ? !!(sonderHeute.vonISO && sonderHeute.bisISO && minutenJetzt >= min(sonderHeute.vonISO) && minutenJetzt < min(sonderHeute.bisISO))
+  : fenster.some((f) => f.tag === tagHeute && minutenJetzt >= min(f.von) && minutenJetzt < min(f.bis));
+const startText = offenJetzt ? texte.offen : texte.geschlossen;
+---
+
+{fenster.length > 0 && (
+  <span
+    class:list={['oeffnungsstatus', klasse, offenJetzt ? 'ist-offen' : 'ist-geschlossen']}
+    data-oeffnungsstatus
+    data-zeiten={JSON.stringify(plan)}
+  >{startText}</span>
+)}
+
+<style>
+  /* Nur ein Punkt als Zustandsanzeige – Farbe und Schrift macht das Design. */
+  .oeffnungsstatus {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--raum-3xs);
+  }
+  .oeffnungsstatus::before {
+    content: '';
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+</style>

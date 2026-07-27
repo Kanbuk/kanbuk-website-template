@@ -161,6 +161,40 @@ export interface Oeffnungszeit {
   bisISO?: string;
 }
 
+/**
+ * Abweichende Zeiten an einzelnen Tagen: Feiertage, Betriebsurlaub,
+ * Inventur, verkürzte Öffnung.
+ *
+ * WARUM DAS FEHLTE UND WAS ES KOSTETE: Die Öffnungszeiten kannten nur den
+ * Wochenrhythmus. Am 25. Dezember, am 1. Mai und im August-Betriebsurlaub
+ * zeigten Website UND Google-Suchergebnis die normalen Zeiten – Gäste standen
+ * vor der verschlossenen Tür. Das ist der Ärger, der als schlechte Bewertung
+ * zurückkommt, und gleichzeitig widerspricht die Website in dem Moment dem
+ * Google-Unternehmensprofil (ein Qualitätssignal, das Google mitzählt).
+ *
+ * Beispiel:
+ *   { datum: '2026-12-25', zeit: 'geschlossen', anlass: 'Weihnachten' }
+ *   { datum: '2026-12-31', zeit: '09:00–15:00', anlass: 'Silvester',
+ *     vonISO: '09:00', bisISO: '15:00' }
+ *   { von: '2026-08-01', bis: '2026-08-14', zeit: 'geschlossen',
+ *     anlass: 'Betriebsurlaub' }
+ */
+export interface Sonderzeit {
+  /** Einzelner Tag im Format JJJJ-MM-TT. Entfällt bei einem Zeitraum. */
+  datum?: string;
+  /** Beginn eines Zeitraums, JJJJ-MM-TT. */
+  von?: string;
+  /** Ende eines Zeitraums (einschließlich), JJJJ-MM-TT. */
+  bis?: string;
+  /** Sichtbarer Text, z. B. 'geschlossen' oder '09:00–15:00'. */
+  zeit: string;
+  /** Anlass für die Anzeige, z. B. 'Weihnachten', 'Betriebsurlaub'. */
+  anlass?: string;
+  /** Maschinenlesbar für Google – weglassen bedeutet geschlossen. */
+  vonISO?: string;
+  bisISO?: string;
+}
+
 export interface SocialLink {
   plattform: 'instagram' | 'facebook' | 'tiktok' | 'youtube' | 'linkedin' | 'whatsapp' | 'website';
   url: string;
@@ -187,6 +221,13 @@ export interface Betrieb {
   email: string;
   adresse: Adresse;
   oeffnungszeiten: Oeffnungszeit[];
+  /**
+   * Abweichungen vom Wochenrhythmus (Feiertage, Betriebsurlaub).
+   * Werden auf der Seite hervorgehoben und an Google gemeldet.
+   * Vergangene Einträge meldet das Prüf-Tor beim Live-Gang – so bleibt die
+   * Liste gepflegt statt jahrelang alte Feiertage zu tragen.
+   */
+  sonderzeiten?: Sonderzeit[];
   socialLinks: SocialLink[];
   /** Dateiname in fotos/. */
   logo?: string;
@@ -196,7 +237,34 @@ export interface Betrieb {
 //  Formulare – ein Motor, beliebig viele Formulare
 // ---------------------------------------------------------------------------
 
-export type FeldTyp = 'text' | 'email' | 'tel' | 'textarea' | 'datum' | 'zeit' | 'zahl' | 'auswahl';
+/**
+ * Feldtypen des Formular-Motors.
+ *
+ * 'haekchen' und 'mehrfach' kamen 2026-07-27 dazu: Ohne sie liess sich weder
+ * eine Datenschutz-Zustimmung noch eine Mehrfachauswahl abbilden (Handwerk:
+ * „Welche Leistungen?", KFZ: „Was soll gemacht werden?").
+ *
+ * BEWUSST NICHT DABEI – Datei-Upload: Der Motor ist rein statisch und hat
+ * keinen Speicher. Ein Foto müsste auf einen fremden Dienst hochgeladen
+ * werden (Speicher, Kosten, Auftragsverarbeitung, Virenprüfung, Missbrauchs-
+ * risiko) – das ist ein eigener Ausbauschritt, kein Feldtyp. Der bewährte
+ * Weg ohne Neubau: ein Hinweis am Formular „Fotos gerne per WhatsApp an
+ * <Nummer>" oder ein 'text'-Feld für einen Link. Für Handwerk und KFZ ist
+ * das in der Praxis sogar schneller als ein Upload-Feld.
+ */
+export type FeldTyp =
+  | 'text'
+  | 'email'
+  | 'tel'
+  | 'textarea'
+  | 'datum'
+  | 'zeit'
+  | 'zahl'
+  | 'auswahl'
+  /** Einzelnes Ankreuzfeld, z. B. Zustimmung zur Datenschutzerklärung. */
+  | 'haekchen'
+  /** Mehrere Ankreuzfelder aus `optionen` – Mehrfachauswahl. */
+  | 'mehrfach';
 
 export interface FormularFeld {
   /** Feldname, landet so in der E-Mail. */
@@ -208,6 +276,12 @@ export interface FormularFeld {
   optionen?: string[];
   /** Browser-Autovervollständigung, z. B. 'name', 'email', 'tel'. */
   autocomplete?: string;
+  /**
+   * Frühestes erlaubtes Datum bei typ 'datum'.
+   * 'heute' setzt beim Bauen das aktuelle Datum – verhindert Terminanfragen
+   * für gestern (der häufigste Unsinn in Reservierungsformularen).
+   */
+  minDatum?: 'heute' | string;
   /** Platzhalter im Feld. */
   platzhalter?: string;
   /** Nur für typ 'zahl'. */

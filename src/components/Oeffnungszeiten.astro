@@ -1,0 +1,107 @@
+---
+/**
+ * Oeffnungszeiten – MOTOR-Baustein: die Wochenzeiten plus die Abweichungen,
+ * die sonst niemand mitbekommt (Feiertage, Betriebsurlaub).
+ *
+ * WARUM ES DEN BAUSTEIN GIBT: Die Zeiten standen in jedem Klon von Hand im
+ * Design-Markup. Feiertage und Betriebsurlaub waren gar nicht abbildbar – am
+ * 25. Dezember zeigten Website und Google die normalen Zeiten, und der Gast
+ * stand vor der Tür. Genau der Ärger, der als Bewertung zurückkommt.
+ *
+ * Zeigt automatisch nur BEVORSTEHENDE Abweichungen (Stand: Bauzeitpunkt) –
+ * alte Feiertage verschwinden beim nächsten Build von selbst.
+ *
+ * Verwendung:  <Oeffnungszeiten />
+ *              <Oeffnungszeiten class="…" />   (Design malt an)
+ */
+import { site } from '../../content.config';
+
+interface Props {
+  class?: string;
+  /** Abweichungen ausblenden (z. B. wenn sie an anderer Stelle stehen). */
+  ohneSonderzeiten?: boolean;
+}
+const { class: klasse, ohneSonderzeiten = false } = Astro.props;
+
+const heute = new Date();
+const kommende = (site.betrieb.sonderzeiten ?? [])
+  .filter((s) => {
+    const ende = s.bis ?? s.datum;
+    return ende ? new Date(`${ende}T23:59:59`) >= heute : false;
+  })
+  .sort((a, b) => (a.von ?? a.datum ?? '').localeCompare(b.von ?? b.datum ?? ''));
+
+/** '2026-12-25' -> '25. Dezember'; Zeiträume als '1.–14. August'. */
+const MONATE = ['Jänner', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+function lesbar(s: { datum?: string; von?: string; bis?: string }): string {
+  const teile = (d: string) => {
+    const [, m, t] = d.split('-');
+    return { tag: Number(t), monat: MONATE[Number(m) - 1] };
+  };
+  if (s.datum) {
+    const d = teile(s.datum);
+    return `${d.tag}. ${d.monat}`;
+  }
+  if (s.von && s.bis) {
+    const a = teile(s.von);
+    const b = teile(s.bis);
+    return a.monat === b.monat ? `${a.tag}.–${b.tag}. ${b.monat}` : `${a.tag}. ${a.monat} – ${b.tag}. ${b.monat}`;
+  }
+  return s.von ?? s.bis ?? '';
+}
+---
+
+<div class:list={['zeiten', klasse]}>
+  <ul class="zeiten__liste">
+    {site.betrieb.oeffnungszeiten.map((o) => (
+      <li class="zeiten__zeile">
+        <span class="zeiten__tag">{o.tag}</span>
+        <span class="zeiten__zeit">{o.zeit}</span>
+      </li>
+    ))}
+  </ul>
+
+  {!ohneSonderzeiten && kommende.length > 0 && (
+    <div class="zeiten__abweichung">
+      <p class="zeiten__abweichung-titel">Abweichende Zeiten</p>
+      <ul class="zeiten__liste">
+        {kommende.map((s) => (
+          <li class="zeiten__zeile">
+            <span class="zeiten__tag">
+              {lesbar(s)}
+              {s.anlass && <span class="zeiten__anlass"> · {s.anlass}</span>}
+            </span>
+            <span class="zeiten__zeit">{s.zeit}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
+
+<style>
+  /* Nur Struktur – Farben, Schrift und Abstände bestimmt das Design. */
+  .zeiten__liste {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--raum-3xs);
+  }
+  .zeiten__zeile {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--raum-2xs) var(--raum-s);
+  }
+  .zeiten__zeit {
+    white-space: nowrap;
+  }
+  .zeiten__abweichung {
+    margin-top: var(--raum-s);
+  }
+  .zeiten__abweichung-titel {
+    font-weight: 700;
+    margin-bottom: var(--raum-3xs);
+  }
+</style>

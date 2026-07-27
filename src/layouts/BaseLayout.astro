@@ -112,6 +112,31 @@ const schriftenVorladen = (() => {
 })();
 
 /**
+ * Feiertage und Betriebsurlaub für Google
+ * (schema.org `specialOpeningHoursSpecification`).
+ *
+ * Ohne diese Angabe zeigt Google an Feiertagen die normalen Wochenzeiten – der
+ * Gast steht vor der verschlossenen Tür, und die Website widerspricht dem
+ * Google-Unternehmensprofil. Vergangene Einträge werden übersprungen, damit
+ * keine alten Feiertage mitgeschleppt werden.
+ */
+const sonderzeitenLd = (site.betrieb.sonderzeiten ?? [])
+  .filter((s) => {
+    const ende = s.bis ?? s.datum;
+    if (!ende) return false;
+    // Nur Einträge, die heute noch bevorstehen oder laufen.
+    return new Date(`${ende}T23:59:59`) >= new Date();
+  })
+  .map((s) => ({
+    '@type': 'OpeningHoursSpecification',
+    validFrom: s.von ?? s.datum,
+    validThrough: s.bis ?? s.datum,
+    // Ohne Uhrzeiten heißt das für Google: an diesem Tag geschlossen.
+    opens: s.vonISO ?? '00:00',
+    closes: s.bisISO ?? '00:00',
+  }));
+
+/**
  * Speisekarte / Preisliste für Google (schema.org `hasMenu`).
  *
  * Die Daten liegen ohnehin strukturiert in der Config – daraus entsteht ohne
@@ -192,6 +217,7 @@ const jsonLd = {
     addressCountry: site.betrieb.adresse.land ?? 'AT',
   },
   ...(oeffnungszeitenLd.length > 0 && { openingHoursSpecification: oeffnungszeitenLd }),
+  ...(sonderzeitenLd.length > 0 && { specialOpeningHoursSpecification: sonderzeitenLd }),
   ...(site.betrieb.socialLinks.length > 0 && {
     sameAs: site.betrieb.socialLinks.map((s) => s.url),
   }),

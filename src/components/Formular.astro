@@ -71,6 +71,22 @@ const istDemo = site.mode === 'demo';
             <option value="">Bitte wählen</option>
             {(f.optionen ?? []).map((o) => <option value={o}>{o}</option>)}
           </select>
+        ) : f.typ === 'haekchen' ? (
+          /* Einzelnes Ankreuzfeld – typisch die Datenschutz-Zustimmung.
+             Der Wert landet als „ja"/„–" in der E-Mail. */
+          <input type="checkbox" name={f.name} value="ja" required={f.pflicht} class="formular__haekchen" />
+        ) : f.typ === 'mehrfach' ? (
+          /* Mehrfachauswahl: mehrere Kästchen mit demselben Feldnamen.
+             Der Browser sendet sie als wiederholten Schlüssel; der
+             Formular-Baustein fasst sie zu „A, B" zusammen. */
+          <span class="formular__mehrfach" role="group" aria-label={f.label}>
+            {(f.optionen ?? []).map((o) => (
+              <label class="formular__mehrfach-option">
+                <input type="checkbox" name={f.name} value={o} />
+                <span>{o}</span>
+              </label>
+            ))}
+          </span>
         ) : (
           <input
             type={
@@ -83,7 +99,7 @@ const istDemo = site.mode === 'demo';
             required={f.pflicht}
             autocomplete={f.autocomplete}
             placeholder={f.platzhalter}
-            min={f.min}
+            min={f.typ === 'datum' && f.minDatum === 'heute' ? new Date().toISOString().slice(0, 10) : (f.minDatum ?? f.min)}
             max={f.max}
           />
         )}

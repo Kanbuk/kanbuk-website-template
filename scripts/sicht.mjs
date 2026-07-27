@@ -178,6 +178,81 @@ for (const seite of seiten) {
         });
     });
 
+    /* 1c) KONTRAST UND SCHRIFTGRÖSSE AM ECHTEN TEXT.
+       Das Prüf-Tor rechnet den Kontrast nur an zwei Farbwerten aus der Config
+       aus (Text auf Hintergrund) – was tatsächlich auf der Seite steht, sah
+       bisher niemand. Genau dort entstehen die Verstöße: gedämpfte Farben auf
+       Sonderflächen, Pflichtangaben in 9 px, blasse Fußzeilen. Gemessen wird
+       hier der GERENDERTE Zustand, inklusive geerbter Farben und Deckkraft.
+       Nur sichtbarer Text mit echtem Inhalt zählt. */
+    const lesbarkeit = await page.evaluate(() => {
+      const zuRgb = (s) => {
+        const m = s.match(/[\d.]+/g);
+        if (!m) return null;
+        return { r: +m[0], g: +m[1], b: +m[2], a: m[3] === undefined ? 1 : +m[3] };
+      };
+      const kanal = (c) => {
+        const s = c / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      };
+      const leucht = ({ r, g, b }) => 0.2126 * kanal(r) + 0.7152 * kanal(g) + 0.0722 * kanal(b);
+      const mischen = (vorn, hinten) => ({
+        r: vorn.r * vorn.a + hinten.r * (1 - vorn.a),
+        g: vorn.g * vorn.a + hinten.g * (1 - vorn.a),
+        b: vorn.b * vorn.a + hinten.b * (1 - vorn.a),
+        a: 1,
+      });
+      /** Erste undurchsichtige Hintergrundfarbe von unten nach oben. */
+      const hintergrundVon = (el) => {
+        let k = el;
+        while (k && k !== document.documentElement) {
+          const f = zuRgb(getComputedStyle(k).backgroundColor);
+          if (f && f.a === 1) return f;
+          k = k.parentElement;
+        }
+        return { r: 255, g: 255, b: 255, a: 1 };
+      };
+
+      const funde = [];
+      const zuKlein = [];
+      const gesehen = new Set();
+      for (const el of document.querySelectorAll('p,li,a,span,td,th,h1,h2,h3,h4,h5,h6,label,button,figcaption,address,dd,dt,small,sup')) {
+        const text = (el.textContent ?? '').trim();
+        if (!text || text.length < 2) continue;
+        // Nur Elemente mit EIGENEM Text (sonst zählt jeder Container mehrfach).
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        const st = getComputedStyle(el);
+        if (st.visibility === 'hidden' || st.display === 'none' || +st.opacity === 0) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2) continue;
+
+        const px = parseFloat(st.fontSize);
+        const kennung = `${el.tagName}.${el.className}`.slice(0, 48);
+        // Text unter 12px ist auf einem Handy kaum lesbar – Pflichtangaben
+        // (Allergene, Preise, Rechtshinweise) landen dort besonders gern.
+        if (px < 12 && !zuKlein.some((z) => z.startsWith(kennung))) {
+          zuKlein.push(`${kennung}: ${px.toFixed(1)}px – „${text.slice(0, 30)}"`);
+        }
+
+        const vorn = zuRgb(st.color);
+        if (!vorn) continue;
+        const deckkraft = parseFloat(st.opacity);
+        const effektiv = mischen({ ...vorn, a: vorn.a * (Number.isFinite(deckkraft) ? deckkraft : 1) }, hintergrundVon(el));
+        const hinten = hintergrundVon(el);
+        const l1 = leucht(effektiv);
+        const l2 = leucht(hinten);
+        const v = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+        // WCAG AA: 4,5:1 normal, 3:1 für großen (>=24px) oder fetten (>=18.66px) Text.
+        const gross = px >= 24 || (px >= 18.66 && +st.fontWeight >= 700);
+        const noetig = gross ? 3 : 4.5;
+        if (v < noetig && !gesehen.has(kennung)) {
+          gesehen.add(kennung);
+          funde.push(`${kennung}: ${v.toFixed(2)}:1 bei ${px.toFixed(0)}px (nötig ${noetig}) – „${text.slice(0, 30)}"`);
+        }
+      }
+      return { kontrast: funde.slice(0, 6), zuKlein: zuKlein.slice(0, 4) };
+    });
+
     const name = `${(seite === '/' ? 'start' : seite.replace(/^\//, '').replace(/\//g, '-'))}-${breite}px.png`;
     await page.screenshot({ path: join(ZIEL, name), fullPage: true });
 
@@ -211,6 +286,16 @@ for (const seite of seiten) {
     for (const f of [...new Set(jsFehler)]) probleme.push(`${kennung}: JS-Fehler -> ${f.slice(0, 140)}`);
     for (const k of [...new Set(kaputt)]) probleme.push(`${kennung}: lädt nicht -> ${k.slice(0, 140)}`);
     for (const m of matschig) probleme.push(`${kennung}: VERPIXELT (hochskaliert) -> ${m}\n      Abhilfe: widths der <Image> bis zur echten Anzeigebreite erweitern.`);
+    for (const k of lesbarkeit.kontrast) {
+      probleme.push(
+        `${kennung}: KONTRAST ZU SCHWACH -> ${k}\n      Farbe aufhellen/abdunkeln (content.config.ts -> design.farben) oder eine kräftigere Textstufe verwenden.`,
+      );
+    }
+    for (const z of lesbarkeit.zuKlein) {
+      probleme.push(
+        `${kennung}: SCHRIFT ZU KLEIN -> ${z}\n      Mindestens 12px; Pflichtangaben (Allergene, Preise, Rechtshinweise) besser 13–14px.`,
+      );
+    }
     if (lcp?.lazy) {
       probleme.push(
         `${kennung}: GRÖSSTES BILD LÄDT VERZÖGERT -> ${lcp.datei} (LCP nach ${lcp.zeit} ms)\n` +
@@ -219,7 +304,7 @@ for (const seite of seiten) {
       );
     }
 
-    console.log(`  ${ueberlauf || jsFehler.length || kaputt.length || matschig.length || lcp?.lazy ? '✗' : '✓'} ${kennung}  → pruefung/${name}`);
+    console.log(`  ${ueberlauf || jsFehler.length || kaputt.length || matschig.length || lcp?.lazy || lesbarkeit.kontrast.length || lesbarkeit.zuKlein.length ? '✗' : '✓'} ${kennung}  → pruefung/${name}`);
     await kontext.close();
   }
 }

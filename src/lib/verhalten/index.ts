@@ -27,6 +27,7 @@ import { vergleichStarten } from './vergleich';
 import { formulareStarten } from './formular';
 import { einwilligungStarten } from './einwilligung';
 import { einbettungStarten } from './einbettung';
+import { oeffnungsstatusStarten } from './oeffnungsstatus';
 
 export { bewegungReduziert } from './hilfen';
 export { erlaubt, beiFreigabe, widerrufen } from './einwilligung';
@@ -46,4 +47,5 @@ export function verhaltenStarten(): void {
   mobilmenueStarten();
   vergleichStarten();
   formulareStarten();
+  oeffnungsstatusStarten();
 }
