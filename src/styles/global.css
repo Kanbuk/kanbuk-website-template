@@ -247,3 +247,67 @@ a {
     transform: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   DRUCKANSICHT
+   Gastro-Alltag: Der Wirt druckt die Karte für den Aushang, ein Gast speichert
+   sie als PDF. Bis 2026-07-27 bekamen beide 21 von 178 Positionen – der Rest
+   steckte in zugeklappten Reitern – und dazu Navigation, Fußzeile und
+   Kanbuk-Leiste. Beim Drucken wird deshalb ALLES aufgeklappt und alles
+   weggelassen, was auf Papier nichts verloren hat.
+   --------------------------------------------------------------------------- */
+@media print {
+  /* Bedienelemente und Beiwerk gehören nicht aufs Papier. */
+  .demobar,
+  .navi,
+  .navi-schalter,
+  .skip-link,
+  [data-einwilligung-banner],
+  .einbettung,
+  .signatur {
+    display: none !important;
+  }
+
+  /* Zugeklappte Reiter und Akkordeons vollständig zeigen – sonst druckt man
+     einen Bruchteil des Inhalts, ohne es zu merken. */
+  [data-tabpanel][hidden] {
+    display: block !important;
+  }
+  details:not([open]) > *:not(summary) {
+    display: revert !important;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Papier ist weiß – dunkle Designs würden sonst die Patrone leeren und
+     hellen Text unsichtbar machen. */
+  :root {
+    --farbe-hintergrund: #ffffff;
+    --farbe-text: #111111;
+    --farbe-flaeche: #ffffff;
+    --farbe-karte: #ffffff;
+    --farbe-fuss: #ffffff;
+  }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  /* Überschriften nicht allein am Seitenende zurücklassen. */
+  h1, h2, h3 {
+    break-after: avoid;
+  }
+  /* Ein Gericht oder ein Absatz soll nicht mitten durchgeschnitten werden. */
+  li, tr, figure {
+    break-inside: avoid;
+  }
+
+  /* Wohin ein Link führt, sieht man auf Papier sonst nie. */
+  a[href^="http"]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+}

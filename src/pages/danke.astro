@@ -1,0 +1,87 @@
+---
+/**
+ * Danke-Seite – das Ziel nach einer abgesendeten Anfrage OHNE JavaScript.
+ *
+ * WARUM ES SIE GIBT: Der Browser verlässt beim normalen Absenden die Seite und
+ * erwartet eine neue. Bis 2026-07-27 bekam er stattdessen eine rohe Datenzeile
+ * zu sehen – der Interessent sah eine nackte Zeile Text, kam nicht zurück, und
+ * die Anfrage wirkte gescheitert. Das trifft nicht nur die wenigen Besucher
+ * ohne JavaScript: Sobald das Skript aus irgendeinem Grund nicht lädt, sind
+ * ALLE betroffen.
+ *
+ * Mit JavaScript wird diese Seite nie aufgerufen – dort bleibt der Besucher auf
+ * dem Formular und sieht die Erfolgsmeldung an Ort und Stelle.
+ *
+ * Wird bewusst NICHT indexiert: Eine Danke-Seite in den Suchergebnissen ist für
+ * niemanden nützlich und würde ohne Zusammenhang angezeigt.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/danke"
+  titel="Danke für Ihre Nachricht"
+  beschreibung={`Ihre Anfrage an ${site.betrieb.name} ist eingegangen. Wir melden uns so bald wie möglich.`}
+  noindex
+>
+  <Kopf aktuell="/danke" />
+  <main id="inhalt" class="danke">
+    <div class="container container--schmal">
+      {/* Der Fehlerfall wird per Skript aus der Adresszeile geholt – ohne
+          Skript bleibt die Erfolgsmeldung stehen. Beides ist besser als eine
+          rohe Datenzeile, und der Besucher hat immer einen Weg zurück. */}
+      <h1 class="danke__titel">{duzen ? 'Danke für deine Nachricht!' : 'Vielen Dank für Ihre Nachricht!'}</h1>
+      <p class="danke__text" data-danke-text>
+        {duzen
+          ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
+          : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.'}
+      </p>
+      <p class="danke__text">
+        {duzen ? 'Du erreichst uns auch direkt:' : 'Sie erreichen uns auch direkt:'}{' '}
+        {site.mode === 'live' ? (
+          <a href={`tel:${site.betrieb.telefon.replace(/[^+0-9]/g, '')}`}>{site.betrieb.telefon}</a>
+        ) : (
+          <span>{site.betrieb.telefon}</span>
+        )}
+        {' · '}
+        <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
+      </p>
+      <p><a class="danke__zurueck" href="/">← {duzen ? 'Zurück zur Startseite' : 'Zurück zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<script>
+  // Kam die Weiterleitung mit einem Fehler, ehrlich benennen statt zu danken.
+  const fehler = new URLSearchParams(location.search).get('fehler');
+  if (fehler) {
+    const titel = document.querySelector('.danke__titel');
+    const text = document.querySelector('[data-danke-text]');
+    if (titel) titel.textContent = 'Das hat leider nicht geklappt';
+    if (text) text.textContent = `${fehler} Bitte versuchen Sie es erneut oder rufen Sie uns an.`;
+  }
+</script>
+
+<style>
+  .danke {
+    padding-block: var(--raum-2xl);
+  }
+  .danke__titel {
+    font-size: var(--schrift-2xl);
+    margin-bottom: var(--raum-s);
+  }
+  .danke__text {
+    margin-bottom: var(--raum-s);
+  }
+  .danke__zurueck {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+</style>

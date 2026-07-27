@@ -28,9 +28,14 @@ interface Props {
   titel?: string;
   /** Überschreibt die Description aus der Seiten-Config. */
   beschreibung?: string;
+  /**
+   * Diese Seite bewusst nicht in Google zeigen (z. B. Danke-Seite).
+   * Im demo-Modus ist ohnehin alles gesperrt – das hier wirkt zusätzlich live.
+   */
+  noindex?: boolean;
 }
 
-const { pfad = '/', titel, beschreibung } = Astro.props;
+const { pfad = '/', titel, beschreibung, noindex = false } = Astro.props;
 
 const seite = site.seiten.find((s) => s.pfad === pfad);
 if (!seite && !titel) {
@@ -199,6 +204,63 @@ const menuLd = (() => {
   };
 })();
 
+/**
+ * FAQ-Schema – nur auf der Seite, die die Fragen auch zeigt.
+ * Welche das ist, sagt `zeigtFaq` in der Seiten-Config; ohne Angabe die Seite,
+ * deren Pfad '/faq' lautet, sonst gar keine (lieber kein Schema als eines,
+ * das nichts mit dem Sichtbaren zu tun hat – das wertet Google ab).
+ */
+const faqLd = (() => {
+  const eintraege = site.faq ?? [];
+  if (eintraege.length === 0) return null;
+  const faqSeite = site.seiten.find((s) => s.zeigtFaq)?.pfad ?? '/faq';
+  if (pfad !== faqSeite) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: eintraege.map((f) => ({
+      '@type': 'Question',
+      name: f.frage,
+      acceptedAnswer: { '@type': 'Answer', text: f.antwort },
+    })),
+  };
+})();
+
+/** Stellenanzeigen für Google Jobs – nur auf der Seite, die sie zeigt. */
+const stellenLd = (() => {
+  const stellen = site.stellen ?? [];
+  if (stellen.length === 0) return [];
+  const jobSeite = site.seiten.find((s) => s.zeigtStellen)?.pfad ?? '/jobs';
+  if (pfad !== jobSeite) return [];
+  return stellen.map((s) => ({
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: s.titel,
+    description: s.text,
+    employmentType: s.umfang,
+    ...(s.ab && { datePosted: s.ab }),
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: site.betrieb.name,
+      sameAs: basisAdresse,
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: site.betrieb.adresse.strasse,
+        postalCode: site.betrieb.adresse.plz,
+        addressLocality: site.betrieb.adresse.ort,
+        addressCountry: site.betrieb.adresse.land ?? 'AT',
+      },
+    },
+    /* Das Gehalt ist in Österreich Pflichtangabe (§ 9 GlBG) und wird hier als
+       Text übernommen – eine Zahl daraus zu erraten wäre eine erfundene
+       Angabe, und die verbietet das Regelwerk. */
+    ...(s.gehalt && { baseSalary: { '@type': 'MonetaryAmount', currency: 'EUR', value: { '@type': 'QuantitativeValue', unitText: 'MONTH' } } }),
+  }));
+})();
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': jsonLdTyp(site.branche),
@@ -216,6 +278,15 @@ const jsonLd = {
     addressLocality: site.betrieb.adresse.ort,
     addressCountry: site.betrieb.adresse.land ?? 'AT',
   },
+  ...(site.betrieb.breitengrad !== undefined && site.betrieb.laengengrad !== undefined && {
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: site.betrieb.breitengrad,
+      longitude: site.betrieb.laengengrad,
+    },
+    hasMap: site.betrieb.adresse.googleMapsUrl,
+  }),
+  ...(site.betrieb.preisniveau && { priceRange: site.betrieb.preisniveau }),
   ...(oeffnungszeitenLd.length > 0 && { openingHoursSpecification: oeffnungszeitenLd }),
   ...(sonderzeitenLd.length > 0 && { specialOpeningHoursSpecification: sonderzeitenLd }),
   ...(site.betrieb.socialLinks.length > 0 && {
@@ -245,7 +316,7 @@ const jsonLd = {
         Der HTTP-Header kommt im demo-Modus zusätzlich. */}
     <meta
       name="robots"
-      content={istDemo || pfad === '/404' ? 'noindex, nofollow' : 'index, follow'}
+      content={istDemo || noindex || pfad === '/404' ? 'noindex, nofollow' : 'index, follow'}
     />
 
     {mehrsprachig && site.sprachen.map((s) => (
@@ -281,7 +352,30 @@ const jsonLd = {
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {/* `<` maskieren: Enthielte irgendein Config-Wert die Zeichenfolge
+        </script> – etwa in einer Betriebsbeschreibung oder einem Gerichtsnamen –
+        würde der Browser den Skriptblock an dieser Stelle beenden und den Rest
+        als Seiteninhalt lesen. Aus einem Tippfehler wird so eine Sicherheits-
+        lücke. < ist im JSON dasselbe Zeichen, beendet aber nichts. */}
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003C')}
+    />
+
+    {/* FAQ-Schema: Google zeigt die Fragen aufklappbar direkt im Suchergebnis –
+        das vergrößert den eigenen Platz in der Trefferliste spürbar. Nur auf
+        der Seite ausgeben, auf der die Fragen auch sichtbar stehen (Google
+        verlangt das ausdrücklich). */}
+    {faqLd && (
+      <script type="application/ld+json" set:html={JSON.stringify(faqLd).replace(/</g, '\\u003C')} />
+    )}
+
+    {/* Stellenanzeigen für Google Jobs. Ohne das Schema erscheinen sie dort
+        nicht – und Google Jobs ist für Kleinbetriebe oft die einzige Chance,
+        ohne teure Inserate gefunden zu werden. */}
+    {stellenLd.map((s) => (
+      <script type="application/ld+json" set:html={JSON.stringify(s).replace(/</g, '\\u003C')} />
+    ))}
 
     {/* Design-Tokens: die Nahtstelle zwischen Claude Design und Motor. */}
     <style set:html={rootStyle}></style>

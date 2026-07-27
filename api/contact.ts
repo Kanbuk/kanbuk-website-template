@@ -81,11 +81,20 @@ function antwort(status: number, json: Record<string, unknown>): Response {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  // 1) Nur echtes JSON. Ohne diese Prüfung geht der Weg über 'text/plain' –
-  //    den behandeln Browser als „einfache Anfrage" ganz ohne Vorab-Nachfrage,
-  //    weshalb jede fremde Seite den Endpunkt direkt ansprechen konnte.
-  const typ = request.headers.get('content-type') ?? '';
-  if (!typ.toLowerCase().includes('application/json')) {
+  /* 1) Zwei erlaubte Formate – und nur diese zwei:
+       - application/json          … der normale Weg (JavaScript im Browser)
+       - x-www-form-urlencoded     … der Weg OHNE JavaScript. Ein Browser ohne
+         laufendes Skript sendet das Formular ganz normal ab; bis 2026-07-27
+         endete das in einer rohen Fehlermeldung und die Anfrage war weg.
+         Das trifft nicht nur die wenigen Besucher ohne JS: Sobald das
+         Skript-Modul aus irgendeinem Grund nicht lädt, sind ALLE betroffen.
+       'text/plain' bleibt gesperrt – dieses Format behandeln Browser als
+       „einfache Anfrage" ohne Vorab-Nachfrage, weshalb darüber jede fremde
+       Seite den Endpunkt direkt ansprechen konnte. */
+  const typ = (request.headers.get('content-type') ?? '').toLowerCase();
+  const istJson = typ.includes('application/json');
+  const istFormular = typ.includes('application/x-www-form-urlencoded');
+  if (!istJson && !istFormular) {
     return antwort(415, { fehler: 'Ungültiges Format.' });
   }
 
@@ -114,16 +123,36 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   let daten: Eingabe = {};
-  try {
-    daten = JSON.parse(roh) as Eingabe;
-  } catch {
-    daten = {};
+  if (istFormular) {
+    // Mehrfach vergebene Namen (Mehrfachauswahl) zusammenfassen – wie im Skript.
+    const felder = new URLSearchParams(roh);
+    for (const schluessel of new Set(felder.keys())) {
+      daten[schluessel] = felder.getAll(schluessel).filter(Boolean).join(', ');
+    }
+  } else {
+    try {
+      daten = JSON.parse(roh) as Eingabe;
+    } catch {
+      daten = {};
+    }
   }
 
   const { status, json } = await verarbeiteKontakt(daten, {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     CONTACT_FROM: process.env.CONTACT_FROM,
   });
+
+  /* Ohne JavaScript hat der Browser gerade die Seite verlassen – er erwartet
+     eine SEITE zurück, keine Datenzeile. Also auf die Danke-Seite umleiten
+     (bzw. mit Fehlermeldung zurück). 303 ist hier richtig: Der Browser holt
+     das Ziel danach per GET, ein Neuladen schickt das Formular nicht erneut. */
+  if (istFormular) {
+    const ok = status === 200;
+    const ziel = ok
+      ? '/danke'
+      : `/danke?fehler=${encodeURIComponent(String(json.fehler ?? 'Unbekannter Fehler'))}`;
+    return new Response(null, { status: 303, headers: { Location: ziel } });
+  }
 
   return antwort(status, json);
 }

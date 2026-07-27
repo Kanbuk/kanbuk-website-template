@@ -46,6 +46,13 @@ function auslieferungsRegeln() {
   const sicherheit = [
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+    /* Kein Fremder darf die Seite in einen Rahmen setzen. Ohne diese Zeile
+       kann jede beliebige Website die Kundenseite einbetten und darüber ein
+       eigenes Bedienelement legen (Clickjacking) – oder sie schlicht als
+       eigene ausgeben. `frame-ancestors` ist der moderne Weg,
+       X-Frame-Options die Rückfallebene für ältere Browser. */
+    { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+    { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
     {
       key: 'Permissions-Policy',
       value: 'geolocation=(), camera=(), microphone=(), interest-cohort=()',

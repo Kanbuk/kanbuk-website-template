@@ -108,10 +108,61 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     });
 
     if (!antwort.ok) {
+      /* Der genaue Grund gehört ins Server-Protokoll, nicht zum Besucher –
+         aber er muss irgendwo stehen. Ohne diese Zeile scheiterte der Versand
+         VOLLSTÄNDIG STILL: falscher Absender, abgelaufener Schlüssel oder ein
+         Resend-Ausfall führten dazu, dass jede Anfrage im Nichts endete und
+         niemand es merkte (der Betrieb wundert sich nur, dass keine Anfragen
+         kommen). Im Vercel-Protokoll ist die Zeile jetzt auffindbar. */
+      console.error('[kontakt] Resend hat abgelehnt:', antwort.status, await antwort.text().catch(() => ''));
       return { status: 502, json: { fehler: 'Die Nachricht konnte gerade nicht gesendet werden.' } };
     }
+
+    /* Bestätigung an den ABSENDER – nur wenn eine E-Mail-Adresse vorliegt.
+       Ohne sie hat der Gast nach einer Reservierungsanfrage nichts in der
+       Hand: kein Beleg, keine Zusammenfassung, keine Nummer für Rückfragen.
+       Genau daraus entstehen die Nachtelefonate, die das Formular sparen
+       sollte. Ein Fehlschlag hier darf die Hauptmeldung NICHT gefährden –
+       die ist beim Betrieb ja bereits angekommen. */
+    if (antwortAdresse) {
+      const duzen = site.ansprache === 'du';
+      const bestaetigung = [
+        duzen ? 'Danke für deine Nachricht!' : 'Vielen Dank für Ihre Nachricht!',
+        '',
+        duzen
+          ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
+          : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.',
+        '',
+        duzen ? 'Deine Angaben zur Übersicht:' : 'Ihre Angaben zur Übersicht:',
+        ...zeilen.slice(2),
+        '',
+        `${site.betrieb.name}`,
+        `${site.betrieb.adresse.strasse}, ${site.betrieb.adresse.plz} ${site.betrieb.adresse.ort}`,
+        site.betrieb.telefon,
+      ];
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: env.CONTACT_FROM,
+            to: [antwortAdresse],
+            reply_to: site.betrieb.email,
+            subject: `${formular.betreff} – ${site.betrieb.name}`,
+            text: bestaetigung.join('\n'),
+          }),
+        });
+      } catch (e) {
+        console.error('[kontakt] Bestätigung an den Absender fehlgeschlagen:', e);
+      }
+    }
+
     return { status: 200, json: { ok: true } };
-  } catch {
+  } catch (e) {
+    console.error('[kontakt] Versand fehlgeschlagen:', e);
     return { status: 502, json: { fehler: 'Die Nachricht konnte gerade nicht gesendet werden.' } };
   }
 }

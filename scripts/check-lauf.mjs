@@ -74,6 +74,29 @@ const marke = quellMarke();
 const alteMarke = existsSync(MARKE) ? JSON.parse(readFileSync(MARKE, 'utf-8')).marke : null;
 
 if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html'))) {
+  /* Typprüfung VOR dem Bauen – aber NUR, wenn das Werkzeug schon da ist.
+     WARUM ÜBERHAUPT: Astro entfernt Typen beim Bauen. Ein falsch geschriebener
+     Feldname bricht deshalb erst zur Laufzeit ab – und wenn er in einem
+     optionalen Ausdruck steht (`site.betrieb?.nam`), rendert die Stelle still
+     LEER und niemand merkt es.
+     WARUM BEDINGT: `astro check` braucht @astrojs/check + typescript und
+     FRAGT INTERAKTIV nach, wenn sie fehlen. Ein solcher Dialog mitten in der
+     Prüfkette würde den Ein-Rutsch-Ablauf einfrieren – schlimmer als die
+     fehlende Prüfung. Wer sie will: `npm i -D @astrojs/check typescript`,
+     danach läuft sie automatisch mit. */
+  const typenDa = existsSync(join(WURZEL, 'node_modules', '@astrojs', 'check'));
+  if (typenDa) {
+    const typen = spawnSync('npx astro check --minimumSeverity error', {
+      stdio: 'inherit',
+      shell: true,
+    });
+    if (typen.status !== 0 && typen.status !== null) {
+      console.error('\n✗ Typprüfung fehlgeschlagen – bitte die gemeldeten Stellen beheben.');
+      process.exit(typen.status);
+    }
+  } else {
+    console.log('↷ Typprüfung übersprungen (npm i -D @astrojs/check typescript schaltet sie ein).');
+  }
   npxLauf(['astro', 'build']);
   writeFileSync(MARKE, JSON.stringify({ marke: quellMarke() }) + '\n', 'utf-8');
 } else {

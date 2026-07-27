@@ -216,6 +216,19 @@ for (const f of htmlDateien) {
     }
   }
 
+  /* Kartenlizenz: Wer ein Bild aus `npm run karte` einbindet, MUSS
+     „Kartendaten © OpenStreetMap-Mitwirkende" sichtbar danebenstellen – das
+     ist Bedingung der ODbL, nicht Höflichkeit. Ohne den Hinweis nutzt der
+     Kunde fremde Kartendaten unlizenziert auf seiner Geschäftsseite. Bisher
+     stand die Pflicht nur als Konsolen-Hinweis im Werkzeug. */
+  if (/karte[.\w-]*\.(webp|jpe?g|png|avif)/i.test(html) && !/OpenStreetMap/i.test(html)) {
+    fehler(
+      `${name}: Kartenbild ohne Lizenzhinweis.
+` +
+        `    „Kartendaten © OpenStreetMap-Mitwirkende" muss sichtbar daneben stehen (ODbL-Pflicht).`,
+    );
+  }
+
   // Die EU-Streitbeilegungsplattform wurde am 20.07.2025 eingestellt
   // (VO (EU) 2024/3228). Ein Link darauf ist ein toter Pflicht-Link und
   // laut WKO zu entfernen – er darf nie wieder in ein Impressum rutschen.

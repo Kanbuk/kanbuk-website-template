@@ -137,6 +137,10 @@ export interface Seite {
    * beschreibt. Ist bei keiner Seite gesetzt, gilt die Startseite.
    */
   zeigtPreisliste?: boolean;
+  /** Stehen die häufigen Fragen auf DIESER Seite? (steuert das FAQ-Schema) */
+  zeigtFaq?: boolean;
+  /** Stehen die Stellenanzeigen auf DIESER Seite? (steuert das Jobs-Schema) */
+  zeigtStellen?: boolean;
   /** Eigenes OG-Bild für DIESE Seite – Dateiname in **public/** (nicht fotos/!),
       z. B. 'og-speisekarte.jpg'. Erzeugen mit:
       npm run og -- --bild fotos/<foto>.jpg --ziel public/og-<seite>.jpg
@@ -210,6 +214,14 @@ export interface Adresse {
   /** Statisches Kartenbild in fotos/ – erzeugt via `npm run karte`.
       NIEMALS ein Live-Embed: das setzt Cookies. */
   karteBild?: string;
+  /**
+   * Geokoordinaten – für die lokale Suche eines der wichtigsten Signale
+   * („Café in meiner Nähe"). `npm run karte` ermittelt sie ohnehin beim
+   * Erzeugen des Kartenbildes und gibt sie am Ende aus; bis 2026-07-27 wurden
+   * sie schlicht weggeworfen. Format: Dezimalgrad, z. B. 48.2082 / 16.3738.
+   */
+  breitengrad?: number;
+  laengengrad?: number;
 }
 
 export interface Betrieb {
@@ -231,6 +243,12 @@ export interface Betrieb {
   socialLinks: SocialLink[];
   /** Dateiname in fotos/. */
   logo?: string;
+  /**
+   * Preisniveau als €-Zeichen: '€' (günstig) bis '€€€€'. Google zeigt das im
+   * Eintrag an und nutzt es für Filter wie „günstig" – ohne die Angabe fehlt
+   * der Betrieb in genau diesen Ergebnissen.
+   */
+  preisniveau?: '€' | '€€' | '€€€' | '€€€€';
 }
 
 // ---------------------------------------------------------------------------
@@ -352,6 +370,63 @@ export interface PreisKategorie {
   gruppen: PreisGruppe[];
 }
 
+/**
+ * Vier Blöcke, die fast jede Branchenseite hat und die bisher in JEDEM Klon von
+ * Hand entstanden – ohne Datenmodell, ohne strukturierte Daten für Google,
+ * ohne Prüfung. Alle vier sind optional: Wer sie nicht befüllt, hat sie nicht.
+ */
+
+/** Mitarbeiter – Praxis, Kanzlei, Studio, Friseur, Werkstatt. */
+export interface TeamMitglied {
+  name: string;
+  rolle: string;
+  /** 1–3 Sätze; bei Praxen typisch Qualifikationen. */
+  text?: string;
+  /** Dateiname in fotos/. */
+  bild?: string;
+  /** Nur wenn der Betrieb es ausdrücklich wünscht (Ärzte, Kanzleien). */
+  email?: string;
+  telefon?: string;
+}
+
+/**
+ * Häufige Fragen. Erscheinen zusätzlich als FAQPage-Schema – Google zeigt sie
+ * dann aufklappbar direkt im Suchergebnis, was den Platz in der Trefferliste
+ * vergrößert. Reine Fließtext-Fragen bringen das nicht.
+ */
+export interface FaqEintrag {
+  frage: string;
+  /** Nur Text, keine Auszeichnung – so verlangt es Google für das Schema. */
+  antwort: string;
+}
+
+/** Referenz / abgeschlossenes Projekt – Handwerk, Bau, Agentur, KFZ. */
+export interface Referenz {
+  titel: string;
+  /** Was gemacht wurde, 1–3 Sätze. */
+  text?: string;
+  /** Ort oder Bezirk – wirkt lokal und ist für die Suche wertvoll. */
+  ort?: string;
+  /** Jahr der Umsetzung. */
+  jahr?: string;
+  bild?: string;
+  /** Freie Kennzeichnungen für Filter, z. B. ['bad', 'sanierung']. */
+  tags?: string[];
+}
+
+/** Stellenanzeige. Erscheint zusätzlich als JobPosting-Schema (Google Jobs). */
+export interface Stelle {
+  titel: string;
+  /** z. B. 'Vollzeit', 'Teilzeit', 'Lehre', 'geringfügig'. */
+  umfang: string;
+  text: string;
+  /** Kollektivvertrags-Mindestgehalt – in Österreich PFLICHTANGABE
+      (§ 9 Gleichbehandlungsgesetz), z. B. 'ab 2.100 € brutto/Monat'. */
+  gehalt: string;
+  /** Frühestes Eintrittsdatum, JJJJ-MM-TT – nur für das Google-Schema. */
+  ab?: string;
+}
+
 export interface Preisliste {
   kategorien: PreisKategorie[];
   /** Allergen-Legende, z. B. { A: 'Glutenhaltiges Getreide' }. */
@@ -459,6 +534,14 @@ export interface SiteConfig {
   seiten: Seite[];
   formulare: Formular[];
   preisliste?: Preisliste;
+  /** Mitarbeiter – siehe TeamMitglied. */
+  team?: TeamMitglied[];
+  /** Häufige Fragen – erscheinen zusätzlich als FAQ-Schema bei Google. */
+  faq?: FaqEintrag[];
+  /** Referenzen / abgeschlossene Projekte. */
+  referenzen?: Referenz[];
+  /** Offene Stellen – erscheinen zusätzlich als JobPosting-Schema. */
+  stellen?: Stelle[];
   rechtstexte: Rechtstexte;
 
   /**

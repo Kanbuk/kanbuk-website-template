@@ -228,6 +228,11 @@ try {
       </Einbettung>
 
   PFLICHT: „${lizenz}" sichtbar neben die Karte setzen (ODbL-Lizenz).
+
+  FÜR DIE LOKALE SUCHE – diese zwei Zeilen in content.config.ts ->
+  betrieb.adresse eintragen (Google gewichtet Koordinaten bei „in meiner Nähe"):
+      breitengrad: ${ort.lat.toFixed(6)},
+      laengengrad: ${ort.lon.toFixed(6)},
 `);
 } catch (e) {
   console.warn(`⚠ Kacheln nicht ladbar (${e.message}) – erzeuge Platzhalter.`);
