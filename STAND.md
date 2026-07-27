@@ -278,8 +278,8 @@ genau das Muster, das `npm run preisliste` schon hat.
   seit dem Piloten nie eingelöst** – eine Erlaubnis-LISTE wird nie vollständig,
   jede neue Befehlsform fragte nach und unterbrach den Nutzer. Behoben mit
   permissions.defaultMode = 'auto' (Version 2026.7.21). Läuft: Komplett-Audit
-  der Daylounge-Referenz (41 Befunde, Gegenprüfung offen).
-- **2026-07-17** – Großer Ausbau-Tag: (1) Pilot-Rückfluss daylounge eingearbeitet
+  einer Gastro-Referenz (41 Befunde, Gegenprüfung offen).
+- **2026-07-17** – Großer Ausbau-Tag: (1) Rückfluss aus dem Gastro-Piloten eingearbeitet
   (10 Motor-Fixes, 9 Beschleuniger, Version 2026.7.17). (2) Demo-Bote v2:
   Projekt-Archiv (Zip) als Standardweg, echte Mehrseiten-Demos, Bildfelder des
   Design-Editors stillgelegt, Marken-Domain demo-<kunde>.kanbuk.com automatisch
@@ -288,6 +288,6 @@ genau das Muster, das `npm run preisliste` schon hat.
   eingerichtet. (4) Formular-Crash auf Vercel behoben (.js-Endungen in der
   Import-Kette, auch im Preislisten-Generator). (5) Toten EU-Streitbeilegungs-
   Link entfernt + Prüf-Tor-Regel. (6) Port-Regeln: Rechtsseiten mit Kopf/Fuß,
-  SocialLinks nie als Buchstaben. Piloten: Phönixhof (4 Seiten) und The Epos
-  (Onepager) als Demos live; **gemessene Demo-Zeit 2 min 26 s** (vorher 19 min
+  SocialLinks nie als Buchstaben. Zwei Piloten als Demos live (einer mit vier
+  Seiten, einer als Onepager); **gemessene Demo-Zeit 2 min 26 s** (vorher 19 min
   über Standalone-Umweg).

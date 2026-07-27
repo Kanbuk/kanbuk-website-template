@@ -592,7 +592,7 @@ if (existsSync(fotoOrdner)) {
 
   // ALLES in fotos/ wird mitveröffentlicht – auch Bilder, die auf keiner Seite
   // vorkommen. Beim Kunden kann so ein nur „geparktes" Foto ungewollt öffentlich
-  // auf dem Server landen. WICHTIG: „liegt in dist/" reicht als Kriterium nicht,
+  // auf dem Server landen. WICHTIG: „liegt in dist/" reicht als Maßstab nicht,
   // weil die Bild-Pipeline alle Fotos emittiert – zählt nur, was eine Seite
   // wirklich REFERENZIERT. Deshalb (nur beim Kunden, nicht im Referenz-Template):
   if (!istTemplate) {
@@ -815,7 +815,61 @@ if (istTemplate) {
     join(WURZEL, 'content.config.ts'),
     join(WURZEL, 'CLAUDE.md'),
     join(WURZEL, 'README.md'),
+    // STAND.md gehört ausdrücklich dazu: Genau dort rutschten am 2026-07-27
+    // drei Betriebsnamen durch – in der Verlaufszeile, wo man beim Schreiben
+    // an die Arbeit denkt und nicht an die Regel.
+    join(WURZEL, 'STAND.md'),
   ].filter((f) => existsSync(f) && ['.ts', '.astro', '.mjs', '.md', '.css'].includes(extname(f)));
+
+  /* BETRIEBSNAMEN – der Fall, den kein allgemeines Muster findet.
+     Telefonnummern und E-Mail-Adressen haben eine erkennbare Form, ein
+     Betriebsname nicht. Eine Namensliste im Template wäre selbst wieder
+     Kundendaten – also holt sich die Regel die Namen dort, wo sie ohnehin
+     stehen: aus den NACHBARORDNERN. Jeder Ordner unter kanbuk-kunden/ und
+     kanbuk-demos/ ist ein Kunde oder eine Demo; taucht sein Name im Template
+     auf, gehört er dort nicht hin.
+
+     Auf einem fremden Rechner gibt es diese Ordner nicht – dann schweigt die
+     Regel, statt Fehlalarm zu schlagen. Sie schützt genau den, der die Fehler
+     machen kann. */
+  const nachbarn = ['kanbuk-kunden', 'kanbuk-demos']
+    .map((ordner) => join(WURZEL, '..', ordner))
+    .filter((p) => existsSync(p))
+    .flatMap((p) => readdirSync(p, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
+      .map((e) => e.name));
+
+  for (const name of new Set(nachbarn)) {
+    /* Aus dem Ordnernamen die Schreibweisen ableiten, die im Text vorkämen:
+       'muster-laden' → 'muster-laden' | 'muster laden' | 'musterladen'.
+
+       Die Wortgrenzen sind nicht Zierde: Ohne sie schlug die Regel mitten in
+       zusammengesetzten Wörtern an, weil ein Demo-Ordner zufällig wie ein
+       gewöhnliches deutsches Wort hieß – ein Wachhund, der jeden Fußgänger
+       anbellt, wird bald ignoriert.
+       Ein Restrisiko bleibt genau dort: Heißt ein Ordner wie ein normales
+       Wort, kann die Regel danebengreifen. Dann entweder den Satz umformulieren
+       oder – dauerhafter – den Ordner mit Präfix benennen (demo-<name>), dann
+       trifft das Muster den Alltagsbegriff nicht mehr. */
+    const teile = name.split('-').filter((s) => s.length > 2);
+    if (teile.length === 0) continue;
+    const muster = new RegExp(
+      '\\b' + teile.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s-]?') + '\\b',
+      'i',
+    );
+    for (const f of motorDateien) {
+      const text = readFileSync(f, 'utf-8');
+      if (!muster.test(text)) continue;
+      const zeile = text.split('\n').find((z) => muster.test(z)) ?? '';
+      fehler(
+        `${relative(WURZEL, f).replace(/\\/g, '/')}: enthält den Namen „${name}" – das ist ein Kunde oder eine Demo aus dem Nachbarordner.\n` +
+          `    „${zeile.trim().slice(0, 90)}"\n` +
+          `    Das Repo ist öffentlich, und JEDER künftige Klon trägt den Namen mit sich herum.\n` +
+          `    Neutral umschreiben („ein Gastro-Pilot") – siehe CLAUDE.md, „Das Template bleibt kundenfrei".`,
+      );
+      break;
+    }
+  }
 
   // Verräterische Muster echter Kundendaten in Beispielen/Kommentaren.
   const kundenspuren = [

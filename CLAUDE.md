@@ -112,6 +112,15 @@ Marker und meldet sie beim Kunden als „noch zu ersetzen".
 Umgekehrt genauso: Aus einem Kundenordner fließt **nichts** ins Template zurück.
 Verbesserungen am Motor gehören als neutraler Code hierher – die Inhalte bleiben dort.
 
+**Die Stelle, an der es tatsächlich passiert, ist STAND.md.** Nicht der Code –
+dort denkt man an die Regel. Sondern die Verlaufszeile am Ende einer Sitzung,
+wo man aufschreibt, was man gemacht hat: „Rückfluss aus dem Piloten <Name>".
+Genau so standen am 27.07.2026 drei Betriebsnamen im öffentlichen Repo und
+damit in jedem Klon. Im Verlauf gehören **Branche und Art**, nie der Name:
+„ein Gastro-Pilot", „zwei Vorschau-Piloten (vier Seiten / Onepager)".
+Das Prüf-Tor liest dafür die Ordnernamen aus `kanbuk-kunden/` und
+`kanbuk-demos/` und schlägt an, wenn einer davon im Template auftaucht.
+
 ---
 
 ## 2. Die eisernen Regeln
