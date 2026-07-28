@@ -148,7 +148,7 @@ const heroBild = bild('hero.jpg');
   }
   .block--getoent {
     /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). */
-    background: var(--farbe-flaeche, #f5f5f5);
+    background: var(--farbe-flaeche, var(--farbe-hintergrund));
     background: var(--farbe-flaeche, color-mix(in srgb, var(--farbe-text) 4%, var(--farbe-hintergrund)));
   }
   .block h2 {
@@ -169,7 +169,7 @@ const heroBild = bild('hero.jpg');
   }
   .liste li {
     padding: var(--raum-s);
-    border: 1px solid rgba(0, 0, 0, 0.14);
+    border: 1px solid var(--farbe-linie);
     border: 1px solid color-mix(in srgb, var(--farbe-text) 14%, transparent);
     border-radius: var(--radius);
   }
@@ -180,7 +180,7 @@ const heroBild = bild('hero.jpg');
     max-width: 60ch;
   }
   .akkordeon details {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+    border-bottom: 1px solid var(--farbe-linie);
     border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 14%, transparent);
   }
   .akkordeon summary {

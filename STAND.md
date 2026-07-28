@@ -56,6 +56,15 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
       nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
       Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
+- [ ] **`npm run sicht` kann einmalig zu Unrecht rot werden.** Beobachtet am
+      2026-07-28: ein roter Lauf, danach sechs grüne ohne jede Änderung. Ursache
+      ist mit hoher Wahrscheinlichkeit die LCP-Messung (`scripts/sicht.mjs`,
+      Zeile 89 ff.): Welches Element als „größtes sichtbares" gewinnt, hängt am
+      Ladezeitpunkt – auf einem langsamen Moment kann ein verzögert geladenes
+      Bild gewinnen, das sonst nie gewinnt. Nicht nachstellbar, deshalb nicht
+      behoben. **Regel bis dahin: Ein einzelner roter Lauf der Sichtprüfung
+      wird wiederholt, bevor daran etwas geändert wird.** Bleibt er rot, ist er
+      echt.
 - [ ] **Browser-Untergrenze nie auf einem ECHTEN alten Gerät nachgestellt.**
       Die Ursachen erklären das gemeldete Symptom vollständig, und `npm run
       browser` sowie `npm run altgeraet` decken CSS und Aussehen ab. Ob

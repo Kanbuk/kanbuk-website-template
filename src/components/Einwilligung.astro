@@ -109,7 +109,7 @@ const t =
     background: var(--farbe-flaeche, var(--farbe-hintergrund));
     /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). Ohne ihn haette
        der Banner keine Abgrenzung zur Seite darunter. */
-    border-top: 1px solid rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--farbe-linie);
     border-top: 1px solid color-mix(in srgb, var(--farbe-text) 20%, transparent);
     padding: var(--raum-s) var(--gutter);
   }

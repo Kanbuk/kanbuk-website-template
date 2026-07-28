@@ -97,6 +97,25 @@ export function cssVariablen(site: SiteConfig): string {
   const fokus = istHell(farben.hintergrund) === istHell(farben.primaer) ? farben.text : farben.primaer;
   zeilen.push(`--farbe-fokus: ${fokus};`);
 
+  /*
+   * Trennlinien – und der ERSATZWERT für `color-mix()`.
+   *
+   * Der Motor zeichnet Linien (Kopfleiste, Fußzeile, Menü) als
+   * `color-mix(in srgb, var(--farbe-text) 12%, transparent)`. Das kennt Safari
+   * erst ab 16.2, deshalb steht davor immer ein einfacher Ersatzwert – und
+   * DIESER hier muss es sein, kein fest eingetragenes Grau.
+   *
+   * WARUM: Ein hart notiertes `rgba(0, 0, 0, 0.12)` ist auf einem hellen
+   * Design richtig und auf einem DUNKLEN unsichtbar – schwarz auf schwarz.
+   * Damit hätte der Ersatzwert genau das angerichtet, was er verhindern soll.
+   * Aus der echten Textfarbe gerechnet stimmt er in beide Richtungen.
+   *
+   * Bewusst `rgba()` statt `color-mix()`: Der Ersatzwert muss selbst überall
+   * funktionieren, sonst ist er keiner. `rgba()` gibt es seit jeher.
+   */
+  const textKanaele = kanaele(farben.text) ?? [0, 0, 0];
+  zeilen.push(`--farbe-linie: rgba(${textKanaele.join(', ')}, 0.14);`);
+
   if (radius) zeilen.push(`--radius: ${radius};`);
 
   return zeilen.join(' ');

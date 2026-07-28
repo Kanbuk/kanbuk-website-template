@@ -239,7 +239,11 @@ kennt, verwirft **den ganzen Regelblock**.
 | **bedienbar ab** | Safari 12 – alles automatisch übersetzbar |
 | **vollständig ab** | **Safari 15.4** (Frühjahr 2022) – das ist die Zusage |
 
-Ab 15.4 sieht die Seite aus wie gebaut; das deckt jedes iPhone ab dem 6s ab.
+Ab 15.4 sieht die Seite aus wie gebaut. Das deckt jedes iPhone ab dem 6s ab –
+nachgerechnet: Das 6s bekommt noch iOS 15.8, und Safari 15.4 kam mit iOS 15.4
+im März 2022. Voraussetzung ist also nur, dass das Gerät innerhalb von iOS 15
+aktuell gehalten wurde; ein 6s, das auf iOS 15.0 stehen geblieben ist, fällt in
+die karge Stufe.
 Darunter bleibt sie **lesbar und bedienbar, sieht aber karg aus** – vier
 CSS-Merkmale (`clamp`, `aspect-ratio`, `dvh`, `padding-block`) lassen sich nicht
 übersetzen. **Das ist eine Entscheidung, kein offener Punkt.** Auch das Aussehen
