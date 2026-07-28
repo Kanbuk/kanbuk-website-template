@@ -304,6 +304,26 @@ Verwandt und ebenso unsichtbar: `content.config.ts → design.farben` muss
 halbdurchsichtige Leisten; bei einer anderen Schreibweise fällt die Rechnung
 still auf Schwarz zurück (das Prüf-Tor meldet es).
 
+### Zwei CSS-Fallen, die keine Prüfung von selbst sieht
+
+**`:global(…)` gehört NICHT in eine eigenständige `.css`-Datei.** Es ist eine
+Astro-Funktion für `<style>`-Blöcke *in Komponenten*. In einer normalen
+CSS-Datei ist es ungültig – und der Browser verwirft dann **die komplette
+Regel**, nicht nur den Selektor. In einem Kundenprojekt war dadurch
+`object-fit: cover` auf der ganzen Seite wirkungslos: Jedes Bild, dessen
+Seitenverhältnis nicht zufällig passte, bekam schwarze Balken. In einer
+`.css`-Datei gilt der Selektor ohnehin überall – `:global()` einfach weglassen.
+Das Prüf-Tor meldet es.
+
+**`[hidden]` verliert gegen jede Klasse mit `display`.** Die Browser-Regel
+steht in der Vorlage des Browsers und wird von jeder Autoren-Klasse
+überstimmt – also von fast jeder Karte und jedem Raster aus dem Design.
+Mehrere Motor-Bausteine verlassen sich aber auf das Attribut (Merklisten-Zähler,
+„keine Treffer"-Hinweis, die Schritte des Assistenten). Deshalb steht in
+`global.css` jetzt `[hidden] { display: none !important; }`. **Diese Zeile nicht
+entfernen** – sonst zeigt der Zähler eine „0", obwohl nichts vorgemerkt ist,
+und „Zu dieser Auswahl gibt es nichts" steht über der vollen Liste.
+
 ### Pflichtmuster für Responsiveness
 
 ```css
@@ -780,6 +800,14 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
 5. **STAND.md ist aktuell** (Phase, Lücken, Verlaufszeile dieser Sitzung).
 6. Committen und pushen (ein Kunde = ein Repo/Branch).
 
+> **Eine Ausnahme im Prüf-Tor, die einen Mangel des MOTORS deckt, ist keine
+> Ausnahme, sondern ein unerledigter Fehler.** Wird der Motor selbst rot, gehört
+> der Motor repariert – nicht die Prüfung. Die Fehlerseite kam lange ohne Kopf
+> und Fuß; statt das zu beheben, stand im Prüf-Tor „außer 404.html", weil sonst
+> jeder Build rot geworden wäre. Ergebnis: Jeder Klon lieferte eine Seite aus,
+> auf der der Besucher weder zur Navigation zurückfand noch das Impressum sah –
+> und eine 404 aus einem alten Google-Treffer ist oft der Erstkontakt.
+>
 > **Eine übersprungene Prüfung ist kein grünes Tor.** Meldet die Kette „↷
 > übersprungen" (etwa die Typprüfung, weil ein Werkzeug fehlt), ist die
 > Definition of Done **nicht** erfüllt – auch wenn unten ein Haken steht.

@@ -274,6 +274,14 @@ wird dabei ersetzt.
 - **Die Handy-Ansicht ist deine Entscheidung** – im Design gibt es sie nicht.
   Zweispalter → einspaltig, Vierer-Grid → zwei → eins, Bild neben Text → Bild über Text.
 - Verhalten über die Bausteine anschließen (`data-tabs`, `data-slider`, …).
+- **Verschiebst du ein Bedienelement, prüfe, ob es noch in der KLAMMER seines
+  Bausteins steht.** Trefferzähler, Sortierung und „Zurücksetzen" müssen INNERHALB
+  des Elements mit `data-filter` liegen. In einem Kundenprojekt wanderten sie
+  (wie das Design es verlangt) ins Kopfband darüber – danach blieb der Zähler bei
+  „4 von 4" stehen, obwohl kein Eintrag mehr sichtbar war, und keine Sortierung
+  wirkte. Zwei Blocker auf einmal, und **beide Prüfungen suchten im selben
+  Kasten** und meldeten deshalb nichts. Die Klammer muss Kopfband UND Liste
+  umschließen.
 - Formulare über `<Formular id="…" />` – nie von Hand nachbauen.
 - Social-Media-Icons über `<SocialLinks />` (Daten in `betrieb.socialLinks`) –
   keine Icon-Dateien erfinden, keine Icons aus dem Design-Export kopieren.

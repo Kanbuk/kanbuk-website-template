@@ -20,43 +20,24 @@ import {
   katalogAdresse,
   katalogAttribute,
   preisText,
-  filterWerte,
-  zahlenBereich,
   beschriftung,
+  filterGruppen,
+  regler as reglerAbleiten,
+  sortierOptionen,
 } from '../lib/katalog';
 
 const katalog = site.katalog!;
 const eintraege = katalogEintraege();
 
-/* Merkmale einsammeln – in der Reihenfolge ihres ersten Auftretens, damit die
-   Filterleiste der Pflege-Reihenfolge folgt und nicht dem Alphabet. */
-const merkmale: string[] = [];
-for (const e of eintraege) {
-  for (const k of Object.keys(e.filter ?? {})) if (!merkmale.includes(k)) merkmale.push(k);
-}
-const gruppen = merkmale
-  .map((name) => ({ name, werte: filterWerte(name) }))
-  // Eine Gruppe mit nur einem Wert kann nichts einschränken – sie wäre nur
-  // ein Knopf, der immer alles zeigt.
-  .filter((g) => g.werte.length > 1);
-
-const zahlenNamen: string[] = [];
-for (const e of eintraege) {
-  for (const k of Object.keys(e.zahlen ?? {})) if (!zahlenNamen.includes(k)) zahlenNamen.push(k);
-}
-if (eintraege.some((e) => e.preis !== undefined) && !zahlenNamen.includes('preis')) {
-  zahlenNamen.unshift('preis');
-}
-const regler = zahlenNamen
-  .map((name) => ({ name, bereich: zahlenBereich(name) }))
-  .filter((r): r is { name: string; bereich: { min: number; max: number } } =>
-    // Sind alle Werte gleich, gäbe es nichts zu schieben.
-    !!r.bereich && r.bereich.max > r.bereich.min,
-  );
-
-/* Beschriftungen kommen aus `katalog.beschriftungen` (siehe dort), sonst
-   grossgeschrieben. Nie den rohen Schluessel anzeigen - der ist ein
-   Adressbaustein und liest sich als "Gruen". */
+/* Die Ableitungen kommen aus src/lib/katalog.ts, nicht von hier.
+   WARUM: Diese Komponente ist ein BEISPIEL. Ein echtes Design ersetzt nicht
+   nur die Karte, sondern die ganze Filterleiste – und ein Klon, der sie neu
+   baut, würde jede spätere Motor-Korrektur verpassen (im Kundenprojekt genau
+   so passiert: der Regler-Fehler musste dort zweimal repariert werden).
+   Wer eigenes Markup schreibt, ruft dieselben drei Funktionen auf. */
+const gruppen = filterGruppen();
+const regler = reglerAbleiten();
+const sortierungen = sortierOptionen();
 ---
 
 <div class="katalog" data-filter data-filter-kombi>
@@ -78,10 +59,10 @@ const regler = zahlenNamen
           type="range"
           id={`regler-${r.name}`}
           data-filter-max={r.name}
-          min={r.bereich.min}
-          max={r.bereich.max}
-          step={Math.max(1, Math.round((r.bereich.max - r.bereich.min) / 50))}
-          value={r.bereich.max}
+          min={r.min}
+          max={r.max}
+          step={r.step}
+          value={r.max}
         />
         <output data-filter-max-anzeige={r.name}></output>
       </p>
@@ -91,15 +72,19 @@ const regler = zahlenNamen
       <label for="katalog-sortierung">Sortierung</label>
       <select id="katalog-sortierung" data-filter-sortierung>
         <option value="">Wie gepflegt</option>
-        {regler.map((r) => (
-          <>
-            <option value={`${r.name}-auf`}>{beschriftung(r.name)} aufsteigend</option>
-            <option value={`${r.name}-ab`}>{beschriftung(r.name)} absteigend</option>
-          </>
+        {sortierungen.map((s) => (
+          <option value={s.wert}>
+            {beschriftung(s.merkmal)} {s.richtung === 'auf' ? 'aufsteigend' : 'absteigend'}
+          </option>
         ))}
       </select>
       <button type="button" data-filter-zuruecksetzen>Zurücksetzen</button>
-      <button type="button" data-merkliste-nur>Nur Vorgemerkte</button>
+      {/* `id="merkliste"` ist kein Beiwerk: Der Weg zur Merkliste ist ein
+          gewöhnlicher Link (`/fahrzeuge#merkliste`). Der Baustein schaltet den
+          Filter beim Ankommen selbst ein – aber OHNE JavaScript muss der Link
+          wenigstens an die richtige Stelle springen, statt ins Leere zu laufen.
+          Das Prüf-Tor kontrolliert genau das. */}
+      <button type="button" id="merkliste" data-merkliste-nur>Nur Vorgemerkte</button>
     </p>
 
     {/* Erst der Gegenstand, dann die Zahlen: "Fahrzeuge: 3 von 12" geht in

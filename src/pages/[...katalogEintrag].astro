@@ -196,6 +196,20 @@ const absatzTrenner = /\n\s*\n/;
             {!verfuegbar && <span class="katalog-detail__status">Nicht mehr verfügbar</span>}
           </p>
 
+          {/* Der Merk-Knopf fehlte ausgerechnet HIER – auf der Seite, auf der
+              man sich entscheidet. In der Liste war er da, auf der Detailseite
+              nicht; wer sich ein Stück ansieht und vormerken will, musste
+              zurück zur Übersicht. Der Zähler und die Merkliste sind
+              dieselben – der Baustein erkennt den Eintrag an data-merken. */}
+          {verfuegbar && (
+            <p class="katalog-detail__merken">
+              <button type="button" data-merken={eintrag.id} aria-label={`${eintrag.titel} vormerken`}>
+                Merken
+              </button>
+              <a href={`${katalog.pfad}#merkliste`}>Meine Merkliste ansehen</a>
+            </p>
+          )}
+
           {bilder.some((b) => b.quelle) && (
             <div class="katalog-detail__bilder" data-lightbox>
               {bilder.map((b, i) =>

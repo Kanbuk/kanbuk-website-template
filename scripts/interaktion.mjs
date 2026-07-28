@@ -20,6 +20,9 @@
  *   • Dialog      – öffnet, übernimmt den Bezug des Auslösers, schließt
  *   • Assistent   – erster Schritt offen, Senden versteckt, leeres
  *                   Pflichtfeld hält den Schritt
+ *   • Bewegung    – bleibt das angeklickte Element dort, wo der Finger es
+ *                   berührt hat? Akkordeon und Assistent, über mehrere Bilder
+ *                   gemessen. Die anderen Stufen sehen Bewegung nicht.
  *   • Formular    – in der Vorschau sichtbar und bedienbar, aber ohne
  *                   Versandziel; ein Klick auf Senden wird beantwortet und
  *                   verlässt die Seite nicht. Live nur strukturell geprüft
@@ -645,6 +648,122 @@ for (const seite of seiten) {
           raus.push({ baustein: i > 0 ? `Formular (Struktur) #${i + 1}` : 'Formular (Struktur)', ok: fehler.length === 0, detail: fehler.join('; ') });
         });
       }
+      return raus;
+    }));
+
+    // --- Bewegung: springt beim Klicken etwas weg? --------------------------
+    /* WARUM ES DIESE MESSUNG GIBT: An einem Tag kamen in einem Kundenprojekt
+       DREI Bewegungsfehler in Motor-Bausteinen zusammen - ein Akkordeon, das
+       beim Zuklappen die angeklickte Frage unter dem Finger wegzog; ein
+       Assistent, der bei jedem Schritt grundlos sprang; ein <details>, das
+       erst 68 px hinunter und dann 48 px zurück ruckte. Gemeldet hat alle drei
+       der Auftraggeber. Alle vier Tore waren gruen - sie messen Ueberlauf,
+       Kontrast, JS-Fehler und Klickbarkeit, aber keine BEWEGUNG.
+
+       Gemessen wird das Einfachste, was zaehlt: Bleibt das angeklickte Element
+       da, wo der Finger es beruehrt hat? */
+    ergebnisse.push(...await page.evaluate(async () => {
+      const raus = [];
+      const warte = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      /**
+       * Wartet, bis die Seite wirklich still steht.
+       *
+       * WARUM DAS SEIN MUSS: Die Seite hat `scroll-behavior: smooth`. Wird
+       * gemessen, während noch eine Scroll-Bewegung läuft, überschreibt die
+       * jede Korrektur des Bausteins - und die Prüfung meldet einen Fehler,
+       * den es nicht gibt. Genau so ist es beim ersten Lauf dieser Messung
+       * passiert: 62 px gemeldet, tatsächlich 0. Eine Prüfung, die Fehlalarm
+       * schlägt, ist schlimmer als keine.
+       */
+      async function ruheAbwarten() {
+        let letzte = -1;
+        for (let i = 0; i < 40 && letzte !== window.scrollY; i++) {
+          letzte = window.scrollY;
+          await warte(50);
+        }
+      }
+
+      /** Klickt ein Element und misst, wie weit es sich dabei verschiebt. */
+      async function wandertBeimKlick(el) {
+        const vorher = el.getBoundingClientRect().top;
+        el.click();
+        // Ueber mehrere Bilder messen: Der schlimmste Ruck passiert im ersten,
+        // die Bewegung endet erst nach der Animation.
+        let groesster = 0;
+        for (const ms of [16, 60, 150, 320]) {
+          await warte(ms);
+          const jetzt = el.getBoundingClientRect().top;
+          groesster = Math.max(groesster, Math.abs(jetzt - vorher));
+        }
+        return groesster;
+      }
+
+      // Akkordeon: die angeklickte Frage darf sich nicht bewegen.
+      for (const [nr, box] of [...document.querySelectorAll('[data-akkordeon]')].entries()) {
+        const fragen = [...box.querySelectorAll('details > summary')];
+        if (fragen.length < 2) continue;
+        const fehler = [];
+
+        // Erst einen weiter OBEN oeffnen - das ist der gefaehrliche Fall bei
+        // "nur eines offen": Schliesst er, rutscht alles darunter hoch.
+        fragen[0].click();
+        await warte(320);
+
+        /* Die anzuklickende Frage sicher ins Bild holen und die Seite zur Ruhe
+           kommen lassen. Ohne das holt der Browser sie beim Klick selbst ins
+           Bild - eine Bewegung, die nichts mit dem Baustein zu tun hat. */
+        const ziel = fragen[fragen.length - 1];
+        ziel.scrollIntoView({ block: 'center' });
+        await ruheAbwarten();
+
+        const wanderung = await wandertBeimKlick(ziel);
+        if (wanderung > 8) {
+          fehler.push(
+            `Die angeklickte Frage wandert beim Aufklappen um ${Math.round(wanderung)} px - ` +
+              'sie springt dem Besucher unter dem Finger weg',
+          );
+        }
+        raus.push({
+          baustein: nr > 0 ? `Akkordeon (Bewegung) #${nr + 1}` : 'Akkordeon (Bewegung)',
+          ok: fehler.length === 0,
+          detail: fehler.join('; '),
+        });
+      }
+
+      // Assistent: ein Schrittwechsel darf nicht grundlos springen.
+      for (const [nr, form] of [...document.querySelectorAll('[data-assistent]')].entries()) {
+        const weiter = form.querySelector('[data-assistent-weiter]');
+        const schritte = [...form.querySelectorAll('[data-assistent-schritt]')];
+        if (!weiter || schritte.length < 2) continue;
+
+        // Nur messen, wenn das Formular ohnehin ganz im Bild steht - dann darf
+        // sich beim Weiterklicken gar nichts bewegen.
+        const kasten = form.getBoundingClientRect();
+        if (kasten.top < 0 || kasten.bottom > window.innerHeight) continue;
+
+        for (const feld of schritte[0].querySelectorAll('[required]')) {
+          if (feld.type === 'checkbox' || feld.type === 'radio') feld.checked = true;
+          else if (feld.type === 'email') feld.value = 'probe@example.org';
+          else if (feld.tagName === 'SELECT') feld.selectedIndex = feld.options.length - 1;
+          else feld.value = 'Probe';
+        }
+
+        await ruheAbwarten();
+        const vorher = window.scrollY;
+        weiter.click();
+        await warte(400);
+        const sprung = Math.abs(window.scrollY - vorher);
+        raus.push({
+          baustein: nr > 0 ? `Assistent (Bewegung) #${nr + 1}` : 'Assistent (Bewegung)',
+          ok: sprung <= 8,
+          detail:
+            sprung > 8
+              ? `Die Seite springt beim Schrittwechsel um ${Math.round(sprung)} px, obwohl das Formular ganz sichtbar ist`
+              : '',
+        });
+      }
+
       return raus;
     }));
 

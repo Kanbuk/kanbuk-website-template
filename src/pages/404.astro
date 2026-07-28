@@ -2,8 +2,23 @@
 /**
  * Technische Fehlerseite. Bewusst schlicht und motor-eigen: Sie muss existieren
  * und funktionieren, braucht aber kein Design aus Claude Design.
+ *
+ * MIT KOPF UND FUSS – und das ist keine Kosmetik. Vorher rendete diese Seite
+ * nur den Rumpf: keine Kopfleiste, keine Navigation, keine Fußzeile, kein
+ * Impressums-Link. Wer über einen alten Google-Treffer hier landet, hatte damit
+ * genau EINEN Weg („Zur Startseite") und sah die Pflichtangaben nicht – und
+ * eine 404 aus einer Suchmaschine ist oft der Erstkontakt mit dem Betrieb.
+ *
+ * Statt das zu beheben, stand die Ausnahme lange im Prüf-Tor: Es übersprang
+ * `404.html` bei der Pflicht „Impressum und Datenschutz von JEDER Seite
+ * erreichbar", mit der Begründung, sonst würde jeder Build rot. Das ist der
+ * Denkfehler: **Eine Ausnahme im Prüf-Tor, die einen Mangel des Motors deckt,
+ * ist keine Ausnahme, sondern ein unerledigter Fehler.** Wird der Motor selbst
+ * rot, gehört der Motor repariert – nicht die Prüfung.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
 import { site } from '../../content.config';
 ---
 
@@ -11,7 +26,10 @@ import { site } from '../../content.config';
   pfad="/404"
   titel="Seite nicht gefunden"
   beschreibung={`Die aufgerufene Seite gibt es nicht. Zurück zur Startseite von ${site.betrieb.name}.`}
+  noindex
 >
+  <Kopf />
+
   <main id="inhalt" class="fehler">
     <div class="container container--schmal fehler__inner">
       <p class="fehler__code">Fehler 404</p>
@@ -20,6 +38,8 @@ import { site } from '../../content.config';
       <a class="fehler__link" href="/">← Zur Startseite</a>
     </div>
   </main>
+
+  <Fuss />
 </BaseLayout>
 
 <style>

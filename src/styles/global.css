@@ -157,6 +157,32 @@ picture {
   display: contents;
 }
 
+/*
+ * `[hidden]` MUSS gewinnen.
+ *
+ * Die Browser-Regel `[hidden] { display: none }` steht in der Vorlage des
+ * Browsers und verliert damit gegen JEDE Autoren-Klasse, die `display` setzt –
+ * also gegen fast jede Karte, jedes Raster, jeden Flex-Container aus dem
+ * Design. Mehrere Motor-Bausteine verlassen sich aber auf das Attribut:
+ *
+ *   [data-merkliste-anzahl]  – der Zähler zeigte eine „0", obwohl nichts
+ *                              vorgemerkt war
+ *   [data-filter-leer]       – „Zu dieser Auswahl gibt es gerade nichts"
+ *                              stand über der vollen Liste
+ *   [data-assistent-schritt] – alle Schritte gleichzeitig sichtbar
+ *
+ * Das sieht jedes Mal nach kaputter Seite aus, obwohl die Mechanik stimmt –
+ * und keine der Prüfungen schlägt an, weil das Element ja korrekt `hidden`
+ * trägt. In einem Kundenprojekt sind zwei dieser Fälle live gegangen.
+ *
+ * `!important` ist hier kein Notnagel, sondern die einzig richtige Stärke:
+ * „versteckt" ist eine Zustandsaussage und darf von Gestaltung nicht
+ * überstimmt werden.
+ */
+[hidden] {
+  display: none !important;
+}
+
 /* Formularelemente erben die Schrift (sonst System-Default). */
 input,
 textarea,

@@ -188,6 +188,61 @@ genau das Muster, das `npm run preisliste` schon hat.
 
 ## Verlauf
 
+- **2026-07-29** – **Rückfluss Teil 4: die restlichen Muss-Punkte.** Fünf
+  Bereiche, jeder einzeln geprüft:
+
+  **Katalog-Mechanik in die Bibliothek.** `filterGruppen()`, `regler()` und
+  `sortierOptionen()` stehen jetzt in `src/lib/katalog.ts`, nicht mehr in der
+  Komponente. Grund: Ein echtes Design ersetzt nicht nur die Karte, sondern die
+  ganze Filterleiste – im Kundenprojekt wurde die Komponente deshalb gar nicht
+  benutzt und die Liste von Hand neu gebaut. Damit erbt so ein Klon **keine**
+  Motor-Korrektur mehr. Dabei fiel ein echter Rechenfehler auf: Der
+  Schieberegler setzte seine Obergrenze auf den echten Höchstwert, aber ein
+  Regler erlaubt nur Werte auf dem Raster `min + n × step` – der Browser rundete
+  still ab, und **der teuerste Eintrag war ab der ersten Sekunde ausgefiltert**.
+  Nachgerechnet an vier realistischen Bereichen: in dreien trat der Fehler auf.
+  Jetzt wird aufs nächste Raster-Vielfache aufgerundet.
+
+  **Die Merkliste hatte kein Ziel.** Der Baustein lieferte Knöpfe, Zähler und
+  den Filter „nur Vorgemerkte" – aber keinen Weg, die Liste zu ÖFFNEN. Jetzt
+  genügt ein gewöhnlicher Link (`/fahrzeuge#merkliste`): Der Baustein schaltet
+  den Filter beim Ankommen selbst ein, und die Sprungmarke sorgt dafür, dass
+  der Link auch ohne JavaScript an der richtigen Stelle landet. Dazu der
+  Merk-Knopf auf der **Detailseite** – er fehlte ausgerechnet dort, wo man sich
+  entscheidet.
+
+  **Drei Bewegungsfehler**, alle im Motor, alle vom Auftraggeber gemeldet statt
+  von einer Prüfung:
+  1. Beim exklusiven Zuklappen rutschte die angeklickte Frage unter dem Finger
+     weg. Jetzt wird ihre Position vorher/nachher gemessen und ausgeglichen –
+     **sofort**, nicht weich: Die Seite hat `scroll-behavior: smooth`, und ohne
+     `behavior: instant` wird aus dem Ausgleich selbst eine sichtbare Bewegung.
+  2. `<details>` klappt beim Klick sofort auf, das Ereignis kommt erst danach –
+     Doppelsprung 68 px hinunter, 48 zurück. Die Sperre sitzt jetzt schon im
+     `click`, vor der nativen Reaktion; und die Innenabstände laufen mit.
+  3. Der Assistent scrollte bei **jedem** Schrittwechsel, auch wenn das Formular
+     ganz sichtbar war – und schob den Anfang unter die klebende Kopfleiste.
+
+  **Neu: `npm run interaktion` misst jetzt BEWEGUNG.** Bleibt das angeklickte
+  Element dort, wo der Finger es berührt hat? Beim ersten Lauf meldete die
+  Messung 62 px – und war damit selbst im Unrecht: Sie klickte mitten in eine
+  laufende Scroll-Animation. Jetzt wartet sie, bis die Seite still steht.
+  Gegengeprüft: Ausgleich abgeschaltet → rot (62 px), wieder an → grün.
+
+  **Die Fehlerseite hat Kopf und Fuß.** Vorher rendete sie nur den Rumpf, und
+  die Ausnahme dafür stand **im Prüf-Tor** („außer 404.html"). Beide Ausnahmen
+  sind raus. Daraus ein Grundsatz in CLAUDE.md: *Eine Ausnahme im Prüf-Tor, die
+  einen Mangel des Motors deckt, ist keine Ausnahme, sondern ein unerledigter
+  Fehler.*
+
+  **Zwei CSS-Fallen geschlossen.** `:global()` in einer eigenständigen
+  `.css`-Datei ist ungültig – der Browser verwirft die **ganze** Regel; im
+  Kundenprojekt war dadurch `object-fit: cover` seitenweit wirkungslos. Das
+  Prüf-Tor meldet es jetzt. Und `[hidden]` verliert gegen jede Klasse mit
+  `display`; deshalb steht in `global.css` jetzt `[hidden] { display: none
+  !important; }` – sonst zeigt der Merklisten-Zähler eine „0", obwohl nichts
+  vorgemerkt ist.
+
 - **2026-07-29** – **Rückfluss Teil 3: die Bildzeichen.** Ein Claude Design
   bindet Symbole **per Name** aus einer Bibliothek ein. Der Motor verbietet
   externe Requests zu Recht – sagte aber nicht, woher die Zeichen dann kommen.

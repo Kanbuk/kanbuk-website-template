@@ -307,13 +307,14 @@ for (const f of htmlDateien) {
     }
   }
 
-  // Erreichbar heißt: von jeder normalen Seite aus verlinkt. Ausgenommen ist
-  // NUR die 404-Seite – sie ist eine technische Hilfsseite ohne Fußzeile
-  // (nachgemessen: sowohl Template als auch Klon liefern dort keine
-  // Rechtslinks; das als Fehler zu werten würde jeden Build rot machen).
+  /* Erreichbar heißt: von JEDER Seite aus verlinkt – ohne Ausnahme.
+     Hier stand einmal „außer 404.html", mit der Begründung, die Fehlerseite
+     habe nun einmal keine Fußzeile und sonst würde jeder Build rot. Das war
+     der Denkfehler: Eine Ausnahme im Prüf-Tor, die einen Mangel des MOTORS
+     deckt, ist keine Ausnahme, sondern ein unerledigter Fehler. Behoben wurde
+     der Mangel (404.astro hat jetzt Kopf und Fuß), nicht die Prüfung. */
   for (const f of htmlDateien) {
     const name = kurz(f);
-    if (name === '404.html') continue;
     const html = readFileSync(f, 'utf-8');
     for (const pflicht of ['impressum', 'datenschutz']) {
       if (!new RegExp(`href=["']/${pflicht}/?["']`).test(html)) {
@@ -999,6 +1000,36 @@ if (istTemplate) {
 }
 
 // ---------------------------------------------------------------------------
+//  8a1. CSS-FALLE: :global() gehoert NICHT in eine eigenstaendige .css-Datei
+//
+//  `:global(...)` ist eine Astro-Funktion fuer komponenteneigene <style>-Bloecke.
+//  In einer normalen .css-Datei ist es ungueltiges CSS - und der Browser
+//  verwirft dann die KOMPLETTE Regel, nicht nur den Selektor.
+//
+//  In einem Kundenprojekt war dadurch `object-fit: cover` auf der ganzen Seite
+//  wirkungslos: Jedes Bild, dessen Seitenverhaeltnis nicht zufaellig zu seiner
+//  Kachel passte, bekam schwarze Balken. Keine der Pruefungen hat es bemerkt -
+//  die Regel war ja da, sie galt nur nicht.
+// ---------------------------------------------------------------------------
+for (const f of alleDateien(join(WURZEL, 'src', 'styles'))) {
+  if (extname(f) !== '.css') continue;
+  const zeilen = readFileSync(f, 'utf-8').split(/\r?\n/);
+  const name = relative(WURZEL, f).replace(/\\/g, '/');
+  zeilen.forEach((zeile, i) => {
+    if (!/:global\s*\(/.test(zeile)) return;
+    fehler(
+      [
+        `${name}:${i + 1}: :global() in einer eigenständigen CSS-Datei.`,
+        `    „${zeile.trim().slice(0, 80)}"`,
+        '    Das ist eine Astro-Funktion für <style>-Blöcke in Komponenten. Hier ist es',
+        '    ungültiges CSS – der Browser verwirft die GANZE Regel, nicht nur den Selektor.',
+        '    In einer .css-Datei gilt der Selektor ohnehin überall: :global() weglassen.',
+      ].join('\n'),
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
 //  8a2. BILDZEICHEN – die Bibliothek ist DATENQUELLE, kein Auslieferungsgut
 //
 //  Lucide liegt vollstaendig im Repo (rund 2.000 Symbole). Das ist bequem beim
@@ -1348,7 +1379,7 @@ if (istLive || nurLive) {
   const MONEY_ANKER = /(webdesign|werbeagentur|grafikdesign|marketing|seo)[-\s]*(agentur\s*)?(wien|österreich|oesterreich|austria)/i;
   for (const f of htmlDateien) {
     const name = kurz(f);
-    if (name === '404.html') continue;
+    // Auch hier keine 404-Ausnahme mehr – die Seite trägt jetzt die Fußzeile.
     const html = readFileSync(f, 'utf-8');
     const treffer = [
       ...html.matchAll(/<a\b[^>]*href=["']https:\/\/(?:www\.)?kanbuk\.com[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi),

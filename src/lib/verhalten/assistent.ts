@@ -95,20 +95,46 @@ export function assistentStarten(): void {
       return true;
     }
 
+    /**
+     * Zum neuen Schritt scrollen – ABER NUR, WENN ES NÖTIG IST.
+     *
+     * Vorher wurde bei JEDEM Schrittwechsel gescrollt, auch wenn das Formular
+     * vollständig im Bild stand. Das Ergebnis war ein Ruck ohne Anlass: Der
+     * Besucher klickt „Weiter", und die Seite springt, obwohl er längst auf
+     * das schaut, was er sehen soll. Gemeldet hat das der Auftraggeber eines
+     * Kundenprojekts – keine der vier Prüfungen misst Bewegung.
+     *
+     * Zweiter Teil: `block: 'start'` schob den Formularanfang UNTER die
+     * klebende Kopfleiste. Deshalb wird deren Höhe abgezogen.
+     */
+    function zeigeSchrittAn() {
+      const kasten = schritte[aktuell].getBoundingClientRect();
+      // Höhe einer klebenden Kopfleiste ermitteln – sie verdeckt sonst den Anfang.
+      const kopf = document.querySelector<HTMLElement>('[data-kopf], header');
+      const kopfHoehe =
+        kopf && getComputedStyle(kopf).position === 'sticky' ? kopf.getBoundingClientRect().height : 0;
+
+      // Steht der Anfang schon sichtbar unter der Kopfleiste? Dann nichts tun.
+      if (kasten.top >= kopfHoehe && kasten.top < window.innerHeight * 0.6) return;
+
+      window.scrollTo({
+        top: window.scrollY + kasten.top - kopfHoehe - 12,
+        behavior: 'smooth',
+      });
+    }
+
     weiter?.setAttribute('type', 'button');
     weiter?.addEventListener('click', () => {
       if (!schrittPasst()) return;
       zeigen(aktuell + 1);
-      /* Nach oben zum neuen Schritt – sonst steht man bei einem langen
-         Formular plötzlich mitten im nächsten Abschnitt. */
-      schritte[aktuell].scrollIntoView({ block: 'start', behavior: 'smooth' });
+      zeigeSchrittAn();
       felderVon(schritte[aktuell])[0]?.focus({ preventScroll: true });
     });
 
     zurueck?.setAttribute('type', 'button');
     zurueck?.addEventListener('click', () => {
       zeigen(aktuell - 1);
-      schritte[aktuell].scrollIntoView({ block: 'start', behavior: 'smooth' });
+      zeigeSchrittAn();
     });
 
     /* Enter in einem einzeiligen Feld bedeutet in einem Assistenten „weiter",

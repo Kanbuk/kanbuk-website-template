@@ -169,6 +169,85 @@ export function beschriftung(schluessel: string): string {
   return schluessel.charAt(0).toUpperCase() + schluessel.slice(1);
 }
 
+/* ===========================================================================
+ *  DIE ABLEITUNGEN – hier, nicht in der Komponente
+ * ===========================================================================
+ *  `KatalogListe.astro` ist ein BEISPIEL, keine Vorschrift. Bei einem echten
+ *  Design weicht nicht nur die Karte ab, sondern die ganze Filterleiste:
+ *  Position, Reihenfolge, Bedienart, Beschriftungen. In einem Kundenprojekt
+ *  wurde die Komponente deshalb gar nicht benutzt und die Liste von Hand neu
+ *  gebaut – rund 700 Zeilen. Damit erbt dieser Klon KEINE Motor-Korrektur mehr;
+ *  der Regler-Fehler weiter unten musste dort zweimal repariert werden.
+ *
+ *  Deshalb stehen die Ableitungen ab jetzt HIER. Wer eigenes Markup schreibt,
+ *  ruft sie auf und kommt mit ein paar Dutzend Zeilen aus – und bekommt jede
+ *  spätere Korrektur automatisch mit.
+ * ======================================================================== */
+
+/**
+ * Die Filtergruppen: je Merkmal die vorkommenden Werte, in der Reihenfolge
+ * ihres ersten Auftretens in der Config (nicht alphabetisch – so folgt die
+ * Leiste der Pflege-Reihenfolge).
+ *
+ * Gruppen mit nur einem Wert fallen weg: Ein Knopf, der immer alles zeigt,
+ * ist kein Filter.
+ */
+export function filterGruppen(): { name: string; werte: string[] }[] {
+  const merkmale: string[] = [];
+  for (const e of katalogEintraege()) {
+    for (const k of Object.keys(e.filter ?? {})) if (!merkmale.includes(k)) merkmale.push(k);
+  }
+  return merkmale
+    .map((name) => ({ name, werte: filterWerte(name) }))
+    .filter((g) => g.werte.length > 1);
+}
+
+/**
+ * Die Schieberegler: je Zahlenmerkmal Bereich und Schrittweite.
+ *
+ * DIE OBERGRENZE WIRD AUFGERUNDET, und das ist kein Schönheitsfehler:
+ * Ein `<input type="range">` erlaubt nur Werte auf dem Raster
+ * `min + n × step`. Liegt der echte Höchstwert nicht darauf, rundet der
+ * Browser beim Laden STILL AB – der Regler steht dann unter dem Maximum, und
+ * der teuerste bzw. größte Eintrag ist ab der ersten Sekunde ausgefiltert.
+ * In einem Kundenprojekt fehlte so ein Fahrzeug in der Liste, ohne dass es
+ * jemandem auffiel; gefunden hat es erst die Bedien-Prüfung, die die
+ * Trefferzahl je Filterwert nachrechnet.
+ */
+export function regler(): { name: string; min: number; max: number; step: number }[] {
+  const namen: string[] = [];
+  for (const e of katalogEintraege()) {
+    for (const k of Object.keys(e.zahlen ?? {})) if (!namen.includes(k)) namen.push(k);
+  }
+  if (katalogEintraege().some((e) => e.preis !== undefined) && !namen.includes('preis')) {
+    namen.unshift('preis');
+  }
+
+  const raus: { name: string; min: number; max: number; step: number }[] = [];
+  for (const name of namen) {
+    const bereich = zahlenBereich(name);
+    // Sind alle Werte gleich, gäbe es nichts zu schieben.
+    if (!bereich || bereich.max <= bereich.min) continue;
+    const step = Math.max(1, Math.round((bereich.max - bereich.min) / 50));
+    // Aufs nächste Raster-Vielfache AUFrunden – siehe Erklärung oben.
+    const max = bereich.min + Math.ceil((bereich.max - bereich.min) / step) * step;
+    raus.push({ name, min: bereich.min, max, step });
+  }
+  return raus;
+}
+
+/**
+ * Die Sortier-Auswahl: je Zahlenmerkmal auf- und absteigend.
+ * Der Wert ist `<merkmal>-auf` / `<merkmal>-ab`, so erwartet es der
+ * Filter-Baustein.
+ */
+export function sortierOptionen(): { wert: string; merkmal: string; richtung: 'auf' | 'ab' }[] {
+  return regler().flatMap((r) => [
+    { wert: `${r.name}-auf`, merkmal: r.name, richtung: 'auf' as const },
+    { wert: `${r.name}-ab`, merkmal: r.name, richtung: 'ab' as const },
+  ]);
+}
+
 /** Kleinster und größter Wert eines Zahlenmerkmals – für Schieberegler. */
 export function zahlenBereich(merkmal: string): { min: number; max: number } | undefined {
   const zahlen = katalogEintraege()

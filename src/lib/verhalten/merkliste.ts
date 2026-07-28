@@ -25,6 +25,10 @@
  * Auf einer Katalogseite zusätzlich:
  *   <button data-merkliste-nur>Nur Vorgemerkte</button>
  *
+ * ZIEL FÜR DAS HERZ IN DER KOPFLEISTE – ein gewöhnlicher Link genügt:
+ *   <a href="/fahrzeuge#merkliste">♥ <span data-merkliste-anzahl></span></a>
+ * Auf der Katalogseite schaltet dieser Baustein den Filter dann selbst ein.
+ *
  * Vergibt `aria-pressed` und die Klasse `.ist-gemerkt`; das Aussehen bestimmt
  * das Design. Ohne JavaScript sind die Knöpfe wirkungslos – deshalb dürfen sie
  * nie der EINZIGE Weg zu einem Eintrag sein.
@@ -102,22 +106,53 @@ export function merklisteStarten(): void {
     });
   });
 
+  /** Schaltet „nur Vorgemerkte" ein oder aus – von Hand oder über die Adresse. */
+  function umschalten(knopf: HTMLElement | null, an: boolean) {
+    nurGemerkte = an;
+    document.querySelectorAll<HTMLElement>('[data-merkliste-nur]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(an));
+      b.classList.toggle('ist-aktiv', an);
+    });
+    if (!an) {
+      document.querySelectorAll<HTMLElement>('[data-merken]').forEach((b) => {
+        const eintrag = b.closest<HTMLElement>('[data-katalog-eintrag]') ?? b.parentElement;
+        if (eintrag) eintrag.hidden = false;
+      });
+    }
+    anzeigen();
+    if (an && knopf) knopf.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
   document.querySelectorAll<HTMLElement>('[data-merkliste-nur]').forEach((k) => {
     if (k.tagName === 'BUTTON') k.setAttribute('type', 'button');
     k.setAttribute('aria-pressed', 'false');
-    k.addEventListener('click', () => {
-      nurGemerkte = !nurGemerkte;
-      k.setAttribute('aria-pressed', String(nurGemerkte));
-      k.classList.toggle('ist-aktiv', nurGemerkte);
-      if (!nurGemerkte) {
-        document.querySelectorAll<HTMLElement>('[data-merken]').forEach((b) => {
-          const eintrag = b.closest<HTMLElement>('[data-katalog-eintrag]') ?? b.parentElement;
-          if (eintrag) eintrag.hidden = false;
-        });
-      }
-      anzeigen();
-    });
+    k.addEventListener('click', () => umschalten(k, !nurGemerkte));
   });
+
+  /*
+   * DIE MERKLISTE BRAUCHT EIN ZIEL.
+   *
+   * Der Baustein lieferte Knöpfe, Zähler und den Filter „nur Vorgemerkte" –
+   * aber keinen Weg, die Merkliste zu ÖFFNEN. Im Design führt das Herz in der
+   * Kopfleiste auf die gefilterte Liste. Ein Kundenprojekt musste sich das
+   * selbst bauen; beim ersten Versuch sprang der Link nur zu einem Anker, und
+   * für den Kunden sah es aus, als sei die ganze Funktion kaputt
+   * („das Favorisieren funktioniert auch nicht").
+   *
+   * Jetzt genügt ein gewöhnlicher Link:
+   *     <a href="/fahrzeuge#merkliste">♥ <span data-merkliste-anzahl></span></a>
+   * Auf der Katalogseite schaltet der Baustein den Filter selbst ein – auch
+   * wenn der Besucher von einer anderen Seite kommt.
+   */
+  const beiAnkerOeffnen = () => {
+    if (location.hash !== '#merkliste') return;
+    const knopf = document.querySelector<HTMLElement>('[data-merkliste-nur]');
+    if (!knopf || nurGemerkte) return;
+    umschalten(knopf, true);
+  };
+  beiAnkerOeffnen();
+  // Auch wenn der Anker erst NACHTRÄGLICH gesetzt wird (Link auf dieselbe Seite).
+  window.addEventListener('hashchange', beiAnkerOeffnen);
 
   anzeigen();
 }
