@@ -37,17 +37,43 @@ export function distSeiten(dist) {
 /** Startet den Server. Liefert Basis-URL, Routenliste und stop(). */
 export async function starteDistServer(dist) {
   const server = createServer((req, res) => {
-    let pfad = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    let datei = join(dist, pfad);
-    if (existsSync(datei) && statSync(datei).isDirectory()) datei = join(datei, 'index.html');
-    if (!existsSync(datei)) datei = `${join(dist, pfad)}.html`;
-    if (!existsSync(datei)) {
-      res.writeHead(404).end('nicht gefunden');
-      return;
+    /*
+     * ALLES ABFANGEN – der Server darf die Prüfung nicht mitreißen.
+     *
+     * WARUM: Ohne diesen Rahmen beendet JEDE Ausnahme im Bearbeiter den
+     * gesamten Node-Prozess. Eine Sicht- oder Bedien-Prüfung bricht dann mit
+     * einem Stapelabzug ab statt mit einer Meldung – für jemanden, der nicht
+     * programmiert, ist das ununterscheidbar von „die Seite ist kaputt".
+     * Der reale Auslöser ist ein Wettlauf: Zwischen `existsSync` und
+     * `readFileSync` kann die Datei verschwinden, wenn nebenher gebaut wird
+     * (ein Build leert dist/ und schreibt es neu). Am 2026-07-28 ist genau so
+     * ein Abbruch aufgetreten und war danach nicht mehr nachstellbar.
+     */
+    try {
+      let pfad = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+      let datei = join(dist, pfad);
+      if (existsSync(datei) && statSync(datei).isDirectory()) datei = join(datei, 'index.html');
+      if (!existsSync(datei)) datei = `${join(dist, pfad)}.html`;
+      if (!existsSync(datei)) {
+        res.writeHead(404).end('nicht gefunden');
+        return;
+      }
+      const inhalt = readFileSync(datei);
+      res.writeHead(200, { 'Content-Type': MIME[extname(datei).toLowerCase()] ?? 'application/octet-stream' });
+      res.end(inhalt);
+    } catch (e) {
+      /* 500 statt Absturz: Die Prüfung sieht dann eine kaputte Seite und
+         meldet sie – das ist das richtige Ergebnis und nicht das Ende. */
+      console.error('[dist-server] Anfrage fehlgeschlagen:', req.url, '->', e?.message ?? e);
+      try {
+        res.writeHead(500).end('Serverfehler');
+      } catch { /* Antwort schon unterwegs – dann ist nichts mehr zu retten */ }
     }
-    res.writeHead(200, { 'Content-Type': MIME[extname(datei).toLowerCase()] ?? 'application/octet-stream' });
-    res.end(readFileSync(datei));
   });
+
+  // Auch ein Fehler am Server selbst (Port, Netzwerk) darf nur melden, nicht töten.
+  server.on('clientError', (_e, socket) => socket.destroy());
+  server.on('error', (e) => console.error('[dist-server]', e?.message ?? e));
   await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
   return {
     basis: `http://127.0.0.1:${server.address().port}`,
