@@ -1,10 +1,36 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { site } from './content.config';
 
 const istLive = site.mode === 'live';
+
+/**
+ * Die Browser-Untergrenze steht in EINER Datei, nicht zweimal.
+ *
+ * `browser-untergrenze.json` wird hier gelesen und von `npm run browser`
+ * ebenso. Stuende die Zahl an beiden Stellen, liefe sie irgendwann
+ * auseinander - und dann prueft das Tor gegen etwas anderes, als gebaut wird.
+ */
+const grenze: Record<string, number> = JSON.parse(
+  readFileSync(new URL('./browser-untergrenze.json', import.meta.url), 'utf-8'),
+);
+
+/** Lightning CSS erwartet die Version in einer eigenen Schreibweise: 12 << 16 = 12.0 */
+const cssZiele = Object.fromEntries(
+  Object.entries(grenze)
+    .filter(([name]) => !name.startsWith('_'))
+    .map(([name, version]) => [name, version << 16]),
+);
+
+/** esbuild erwartet Namen wie "safari12". `ios_saf` kennt es nicht - iOS laeuft ohnehin auf Safari. */
+const jsZiele = [
+  'safari' + grenze.safari,
+  'chrome' + grenze.chrome,
+  'firefox' + grenze.firefox,
+  'edge' + grenze.edge,
+];
 
 /**
  * Erzeugt nach dem Build automatisch die Auslieferungs-Regeln für Vercel
@@ -195,5 +221,36 @@ export default defineConfig({
   },
   build: {
     inlineStylesheets: 'auto',
+  },
+
+  /**
+   * ZIEL-BROWSER - die Einstellung, deren FEHLEN eine fertige Seite auf
+   * aelteren Geraeten unbenutzbar machte, waehrend alle Pruefungen gruen waren.
+   *
+   * Ohne diese Angabe nimmt der Build an, jeder Browser sei taufrisch:
+   *
+   *  - Der CSS-Verdichter schreibt `@media (min-width: 900px)` in die Kurzform
+   *    `@media (width>=900px)` um. Die versteht Safari erst ab 16.4 (Maerz
+   *    2023). Ein Browser, der sie nicht kennt, verwirft nicht eine Zeile,
+   *    sondern den GANZEN Regelblock. Im Kundenprojekt blieb dadurch der
+   *    Menue-Knopf auf `display:none` UND die Navigationsliste ebenfalls - es
+   *    gab auf keiner Seite mehr eine Navigation.
+   *  - Das Skriptbuendel entsteht als "esnext". Eine Schreibweise, die der
+   *    Browser nicht LESEN kann, ist kein Ausfall eines Bausteins: Er bricht
+   *    beim Einlesen ab, und damit sind Menue, Filter, Merkliste, Formular und
+   *    Lightbox gleichzeitig tot - ohne Fehlermeldung fuer den Besucher.
+   *
+   * ACHTUNG, HIER LIEGT EINE FALLE: `environments.client.build.target` klingt
+   * richtig, wirkt aber nicht - Astros eigene Vorgabe gewinnt. Nur der
+   * `vite`-Schluessel unten greift.
+   *
+   * DIE ZAHLEN SELBST stehen in `browser-untergrenze.json`, dort auch die
+   * Anleitung zum Aendern. `npm run browser` misst den fertigen Build dagegen.
+   */
+  vite: {
+    // JavaScript: Was der Browser nicht LESEN kann, killt das ganze Buendel.
+    build: { target: jsZiele },
+    // CSS: verhindert die Kurzformen und ergaenzt noetige Hersteller-Praefixe.
+    css: { lightningcss: { targets: cssZiele } },
   },
 });

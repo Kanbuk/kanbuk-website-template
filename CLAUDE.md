@@ -135,6 +135,8 @@ die dagegen verstößt, darf nicht raus.
 - ✅ **Jede Seite** braucht eigenen Titel, eigene Description, eigene Canonical, OG-Bild.
 - ✅ **Jedes Bild** braucht einen Alt-Text.
 - ✅ **Genau eine `<h1>`** je Seite.
+- ✅ **Die Browser-Untergrenze halten** (`browser-untergrenze.json`, Abschnitt 4a).
+  `npm run browser` ist das fünfte Tor und Pflicht vor jedem Live-Gang.
 
 **Standard: cookiefrei, kein Tracking, kein Banner.** Das ist der Normalfall und ein
 Verkaufsargument – kein Banner heißt bessere Bedienung und mehr Anfragen.
@@ -211,6 +213,85 @@ grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 **Die Handy-Ansicht ist deine Entscheidung, nicht die des Designs** – dort gibt es sie
 nicht. Standardregeln: zwei Spalten → eine; vier Spalten → zwei → eine; Bild neben Text →
 Bild über Text; Sticky-Leisten am Handy prüfen (verdecken sie Inhalt?).
+
+---
+
+## 4a. Die Browser-Untergrenze (**der Fall „grün, aber kaputt"**)
+
+Der Motor sagt zu, **ab welchem Browser** eine Seite funktioniert. Die Zahl steht
+an genau einer Stelle: `browser-untergrenze.json`. `astro.config.ts` baut danach,
+`npm run browser` misst dagegen.
+
+**Warum das eine eiserne Regel ist:** In einem Kundenprojekt war die abgenommene
+Seite auf einem älteren Gerät unbenutzbar – **keine Navigation, auf keiner
+Seite** –, während alle vier Prüfungen grün waren. Der Grund ist bauartbedingt:
+`check`, `sicht`, `interaktion` und `abgleich` fahren alle dasselbe aktuelle
+Chromium. Ohne festgeschriebene Zusage gibt es kein Soll, und ohne Soll gibt es
+nichts zu prüfen. Ursache war eine **fehlende Angabe**, kein fehlerhafter
+Quelltext: Der CSS-Verdichter schrieb `@media (min-width: 900px)` in die Kurzform
+`@media (width>=900px)` um – die kennt Safari erst ab 16.4, und wer sie nicht
+kennt, verwirft **den ganzen Regelblock**.
+
+### Zwei Stufen, mit Absicht
+
+| | |
+| --- | --- |
+| **bedienbar ab** | Safari 12 – alles automatisch übersetzbar |
+| **vollständig ab** | **Safari 15.4** (Frühjahr 2022) – das ist die Zusage |
+
+Ab 15.4 sieht die Seite aus wie gebaut; das deckt jedes iPhone ab dem 6s ab.
+Darunter bleibt sie **lesbar und bedienbar, sieht aber karg aus** – vier
+CSS-Merkmale (`clamp`, `aspect-ratio`, `dvh`, `padding-block`) lassen sich nicht
+übersetzen. **Das ist eine Entscheidung, kein offener Punkt.** Auch das Aussehen
+bis Safari 12 zu retten hieße Ersatzwerte durch das ganze Token-System zu
+ziehen – geprüft und bewusst verworfen, es wäre Aufwand für weit unter ein
+Prozent der Besucher. Zum Vergleich in die andere Richtung: Vite hätte von sich
+aus Safari 16.4 gewählt, also 2023 statt 2022.
+
+### Schreibweisen im Browser-Code (**Regel für Motor-Bausteine**)
+
+Gilt für alles unter `src/lib/verhalten/` und für jedes `<script>` in einer
+Seite – **nicht** für `scripts/`, das läuft in Node.
+
+1. **Kein Zerlegen in Klammern.** `const [a, b] = …` und `const { a } = …` sind
+   die einzige moderne Schreibweise, die der Übersetzer **nicht** ersetzen kann.
+   Steht sie irgendwo im Browser-Code, ist das **gesamte Skriptbündel** für
+   ältere Browser ein Lesefehler – dann fällt nicht ein Baustein aus, sondern
+   alle gleichzeitig, ohne Meldung für den Besucher. Ausschreiben:
+   `const a = x[0]; const b = x[1];`
+2. **Jedes CSS-Merkmal jünger als die Untergrenze braucht einen Ersatzwert
+   davor.** Ein Browser, der die zweite Zeile nicht versteht, verwirft nur sie
+   und behält die erste:
+   ```css
+   background: var(--farbe-hintergrund);                      /* alter nimmt den */
+   background: color-mix(in srgb, var(--farbe-hintergrund) 82%, transparent);
+   ```
+   `color-mix()` und `dvh` standen in Motor-Bausteinen und hätten **jeden** Klon
+   getroffen.
+3. **Bilder immer `<Picture>` mit `fallbackFormat="jpeg"`**, dazu
+   `picture { display: contents }` in `global.css`. Ohne Ersatzfassung zeigen
+   Macs mit älterem Betriebssystem **kein einziges Foto** – dort hängt WebP am
+   System, nicht an der Safari-Version. Das sind genau die Rechner, die in
+   Betrieben als Büro-Mac weiterlaufen. Bei einem Händler fällt damit aus, was
+   verkauft. Logos bleiben `<Image>`: klein, oft mit Transparenz.
+
+### Was das fünfte Tor NICHT sieht
+
+Ehrlich benannt, damit niemand sich in falscher Sicherheit wiegt:
+
+- **JavaScript** prüft es vollständig, **CSS** nur gegen eine benannte Liste in
+  `scripts/browser.mjs`. Ein brandneues Merkmal, das dort fehlt, fällt durch –
+  dann gehört es in `CSS_MERKMALE`. Ein maschinelles Auffangnetz wurde versucht
+  und verworfen: Es meldete konstruktionsbedingt Falschmeldungen.
+- **Funktionen, die erst im Browser fehlen**, nicht in der Datei:
+  `dialog.showModal()`, `replaceChildren`, `matchMedia.addEventListener`.
+  Syntaktisch sind sie einwandfrei.
+- **Bild- und Schriftformate, Zertifikate, Netzwerk.**
+- **Wie schlimm es aussieht.** Das Tor sagt, WAS fehlt. Das Aussehen zeigt
+  `npm run altgeraet` – Bilder der Seite ohne die modernen Merkmale, ohne dass
+  ein altes Gerät da sein muss. **Ansehen ist Pflicht**, genau daran ist die
+  Einschätzung im Kundenprojekt einmal vorbeigegangen.
+- **Ein echtes Altgerät ersetzt es nicht.** Siehe STAND.md, offener Punkt.
 
 ---
 
@@ -475,6 +556,9 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
    `pruefung/texte.md` gelesen (Rechtschreibung, Ansprache), die Bögen angesehen
    (Layout über alle Breiten), Verdachtsfälle im Einzel-Screenshot (Etappe 5).
 3a. `npm run interaktion` ist **grün** – jedes Bedien-Element klickt wirklich.
+3b. `npm run browser` ist **grün** – die Seite hält die Browser-Untergrenze
+   (Abschnitt 4a). Dazu **einmal `npm run altgeraet` und die Bilder ansehen**:
+   Erwartet wird „ärmer, aber lesbar und bedienbar" – alles andere ist ein Befund.
 4. Lighthouse-Ziel **≥ 95** in allen vier Kategorien.
 5. **STAND.md ist aktuell** (Phase, Lücken, Verlaufszeile dieser Sitzung).
 6. Committen und pushen (ein Kunde = ein Repo/Branch).
@@ -520,6 +604,8 @@ keines optimiert wurde.
 | `npm run og -- --bild fotos/<hero>.jpg` | OG-Vorschaubild aus echtem Foto (beim Port Pflicht) |
 | `npm run sicht` | **Sichtprüfung im echten Browser** – Screenshots + Überlauf-/Fehler-Messung + `pruefung/texte.md` + Bögen |
 | `npm run interaktion` | **Bedien-Prüfung** – fährt jeden Verhaltens-Baustein real (350 + 1440 px) |
+| `npm run browser` | **Browser-Prüfung** – hält den Build gegen `browser-untergrenze.json` (Abschnitt 4a) |
+| `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
 | `npm run bogen -- --fotos` | Kontaktbögen aller Fotos (Sichtpflicht mit 1–2 Reads statt 20) |
 | `npm run holen -- --url <…> --ziel <pfad>` | Download + Integritätsprüfung (nie Base64 durch den Chat!) |
 | `npm run preisliste` | Preislisten-JSON aus dem Design validieren → `daten/preisliste.ts` |

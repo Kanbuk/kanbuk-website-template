@@ -261,7 +261,23 @@ wird dabei ersetzt.
 
 ---
 
-## Etappe 5 – Die Launch-Prüfung (vier Stufen, alle Pflicht)
+## Etappe 5 – Die Launch-Prüfung (fünf Stufen, alle Pflicht)
+
+**Stufe 5 ist `npm run browser`** – sie hält den Build gegen die
+Browser-Untergrenze (CLAUDE.md Abschnitt 4a). Sie kam dazu, weil eine
+abgenommene Seite auf einem älteren Gerät unbenutzbar war, während alle vier
+anderen Stufen grün waren: Die fahren alle dasselbe aktuelle Chromium.
+
+Dazu einmal **`npm run altgeraet`** und die Bilder **ansehen**. Das Tor sagt,
+WAS fehlt – nicht, wie schlimm es aussieht. Erwartet wird „ärmer, aber lesbar
+und bedienbar"; alles andere ist ein Befund.
+
+Beim Bauen der Seiten deshalb von Anfang an:
+`<Picture formats={['webp']} fallbackFormat="jpeg">` statt `<Image>` für
+Inhaltsbilder, kein Zerlegen in Klammern in Browser-Code, Ersatzwert vor jedem
+modernen CSS-Merkmal.
+
+
 
 **Vorbedingung:** `package.json → name` ist `kanbuk-<kunde>` – sonst prüft das
 Tor im Template-Modus und Referenz-Reste rutschen durch.

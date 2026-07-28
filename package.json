@@ -1,7 +1,7 @@
 {
   "name": "kanbuk-website-template",
   "type": "module",
-  "version": "2026.7.27",
+  "version": "2026.7.28",
   "description": "Technischer Motor für Kunden-Websites – Design kommt aus Claude Design",
   "scripts": {
     "dev": "astro dev",
@@ -18,6 +18,8 @@
     "sicht": "node scripts/sicht.mjs",
     "vorcheck": "node scripts/vorcheck.mjs",
     "interaktion": "node scripts/interaktion.mjs",
+    "browser": "node scripts/browser.mjs",
+    "altgeraet": "node scripts/altgeraet.mjs",
     "bogen": "node scripts/bogen.mjs",
     "holen": "node scripts/holen.mjs",
     "preisliste": "node scripts/preisliste.mjs",

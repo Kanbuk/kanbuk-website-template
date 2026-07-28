@@ -1,0 +1,24 @@
+{
+  "_1_was_ist_das": "Die aelteste Browser-Generation, die diese Website noch bedienen koennen muss. Diese Datei ist die EINZIGE Stelle, an der die Grenze steht - astro.config.ts baut danach, scripts/browser.mjs prueft danach. Stuende die Zahl zweimal da, liefe sie irgendwann auseinander.",
+
+  "_2_warum_es_sie_gibt": "Ohne feste Grenze nimmt der Build an, jeder Browser sei taufrisch, und schreibt Kurzformen von 2023 ins Ergebnis. In einem Kundenprojekt verschwand dadurch auf aelteren Geraeten die KOMPLETTE Navigation - kein Menue-Knopf, keine Menueliste, auf keiner Seite. Alle vier Pruefungen des Motors waren dabei gruen, weil sie alle dasselbe aktuelle Chromium fahren.",
+
+  "_3_wie_man_sie_aendert": "Zahl erhoehen = neuere Geraete gefordert, kleinere Dateien, mehr moderne Technik erlaubt. Zahl senken = aeltere Geraete bedient. Nach jeder Aenderung 'npm run check' und 'npm run browser' - das Tor sagt, ob der Bau die neue Grenze einhaelt.",
+
+  "_4_zwei_stufen": "Es gibt ZWEI Grenzen, weil zwei verschiedene Dinge kaputtgehen. 'safari' ist die BEDIENBAR-Grenze: bis dorthin laesst sich alles automatisch in aeltere Schreibweisen uebersetzen - Navigation, Filter, Merkliste, Formular und Bilder funktionieren. 'vollstaendig_ab_safari' ist die AUSSEHEN-Grenze: vier CSS-Merkmale (clamp, aspect-ratio, dvh, padding-block) lassen sich NICHT uebersetzen. Darunter wird die Seite optisch aermer - Abstaende fallen weg, Schriftgroessen verlieren die Abstufung, Bilder springen beim Laden. Lesbar und bedienbar bleibt sie.",
+
+  "_5_die_zusage": "Die Zusage an den Kunden lautet: VOLLSTAENDIG ab Safari 15.4 (Fruehjahr 2022). Das deckt jedes iPhone ab dem 6s ab. Darunter bleibt die Seite bedienbar, sieht aber karg aus - das ist eine bewusste Entscheidung und KEIN offener Punkt.",
+
+  "_6_warum_nicht_tiefer": "Auch das Aussehen bis Safari 12 zu retten hiesse Ersatzwerte durch das ganze Token-System zu ziehen. Das wurde in einem Kundenprojekt geprueft und bewusst verworfen: Es waere Aufwand fuer weit unter ein Prozent der Besucher. Zum Vergleich in die andere Richtung: Vite haette von sich aus Safari 16.4 gewaehlt - also 2023 statt 2022. Die Grenze hier ist bewusst gesetzt, nicht moeglichst tief und nicht moeglichst bequem.",
+
+  "_7_sehen_statt_lesen": "'npm run browser' sagt, WAS ein alter Browser nicht kann. Wie schlimm das aussieht, zeigt 'npm run altgeraet' - Bilder der Seite ohne die modernen Merkmale, ohne dass ein altes Geraet da sein muss.",
+
+  "vollstaendig_ab_safari": 15.4,
+  "safari": 12,
+  "ios_saf": 12,
+  "chrome": 70,
+  "firefox": 68,
+  "edge": 79,
+  "android": 70,
+  "samsung": 10
+}

@@ -15,7 +15,7 @@
  *  portieren. Siehe CLAUDE.md -> „Portier-Rezept".
  * =============================================================================
  */
-import { Image } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Kopf from '../components/Kopf.astro';
 import Fuss from '../components/Fuss.astro';
@@ -42,7 +42,14 @@ const heroBild = bild('hero.jpg');
 
       {heroBild && (
         <div class="hero__bild">
-          <Image
+          {/* <Picture> statt <Image>: liefert WebP fuer moderne Browser UND
+              eine JPEG-Ersatzfassung. Ohne sie zeigen Macs mit aelterem
+              Betriebssystem KEIN einziges Foto - dort haengt WebP am System,
+              nicht an der Safari-Version. Das sind genau die Rechner, die in
+              Betrieben als Buero-Mac weiterlaufen. */}
+          <Picture
+            formats={['webp']}
+            fallbackFormat="jpeg"
             src={heroBild}
             alt="Referenz-Bild: zeigt, dass die Bild-Pipeline aus fotos/ funktioniert"
             widths={[480, 768, 1200, 1800]}
@@ -140,6 +147,8 @@ const heroBild = bild('hero.jpg');
     padding-block: var(--raum-2xl);
   }
   .block--getoent {
+    /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). */
+    background: var(--farbe-flaeche, #f5f5f5);
     background: var(--farbe-flaeche, color-mix(in srgb, var(--farbe-text) 4%, var(--farbe-hintergrund)));
   }
   .block h2 {
@@ -160,6 +169,7 @@ const heroBild = bild('hero.jpg');
   }
   .liste li {
     padding: var(--raum-s);
+    border: 1px solid rgba(0, 0, 0, 0.14);
     border: 1px solid color-mix(in srgb, var(--farbe-text) 14%, transparent);
     border-radius: var(--radius);
   }
@@ -170,6 +180,7 @@ const heroBild = bild('hero.jpg');
     max-width: 60ch;
   }
   .akkordeon details {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.14);
     border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 14%, transparent);
   }
   .akkordeon summary {

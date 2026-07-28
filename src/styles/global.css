@@ -130,6 +130,24 @@ svg {
   height: auto;
 }
 
+/*
+ * `<picture>` erzeugt KEINEN eigenen Kasten.
+ *
+ * WARUM: Ein Bild mit Ersatzfassung steht in einem `<picture>`-Rahmen. Der
+ * schiebt sich zwischen die Kachel und das Bild - und damit bezieht sich
+ * jedes `height: 100%` am Bild ploetzlich auf den Rahmen statt auf die
+ * Kachel. Weil der Rahmen selbst `height: auto` hat, wird daraus "so hoch
+ * wie noetig": Karten und Kacheln fallen in sich zusammen.
+ *
+ * `display: contents` blendet nur den Kasten aus, nicht den Inhalt - das Bild
+ * sitzt fuers Layout wieder direkt in der Kachel. So bleibt jede bestehende
+ * CSS-Regel gueltig, obwohl sich das Markup geaendert hat.
+ * Gibt es seit Safari 11.1 und damit unterhalb unserer Untergrenze.
+ */
+picture {
+  display: contents;
+}
+
 /* Formularelemente erben die Schrift (sonst System-Default). */
 input,
 textarea,

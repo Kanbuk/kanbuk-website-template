@@ -136,8 +136,21 @@ export function filterStarten(): void {
       elemente.forEach((el) => {
         let zeigen = true;
 
-        // Merkmalsgruppen: innerhalb ODER, zwischen UND
-        for (const [merkmal, werte] of auswahl) {
+        /*
+         * Merkmalsgruppen: innerhalb ODER, zwischen UND
+         *
+         * WARUM HIER KEIN `const [a, b] of …` STEHT (gilt fuer jede Stelle in
+         * jedem Verhaltens-Baustein): Das Zerlegen in Klammern ist die EINZIGE
+         * moderne Schreibweise, die der Uebersetzer nicht in eine aeltere
+         * umwandeln kann. Solange sie hier steht, ist das GESAMTE Skriptbuendel
+         * fuer aeltere Browser ein Lesefehler - und dann faellt nicht nur der
+         * Filter aus, sondern alles gleichzeitig: Menue, Merkliste, Formular,
+         * Lightbox. Ausgeschrieben kostet es zwei Zeilen.
+         * `npm run browser` schlaegt an, wenn es jemand wieder einbaut.
+         */
+        for (const eintrag of auswahl) {
+          const merkmal = eintrag[0];
+          const werte = eintrag[1];
           if (werte.size === 0) continue;
           const eigene = (el.dataset[merkmal] ?? '').split(/\s+/).filter(Boolean);
           if (!eigene.some((w) => werte.has(w))) { zeigen = false; break; }
@@ -145,7 +158,9 @@ export function filterStarten(): void {
 
         // Obergrenzen
         if (zeigen) {
-          for (const [merkmal, max] of grenzen) {
+          for (const eintrag of grenzen) {
+            const merkmal = eintrag[0];
+            const max = eintrag[1];
             const wert = zahl(el.dataset[merkmal]);
             // Ein Eintrag OHNE den Wert wird nicht ausgeblendet – sonst
             // verschwinden Einträge, bei denen die Angabe schlicht fehlt.
@@ -169,8 +184,9 @@ export function filterStarten(): void {
 
     function sortieren(wert: string) {
       if (!wert) return;
-      const [merkmal, richtung] = wert.split('-');
-      const faktor = richtung === 'ab' ? -1 : 1;
+      const teile = wert.split('-');
+      const merkmal = teile[0];
+      const faktor = teile[1] === 'ab' ? -1 : 1;
       const sortiert = [...elemente].sort((a, b) => {
         const x = zahl(a.dataset[merkmal]);
         const y = zahl(b.dataset[merkmal]);

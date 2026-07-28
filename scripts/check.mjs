@@ -618,10 +618,39 @@ if (existsSync(fotoOrdner)) {
 //  6. BILDER – Gewicht und Format
 // ---------------------------------------------------------------------------
 const bilder = dateien.filter((f) => ['.jpg', '.jpeg', '.png', '.webp', '.avif'].includes(extname(f).toLowerCase()));
+
+/*
+ * ERSATZFASSUNGEN WERDEN ANDERS GEWOGEN.
+ *
+ * Die Gewichtsgrenze unterstellt: Was ausgeliefert wird, lädt jeder Besucher.
+ * Bei einem `<picture>` stimmt das nicht mehr – dort steht das moderne Format
+ * in `<source>`, die ältere Fassung nur im `<img src>`. Wer WebP kann
+ * (praktisch jeder seit 2020), lädt die Ersatzfassung NIE.
+ *
+ * Würde man sie mit demselben Maß wiegen, gäbe es nur zwei Auswege: die
+ * Bildqualität für ALLE senken, oder auf die Ersatzfassung verzichten – und
+ * damit auf jedes Foto bei genau den Besuchern, die sie brauchen. Beides wäre
+ * falsch. Deshalb ein eigenes, großzügigeres, aber vorhandenes Maß.
+ */
+const ersatzfassungen = new Set();
+for (const seite of htmlDateien) {
+  const html = readFileSync(seite, 'utf-8');
+  for (const m of html.matchAll(/<picture[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/g)) {
+    ersatzfassungen.add(m[1].split('/').pop());
+  }
+}
+
 for (const b of bilder) {
   const kb = statSync(b).size / 1024;
   const name = kurz(b);
   if (name === 'og.jpg') continue; // OG-Bild darf größer sein
+
+  if (ersatzfassungen.has(name.split('/').pop())) {
+    if (kb > 600) fehler(`${name}: ${Math.round(kb)} KB – Ersatzfassung zu schwer (Grenze 600 KB)`);
+    else if (kb > 400) warnung(`${name}: ${Math.round(kb)} KB – Ersatzfassung grenzwertig`);
+    continue;
+  }
+
   if (kb > 300) fehler(`${name}: ${Math.round(kb)} KB – zu schwer (Richtwert: max. 200 KB, Hero ~200 KB)`);
   else if (kb > 200) warnung(`${name}: ${Math.round(kb)} KB – grenzwertig`);
 }
@@ -953,6 +982,51 @@ if (istTemplate) {
         }
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  8bb. SCHREIBWEISEN IM BROWSER-CODE
+//
+//  `npm run browser` findet das im fertigen Bündel – aber mit der Meldung des
+//  Übersetzers („Transforming destructuring … not supported yet") und ohne
+//  Dateinamen aus dem Quelltext. Diese Regel sagt dasselbe an der Stelle, an
+//  der es zu ändern ist.
+//
+//  WARUM AUSGERECHNET DIESE EINE SCHREIBWEISE: Das Zerlegen in Klammern
+//  (`const [a, b] = …`, `const { a } = …`) ist die einzige moderne Form, die
+//  der Übersetzer NICHT in eine ältere umwandeln kann. Steht sie irgendwo im
+//  Browser-Code, ist das GESAMTE Skriptbündel für ältere Browser ein
+//  Lesefehler – und dann fällt nicht ein Baustein aus, sondern alle
+//  gleichzeitig: Menü, Filter, Merkliste, Formular, Lightbox. Ohne Meldung
+//  für den Besucher. In einem Kundenprojekt hoben fünf solche Stellen die
+//  Untergrenze des ganzen Bündels um zwei Safari-Generationen.
+//
+//  NUR Browser-Code. In scripts/ ist Zerlegen völlig in Ordnung – das läuft
+//  in Node auf einem aktuellen Rechner, nie im Browser eines Besuchers.
+// ---------------------------------------------------------------------------
+{
+  const browserCode = alleDateien(join(WURZEL, 'src', 'lib', 'verhalten'))
+    .filter((f) => extname(f) === '.ts');
+  const zerlegen = /^\s*(?:const|let|var)\s*[[{]|for\s*\(\s*(?:const|let|var)\s*[[{]/;
+
+  for (const f of browserCode) {
+    const zeilen = readFileSync(f, 'utf-8').split(/\r?\n/);
+    const name = relative(WURZEL, f).replace(/\\/g, '/');
+    zeilen.forEach((zeile, i) => {
+      // Kommentarzeilen erklären die Regel oft am Beispiel – die zählen nicht.
+      if (/^\s*(\*|\/\/|\/\*)/.test(zeile)) return;
+      if (!zerlegen.test(zeile)) return;
+      fehler(
+        [
+          `${name}:${i + 1}: Zerlegen in Klammern im Browser-Code.`,
+          `    „${zeile.trim().slice(0, 80)}"`,
+          '    Diese eine Schreibweise kann der Übersetzer nicht ersetzen. Solange sie hier steht,',
+          '    ist das GESAMTE Skriptbündel für ältere Browser unlesbar – dann funktioniert KEIN',
+          '    Bedien-Element mehr. Ausschreiben: const a = x[0]; const b = x[1];',
+        ].join('\n'),
+      );
+    });
   }
 }
 

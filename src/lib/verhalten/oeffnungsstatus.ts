@@ -58,9 +58,17 @@ function jetztIn(zeitzone: string): { datum: string; tag: number; minuten: numbe
   };
 }
 
+/*
+ * Ausgeschrieben statt `const [h, m] = …` - siehe die ausfuehrliche
+ * Begruendung in `filter.ts`: Diese eine Schreibweise kann der Uebersetzer
+ * nicht in eine aeltere umwandeln, und sie allein macht das GESAMTE
+ * Skriptbuendel fuer aeltere Browser unlesbar.
+ */
 const zuMinuten = (hhmm: string) => {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + (m || 0);
+  const teile = hhmm.split(':');
+  const stunde = Number(teile[0]);
+  const minute = Number(teile[1]);
+  return stunde * 60 + (minute || 0);
 };
 
 export function oeffnungsstatusStarten(): void {
@@ -73,7 +81,10 @@ export function oeffnungsstatusStarten(): void {
     }
 
     function zeige() {
-      const { datum, tag, minuten } = jetztIn(plan.zeitzone);
+      const jetzt = jetztIn(plan.zeitzone);
+      const datum = jetzt.datum;
+      const tag = jetzt.tag;
+      const minuten = jetzt.minuten;
 
       // 1) Feiertag / Betriebsurlaub schlägt den Wochenrhythmus.
       const sonder = plan.sonder.find((s) => datum >= s.von && datum <= s.bis);

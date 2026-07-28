@@ -123,11 +123,18 @@ const eintraege = site.seiten.filter((s) => s.inNavigation !== false);
       top: 100%;
       display: none;
       background: var(--farbe-hintergrund);
+      /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). Ohne ihn haette
+         das offene Menue unten keine Abgrenzung zur Seite darunter. */
+      border-bottom: 1px solid rgba(0, 0, 0, 0.12);
       border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
       padding: var(--raum-xs) var(--gutter) var(--raum-s);
       /* PFLICHT, nicht Kosmetik: Ohne Höhenbegrenzung und eigenes Scrollen
          sind im Querformat (Handy quer, kurzer Bildschirm) die unteren
          Menüpunkte unerreichbar – im Piloten live nachgemessen. */
+      /* `dvh` erst ab Safari 15.4 - ohne Ersatzwert fiele die Begrenzung
+         genau dort weg, wo sie Pflicht ist (Handy quer, kurzer Bildschirm).
+         `vh` ist minimal ungenauer, aber ueberall verfuegbar. */
+      max-height: calc(100vh - 100%);
       max-height: calc(100dvh - 100%);
       overflow-y: auto;
       overscroll-behavior: contain;

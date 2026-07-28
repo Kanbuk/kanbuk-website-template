@@ -56,6 +56,14 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
       nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
       Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
+- [ ] **Browser-Untergrenze nie auf einem ECHTEN alten Gerät nachgestellt.**
+      Die Ursachen erklären das gemeldete Symptom vollständig, und `npm run
+      browser` sowie `npm run altgeraet` decken CSS und Aussehen ab. Ob
+      *restlos*, weiß man erst nach einer Sitzung auf einem echten Gerät mit
+      altem iOS oder altem macOS (BrowserStack o. ä.). Das gehört EINMAL
+      gemacht und das Ergebnis dann als Erfahrungswert hierher. Nicht sehen
+      kann die Prüfung ohnehin: Laufzeit-Funktionen (`dialog.showModal`,
+      `replaceChildren`), Bild- und Schriftformate, Netzwerk.
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
       nach Art. 28 DSGVO. Noch nirgends vorgesehen.
@@ -155,6 +163,52 @@ genau das Muster, das `npm run preisliste` schon hat.
   Verzweigung. Nur ein Rezept, das liest, wer es braucht.
 
 ## Verlauf
+
+- **2026-07-28** – **Browser-Untergrenze: der Fall „überall grün, beim Besucher
+  kaputt".** Rückfluss aus einem Kundenprojekt. Dort war die bereits abgenommene
+  Seite auf einem älteren Gerät des Auftraggebers unbenutzbar – **keine
+  Navigation, auf keiner Seite** –, während alle vier Prüfungen grün waren.
+  Das ist bauartbedingt: Alle vier fahren dasselbe aktuelle Chromium, und es gab
+  nirgends eine Zusage, welche Browser überhaupt unterstützt werden. Ohne Soll
+  gibt es nichts zu prüfen. Die Ursache war eine **fehlende Angabe**, kein
+  fehlerhafter Quelltext:
+  - Der CSS-Verdichter schrieb `@media (min-width: 900px)` in die Kurzform
+    `@media (width>=900px)` um – verständlich erst ab Safari 16.4 (2023). Wer
+    sie nicht kennt, verwirft **den ganzen Regelblock**. Betroffen war unter
+    anderem der Block, der den Menü-Knopf sichtbar macht.
+  - Das Skriptbündel entstand als „esnext". Eine Schreibweise, die der Browser
+    nicht LESEN kann, ist kein Ausfall eines Bausteins: Er bricht beim Einlesen
+    ab – Menü, Filter, Merkliste, Formular und Lightbox sind gleichzeitig tot.
+  - Bilder gingen nur als WebP ohne Ersatzfassung hinaus. Auf Macs mit älterem
+    Betriebssystem erscheint dort **kein einziges Foto**.
+
+  **Übernommen (die sieben Punkte aus der Rückmeldung):** `browser-untergrenze.json`
+  als einzige Stelle für die Zusage, Weitergabe in `astro.config.ts` (Falle
+  dabei: `environments.client.build.target` klingt richtig, wirkt aber nicht –
+  nur der `vite`-Schlüssel greift), `npm run browser` als **fünftes Tor** und in
+  der Definition of Done, fünf Zerlege-Stellen in `filter.ts`/`oeffnungsstatus.ts`
+  ausgeschrieben, Bilder auf `<Picture>` mit JPEG-Ersatzfassung samt
+  `picture { display: contents }`, Ersatzwerte vor `color-mix()` und `dvh` in
+  den Motor-Bausteinen, und die Grenzen des Tors ehrlich dokumentiert.
+
+  **Dazu zwei eigene Wächter:** eine Quelltext-Regel gegen das Zerlegen in
+  Klammern (sagt es an der Stelle, an der es zu ändern ist, statt im fertigen
+  Bündel) und ein eigenes Gewichtsmaß für Ersatzfassungen – die alte Regel
+  unterstellt, jeder Besucher lade jedes Bild; bei einem `<picture>` lädt die
+  Ersatzfassung praktisch niemand.
+
+  **`npm run altgeraet`** zeigt in 30 Sekunden, wie die Seite auf einem alten
+  Browser AUSSIEHT, ohne dass ein altes Gerät da sein muss. Es kam dazu, weil
+  das Tor nur sagt, WAS fehlt – im Kundenprojekt las sich das als „ärmer, aber
+  bedienbar", während auf dem echten Gerät Elemente aneinanderklebten.
+  Nachgesehen: bei 350 px eng, aber vollständig lesbar und bedienbar, Menü-Knopf
+  sichtbar. Das ist die Zusage.
+
+  **Die Grenze ist bewusst gesetzt:** vollständig ab Safari 15.4 (Frühjahr 2022,
+  jedes iPhone ab 6s). Darunter bedienbar, aber karg – kein offener Punkt,
+  sondern eine Entscheidung. Auch das Aussehen bis Safari 12 zu retten wurde im
+  Kundenprojekt geprüft und verworfen: Aufwand für weit unter ein Prozent der
+  Besucher. Zum Vergleich: Vite hätte von sich aus Safari 16.4 gewählt.
 
 - **2026-07-27** – **Vorarbeit für den ersten Zeittest.** Sechs Befunde aus der
   Praxis-Prüfung abgearbeitet, damit die gemessene Zahl etwas wert ist:

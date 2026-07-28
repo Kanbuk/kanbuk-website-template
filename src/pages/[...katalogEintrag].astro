@@ -22,7 +22,7 @@
  *  bleiben stehen.
  * =============================================================================
  */
-import { Image, getImage } from 'astro:assets';
+import { Picture, getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Kopf from '../components/Kopf.astro';
 import Fuss from '../components/Fuss.astro';
@@ -201,7 +201,13 @@ const absatzTrenner = /\n\s*\n/;
               {bilder.map((b, i) =>
                 b.quelle ? (
                   <figure>
-                    <Image
+                    {/* <Picture> mit JPEG-Ersatzfassung - siehe index.astro.
+                        Bei einem Katalog faellt das besonders ins Gewicht:
+                        Ohne Ersatzfassung sieht ein Interessent auf einem
+                        aelteren Buero-Mac kein einziges Foto des Eintrags. */}
+                    <Picture
+                      formats={['webp']}
+                      fallbackFormat="jpeg"
                       src={b.quelle}
                       alt={b.alt}
                       widths={[400, 800, 1280, 1600]}
