@@ -999,6 +999,54 @@ if (istTemplate) {
 }
 
 // ---------------------------------------------------------------------------
+//  8a2. BILDZEICHEN – die Bibliothek ist DATENQUELLE, kein Auslieferungsgut
+//
+//  Lucide liegt vollstaendig im Repo (rund 2.000 Symbole). Das ist bequem beim
+//  Portieren und waere ein Eigentor gegen die eigene Ladezeit-Regel, wenn davon
+//  mehr in der Auslieferung landete als gebraucht wird. `Symbol.astro` gibt
+//  konstruktionsbedingt nur Angefordertes aus - diese Regel MISST nach, statt
+//  sich darauf zu verlassen.
+// ---------------------------------------------------------------------------
+let bildzeichenImBuild = 0;
+{
+  // 1. Die Bibliotheksdatei selbst darf nirgends im Build liegen.
+  for (const f of dateien) {
+    const name = kurz(f);
+    if (/^icons\//.test(name) || /(lucide|heroicons|phosphor|feather)\.json$/.test(name)) {
+      fehler(
+        [
+          `${name}: Die Symbol-Bibliothek liegt in der Auslieferung.`,
+          '    Sie ist Datenquelle im Repo (icons/), nicht Auslieferungsgut - rund 2.000 ungenutzte',
+          '    Symbole waeren ein Eigentor gegen die eigene Ladezeit-Regel. Gehoert NICHT nach public/.',
+        ].join('\n'),
+      );
+    }
+  }
+
+  // 2. Wie viele verschiedene Symbole stehen wirklich in den Seiten?
+  const benutzt = new Set();
+  for (const f of htmlDateien) {
+    for (const m of readFileSync(f, 'utf-8').matchAll(/data-symbol="([^"]+)"/g)) benutzt.add(m[1]);
+  }
+
+  /* Die Obergrenze ist bewusst grosszuegig und trotzdem da. Eine echte
+     Kundenseite kommt mit ein bis drei Dutzend Zeichen aus; wer die 150
+     ueberschreitet, hat mit hoher Wahrscheinlichkeit die Bibliothek
+     ausgeschuettet statt einzelne Symbole angefordert. Lieber eine Zahl, die
+     nie im Weg steht, als gar keine Messung. */
+  if (benutzt.size > 150) {
+    fehler(
+      [
+        `${benutzt.size} verschiedene Bildzeichen im Build - das sieht nach ausgeschuetteter Bibliothek aus.`,
+        '    <Symbol> gibt je Aufruf genau ein Zeichen aus. So viele verschiedene braucht keine Seite;',
+        '    vermutlich wird irgendwo ueber alle Namen der Bibliothek gelaufen.',
+      ].join('\n'),
+    );
+  }
+  bildzeichenImBuild = benutzt.size;
+}
+
+// ---------------------------------------------------------------------------
 //  8ba. DESIGN-FARBEN MUESSEN HEX-WERTE SEIN
 //
 //  Der Motor rechnet aus den Farben abgeleitete Toene (Trennlinien, halbdurch-
@@ -1347,7 +1395,9 @@ if (istLive || nurLive) {
 // ---------------------------------------------------------------------------
 console.log('');
 console.log(
-  `Geprüft: ${htmlDateien.length} Seite(n), ${bilder.length} Bild(er) — Modus: ${istLive ? 'live' : 'demo'} — Motor ${pkg.version ?? '?'}`,
+  `Geprüft: ${htmlDateien.length} Seite(n), ${bilder.length} Bild(er)` +
+    (bildzeichenImBuild ? `, ${bildzeichenImBuild} Bildzeichen` : '') +
+    ` — Modus: ${istLive ? 'live' : 'demo'} — Motor ${pkg.version ?? '?'}`,
 );
 console.log('');
 

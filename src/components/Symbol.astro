@@ -1,0 +1,115 @@
+---
+/**
+ * Symbol – MOTOR-Baustein für Bildzeichen (Icons).
+ *
+ *     <Symbol name="car-front" />
+ *     <Symbol name="phone" label="Anrufen" />        ← trägt Bedeutung
+ *     <Symbol name="home" set="heroicons" />         ← andere Bibliothek
+ *
+ * WOHER DIE SYMBOLE KOMMEN: Lucide liegt VOLLSTÄNDIG im Motor
+ * (`icons/lucide.json`, rund 2.000 Symbole, feste Version). Jedes Zeichen, das
+ * ein Claude Design per Name einbindet, ist damit da.
+ *
+ * ICONS WERDEN NIEMALS SELBST GEZEICHNET. In einem Kundenprojekt wurden sie
+ * mangels Alternative nachgezeichnet – danach sah jedes Zeichen der Seite
+ * anders aus als im Design, und die ganze Seite wirkte fremd. Fehlt ein Symbol
+ * wirklich, ist das eine Motor-Meldung, kein Anlass, den Stift zu nehmen.
+ *
+ * NUR ANGEFORDERTES LANDET IM BUILD: Die Bibliothek ist Datenquelle im Repo.
+ * Diese Komponente gibt genau ein Symbol aus – das angeforderte. Das Prüf-Tor
+ * misst nach, dass die Bibliothek selbst nicht in der Auslieferung landet.
+ *
+ * DAS AUSSEHEN bestimmt das Design: Die Hülle trägt `currentColor` und
+ * `1em`-Maße, das Symbol nimmt also Farbe und Größe seiner Umgebung an.
+ * Feinschliff über `.symbol` bzw. `[data-symbol="car-front"]`.
+ */
+import lucide from '../../icons/lucide.json';
+
+interface Props {
+  /** Name in der Bibliothek, z. B. 'car-front'. */
+  name: string;
+  /** Andere Bibliothek – braucht `npm run icons -- --set <name> --namen "…"`. */
+  set?: string;
+  /**
+   * Was ein Screenreader vorlesen soll. WEGLASSEN, wenn das Symbol nur
+   * schmückt und der Text daneben dasselbe sagt – dann ist Schweigen richtig
+   * und das Symbol wird ausgeblendet.
+   */
+  label?: string;
+  class?: string;
+  /** Strichstärke. Lucide zeichnet mit 2; dünnere Designs nehmen 1.5. */
+  strichstaerke?: number;
+}
+const { name, set = 'lucide', label, class: klasse, strichstaerke = 2 } = Astro.props;
+
+/* Fremde Bibliotheken liegen als eigene Datei daneben. Bewusst über
+   import.meta.glob statt eines dynamischen import: So merkt der Build, welche
+   Dateien überhaupt gebraucht werden, und eine fehlende fällt hier auf. */
+const weitere = import.meta.glob<{ default: { symbole: Record<string, string> } }>(
+  '../../icons/*.json',
+  { eager: true },
+);
+
+const bibliothek: Record<string, string> =
+  set === 'lucide'
+    ? (lucide as { symbole: Record<string, string> }).symbole
+    : (weitere[`../../icons/${set}.json`]?.default?.symbole ?? {});
+
+if (set !== 'lucide' && Object.keys(bibliothek).length === 0) {
+  throw new Error(
+    `<Symbol set="${set}"> – die Bibliothek "${set}" liegt nicht in icons/.\n` +
+      `  Holen mit: npm run icons -- --set ${set} --namen "${name}"\n` +
+      `  Oder Lucide benutzen (liegt vollständig im Motor): <Symbol name="…" />`,
+  );
+}
+
+const inhalt = bibliothek[name];
+
+/*
+ * EIN FALSCHER NAME MUSS LAUT SCHEITERN.
+ *
+ * Gäbe die Komponente bei einem Tippfehler still nichts aus, fehlte auf der
+ * fertigen Seite ein Symbol – und niemand merkte es, weil an der Stelle
+ * einfach eine Lücke ist. Deshalb bricht der Build ab, mit Vorschlägen.
+ */
+if (!inhalt) {
+  const aehnlich = Object.keys(bibliothek)
+    .filter((n) => n.includes(name) || name.includes(n) || n.startsWith(name.slice(0, 4)))
+    .slice(0, 8);
+  throw new Error(
+    `<Symbol name="${name}" /> – dieses Symbol gibt es in "${set}" nicht.\n` +
+      (aehnlich.length ? `  Gemeint war vielleicht: ${aehnlich.join(', ')}\n` : '') +
+      `  Alle Namen: https://lucide.dev/icons/\n` +
+      `  Kein Symbol selbst zeichnen – siehe CLAUDE.md, Abschnitt „Bildzeichen".`,
+  );
+}
+---
+
+<svg
+  class:list={['symbol', klasse]}
+  data-symbol={name}
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width={strichstaerke}
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+  focusable="false"
+  set:html={inhalt}
+/>
+
+<style>
+  /* Nimmt Größe und Farbe der Umgebung an – so muss das Design nichts
+     umrechnen, sondern setzt font-size und color wie bei Text. */
+  .symbol {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -0.125em;
+    flex: none;
+  }
+</style>

@@ -188,6 +188,42 @@ genau das Muster, das `npm run preisliste` schon hat.
 
 ## Verlauf
 
+- **2026-07-29** – **Rückfluss Teil 3: die Bildzeichen.** Ein Claude Design
+  bindet Symbole **per Name** aus einer Bibliothek ein. Der Motor verbietet
+  externe Requests zu Recht – sagte aber nicht, woher die Zeichen dann kommen.
+  Im Kundenprojekt wurden sie daraufhin **selbst gezeichnet**; danach sah jedes
+  Zeichen der Seite anders aus als im Design, und die ganze Seite wirkte fremd.
+
+  **Lucide liegt jetzt vollständig im Motor: 2007 Symbole, Version 1.27.0,
+  im Repo.** `<Symbol name="car-front" />` – fertig. Beim Portieren muss niemand
+  mehr überlegen, welche Zeichen gebraucht werden, und es kann nicht mehr
+  passieren, dass eines fehlt und jemand zum Stift greift.
+
+  Die fünf Bedingungen des Auftraggebers, jede geprüft:
+  1. **Nur Angefordertes landet im Build.** Die Bibliothek ist Datenquelle im
+     Repo (420 KB), kein Auslieferungsgut. Das Prüf-Tor misst nach und nennt
+     die Zahl in seiner Ergebniszeile („1 Bildzeichen"). Zwei Regeln dahinter:
+     Die Bibliotheksdatei darf nirgends in `dist/` liegen, und mehr als 150
+     verschiedene Zeichen im Build gelten als ausgeschüttete Bibliothek.
+     **Gegengeprüft:** Datei nach `dist/` kopiert → rot.
+  2. **Feste Version, kein „latest"** – in `package.json` (`iconBibliothek`),
+     in `scripts/icons.mjs` und hier.
+  3. **Lizenz (ISC) liegt bei** (`icons/lucide.LICENSE`).
+  4. **Ein falscher Name scheitert laut.** `<Symbol name="autoo" />` hält den
+     Build an und schlägt ähnliche Namen vor. **Gegengeprüft:** Build bricht ab.
+  5. **Andere Bibliotheken bleiben möglich:**
+     `npm run icons -- --set heroicons --namen "…"` holt dort nur die genannten
+     Zeichen. **Gegengeprüft:** heroicons geholt, Datei entstand, wieder entfernt.
+
+  **Kein neues npm-Paket.** Die eiserne Regel bleibt gewahrt: `lucide-static`
+  wird von `npm run icons` einmalig in einen Wegwerf-Ordner geholt, ausgelesen
+  und wieder gelöscht. Im Projekt liegt nur die erzeugte JSON-Datei – ein Klon
+  bleibt damit auch dann vollständig, wenn es den Anbieter nicht mehr gibt.
+
+  **Version:** Sie steht bereits auf dem heutigen Datum (2026.7.29) – das
+  Kalender-Schema kennt nur einen Stand je Tag, und das ist heute schon der
+  dritte Rückfluss.
+
 - **2026-07-29** – **Rückfluss Teil 2: die Regeln.** Der teuerste Einzelbefund
   des Kundenberichts war kein Fehler im Code, sondern **ein Satz im Regelwerk**.
 

@@ -13,6 +13,7 @@
     "check": "node scripts/check-lauf.mjs",
     "astro": "astro",
     "schrift": "node scripts/schrift.mjs",
+    "icons": "node scripts/icons.mjs",
     "karte": "node scripts/karte.mjs",
     "og": "node scripts/og.mjs",
     "sicht": "node scripts/sicht.mjs",
@@ -32,5 +33,10 @@
   },
   "devDependencies": {
     "playwright": "^1.61.1"
+  },
+  "iconBibliothek": {
+    "lucide": "1.27.0",
+    "lizenz": "ISC",
+    "hinweis": "Feste Version mit Absicht - siehe scripts/icons.mjs. Neu holen: npm run icons"
   }
 }

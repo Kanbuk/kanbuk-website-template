@@ -448,6 +448,7 @@ bauen – anschließen und im Design anmalen.
 | **Dialog** | `data-dialog` + `data-dialog-oeffnen` (nativ `<dialog>`) | Anfrage-Fenster, Hinweis; `data-dialog-bezug` trägt den Eintrag mit |
 | **Merkliste** | `data-merken="id"` | Vormerken/Favoriten – bleibt auf dem Gerät (Abschnitt 6a) |
 | **Katalog** | `katalog` in der Config | Fahrzeuge, Objekte, Maschinen, Kurse – Übersicht **und je Eintrag eine eigene Seite** (Abschnitt 6a) |
+| **Bildzeichen** | `<Symbol name="car-front" />` | Alle Icons des Designs – Lucide liegt vollständig im Motor (Abschnitt 5a) |
 | **Social-Icons** | `<SocialLinks />` (liest `betrieb.socialLinks`) | Fußzeile, Kontaktseite |
 | **Signatur** | `<Signatur />` | Fußzeile – Kanbuk-Backlink (**Live-Pflicht**, Prüf-Tor erzwingt sie) |
 | **Kopf / Fuß** | `<Kopf aktuell={pfad} />`, `<Fuss />` | Kopfleiste mit Handy-Navigation, Fußzeile mit Rechtslinks |
@@ -458,6 +459,62 @@ bauen – anschließen und im Design anmalen.
 
 Sie vergeben nur ARIA-Attribute und Zustandsklassen (`.ist-aktiv`, `.ist-offen`).
 Alles funktioniert **ohne JS** sinnvoll. Details stehen im Kopf jeder Datei.
+
+---
+
+## 5a. Bildzeichen (**Icons werden NIEMALS selbst gezeichnet**)
+
+Ein Claude Design bindet Symbole **per Name** aus einer Bibliothek ein
+(`<script src="https://unpkg.com/lucide@latest">`, dann `Icon name="gauge"`).
+Der Motor verbietet externe Requests zu Recht – sagte aber lange nicht, woher
+die Zeichen dann kommen sollen.
+
+**Was daraus im Kundenprojekt wurde:** Es wurden eigene Symbole *gezeichnet*.
+Danach sah jedes Zeichen der Seite anders aus als im Design, und die ganze
+Seite wirkte fremd. Das ist kein Schönheitsfehler – Symbole tragen den
+Wiedererkennungswert eines Auftritts.
+
+> **Deshalb liegt Lucide VOLLSTÄNDIG im Motor** – 2007 Symbole, feste
+> Version, im Repo. Jedes Zeichen, das ein Design per Name einbindet, ist da:
+>
+> ```astro
+> <Symbol name="car-front" />
+> <Symbol name="phone" label="Anrufen" />   <!-- trägt Bedeutung -->
+> ```
+>
+> **Fehlt eines wirklich, ist das eine Motor-Meldung – kein Anlass, den Stift
+> zu nehmen.**
+
+**Vier Dinge, die dabei geregelt sind:**
+
+1. **Nur Angefordertes landet in der Seite.** Die Bibliothek ist Datenquelle im
+   Repo (`icons/lucide.json`), kein Auslieferungsgut. `<Symbol>` gibt genau ein
+   Zeichen aus. Das Prüf-Tor **misst** es und nennt die Zahl in seiner
+   Ergebniszeile – 2007 ungenutzte Symbole im HTML wären ein Eigentor gegen
+   die eigene Ladezeit-Regel.
+2. **Feste Version, kein „latest".** Sonst sieht ein Klon von heute in zwei
+   Jahren anders aus als einer von morgen. Sie steht in `package.json`
+   (`iconBibliothek`), in `scripts/icons.mjs` und in STAND.md.
+3. **Die Lizenz liegt bei** (`icons/lucide.LICENSE`, ISC). Sie erlaubt die
+   Nutzung, verlangt aber den Text.
+4. **Ein falscher Name scheitert laut.** `<Symbol name="autoo" />` hält den
+   Build an und schlägt ähnliche Namen vor – statt still nichts auszugeben und
+   eine Lücke auf der Seite zu hinterlassen, die niemandem auffällt.
+
+**Andere Bibliotheken bleiben möglich.** Nennt ein Design heroicons, phosphor
+oder feather:
+
+```
+npm run icons -- --set heroicons --namen "home,user,phone"
+```
+
+Dort werden **nur die genannten** Zeichen geholt (bei einer fremden Bibliothek
+kennen wir weder Umfang noch Aufbau). Verwendung dann
+`<Symbol set="heroicons" name="home" />`.
+
+**Größe und Farbe** kommen aus der Umgebung: Das Symbol ist `1em` groß und
+nimmt `currentColor` an – das Design setzt `font-size` und `color` wie bei
+Text. Feinschliff über `.symbol` oder `[data-symbol="car-front"]`.
 
 ---
 
@@ -773,6 +830,7 @@ keines optimiert wurde.
 | `npm run dev` | Vorschau lokal |
 | `npm run check` | **Das Prüf-Tor** – baut und prüft den Standard |
 | `npm run schrift -- --familie "<Name>"` | Google-Schrift lokal einbetten |
+| `npm run icons` | Symbol-Bibliothek neu holen (liegt schon im Repo – nur bei Versionswechsel nötig) |
 | `npm run karte -- --adresse "…"` | Statisches Kartenbild (statt Maps-Embed) |
 | `npm run og -- --bild fotos/<hero>.jpg` | OG-Vorschaubild aus echtem Foto (beim Port Pflicht) |
 | `npm run sicht` | **Sichtprüfung im echten Browser** – Screenshots + Überlauf-/Fehler-Messung + `pruefung/texte.md` + Bögen |

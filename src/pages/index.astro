@@ -20,6 +20,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import Kopf from '../components/Kopf.astro';
 import Fuss from '../components/Fuss.astro';
 import Formular from '../components/Formular.astro';
+import Symbol from '../components/Symbol.astro';
 import { site } from '../../content.config';
 import { bild } from '../lib/bilder';
 
@@ -64,7 +65,7 @@ const heroBild = bild('hero.jpg');
 
     <section class="block" data-reveal>
       <div class="container">
-        <h2>Was der Motor liefert</h2>
+        <h2><Symbol name="wrench" /> Was der Motor liefert</h2>
         <ul class="liste">
           <li><strong>Meta je Seite</strong> – Titel, Description, Canonical, OG-Bild, JSON-LD</li>
           <li><strong>Fluide Skala</strong> – jede Länge ein Token, responsiv von 350 bis 1440 px</li>

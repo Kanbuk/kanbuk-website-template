@@ -142,6 +142,16 @@ kommt ins Lücken-Inventar.
 
 ## Etappe 2 – Entgiften & Assets
 
+- **Bildzeichen:** **NIEMALS selbst zeichnen.** Lucide liegt vollständig im
+  Motor (2007 Symbole) – jedes Zeichen, das das Design per Name einbindet,
+  ist unter diesem Namen da: `<Symbol name="car-front" />`. Der `<script
+  src="…lucide…">` aus dem Design fliegt ersatzlos raus.
+  Fehlt ein Symbol wirklich, ist das eine **Motor-Meldung** – kein Anlass, den
+  Stift zu nehmen. Nennt das Design eine andere Bibliothek:
+  `npm run icons -- --set heroicons --namen "…"`.
+  **Warum das hier so deutlich steht:** In einem Kundenprojekt wurden die
+  Symbole mangels Alternative nachgezeichnet. Danach sah jedes Zeichen der
+  Seite anders aus als im Design – und die ganze Seite wirkte fremd.
 - **Schriften:** je Familie `npm run schrift -- --familie "<Name>" --schnitte <…>`.
   Danach in `content.config.ts → design.schriften` eintragen. Nie eine CDN-Schrift
   verlinken.
