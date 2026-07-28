@@ -58,6 +58,13 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
    abgenommene Seite live, die auf älteren Geräten keine Navigation hatte.**
 4. **Mit eigenen Augen:** `pruefung/texte.md` lesen (Rechtschreibung, Ansprache),
    Bögen ansehen (Layout über alle Breiten), Verdachtsfälle im Einzel-Screenshot
+4a. **Abgleich mit der Design-Vorlage** (nur bei portierten Kundenseiten):
+   Seite für Seite die `.dc.html` daneben legen. Ist jeder Block da, an der
+   richtigen Stelle, mit der richtigen Grundfarbe? Und steht umgekehrt etwas auf
+   der Seite, das im Design nicht vorkommt? **Grüne Technikprüfungen sagen
+   nichts über Design-Treue** – im Kundenprojekt waren alle Tore grün, während
+   Bänder die falsche Farbe hatten und Abschnitte fehlten. Verbleibende
+   Abweichungen gehören begründet in den Bericht (`/port`-Skill, Etappe 5).
 5. Beim Live-Gang zusätzlich: `npm run check -- --live` (Platzhalter, offene
    STAND.md-Punkte, Sitemap) und `npm audit --omit=dev` – Funde mit Schweregrad
    high/critical stoppen den Launch (dem Nutzer melden)
@@ -104,6 +111,14 @@ GitHub-Zugang prüfen: `gh auth status`; falls nicht eingeloggt, den Nutzer durc
 `gh auth login` führen (Firmen-Konto verwenden; Zugänge zu GitHub/Vercel/Resend
 bekommt ein neuer Mitarbeiter vom Inhaber).
 
+> **Was der Nutzer selbst klicken muss, beschreibst du klickbar.** Keine
+> Befehlszeile in einer Anleitung für ihn – alles, was ein Terminal braucht,
+> machst du. Und Bezeichnungen fremder Oberflächen (Menüpunkte, Rollennamen,
+> Berechtigungsstufen) **nie aus dem Gedächtnis** nennen: entweder belegt
+> nachgeschlagen oder bewusst unscharf („die Berechtigung mit Schreibrecht").
+> Im Kundenprojekt stand der Auftraggeber vor einer Maske und suchte eine
+> Option, die es dort nicht gibt. Siehe CLAUDE.md Abschnitt 0.
+
 0. **Vom Demo zum Kundenprojekt umziehen** (einmalig, sobald der Vertrag steht).
    Aus `demo-` wird `kunde-`, der Bezeichner `<betrieb>` bleibt derselbe:
    - Ordner verschieben: `kanbuk-demos/<betrieb>` → `kanbuk-kunden/<betrieb>`
@@ -117,6 +132,20 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
      Verkaufs-Demo `demo-<betrieb>.kanbuk.com` wird die Abnahme-Vorschau
      `<betrieb>.kanbuk.com` ohne Präfix. Die alte Demo-Adresse kann bleiben
      oder entfernt werden; sie war nur für den Lead gedacht.
+   - **Privates Repo anlegen und hochladen – JETZT, nicht am Live-Tag.**
+     ```bash
+     git init -b main   # falls noch kein Repo
+     gh repo create Kanbuk/kunde-<betrieb> --private --source=. --remote=origin --push
+     ```
+     Ohne das `Kanbuk/`-Präfix landet es im Privatkonto des Angemeldeten.
+     Gegenprobe: `gh repo list <privatkonto>` darf es NICHT enthalten.
+
+     **Warum hier und nicht weiter unten:** Zwischen „Vertrag steht" und „live"
+     liegen bei jedem Kunden Tage bis Wochen mit der **meisten** Arbeit – Port,
+     Nachbesserungsrunden, Abnahme. Stand der Repo-Schritt erst im Live-Abschnitt,
+     gab es in genau dieser Zeit weder Backup noch Verlauf noch eine Möglichkeit
+     zurückzurollen. Im Kundenprojekt entstand das Repo tatsächlich erst, als die
+     Seite längst auf der Abnahme-Adresse stand.
    - In Notion: Walk-in-Karte auf „Unterschrieben", Projekt-Art auf „Kundenprojekt".
    Läuft daneben ein Claude-Code-Verlauf für den Ordner, wandert er NICHT automatisch
    mit: Claude leitet den Verlaufspfad aus dem Ordnerpfad ab. Vor dem Verschieben in
@@ -134,19 +163,10 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    STAND.md-Punkten und Platzhaltern).
 3. **Formular-Versand:** im Vercel-Dashboard (bzw. `vercel env add`) `RESEND_API_KEY` und
    `CONTACT_FROM` hinterlegen. `npm run build` muss weiter fehlerfrei sein.
-4. **Privates GitHub-Repo anlegen + hochladen** – in der Organisation `Kanbuk`,
-   Repo-Name `kunde-<betrieb>` (nicht der nackte Ordnername, siehe Namensregeln).
-   Das wird ein **eigenständiges, privates Repo** – kein Fork, kein Branch des
-   Templates, keine öffentlich sichtbare Verbindung dorthin:
-   ```bash
-   git init -b main   # falls noch kein Repo
-   gh repo create Kanbuk/kunde-<betrieb> --private --source=. --remote=origin --push
-   ```
-   Ohne das `Kanbuk/`-Präfix landet das Repo im Privatkonto des Angemeldeten –
-   genau das war der Zustand, den die Aufräumaktion vom 28.07.2026 beseitigt hat.
-   Gegenprobe nach dem Anlegen: `gh repo list <privatkonto>` darf das neue Repo
-   NICHT enthalten.
-   Das gibt Backup + Verlauf; bei jeder späteren Änderung genügt `git add -A && git commit && git push`.
+4. **Stand hochladen.** Das private Repo steht seit Schritt B.0 – hier genügt
+   `git add -A && git commit && git push`. Falls es wider Erwarten noch keines
+   gibt, jetzt nachholen (Befehle siehe B.0) und im Bericht als versäumten
+   Schritt nennen: Die Arbeit lag bis hierher ohne Backup.
 5. **Live deployen:** `npx vercel --prod`. (Optional im Vercel-Dashboard das GitHub-Repo
    verbinden, dann deployt jeder `git push` automatisch neu.)
 6. **Echte Kunden-Domain verbinden:** `npx vercel domains add <kundendomain> <projektname>`.

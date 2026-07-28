@@ -14,10 +14,19 @@
  *  Farben/Schriften kommen als --farbe-* / --font-* aus content.config.ts
  *  (injiziert im BaseLayout, siehe src/lib/theme.ts).
  *
- *  >>> UMRECHNUNGSTABELLE beim Portieren – siehe CLAUDE.md <<<
- *  Claude Design liefert feste Pixel. Diese werden NIE übernommen, sondern
- *  auf die Token hier abgebildet. Die Skala ist so gerechnet, dass sie die
- *  typischen Design-Werte bei 1280 px Breite exakt trifft.
+ *  >>> VORRANG beim Portieren – siehe CLAUDE.md Abschnitt 4 <<<
+ *  WO DAS DESIGN EINEN WERT NENNT, GEWINNT DER WERT. Die Skala hier greift,
+ *  wo das Design schweigt – und dort, wo etwas sonst am Handy überliefe
+ *  (Seitenrand, Sektionshöhe, Spaltenzahl).
+ *
+ *  Hier stand früher das Gegenteil („feste Pixel werden NIE übernommen").
+ *  Diese Datei ist die erste, die ein Port beim CSS-Schreiben öffnet – der
+ *  Satz hier hat also mehr Gewicht als jede Regel zwei Dateien weiter. In
+ *  einem Kundenprojekt entstand aus dieser Anweisung eine Seite, die dem
+ *  Design nur ähnelte.
+ *
+ *  Die Skala ist so gerechnet, dass sie die typischen Design-Werte bei
+ *  1280 px Breite trifft – sie ist der Rückfall, nicht die Vorschrift.
  * ========================================================================= */
 
 *,

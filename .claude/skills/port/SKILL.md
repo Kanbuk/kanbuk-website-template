@@ -76,6 +76,27 @@ die Referenzdaten aus der Config raus sind. Vorher wäre Rot kein Signal.)
 
 ## Etappe 1 – Inventar (erst lesen, dann bauen)
 
+> ### Schritt 0: Bauanleitung sichern – **vor allem anderen**
+>
+> Ein Design-Projekt liefert **zwei** Dateien, und beide sind verbindlich
+> (CLAUDE.md Abschnitt 4):
+>
+> | Datei | sagt dir |
+> | --- | --- |
+> | `<Projekt>.dc.html` | **welche Bauteile wo stehen** – Seiten, Blöcke, Reihenfolge, Abstände, Texte, Grundfarben |
+> | `_ds_bundle.js` + `tokens/*.css` | **wie ein Bauteil aussieht** – je Komponente das exakte Style-Objekt |
+>
+> **Beide lokal ablegen** (z. B. unter `design/`). Aus dem Bundle die
+> Style-Objekte **jeder verwendeten** Komponente herausziehen und als Merkzettel
+> speichern. **Erst danach anfangen zu bauen.**
+>
+> **Warum das ganz vorne steht:** In einem Kundenprojekt wurde das Design-System
+> sauber ausgelesen und die Sache damit für erledigt gehalten – die `.dc.html`
+> nur überflogen. Ergebnis: richtige Bauteile in falscher Anordnung. Der
+> Auftraggeber musste dreimal darauf hinweisen. Die Tücke: **Eine Seite aus
+> lauter korrekten Komponenten wirkt fertig.** Erst wer sie neben die
+> Design-Datei hält, sieht, dass es eine andere Seite ist.
+
 Design-Projekt mit **DesignSync** auslesen: `get_project` → `list_files` → `get_file`
 für die Hauptdatei (`*.dc.html`). Bei großen Dateien gezielt analysieren statt alles
 in den Kontext zu laden.
@@ -101,6 +122,17 @@ in den Kontext zu laden.
   schreiben** – Platzhalter setzen und ins Lücken-Inventar.
 - **Daten:** Speisekarte/Preisliste (oft eigene Datei wie `data/menu.js`), Allergene,
   Öffnungszeiten, Adresse, Telefon, E-Mail.
+- **Alte Adressen – mit Verfahren, nicht aus dem Gedächtnis.** Gab es eine
+  Vorgänger-Website? Dann deren **`sitemap.xml`** holen (auch `/wp-sitemap.xml`,
+  `/sitemap_index.xml`, notfalls das Web-Archiv) und **jede** alte Adresse einer
+  neuen zuordnen. Ohne Entsprechung führt sie auf die nächstliegende Übersicht –
+  **nie auf eine Fehlerseite**. Ergebnis nach `weiterleitungen` (CLAUDE.md 7b).
+  **Warum als Pflichtschritt:** Das Prüf-Tor kann eine VERGESSENE Adresse
+  prinzipiell nicht sehen – es prüft nur, ob eingetragene Ziele existieren. Im
+  Kundenprojekt wurde die alte Sitemap erst am letzten Abend gelesen; fünf von
+  dreizehn Adressen hatten sich geändert, darunter alle Detailseiten. Der
+  Schaden – über Nacht verlorene Google-Treffer – trifft ausgerechnet die
+  Kunden mit der längsten Historie und fällt erst Wochen später auf.
 - **Lücken:** Platzhalterbilder? Fehlende Preise? Fehlende Rechtsdaten?
 
 **Nichts erfinden.** Was nicht im Design oder in den Unterlagen steht, fehlt – und
@@ -198,8 +230,34 @@ Je Unterseite eine Datei in `src/pages/`, je Sektion eine Komponente in
 `src/components/`. Die Referenz in `src/pages/index.astro` zeigt die Bauweise – sie
 wird dabei ersetzt.
 
-**Beim Übertragen gilt ausnahmslos:**
-- Jeder Pixelwert wird zum Token (**Umrechnungstabelle in CLAUDE.md Abschnitt 4**).
+> ### Die Design-Datei gewinnt
+>
+> **Wo die `.dc.html` einen Wert nennt, wird dieser übernommen.** Die
+> Token-Skala greift nur, wo sie schweigt – und dort, wo etwas sonst am Handy
+> überliefe (Seitenrand, Sektionshöhe, Spaltenzahl).
+>
+> Hier stand früher „Jeder Pixelwert wird zum Token". Genau dieser Satz war im
+> Kundenprojekt die Ursache des größten Fehlschlags: Er liest sich wie „übersetze
+> frei in die Motor-Skala". Herausgekommen ist eine Seite mit richtigen Bauteilen
+> in falscher Anordnung.
+>
+> Konkret heißt das:
+> - **Block für Block** aus der `.dc.html` abarbeiten. Kein Block wird
+>   zusammengefasst, umsortiert, weggelassen oder **ergänzt** – auch kein
+>   „sinnvoller" zusätzlicher.
+> - Inline-Stile **Wert für Wert** übernehmen: Innenabstände, Höhen,
+>   Schriftgrößen, Radien, Zeilenhöhen, Sperrungen, Farben, Verläufe, Deckkraft.
+> - Bringt das Design eigene `clamp()` mit, werden **die** übernommen.
+> - Für jede Komponente die Definition im `_ds_bundle.js` lesen – **nicht** vom
+>   Bildschirmfoto ableiten.
+> - **Jede Abweichung beim Entstehen notieren und begründen.** Sie gehört in den
+>   Abschlussbericht. Zwei Abweichungen sind sogar Pflicht und brauchen keine
+>   Diskussion: Schrift unter 12 px und zu geringer Kontrast – da schlägt der
+>   Motor das Design (CLAUDE.md Abschnitt 4).
+
+**Beim Übertragen gilt außerdem:**
+- Wo das Design schweigt: Token statt fester Pixel (**Umrechnungstabelle in
+  CLAUDE.md Abschnitt 4**).
 - Jede Farbe wird zu `var(--farbe-…)`. Nie ein Hex-Wert im Markup.
 - Inline-Styles aus dem Design → Astro-`<style>`-Block. (Inline-Styles können keine
   Media-Queries – sie zu übernehmen macht Responsiveness unmöglich.)
@@ -265,7 +323,7 @@ wird dabei ersetzt.
 > nicht mit `<Image>` – sonst sehen Rechner mit älterem Betriebssystem kein
 > einziges Foto (CLAUDE.md Abschnitt 4a). Logos bleiben `<Image>`.
 
-## Etappe 5 – Die Launch-Prüfung (fünf Stufen, alle Pflicht)
+## Etappe 5 – Die Launch-Prüfung (sechs Stufen, alle Pflicht)
 
 **Stufe 5 ist `npm run browser`** – sie hält den Build gegen die
 Browser-Untergrenze (CLAUDE.md Abschnitt 4a). Sie kam dazu, weil eine
@@ -281,10 +339,33 @@ Beim Bauen der Seiten deshalb von Anfang an:
 Inhaltsbilder, kein Zerlegen in Klammern in Browser-Code, Ersatzwert vor jedem
 modernen CSS-Merkmal.
 
+> ### Stufe 6: Abgleich mit der Vorlage – **von Hand, und ohne Abkürzung**
+>
+> **Grüne Technikprüfungen sagen nichts über Design-Treue.** Im Kundenprojekt
+> waren alle Tore grün, während ein Abschlussband die falsche Grundfarbe hatte,
+> Bedienelemente an der falschen Stelle standen, Abschnitte fehlten und andere
+> erfunden waren.
+>
+> Also: Seite für Seite die `.dc.html` neben die Umsetzung legen und **beide
+> Richtungen** prüfen.
+>
+> 1. **Ist jeder Block des Designs da?** In der richtigen Reihenfolge, mit der
+>    richtigen Grundfarbe, den richtigen Abständen, Radien, Schriftgrößen?
+> 2. **Steht auf der Seite etwas, das im Design nicht vorkommt?** Das ist der
+>    Fehler, den man selbst am schwersten sieht – eigene Ergänzungen wirken
+>    „sinnvoll". Dazu zählen auch Bedienelemente, die der MOTOR erzeugt hat:
+>    Filtergruppen und Regler entstehen automatisch aus den Daten und entsprechen
+>    nicht zwangsläufig dem Design (CLAUDE.md Abschnitt 6a).
+> 3. **Jede verbleibende Abweichung** steht mit Grund im Bericht.
+>
+> Diese Stufe ist heute Handarbeit. Ein Werkzeug dafür ist vorgemerkt
+> (STAND.md) – bis es da ist, ersetzt nichts das Nebeneinanderlegen.
 
 
-**Vorbedingung:** `package.json → name` ist `kanbuk-<kunde>` – sonst prüft das
-Tor im Template-Modus und Referenz-Reste rutschen durch.
+
+**Vorbedingung:** `package.json → name` ist nicht mehr `kanbuk-website-template`
+– sonst prüft das Tor im Template-Modus und Referenz-Reste rutschen durch. Auf
+welchen Namen er wechselt, sagt die Namenstabelle im `/deploy`-Skill.
 
 **1. `npm run check` muss grün sein.** Vorprüfung in Sekunden (Pflichtfelder,
 referenzierte Dateien existieren, Binär-Integrität aller Bilder/PDFs), dann Build

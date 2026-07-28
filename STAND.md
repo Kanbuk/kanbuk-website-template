@@ -56,6 +56,21 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
       nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
       Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
+- [ ] **Kein Werkzeug für den Abgleich mit der Design-Vorlage.** Die Regel steht
+      jetzt (CLAUDE.md 9 Punkt 3c, `/port` Etappe 5 Stufe 6, Deploy-Checkliste
+      4a), das Nebeneinanderlegen ist aber **Handarbeit**. Im Kundenprojekt
+      wurde dafür ein Werkzeug gebaut, das aus der Design-Datei jedes Element
+      mit Inline-Stil sucht und Wert für Wert vergleicht – beim ersten Lauf
+      36 Abweichungen, davon eine grobe. Es ist so aber **nicht** ins Template
+      hebbar: Seitenzuordnung und Anker sind klonspezifisch. Vor dem nächsten
+      Port entscheiden, ob es sich lohnt.
+- [ ] **Kein Ort für bewusste Design-Abweichungen im Klon.** Die Regel sagt
+      jetzt, dass Mindest-Schriftgröße und Kontrast das Design schlagen und die
+      Abweichung in den Bericht gehört. Ein maschinenlesbarer Ort dafür
+      (`design-abweichungen.md`) fehlt – im Kundenprojekt landete die Ausnahme
+      in einer fest einprogrammierten Liste im Prüfskript, mit Kundenfarbwerten
+      darin. Das ist der falsche Ort: Ein Klon bekommt keine Template-Updates,
+      und ins Template dürfen keine Kundenwerte.
 - [ ] **`npm run sicht` kann einmalig zu Unrecht rot werden.** Beobachtet am
       2026-07-28: ein roter Lauf, danach sechs grüne ohne jede Änderung. Ursache
       ist mit hoher Wahrscheinlichkeit die LCP-Messung (`scripts/sicht.mjs`,
@@ -172,6 +187,62 @@ genau das Muster, das `npm run preisliste` schon hat.
   Verzweigung. Nur ein Rezept, das liest, wer es braucht.
 
 ## Verlauf
+
+- **2026-07-29** – **Rückfluss Teil 2: die Regeln.** Der teuerste Einzelbefund
+  des Kundenberichts war kein Fehler im Code, sondern **ein Satz im Regelwerk**.
+
+  **Der Vorrang stand falsch herum.** CLAUDE.md Abschnitt 4 sagte: „Diese Werte
+  werden **niemals** übernommen", der `/port`-Skill „Jeder Pixelwert wird zum
+  Token", und der Kopfkommentar von `global.css` dasselbe noch einmal. Zusammen
+  liest sich das als Einladung, das Design frei zu übersetzen. Im Kundenprojekt
+  entstand daraus eine Seite mit **richtigen Bauteilen in falscher Anordnung** –
+  Knöpfe und Karten stimmten aufs Pixel, aber Bänder hatten die falsche
+  Grundfarbe, Bedienelemente standen falsch, Abschnitte fehlten und andere waren
+  erfunden. Der Auftraggeber musste dreimal darauf hinweisen. Die Tücke: **Eine
+  Seite aus lauter korrekten Komponenten wirkt fertig** – erst neben der
+  Design-Datei sieht man, dass es eine andere Seite ist.
+
+  Alle drei Fundstellen tragen jetzt dieselbe Regel: **Wo das Design einen Wert
+  nennt, gewinnt der Wert.** Die Token-Skala ist der Rückfall, nicht die
+  Vorschrift. Dazu übernommen:
+  - **Zwei Dateien, beide verbindlich.** Das Design-System (`_ds_bundle.js`)
+    sagt, wie ein Bauteil aussieht; die `.dc.html` sagt, welche Bauteile wo
+    stehen. Wer nur eines liest, baut garantiert falsch. Die `.dc.html` ist
+    Bauanleitung, nicht Inspiration – Block für Block, Wert für Wert, keine
+    Ergänzungen. Komponenten-Definitionen werden **gelesen**, nicht vom
+    Bildschirmfoto abgeleitet.
+  - **Wenn der Motor dem Design widerspricht:** Mindest-Schriftgröße (12 px) und
+    Mindest-Kontrast schlagen das Design. Abweichen ist dort **Pflicht** – und
+    gehört begründet in den Bericht, sonst kann der Inhaber es dem Kunden nicht
+    erklären.
+  - **Stufe 6 der Launch-Prüfung: Abgleich mit der Vorlage.** Grüne
+    Technikprüfungen sagen nichts über Design-Treue. Geprüft werden **beide**
+    Richtungen – fehlt etwas aus dem Design, und steht etwas auf der Seite, das
+    dort nicht vorkommt? Letzteres sieht man selbst am schwersten, weil eigene
+    Ergänzungen „sinnvoll" wirken.
+  - **CSS-Falle bei dunklen Abschnitten:** Abgeleitete Farb-Token frieren im
+    `:root` ein. Wer ein Basis-Token dunkel neu setzt, muss alle davon
+    abgeleiteten mitsetzen – sonst liegt eine helle Haarlinie um jede Karte auf
+    schwarzem Grund. Im Kundenprojekt auf jeder Seite sichtbar, elf Runden lang
+    niemandem aufgefallen.
+  - **Katalog:** Die Schnittstelle sind die `data`-Attribute, **nicht** die
+    Komponente. Ein echtes Design ersetzt nicht nur die Karte, sondern die ganze
+    Filterleiste. Und: Erscheint ein Bedienelement, das im Design nicht vorkommt,
+    ist das der **Motor** (er leitet Filter automatisch aus den Daten ab), kein
+    Einfall des Ports.
+  - **Weiterleitungen mit Verfahren statt aus dem Gedächtnis:** alte
+    `sitemap.xml` holen, jede Adresse zuordnen, keine auf eine Fehlerseite. Das
+    Prüf-Tor kann eine vergessene Adresse prinzipiell nicht sehen.
+  - **Repo sofort bei Vertragsabschluss**, nicht am Live-Tag. Dazwischen liegen
+    Tage bis Wochen mit der meisten Arbeit – bisher ohne Backup.
+  - **Anleitungen für den Nutzer:** keine Befehlszeile, und Bezeichnungen fremder
+    Oberflächen nie aus dem Gedächtnis. Eine falsche Klickanleitung ist teurer
+    als gar keine.
+  - **Eine übersprungene Prüfung ist kein grünes Tor** – auch wenn unten ein
+    Haken steht.
+  - **Namenswiderspruch aufgelöst:** CLAUDE.md nannte ein eigenes Präfix, der
+    Deploy-Skill ein anderes. Jetzt gilt die Namenstabelle des Deploy-Skills;
+    das Prüf-Tor wird scharf, sobald der Name nicht mehr der Template-Name ist.
 
 - **2026-07-29** – **Abnahme des Rückflusses: drei Blocker in meiner eigenen
   Arbeit gefunden.** Zehn Prüfer haben den Umbau vom Vortag auseinandergenommen,

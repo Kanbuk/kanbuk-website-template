@@ -33,6 +33,21 @@ Verständnis, darfst du die Detailtiefe anheben – die übrigen Regeln gelten i
 - **Am Ende immer:** was fertig ist, die Vorschau-Adresse, und die **konkreten offenen
   Punkte für den Live-Gang** (Impressum, Platzhalter tauschen …).
 
+**Anleitungen für den Nutzer – zwei harte Regeln.** Jede Einrichtungsanleitung,
+die der Motor liefert (Domain, Dienste, Zugänge), entsteht sonst zuerst als
+Entwickler-Doku und kostet dann je eine Runde beim Nutzer, der davorsitzt:
+
+1. **Keine Befehlszeile.** Alles, was ein Terminal braucht, macht der Klon
+   selbst; der Nutzer klickt nur. Eine Anleitung mit Befehlen ist für ihn
+   unbrauchbar – im Kundenprojekt musste eine deshalb komplett neu geschrieben
+   werden.
+2. **Bezeichnungen fremder Oberflächen nie aus dem Gedächtnis nennen.**
+   Menüpunkte, Rollennamen, Berechtigungsstufen: entweder belegt nachgeschlagen
+   oder bewusst unscharf („die Berechtigung mit Schreibrecht"). Im
+   Kundenprojekt stand der Auftraggeber vor einer Maske und suchte eine Option,
+   die es dort gar nicht gibt. **Eine falsche Klickanleitung ist teurer als
+   gar keine.**
+
 Beim Bauen einer Seite gilt zusätzlich der **Ein-Rutsch-Grundsatz**: ein Prompt, ein
 Design-Link → fertige Seite, ohne Zwischenfragen. Details im `/port`-Skill.
 
@@ -169,16 +184,83 @@ Die Texte kommen meist aus dem Design. Wenn du welche schreibst oder korrigierst
 
 ---
 
-## 4. Das Token-System (**der Kern des Portierens**)
+## 4. Design und Token-System (**der Kern des Portierens**)
 
-Claude Design liefert **feste Pixelwerte** – in einem typischen Design mehrere hundert,
-ohne ein einziges `clamp()` und ohne Media-Queries. Diese Werte werden **niemals übernommen** – sie werden auf die Token
-aus `src/styles/global.css` abgebildet. Dadurch wird das Portieren mechanisch statt
-kreativ, und das Ergebnis ist automatisch responsiv.
+> ### Der Vorrang – dieser Absatz kommt vor allem anderen
+>
+> **Wo das Design einen Wert nennt, gewinnt der Wert.** Die Token-Skala unten
+> greift nur dort, wo das Design schweigt – und dort, wo etwas sonst am Handy
+> überliefe (Seitenrand, Sektionshöhe, Spaltenzahl).
+>
+> Hier stand früher das Gegenteil: „Diese Werte werden **niemals** übernommen."
+> Zusammen mit dem Satz „jeder Pixelwert wird zum Token" las sich das wie eine
+> Einladung, frei zu übersetzen. **In einem Kundenprojekt war das die Ursache
+> für den größten Fehlschlag des ganzen Ports:** Es entstand eine Seite mit
+> richtigen Bauteilen in falscher Anordnung – Knöpfe und Karten stimmten aufs
+> Pixel, aber Bänder hatten die falsche Grundfarbe, Bedienelemente standen an
+> der falschen Stelle, Abschnitte fehlten und andere waren erfunden. Der
+> Auftraggeber musste dreimal darauf hinweisen. Der Grund, warum es niemandem
+> vorher auffiel, ist die Tücke der Sache: **Eine Seite aus lauter korrekten
+> Komponenten wirkt fertig.** Erst wer sie neben die Design-Datei hält, sieht,
+> dass es eine andere Seite ist.
+>
+> „1:1 nachbauen" ist ein **Auftrag**, keine Anregung.
+
+### Zwei Dateien, zwei Fragen – beide verbindlich
+
+Ein Claude-Design-Projekt liefert **zwei** Artefakte. Sie beantworten
+verschiedene Fragen, und **wer nur eines liest, baut garantiert falsch**:
+
+| Datei | Was darin steht | Beantwortet |
+| --- | --- | --- |
+| `_ds_bundle.js` + `tokens/*.css` | das Design-**SYSTEM**: Farbskala, Schriftskala, Abstände, und je Komponente ihre exakte Definition (Knopf, Karte, Chip …) | *Wie sieht ein einzelnes Bauteil aus?* |
+| `<Projekt>.dc.html` | die **WEBSITE**: welche Seite aus welchen Blöcken besteht, in welcher Reihenfolge, mit welchen Abständen, Texten und Grundfarben | *Wie ist die Seite zusammengesetzt?* |
+
+Im Kundenprojekt wurde das Design-System sauber ausgelesen und die Sache damit
+für erledigt gehalten – die `.dc.html` nur überflogen. Genau daraus entstand die
+Seite, die dem Design nur *ähnelte*.
+
+**Die `.dc.html` ist die Bauanleitung, nicht die Inspiration:**
+
+1. Sie wird **Block für Block** abgearbeitet. Jeder Seiten-Schalter
+   (`<sc-if value="{{ isX }}">`) ist eine Seite, jede `<section>` darin ein
+   Block. Kein Block wird zusammengefasst, umsortiert, weggelassen oder
+   ergänzt – auch kein „sinnvoller" zusätzlicher.
+2. Die **Inline-Stile jedes Blocks werden Wert für Wert übernommen**:
+   Innenabstände, Höhen, Schriftgrößen, Radien, Zeilenhöhen, Sperrungen,
+   Farben, Verläufe, Deckkraft, Übergänge.
+3. Fluid gemacht wird **ausschließlich**, was sonst am Handy überliefe.
+   Alles andere bleibt fest. Bringt das Design eigene `clamp()` mit, werden
+   **die** übernommen – nicht durch eigene ersetzt.
+4. Wo das Design eine Komponente einbindet
+   (`<x-import component-from-global-scope="…">`), wird **ihre Definition im
+   `_ds_bundle.js` gelesen** – dort steht das exakte Style-Objekt. Nicht raten,
+   nicht vom Bildschirmfoto ableiten. Im Kundenprojekt lagen die Definitionen
+   die ganze Zeit im Projekt, während die Karten nach Augenmaß nachempfunden
+   wurden.
+5. **Vor dem Bauen** wird eine Abweichungsliste geführt. Jede bewusste
+   Abweichung braucht einen Grund und steht danach im Bericht.
+
+### Wenn der Motor dem Design widerspricht
+
+Zwei Motor-Untergrenzen **schlagen das Design**, und zwar ohne Ermessen:
+
+- **Schrift unter 12 px** – die Sichtprüfung lässt sie nicht durch.
+- **Kontrast unter dem WCAG-Wert** – ebenso.
+
+Praktisch jedes Design unterschreitet beides irgendwo (Beschriftungen, Chips,
+graue Zweittexte auf dunklem Grund). Das ist kein Fehler des Designs und kein
+Fehler des Ports: **Abweichen ist hier Pflicht.** Sie gehört aber begründet in
+den Bericht und in die Abweichungsliste – sonst steht der Inhaber vor dem Kunden
+und kann nicht erklären, warum die Seite an einer Stelle anders aussieht.
 
 ### Umrechnungstabelle
 
-Die Skala ist so gerechnet, dass sie die typischen Design-Werte bei **1280 px** trifft.
+**Diese Tabelle gilt nur, wo das Design für die jeweilige Stelle keinen eigenen
+Wert liefert.** Liefert es einen, gewinnt er (siehe Vorrang oben).
+
+Die Skala ist so gerechnet, dass sie die typischen Design-Werte bei **1280 px**
+trifft – sie ist der Rückfall, nicht die Vorschrift.
 
 | Design (fest) | Motor-Token | bei 1280 px |
 | --- | --- | --- |
@@ -198,6 +280,29 @@ Die Skala ist so gerechnet, dass sie die typischen Design-Werte bei **1280 px** 
 
 **Farben nie direkt ins Markup.** Sie stehen in `content.config.ts → design.farben` und
 werden zu `--farbe-<name>` (siehe `src/lib/theme.ts`).
+
+### Die Falle bei dunklen Abschnitten (**abgeleitete Farb-Token**)
+
+Fast jedes Design bringt eine Umkehr-Skala für dunkle Bereiche mit (Hero,
+Fußzeile, Bänder) – und fast jedes benutzt **abgeleitete** Farben: eine
+Haarlinie, ein Fokusring, ein Schatten, die sich aus Rahmen- und Flächenfarbe
+errechnen.
+
+Werden die Token wörtlich übernommen (und genau das verlangt der Vorrang oben),
+kommt der Fehler mit: Die abgeleiteten Werte stehen im `:root` und **frieren
+dort ein**. Im dunklen Abschnitt wird zwar die Basisfarbe neu gesetzt, die
+davon abgeleitete aber nicht – und dann liegt eine helle Haarlinie um jede
+Karte auf schwarzem Grund. Im Kundenprojekt war das auf **jeder Seite**
+sichtbar und fiel elf Runden lang niemandem auf.
+
+> **Regel:** Beim Übernehmen der Farb-Token jede Variable, die eine andere
+> benutzt, im Umkehr-Bereich **wiederholen**. Wer ein Basis-Token dunkel neu
+> setzt, muss alle davon abgeleiteten mitsetzen.
+
+Verwandt und ebenso unsichtbar: `content.config.ts → design.farben` muss
+**Hex-Werte** enthalten. Der Motor rechnet daraus Trennlinien und
+halbdurchsichtige Leisten; bei einer anderen Schreibweise fällt die Rechnung
+still auf Schwarz zurück (das Prüf-Tor meldet es).
 
 ### Pflichtmuster für Responsiveness
 
@@ -415,9 +520,26 @@ Leerzeichen/Umlauten und bei einem `anfrageFormular`, das es nicht gibt.
 `katalog.beschriftungen` (`{ gruen: 'Grün', km: 'Kilometerstand' }`) – sonst liest
 der Besucher „Gruen".
 
-**Beim Portieren:** Die Karte aus dem Design ersetzt die Motor-Karte. Dabei
-`{...katalogAttribute(e)}` an die Karte weitergeben – daran hängen Filter,
-Sortierung und Merkliste. Fehlt es, filtert nichts mehr.
+**Beim Portieren – und was hier wirklich die Schnittstelle ist:**
+
+Der Motor bringt mit `KatalogListe.astro` eine fertige Übersicht mit. Die ist
+ein **Beispiel**, keine Vorschrift. In einem echten Design weicht nicht nur die
+Karte ab, sondern die ganze Filterleiste: Position, Reihenfolge, Bedienart
+(Knöpfe statt Kästchen), Beschriftungen. Im Kundenprojekt wurde die Komponente
+deshalb gar nicht benutzt und die Liste komplett neu gebaut.
+
+> **Die Schnittstelle des Katalogs sind die `data`-Attribute, nicht die
+> Komponente.** Wer eigenes Markup schreibt, muss nur zwei Dinge einhalten:
+> `{...katalogAttribute(e)}` an jede Karte, und die `data-filter-*`-Attribute
+> aus Abschnitt 5 an die Bedienelemente. Daran hängen Filter, Sortierung und
+> Merkliste – fehlen sie, filtert nichts mehr.
+
+**Wichtig für den Bericht:** Der Motor erzeugt Filtergruppen und Regler
+automatisch aus den Daten. Das ist für den ersten Wurf gut, entspricht aber
+nicht zwangsläufig dem Design – ein Design legt seine Filterleiste immer genau
+fest, die Datenlage nie. Erscheint ein Bedienelement, das im Design nicht
+vorkommt, ist das **kein Einfall des Ports, sondern der Motor**. Es gehört
+entfernt und in die Abweichungsliste.
 
 ### Merkliste und Datenschutz
 
@@ -564,8 +686,12 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
 2. **Entgiften** – `npm run schrift` je Schrift, `npm run karte` für die Anfahrt,
    Maps-Rahmen raus, Fremdbilder lokal.
 3. **Config füllen** – Betriebsdaten, Design-Tokens, Seiten samt SEO, Formulare,
-   Preisliste, **Weiterleitungen** (falls es eine Vorgänger-Website gab, Abschnitt 7b). `package.json → name` auf `kanbuk-<kunde>` setzen (schaltet das
-   Prüf-Tor scharf).
+   Preisliste, **Weiterleitungen** (falls es eine Vorgänger-Website gab, Abschnitt 7b). `package.json → name` umbenennen – **die maßgebliche Namenstabelle
+   steht im `/deploy`-Skill**, damit Paket-, Repo- und Vercel-Name zusammenpassen.
+   Hier stand früher ein eigenes Präfix, das der Tabelle widersprach und im
+   Kundenprojekt einen Korrektur-Commit kostete. Wirkung: Das Prüf-Tor wird
+   scharf, sobald der Name **nicht mehr** `kanbuk-website-template` lautet – auf
+   welchen er wechselt, ist dafür gleichgültig.
 4. **Seiten bauen** – je Unterseite eine Datei in `src/pages/`, je Sektion eine
    Komponente in `src/components/`. **Nur Tokens**, nie feste Pixel, nie Farbwerte.
 5. **Prüfen** – `npm run check` muss grün sein. Dann Sichtprüfung bei 350/768/1440.
@@ -586,9 +712,23 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
 3b. `npm run browser` ist **grün** – die Seite hält die Browser-Untergrenze
    (Abschnitt 4a). Dazu **einmal `npm run altgeraet` und die Bilder ansehen**:
    Erwartet wird „ärmer, aber lesbar und bedienbar" – alles andere ist ein Befund.
+3c. **Abgleich mit der Vorlage.** Seite für Seite die Design-Datei neben die
+   Umsetzung legen und Wert für Wert vergleichen: Ist jeder Block da? Steht er
+   an der richtigen Stelle? Stimmen Grundfarbe, Abstände, Radien, Schriftgrößen?
+   **Grüne Technikprüfungen sagen nichts über Design-Treue** – im Kundenprojekt
+   waren alle Tore grün, während Bänder die falsche Farbe hatten und Abschnitte
+   fehlten. Prüfe dabei BEIDE Richtungen: fehlt etwas aus dem Design, und steht
+   auf der Seite etwas, das im Design gar nicht vorkommt?
 4. Lighthouse-Ziel **≥ 95** in allen vier Kategorien.
 5. **STAND.md ist aktuell** (Phase, Lücken, Verlaufszeile dieser Sitzung).
 6. Committen und pushen (ein Kunde = ein Repo/Branch).
+
+> **Eine übersprungene Prüfung ist kein grünes Tor.** Meldet die Kette „↷
+> übersprungen" (etwa die Typprüfung, weil ein Werkzeug fehlt), ist die
+> Definition of Done **nicht** erfüllt – auch wenn unten ein Haken steht.
+> Entweder das Fehlende nachinstallieren oder die Lücke ausdrücklich in
+> STAND.md eintragen. Sonst verschwindet ein falsch geschriebener Config-Pfad
+> lautlos: Die Stelle rendert leer, und niemand merkt es.
 
 ---
 
