@@ -263,15 +263,38 @@ Seite – **nicht** für `scripts/`, das läuft in Node.
    ältere Browser ein Lesefehler – dann fällt nicht ein Baustein aus, sondern
    alle gleichzeitig, ohne Meldung für den Besucher. Ausschreiben:
    `const a = x[0]; const b = x[1];`
-2. **Jedes CSS-Merkmal jünger als die Untergrenze braucht einen Ersatzwert
-   davor.** Ein Browser, der die zweite Zeile nicht versteht, verwirft nur sie
-   und behält die erste:
+2. **Kein modernes CSS-Merkmal ohne Absicherung – und der Ersatzwert davor
+   reicht oft NICHT.** Der übliche Rat lautet: einfache Zeile davor, moderne
+   danach; wer die zweite nicht versteht, behält die erste. Das stimmt **nur,
+   solange die moderne Zeile kein `var()` enthält**. Im Browser nachgemessen:
+
    ```css
-   background: var(--farbe-hintergrund);                      /* alter nimmt den */
-   background: color-mix(in srgb, var(--farbe-hintergrund) 82%, transparent);
+   /* WIRKT NICHT – der Ersatzwert wird gelöscht: */
+   border-top: 1px solid var(--farbe-linie);
+   border-top: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
    ```
-   `color-mix()` und `dvh` standen in Motor-Bausteinen und hätten **jeden** Klon
-   getroffen.
+
+   Eine Zeile mit `var()` kann der Browser beim **Einlesen** nicht prüfen. Er
+   behält sie, ersetzt später die Variable, stellt dann fest, dass das Ergebnis
+   ungültig ist – und setzt die Eigenschaft auf **nichts**. Der Ersatzwert
+   löscht also genau das, was er retten soll. Gemessen: Rahmen 0px statt 1px.
+
+   Deshalb im Motor **drei Wege, in dieser Reihenfolge**:
+   1. **Rechnen statt mischen.** `color-mix(in srgb, X 12%, transparent)` ist
+      dasselbe wie `rgba(X, 0.12)`. Der Motor leitet solche Farben in
+      `src/lib/theme.ts` ab (`--farbe-linie`, `--farbe-grund-92` …) und benutzt
+      **nirgends** `color-mix()`. Das ist der Normalfall.
+   2. **Ersatzwert davor** – aber nur, wenn die moderne Zeile **kein `var()`**
+      enthält. Beispiel im Motor: `max-height: calc(100vh - 100%)` vor
+      `calc(100dvh - 100%)`.
+   3. **`@supports`**, wenn es beides nicht gibt. Ein alter Browser überspringt
+      den Block ganz, statt die Eigenschaft zu löschen.
+
+   Unterhalb der **Zusage** (nicht der Bedienbar-Grenze) ist eine Absicherung
+   Pflicht. Zwischen den beiden Grenzen nur dann, wenn ohne sie etwas
+   **unbedienbar** wird – Beispiel `dvh` im Menü: ohne Ersatzwert sind im
+   Querformat die unteren Menüpunkte unerreichbar. Reines Aussehen wird dort
+   bewusst nicht gerettet (Abschnitt „Zwei Stufen, mit Absicht").
 3. **Bilder immer `<Picture>` mit `fallbackFormat="jpeg"`**, dazu
    `picture { display: contents }` in `global.css`. Ohne Ersatzfassung zeigen
    Macs mit älterem Betriebssystem **kein einziges Foto** – dort hängt WebP am
@@ -580,6 +603,12 @@ technische Pfade kennen zu müssen.
 - Zuordnung selbst treffen (Dateiname + Bildinhalt), im Bericht nennen. Nicht fragen.
 - Einbinden über `bild('name.jpg')` (`src/lib/bilder.ts`) + `<Image>` aus
   `astro:assets`. Nie ein rohes `<img src>` – dann fehlt die Optimierung.
+- **Inhaltsbilder als `<Picture formats={['webp']} fallbackFormat="jpeg">`**,
+  nicht als `<Image>`. Ohne Ersatzfassung zeigen Rechner mit älterem
+  Betriebssystem **kein einziges Foto** – dort hängt WebP am System, nicht an
+  der Browser-Version. Logos bleiben `<Image>` (klein, oft mit Transparenz;
+  eine JPEG-Ersatzfassung füllt den freigestellten Hintergrund aus). Siehe
+  Abschnitt 4a.
 - Unterordner sind erlaubt: `bild('hero.jpg')` findet auch `fotos/galerie/hero.jpg`.
 - **Jeder Platzhalter kommt ins Lücken-Inventar.**
 

@@ -173,6 +173,47 @@ genau das Muster, das `npm run preisliste` schon hat.
 
 ## Verlauf
 
+- **2026-07-29** – **Abnahme des Rückflusses: drei Blocker in meiner eigenen
+  Arbeit gefunden.** Zehn Prüfer haben den Umbau vom Vortag auseinandergenommen,
+  jeder Befund wurde von einem Gegenprüfer widerlegt oder bestätigt (zwei
+  Befunde fielen dabei durch). Was standhielt:
+  - **Der zentrale Kunstgriff funktionierte nicht.** Das Muster „einfacher
+    Ersatzwert, moderne Zeile darunter" wirkt NICHT, wenn die moderne Zeile ein
+    `var()` enthält – der Browser kann sie beim Einlesen nicht prüfen, behält
+    sie, merkt später die Ungültigkeit und setzt die Eigenschaft auf **nichts**.
+    Der Ersatzwert löscht also genau das, was er retten soll. Im Browser
+    nachgemessen: Rahmen 0px statt 1px. Und dieses falsche Muster stand bereits
+    als Regel in CLAUDE.md und im Port-Skill – es wäre in jeden künftigen Port
+    gewandert. **Behoben, indem `color-mix()` ganz aus dem Motor verschwindet:**
+    `src/lib/theme.ts` rechnet die abgeleiteten Farben als `rgba()` aus den
+    Design-Farben (`--farbe-linie`, `--farbe-grund-92`, …). Rechnerisch
+    dasselbe, funktioniert überall, braucht keinen Ersatzwert.
+  - **Die JavaScript-Prüfung war nur halb.** Sie meldete ausschließlich, was
+    der Übersetzer NICHT umwandeln kann. Alles, was er umwandeln KÖNNTE (`?.`,
+    `??`), wandelte er brav um, das Ergebnis wurde weggeworfen – und ein
+    `<script is:inline>` mit `?.` ging grün durch, obwohl es unverändert in der
+    Seite landet und dort jedes Skript killt. Der erste Reparaturversuch (zwei
+    Übersetzungen vergleichen) war zu grob und meldete Backticks gegen
+    Anführungszeichen als Verstoß. Jetzt: benannte Liste `JS_MERKMALE`, wie
+    beim CSS auch.
+  - **Das fünfte Tor lief in keiner Kette mit** – weder in `npm run check` noch
+    in der Deploy-Checkliste. Genau eine vergessene Ausführung hätte gereicht.
+    Jetzt hängt es in `check-lauf.mjs` und steht in beiden Checklisten.
+
+  Dazu bestätigte Kleinigkeiten, alle behoben: `istAbgesichert` sah nur die
+  Zeile davor, während der Verdichter umsortiert (meldete `dvh` als Ausfall,
+  den es nicht gab); `vollstaendig_ab_safari` wanderte als vermeintlicher
+  Browsername in die CSS-Ziele, und `<< 16` verwarf Nachkommastellen (aus 15.4
+  wurde 15.0 – genau das Auseinanderlaufen, das die eine gemeinsame Datei
+  verhindern soll); der Namens-Wächter las `astro.config.ts` und JSON-Dateien
+  gar nicht, also ausgerechnet die neu angelegten; die Gewichtsregel für
+  Ersatzfassungen lief über Elementgrenzen hinweg. **Neue Regel:** Design-Farben
+  müssen Hex-Werte sein – sonst fällt die Farbrechnung still auf Schwarz zurück
+  und die Trennlinie ist auf dunklen Designs unsichtbar.
+
+  **Kundenfrei bestätigt:** In den versionierten Dateien steht kein Betriebsname,
+  kein Ort, keine Fahrzeugdaten, keine kundenspezifische Zahl.
+
 - **2026-07-28** – **Browser-Untergrenze: der Fall „überall grün, beim Besucher
   kaputt".** Rückfluss aus einem Kundenprojekt. Dort war die bereits abgenommene
   Seite auf einem älteren Gerät des Auftraggebers unbenutzbar – **keine

@@ -105,3 +105,13 @@ if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html
 
 // --- 3. Das Prüf-Tor ----------------------------------------------------------
 nodeLauf([join('scripts', 'check.mjs'), ...(live ? ['--live'] : [])]);
+
+/* --- 4. Die Browser-Untergrenze ---------------------------------------------
+   Hängt hier mit drin und nicht nur in der Definition of Done. Grund: Der
+   Ausgangsfall war eine Zusage, die NIEMAND geprüft hat – genau eine vergessene
+   Ausführung reicht, damit derselbe Fehler wiederkommt. Die Prüfung braucht
+   keinen Browser, misst den fertigen Build und läuft unter einer Sekunde; sie
+   hier wegzulassen spart nichts und kostet die Zusage. */
+if (existsSync(join(WURZEL, 'scripts', 'browser.mjs'))) {
+  nodeLauf([join('scripts', 'browser.mjs')]);
+}

@@ -54,7 +54,6 @@ const heroBild = bild('hero.jpg');
             alt="Referenz-Bild: zeigt, dass die Bild-Pipeline aus fotos/ funktioniert"
             widths={[480, 768, 1200, 1800]}
             sizes="100vw"
-            format="webp"
             quality={72}
             loading="eager"
             fetchpriority="high"
@@ -147,9 +146,7 @@ const heroBild = bild('hero.jpg');
     padding-block: var(--raum-2xl);
   }
   .block--getoent {
-    /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). */
-    background: var(--farbe-flaeche, var(--farbe-hintergrund));
-    background: var(--farbe-flaeche, color-mix(in srgb, var(--farbe-text) 4%, var(--farbe-hintergrund)));
+    background: var(--farbe-flaeche, var(--farbe-flaeche-weich));
   }
   .block h2 {
     font-size: var(--schrift-2xl);
@@ -170,7 +167,6 @@ const heroBild = bild('hero.jpg');
   .liste li {
     padding: var(--raum-s);
     border: 1px solid var(--farbe-linie);
-    border: 1px solid color-mix(in srgb, var(--farbe-text) 14%, transparent);
     border-radius: var(--radius);
   }
 
@@ -181,7 +177,6 @@ const heroBild = bild('hero.jpg');
   }
   .akkordeon details {
     border-bottom: 1px solid var(--farbe-linie);
-    border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 14%, transparent);
   }
   .akkordeon summary {
     cursor: pointer;

@@ -52,6 +52,10 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
 2. `npm run sicht` grün (echter Browser: Überlauf, JS-Fehler, kaputte
    Ressourcen; erzeugt Screenshots, Bögen und `pruefung/texte.md`)
 3. `npm run interaktion` grün (jeder Bedien-Baustein wird real gefahren)
+3a. `npm run browser` grün – die Seite hält die Browser-Untergrenze
+   (CLAUDE.md Abschnitt 4a). Läuft seit 2026-07-28 in `npm run check` mit;
+   der eigene Aufruf schadet nicht. **Ohne diese Stufe ging schon einmal eine
+   abgenommene Seite live, die auf älteren Geräten keine Navigation hatte.**
 4. **Mit eigenen Augen:** `pruefung/texte.md` lesen (Rechtschreibung, Ansprache),
    Bögen ansehen (Layout über alle Breiten), Verdachtsfälle im Einzel-Screenshot
 5. Beim Live-Gang zusätzlich: `npm run check -- --live` (Platzhalter, offene

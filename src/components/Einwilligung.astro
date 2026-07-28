@@ -107,10 +107,9 @@ const t =
     bottom: 0;
     z-index: 200;
     background: var(--farbe-flaeche, var(--farbe-hintergrund));
-    /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). Ohne ihn haette
-       der Banner keine Abgrenzung zur Seite darunter. */
+    /* Abgrenzung zur Seite darunter. Farbe aus der Textfarbe des Designs
+       gerechnet - siehe src/lib/theme.ts. */
     border-top: 1px solid var(--farbe-linie);
-    border-top: 1px solid color-mix(in srgb, var(--farbe-text) 20%, transparent);
     padding: var(--raum-s) var(--gutter);
   }
   .einwilligung[hidden] {

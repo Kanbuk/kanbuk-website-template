@@ -98,23 +98,48 @@ export function cssVariablen(site: SiteConfig): string {
   zeilen.push(`--farbe-fokus: ${fokus};`);
 
   /*
-   * Trennlinien – und der ERSATZWERT für `color-mix()`.
+   * ===========================================================================
+   *  ABGELEITETE FARBEN – und warum der Motor KEIN `color-mix()` benutzt
+   * ===========================================================================
    *
-   * Der Motor zeichnet Linien (Kopfleiste, Fußzeile, Menü) als
-   * `color-mix(in srgb, var(--farbe-text) 12%, transparent)`. Das kennt Safari
-   * erst ab 16.2, deshalb steht davor immer ein einfacher Ersatzwert – und
-   * DIESER hier muss es sein, kein fest eingetragenes Grau.
+   * Der Motor braucht an mehreren Stellen halbdurchsichtige Ableitungen der
+   * Design-Farben: Trennlinien, eine leicht durchscheinende Kopfleiste, eine
+   * abgesetzte Fläche. Naheliegend wäre `color-mix()`. Das steht hier
+   * ausdrücklich NICHT, und zwar aus einem gemessenen Grund:
    *
-   * WARUM: Ein hart notiertes `rgba(0, 0, 0, 0.12)` ist auf einem hellen
-   * Design richtig und auf einem DUNKLEN unsichtbar – schwarz auf schwarz.
-   * Damit hätte der Ersatzwert genau das angerichtet, was er verhindern soll.
-   * Aus der echten Textfarbe gerechnet stimmt er in beide Richtungen.
+   * `color-mix()` kennt Safari erst ab 16.2 (Ende 2022). Der übliche Ausweg
+   * ist ein Ersatzwert in der Zeile davor – der FUNKTIONIERT HIER ABER NICHT,
+   * weil die moderne Zeile selbst ein `var()` enthält:
    *
-   * Bewusst `rgba()` statt `color-mix()`: Der Ersatzwert muss selbst überall
-   * funktionieren, sonst ist er keiner. `rgba()` gibt es seit jeher.
+   *     border-top: 1px solid var(--farbe-linie);                    ← Ersatz
+   *     border-top: 1px solid color-mix(in srgb, var(--farbe-text) …); ← modern
+   *
+   * Eine Zeile mit `var()` kann der Browser beim EINLESEN nicht prüfen. Er
+   * behält sie also, ersetzt später die Variable, stellt dann fest, dass das
+   * Ergebnis ungültig ist – und setzt die Eigenschaft auf NICHTS statt auf den
+   * Ersatzwert. Im Browser nachgemessen am 2026-07-28:
+   *     moderne Zeile MIT var()  -> border 0px, Ersatzwert weggewischt
+   *     moderne Zeile OHNE var() -> Ersatzwert greift
+   * Der Ersatzwert löscht also genau das, was er retten soll.
+   *
+   * Deshalb wird hier gerechnet statt gemischt. `rgba()` gibt es seit jeher,
+   * und `color-mix(in srgb, X 12%, transparent)` ist rechnerisch dasselbe wie
+   * `rgba(X, 0.12)`. Der Motor verliert nichts und gewinnt jeden Browser.
+   *
+   * Die Werte stammen aus den ECHTEN Design-Farben – ein fest eingetragenes
+   * `rgba(0,0,0,0.14)` wäre auf einem dunklen Design unsichtbar.
    */
   const textKanaele = kanaele(farben.text) ?? [0, 0, 0];
-  zeilen.push(`--farbe-linie: rgba(${textKanaele.join(', ')}, 0.14);`);
+  const grundKanaele = kanaele(farben.hintergrund) ?? [255, 255, 255];
+  const rgba = (k: number[], a: number) => `rgba(${k.join(', ')}, ${a})`;
+
+  /** Trennlinien (Kopfleiste, Fußzeile, Menü, Karten). */
+  zeilen.push(`--farbe-linie: ${rgba(textKanaele, 0.14)};`);
+  /** Leicht abgesetzte Fläche – wirkt wie der Hintergrund, nur einen Hauch anders. */
+  zeilen.push(`--farbe-flaeche-weich: ${rgba(textKanaele, 0.04)};`);
+  /** Fast deckender Hintergrund für Leisten, die über dem Inhalt liegen. */
+  zeilen.push(`--farbe-grund-92: ${rgba(grundKanaele, 0.92)};`);
+  zeilen.push(`--farbe-grund-82: ${rgba(grundKanaele, 0.82)};`);
 
   if (radius) zeilen.push(`--radius: ${radius};`);
 

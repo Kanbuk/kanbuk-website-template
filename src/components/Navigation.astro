@@ -123,10 +123,7 @@ const eintraege = site.seiten.filter((s) => s.inNavigation !== false);
       top: 100%;
       display: none;
       background: var(--farbe-hintergrund);
-      /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). Ohne ihn haette
-         das offene Menue unten keine Abgrenzung zur Seite darunter. */
       border-bottom: 1px solid var(--farbe-linie);
-      border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
       padding: var(--raum-xs) var(--gutter) var(--raum-s);
       /* PFLICHT, nicht Kosmetik: Ohne Höhenbegrenzung und eigenes Scrollen
          sind im Querformat (Handy quer, kurzer Bildschirm) die unteren

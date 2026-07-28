@@ -13,15 +13,45 @@ const istLive = site.mode === 'live';
  * ebenso. Stuende die Zahl an beiden Stellen, liefe sie irgendwann
  * auseinander - und dann prueft das Tor gegen etwas anderes, als gebaut wird.
  */
-const grenze: Record<string, number> = JSON.parse(
-  readFileSync(new URL('./browser-untergrenze.json', import.meta.url), 'utf-8'),
-);
+let grenze: Record<string, number>;
+try {
+  grenze = JSON.parse(readFileSync(new URL('./browser-untergrenze.json', import.meta.url), 'utf-8'));
+} catch (e) {
+  /* Klartext statt Stapelabzug: Ohne die Datei bricht sonst `astro build` mit
+     einem ENOENT und fuenf Zeilen Technik ab - fuer jemanden, der nicht
+     programmiert, unlesbar. Abgebrochen wird trotzdem, und das mit Absicht:
+     Ohne Zusage wuerde still gegen "jeder Browser ist taufrisch" gebaut, und
+     genau das war der urspruengliche Fehler. */
+  throw new Error(
+    'browser-untergrenze.json fehlt oder ist kaputt. Ohne sie weiss der Bau nicht, ' +
+      'ab welchem Browser die Seite funktionieren muss - und baut fuer brandneue. ' +
+      'Datei aus dem Template zuruueckholen. (' + ((e as Error)?.message ?? e) + ')',
+  );
+}
 
-/** Lightning CSS erwartet die Version in einer eigenen Schreibweise: 12 << 16 = 12.0 */
+/**
+ * Nur ECHTE Browsernamen weitergeben - und die Version richtig codieren.
+ *
+ * Zwei Fallen steckten hier, beide still:
+ *  1. Ein Filter auf "alles ohne Unterstrich" reichte NICHT: `vollstaendig_ab_safari`
+ *     ist keine Bau-Angabe, sondern die Aussehen-Grenze. Sie landete als
+ *     vermeintlicher Browser in den CSS-Zielen und wurde wortlos geschluckt.
+ *  2. `version << 16` verwirft Nachkommastellen: Aus 15.4 wird 15.0. Wer der
+ *     Anleitung in der JSON-Datei folgt und `safari` eines Tages auf 15.4 setzt,
+ *     baut gegen 15.0, waehrend das Tor gegen 15.4 misst - genau das
+ *     Auseinanderlaufen, das die eine gemeinsame Datei verhindern soll.
+ */
+const BROWSER = ['safari', 'ios_saf', 'chrome', 'firefox', 'edge', 'android', 'samsung'] as const;
+
+/** 15.4 -> (15 << 16) | (4 << 8), so erwartet es Lightning CSS. */
+function codiere(version: number): number {
+  const haupt = Math.floor(version);
+  const neben = Math.round((version - haupt) * 10);
+  return (haupt << 16) | (neben << 8);
+}
+
 const cssZiele = Object.fromEntries(
-  Object.entries(grenze)
-    .filter(([name]) => !name.startsWith('_'))
-    .map(([name, version]) => [name, version << 16]),
+  BROWSER.filter((name) => typeof grenze[name] === 'number').map((name) => [name, codiere(grenze[name])]),
 );
 
 /** esbuild erwartet Namen wie "safari12". `ios_saf` kennt es nicht - iOS laeuft ohnehin auf Safari. */

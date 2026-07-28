@@ -26,8 +26,8 @@
  *  ─────────────────────────────────────────────────────────────────────────
  *  WAS SIE NICHT SIEHT – damit niemand sich in falscher Sicherheit wiegt:
  *
- *   • JavaScript prüft sie VOLLSTÄNDIG (der Übersetzer kennt jede
- *     Schreibweise). CSS dagegen gegen eine NAMENTLICHE Liste unten. Ein
+ *   • Geprüft wird gegen NAMENTLICHE Listen (`JS_MERKMALE`, `CSS_MERKMALE`)
+ *     plus alles, was der Übersetzer selbst nicht umwandeln kann. Ein
  *     brandneues CSS-Merkmal, das dort fehlt, fällt durch. Kommt ein Fund
  *     dazu: in `CSS_MERKMALE` eintragen, dann ist er dauerhaft erfasst.
  *     Ein maschinelles Auffangnetz gibt es bewusst NICHT – der Versuch, das
@@ -125,20 +125,84 @@ const jsZiele = [
   'edge' + grenze.edge,
 ];
 
-for (const stueck of jsStuecke) {
+/*
+ * Schreibweisen, die ein Browser unterhalb der Grenze nicht LESEN kann.
+ *
+ * WARUM EINE NAMENTLICHE LISTE UND KEIN AUTOMATISMUS: Der erste Versuch war,
+ * das Gebaute zweimal zu uebersetzen (einmal gegen die Grenze, einmal gegen
+ * "esnext") und die Ergebnisse zu vergleichen. Das war zu grob - der
+ * Uebersetzer trifft je nach Ziel auch reine Schreibentscheidungen. Gemessen:
+ * Er machte aus `[data-tabs]` in Schraegstrichen ein normales
+ * Anfuehrungszeichen. Voellig gleichwertig, aber der Vergleich meldete es als
+ * Verstoss - ein Waechter, der bei jedem Bau bellt, wird abgeschaltet.
+ *
+ * Also benannt, wie beim CSS auch: Jede Zeile hier ist ein Fall, der wirklich
+ * Schaden anrichtet, mit der Version, ab der es geht. Was fehlt, faellt durch -
+ * dann gehoert es hier hinein.
+ *
+ * WANN DAS UEBERHAUPT VORKOMMT: Normale Skripte wandelt der Bau selbst um.
+ * Durch die Maschen kommt nur, was daran vorbeigeht - allen voran ein
+ * `<script is:inline>`. Genau dafuer ist diese Liste da.
+ */
+const JS_MERKMALE = [
+  { name: 'Fragezeichen-Punkt (a?.b)', suche: /\?\.\s*[A-Za-z_$[(]/, abSafari: 13.1 },
+  { name: 'doppeltes Fragezeichen (a ?? b)', suche: /\?\?[^=]/, abSafari: 13.1 },
+  { name: 'zuweisende Kurzformen (??=, ||=, &&=)', suche: /(\?\?|\|\||&&)=/, abSafari: 14 },
+  { name: 'private Klassenfelder (#name)', suche: /(^|[\s;{])#[A-Za-z_$][\w$]*\s*[=(;]/, abSafari: 14.1 },
+  { name: 'statischer Klassenblock (static { … })', suche: /static\s*\{/, abSafari: 16.4 },
+  { name: 'Rueckschau im Suchmuster ((?<=…))', suche: /\(\?<[=!]/, abSafari: 16.4 },
+];
+
+/**
+ * Prueft ein Skriptstueck gegen die Untergrenze.
+ *
+ * Zwei Wege, weil es zwei Arten von Schaden gibt:
+ *  1. Was der Uebersetzer GAR NICHT umwandeln kann (das Zerlegen in Klammern):
+ *     Das meldet er selbst als Ausnahme, samt Zeilennummer.
+ *  2. Was er umwandeln KOENNTE, im fertigen Bau aber trotzdem noch dasteht:
+ *     Dann ist es an ihm vorbeigelaufen - siehe JS_MERKMALE oben.
+ *
+ * Beides ist derselbe Schaden fuer den Besucher: Der Browser bricht beim
+ * EINLESEN ab. Es faellt nicht ein Baustein aus, sondern alle gleichzeitig -
+ * Menue, Filter, Merkliste, Formular, Lightbox - und zwar ohne Fehlermeldung.
+ */
+function jsBefunde(stueck) {
+  const raus = [];
+
   try {
     jsPruefen(stueck.code, { target: jsZiele, loader: 'js' });
   } catch (fehler) {
     for (const e of fehler.errors ?? []) {
-      const ort = e.location ? ` (Zeile ${e.location.line})` : '';
-      befunde.push({
+      raus.push({
         art: 'JavaScript',
-        quelle: stueck.quelle + ort,
+        quelle: stueck.quelle + (e.location ? ` (Zeile ${e.location.line})` : ''),
         text: e.text,
-        folge: 'Das gesamte Skript wird nicht ausgeführt – KEIN Bedien-Element funktioniert.',
+        folge: 'Das gesamte Skript wird nicht ausgefuehrt - KEIN Bedien-Element funktioniert.',
       });
     }
+    return raus; // Steckt schon eine unumwandelbare Stelle drin, reicht das.
   }
+
+  for (const merkmal of JS_MERKMALE) {
+    if (merkmal.abSafari <= grenze.safari) continue; // von der Grenze gedeckt
+    if (!merkmal.suche.test(stueck.code)) continue;
+    raus.push({
+      art: 'JavaScript',
+      quelle: stueck.quelle,
+      text: `${merkmal.name} - geht erst ab Safari ${merkmal.abSafari}, bedienbar zugesagt ist ab ${grenze.safari}`,
+      folge: [
+        'Der Browser bricht beim EINLESEN ab – Menü, Filter, Merkliste, Formular und Lightbox',
+        '      sind gleichzeitig tot, ohne Fehlermeldung.',
+        '      Häufigste Ursache: ein <script is:inline> – das geht am Bau-Ziel vorbei und',
+        '      landet unverändert in der Seite.',
+      ].join('\n'),
+    });
+  }
+  return raus;
+}
+
+for (const stueck of jsStuecke) {
+  befunde.push(...jsBefunde(stueck));
 }
 
 /* ---------------------------------------------------------------------------
@@ -200,6 +264,7 @@ const CSS_MERKMALE = [
  * abgesicherten Einsatz als Verstoß melden – und wäre damit wertlos.
  */
 function istAbgesichert(code, treffer) {
+  // Die Deklaration, in der der Treffer steckt.
   let start = treffer;
   while (start > 0 && !';{}'.includes(code[start - 1])) start--;
   const doppelpunkt = code.slice(start, treffer).indexOf(':');
@@ -207,11 +272,25 @@ function istAbgesichert(code, treffer) {
   const eigenschaft = code.slice(start, start + doppelpunkt).trim();
   if (!eigenschaft) return false;
 
-  const vorEnde = start - 1;
-  if (vorEnde <= 0 || code[vorEnde] !== ';') return false; // davor beginnt der Block
-  let vorStart = vorEnde;
-  while (vorStart > 0 && !';{}'.includes(code[vorStart - 1])) vorStart--;
-  return code.slice(vorStart, vorEnde).trim().startsWith(eigenschaft + ':');
+  /*
+   * DEN GANZEN BLOCK ABSUCHEN, nicht nur die Zeile davor.
+   *
+   * Die erste Fassung sah ausschließlich die UNMITTELBAR vorangehende
+   * Deklaration an. Das ging schief, weil der Verdichter umsortiert: Im
+   * Quelltext standen Ersatzwert und moderner Wert direkt untereinander, im
+   * fertigen CSS schob sich eine fremde Zeile dazwischen
+   * (`…calc(100vh - 100%);overscroll-behavior:contain;max-height:calc(100dvh…`).
+   * Die Absicherung war da, die Prüfung sah sie nur nicht – und meldete einen
+   * Ausfall, den es nicht gab. Eine Meldung, die nicht stimmt, ist schlimmer
+   * als keine: Beim nächsten Mal glaubt sie niemand mehr.
+   */
+  let blockStart = start;
+  while (blockStart > 0 && code[blockStart - 1] !== '{' && code[blockStart - 1] !== '}') blockStart--;
+
+  return code
+    .slice(blockStart, start)
+    .split(';')
+    .some((d) => d.trim().startsWith(eigenschaft + ':'));
 }
 
 /*

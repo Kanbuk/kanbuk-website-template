@@ -635,8 +635,15 @@ const bilder = dateien.filter((f) => ['.jpg', '.jpeg', '.png', '.webp', '.avif']
 const ersatzfassungen = new Set();
 for (const seite of htmlDateien) {
   const html = readFileSync(seite, 'utf-8');
-  for (const m of html.matchAll(/<picture[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"/g)) {
-    ersatzfassungen.add(m[1].split('/').pop());
+  /* ERST den picture-Block ausschneiden, DANN darin suchen.
+     Vorher lief das Muster ueber Elementgrenzen hinweg: Ein <picture>, dessen
+     <img> nur ein srcset und kein src hat (gueltiges HTML), haette das
+     NAECHSTE Bild irgendwo spaeter auf der Seite als Ersatzfassung ausgegeben -
+     und ihm damit die weichere Gewichtsgrenze verschafft. */
+  for (const block of html.match(/<picture[\s\S]*?<\/picture>/g) ?? []) {
+    for (const m of block.matchAll(/<img[^>]+src="([^"]+)"/g)) {
+      ersatzfassungen.add(m[1].split('/').pop());
+    }
   }
 }
 
@@ -848,7 +855,13 @@ if (istTemplate) {
     // drei Betriebsnamen durch – in der Verlaufszeile, wo man beim Schreiben
     // an die Arbeit denkt und nicht an die Regel.
     join(WURZEL, 'STAND.md'),
-  ].filter((f) => existsSync(f) && ['.ts', '.astro', '.mjs', '.md', '.css'].includes(extname(f)));
+    /* Die Bau-Konfiguration und die Grenz-Datei gehoerten frueher NICHT dazu -
+       ausgerechnet die beiden Dateien, die der letzte Rueckfluss angelegt hat.
+       Ein Kundenname in einem Kommentar dort waere durchgerutscht. */
+    join(WURZEL, 'astro.config.ts'),
+    join(WURZEL, 'browser-untergrenze.json'),
+    join(WURZEL, 'package.json'),
+  ].filter((f) => existsSync(f) && ['.ts', '.astro', '.mjs', '.md', '.css', '.json'].includes(extname(f)));
 
   /* BETRIEBSNAMEN – der Fall, den kein allgemeines Muster findet.
      Telefonnummern und E-Mail-Adressen haben eine erkennbare Form, ein
@@ -982,6 +995,32 @@ if (istTemplate) {
         }
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  8ba. DESIGN-FARBEN MUESSEN HEX-WERTE SEIN
+//
+//  Der Motor rechnet aus den Farben abgeleitete Toene (Trennlinien, halbdurch-
+//  sichtige Leisten - siehe src/lib/theme.ts). Diese Rechnung versteht NUR
+//  #rgb und #rrggbb. Steht dort 'rgb(240,240,240)' oder ein Farbname, faellt
+//  sie still auf Schwarz zurueck - und auf einem dunklen Design ist die
+//  Trennlinie dann unsichtbar. Genau der Fehler, den die Ableitung verhindern
+//  soll, nur eine Ebene tiefer.
+// ---------------------------------------------------------------------------
+{
+  const farbBlock = configText.match(/farben:\s*\{[^}]*\}/)?.[0] ?? '';
+  for (const m of farbBlock.matchAll(/(\w+)\s*:\s*'([^']+)'/g)) {
+    const name = m[1];
+    const wert = m[2];
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(wert)) continue;
+    fehler(
+      [
+        `content.config.ts: Die Farbe „${name}" ist „${wert}" – erwartet wird ein Hex-Wert (#rrggbb).`,
+        '    Der Motor rechnet daraus Trennlinien und halbdurchsichtige Leisten. Bei einer anderen',
+        '    Schreibweise fällt die Rechnung auf Schwarz zurück – auf dunklen Designs unsichtbar.',
+      ].join('\n'),
+    );
   }
 }
 

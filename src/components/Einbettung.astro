@@ -103,18 +103,11 @@ const t =
     gap: var(--raum-2xs);
     padding: var(--raum-s);
     text-align: center;
-    /*
-       ERSATZWERT ZUERST - das Muster gilt fuer JEDES moderne CSS-Merkmal in
-       einem Motor-Baustein (siehe CLAUDE.md, "Schreibweisen im Browser-Code").
-
-       Ein Browser, der die zweite Zeile nicht versteht, verwirft NUR sie und
-       behaelt die erste. Ohne den Ersatzwert faellt die Eigenschaft ganz aus:
-       `color-mix` kennt Safari erst ab 16.2 (Ende 2022), die Flaeche bliebe
-       also ohne Hintergrund und der Hinweistext stuende unlesbar auf dem
-       Kartenbild. Deckend statt 82 Prozent ist der kleinere Schaden.
-    */
-    background: var(--farbe-hintergrund);
-    background: color-mix(in srgb, var(--farbe-hintergrund) 82%, transparent);
+    /* Fast deckend, damit der Hinweistext auf dem Kartenbild lesbar bleibt.
+       Gerechnet statt gemischt: Der Motor benutzt bewusst nirgends `color-mix()`
+       – ein Ersatzwert davor wirkt NICHT, wenn die moderne Zeile ein `var()`
+       enthält. Begründung samt Messung in src/lib/theme.ts. */
+    background: var(--farbe-grund-82);
     backdrop-filter: blur(2px);
   }
   .einbettung__text {

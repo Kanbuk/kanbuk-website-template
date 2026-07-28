@@ -47,14 +47,11 @@ const logo = site.betrieb.logo ? bild(site.betrieb.logo) : null;
     position: sticky;
     top: 0;
     z-index: 50;
-    /* Ersatzwert zuerst (Muster: siehe Einbettung.astro). Ohne ihn waere die
-       Kopfleiste durchsichtig und der Inhalt schoebe sich beim Scrollen
-       dahinter durch. */
-    background: var(--farbe-hintergrund);
-    background: color-mix(in srgb, var(--farbe-hintergrund) 92%, transparent);
+    /* Fast deckend: Sonst schiebt sich der Inhalt beim Scrollen sichtbar
+       hinter der Kopfleiste durch. */
+    background: var(--farbe-grund-92);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--farbe-linie);
-    border-bottom: 1px solid color-mix(in srgb, var(--farbe-text) 12%, transparent);
   }
   .kopf__inner {
     /* position: relative ist PFLICHT – das Handy-Panel hängt sich mit

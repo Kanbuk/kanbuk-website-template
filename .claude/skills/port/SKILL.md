@@ -150,7 +150,7 @@ kommt ins Lücken-Inventar.
   (Im Piloten waren 2 von 19 Fotos vertauscht; ohne Sichtung wäre das online
   gegangen.) Zuordnung dann selbst entscheiden und im Bericht nennen – nicht fragen.
 
-  Einbinden ausschließlich über `astro:assets` (`<Image>`) und `bild('name.jpg')` aus
+  Einbinden ausschließlich über `astro:assets` und `bild('name.jpg')` aus
   `src/lib/bilder.ts` – nie als rohes `<img src>`. Unterordner in `fotos/` sind
   erlaubt; `bild()` findet die Datei auch dort.
 
@@ -260,6 +260,10 @@ wird dabei ersetzt.
   kommt dann als offener Punkt in STAND.md.
 
 ---
+
+> **Inhaltsbilder mit `<Picture formats={['webp']} fallbackFormat="jpeg">`**,
+> nicht mit `<Image>` – sonst sehen Rechner mit älterem Betriebssystem kein
+> einziges Foto (CLAUDE.md Abschnitt 4a). Logos bleiben `<Image>`.
 
 ## Etappe 5 – Die Launch-Prüfung (fünf Stufen, alle Pflicht)
 
