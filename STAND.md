@@ -56,28 +56,30 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
       nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
       Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
-- [ ] **KEIN WERKZEUG FÜR DEN ABGLEICH MIT DEM DESIGN – die größte Lücke des
-      Motors.** Die Regel steht (CLAUDE.md 9 Punkt 3c, `/port` Etappe 5 Stufe 6,
-      Deploy-Checkliste), das Nebeneinanderlegen ist aber **Handarbeit** – und
-      wird deshalb zuverlässig übersprungen.
-      **Am 29.07.2026 zum ersten Mal gemessen:** Ein Autohaus-Design wurde aus
-      der frischen Vorlage portiert. Nach fünf Korrekturrunden waren `check`,
-      `sicht`, `interaktion`, `browser` und `altgeraet` grün. Ein Abgleich von
-      Hand fand danach **65 Befunde, 11 davon schwer** – ein fehlender
-      Schwebeknopf auf allen Seiten, zwei Rechtsseiten ohne Kopfband, eine
-      fehlende und eine erfundene FAQ-Frage, ein nicht gebauter Formular-Zustand,
-      drei Kartenplätze mit zwei Karten. **Kein einziger davon war von einem Tor
-      gemeldet worden**, und keines kann das: Alle vier prüfen, was DA ist – nie,
-      was fehlen könnte. (Vollständig in `ABGLEICH.md` des Testklons.)
-      **Was fehlen würde:** ein `npm run abgleich` als sechstes Tor – zählt die
-      Blöcke je Seite gegen die `.dc.html`, vergleicht gemessene Grundfarben und
-      Polsterungen, meldet BEIDE Richtungen (fehlt / erfunden). Beide Seiten sind
-      maschinell lesbar, also machbar.
-      **Vorarbeit vorhanden:** In einem Kundenprojekt wurde so ein Werkzeug
-      gebaut (erster Lauf: 36 Abweichungen, eine grobe). Es ist so **nicht**
-      hebbar – Seitenzuordnung und Anker sind klonspezifisch. Genau das ist die
-      zu lösende Aufgabe: die Zuordnung Design-Seite ↔ Route muss aus der Config
-      kommen, nicht aus einer Liste im Skript.
+- [x] **Werkzeug für den Abgleich mit dem Design – gebaut am 29.07.2026.**
+      `npm run abgleich` ist das sechste Tor. Es liest die `.dc.html` mit einem
+      echten DOM, zerlegt sie in Seiten und Blöcke und hält das gegen die
+      gebaute Seite: Blockzahl, Überschriften-Folge, Reihenfolge, dunkle Bänder,
+      fest stehende Elemente. Die Zuordnung Seite→Adresse steht in
+      `design/abgleich.json` **im Klon** – genau daran war ein früherer Versuch
+      gescheitert (Liste im Skript, damit nicht ins Template hebbar).
+      **Was es kann und was nicht, gemessen statt behauptet:** Von elf schweren
+      Befunden eines Handabgleichs findet es drei zuverlässig – die der Klasse
+      „Block fehlt / Block erfunden", also die teuerste. Feinheiten INNERHALB
+      eines Blocks, Textinhalte und Klick-Zustände sieht es nicht.
+      Verworfen wurde bewusst der naheliegende Weg, beide Seiten als Bild
+      übereinanderzulegen: Die `.dc.html` ist eine Schablone und lässt sich ohne
+      den Laufzeit-Teil von Claude Design (`support.js`, kommt beim Export nicht
+      mit) gar nicht rendern. Ihn nachzubauen hieße, eine zweite Fassung von
+      Claude Design zu pflegen. Und ein Pixelvergleich erstickte ohnehin am
+      Rauschen: Das Design zeigt Musterinhalte, die Seite echte.
+- [ ] **Das sechste Tor rauscht noch.** Im Testklon meldet es neben den echten
+      Befunden rund acht, die keine sind – meist „ein Block zu viel", weil die
+      Regel zum Erkennen eines reinen Rahmens (mehrere Kinder, keine eigene
+      Polsterung) auf beiden Seiten leicht verschieden greift. Es ist damit ein
+      Hinweisgeber, kein Blocker: Es endet nur bei „Block fehlt/erfunden" rot.
+      Nachschärfen, sobald ein zweites Design vorliegt – an einem einzigen
+      Design lässt sich die Regel nicht sauber eichen.
 - [ ] **Kein Ort für bewusste Design-Abweichungen im Klon.** Die Regel sagt
       jetzt, dass Mindest-Schriftgröße und Kontrast das Design schlagen und die
       Abweichung in den Bericht gehört. Ein maschinenlesbarer Ort dafür

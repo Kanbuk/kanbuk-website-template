@@ -26,7 +26,8 @@
     "preisliste": "node scripts/preisliste.mjs",
     "demo": "node scripts/demo-hosten.mjs",
     "inhalte": "node scripts/inhalte.mjs",
-    "maske": "node scripts/maske.mjs"
+    "maske": "node scripts/maske.mjs",
+    "abgleich": "node scripts/abgleich.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

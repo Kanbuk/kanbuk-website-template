@@ -1,0 +1,533 @@
+/**
+ * `npm run abgleich` – DAS SECHSTE TOR: hält die gebaute Seite gegen das Design.
+ *
+ * =============================================================================
+ *  WOZU ES DAS GIBT
+ * =============================================================================
+ *  Am 29.07.2026 wurde ein echtes Autohaus-Design aus der frischen Vorlage
+ *  portiert. Nach fünf Korrekturrunden waren ALLE fünf Tore grün – `check`,
+ *  `sicht`, `interaktion`, `browser`, `altgeraet`. Ein Abgleich von Hand fand
+ *  danach 65 Abweichungen, elf davon grob: ein Schwebeknopf, der auf keiner
+ *  einzigen Seite existierte; zwei Rechtsseiten ohne ihr Kopfband; eine
+ *  fehlende und eine erfundene Frage im Akkordeon; ein Formular-Zustand, den
+ *  es gar nicht gab; drei Kartenplätze mit zwei Karten darin.
+ *
+ *  Kein einziger davon war von einem Tor gemeldet worden – und keines KONNTE
+ *  es: Alle fünf prüfen, was DA ist. Keines weiß, was da sein müsste.
+ *
+ *  Die Tücke dabei ist bekannt und steht in CLAUDE.md Abschnitt 4: Eine Seite
+ *  aus lauter korrekten Bauteilen wirkt fertig. Erst wer sie neben die
+ *  Design-Datei hält, sieht, dass es eine andere Seite ist.
+ *
+ * =============================================================================
+ *  WARUM ES NICHT DIE BILDER VERGLEICHT
+ * =============================================================================
+ *  Die naheliegende Idee – beide Seiten als Bild übereinanderlegen – trägt aus
+ *  zwei Gründen nicht:
+ *
+ *  1. **Die Design-Datei lässt sich nicht rendern.** Sie ist eine Schablone mit
+ *     Bauteil-Platzhaltern (`<x-import>`), Seiten-Schaltern (`<sc-if>`) und
+ *     Schleifen (`<sc-for>`). Aufgelöst werden die von `support.js`, dem
+ *     Laufzeit-Teil von Claude Design – der beim Export nicht mitkommt. Ihn
+ *     nachzubauen hieße, eine zweite Fassung von Claude Design zu pflegen, die
+ *     bei jeder Änderung dort bricht.
+ *  2. **Ein Pixelvergleich ertränke die Befunde.** Das Design zeigt
+ *     Musterinhalte, die Seite echte: andere Fotos, andere Preise, andere
+ *     Textlängen. Jeder Textblock wäre ein Unterschied, und die groben Fehler
+ *     gingen im Rauschen unter.
+ *
+ *  Beide Seiten sind aber maschinell lesbar als STRUKTUR. Genau darauf schaut
+ *  dieses Werkzeug: Wie viele Blöcke, in welcher Reihenfolge, mit welcher
+ *  Grundfarbe, welcher Polsterung, welcher Überschrift. Das sind die Merkmale,
+ *  an denen die elf groben Befunde hingen – und sie sind unempfindlich gegen
+ *  andere Inhalte.
+ *
+ *  WAS ES NICHT SIEHT (ehrlich benannt, damit sich niemand in Sicherheit wiegt):
+ *    - Feinheiten innerhalb eines Blocks (Schriftgrößen, Radien, Zeilenhöhen).
+ *      Dafür bleibt das Auge zuständig – `npm run sicht` liefert die Bögen.
+ *    - Ob ein Text inhaltlich stimmt. Es zählt Blöcke, es liest nicht Korrektur.
+ *    - Zustände, die erst ein Klick zeigt (offene Tabs, gesendetes Formular).
+ *    - Alles, was das Design nur in einer Zeichnung andeutet.
+ */
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { join, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { chromium } from 'playwright';
+import { starteDistServer } from './lib/dist-server.mjs';
+
+const WURZEL = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+const DESIGN = join(WURZEL, 'design');
+const ZUORDNUNG = join(DESIGN, 'abgleich.json');
+
+const nurBericht = process.argv.includes('--bericht');
+
+// ---------------------------------------------------------------------------
+//  Ohne Design-Datei gibt es nichts abzugleichen
+// ---------------------------------------------------------------------------
+function designDatei() {
+  if (!existsSync(DESIGN)) return undefined;
+  const treffer = readdirSync(DESIGN).filter((f) => f.endsWith('.dc.html'));
+  return treffer.length ? join(DESIGN, treffer[0]) : undefined;
+}
+
+const datei = designDatei();
+if (!datei) {
+  console.log(
+    'Kein Design zum Abgleichen gefunden.\n' +
+      '\n' +
+      'Dieses Tor braucht die Bauanleitung des Design-Projekts:\n' +
+      '  design/<Projekt>.dc.html\n' +
+      '\n' +
+      'Beim Portieren wird sie ohnehin dort abgelegt (siehe /port, Etappe 1,\n' +
+      'Schritt 0). Ohne sie kann niemand prüfen, ob die Seite dem Design\n' +
+      'entspricht – auch kein Mensch.',
+  );
+  process.exit(0);
+}
+
+console.log(`Design: ${basename(datei)}`);
+
+// ---------------------------------------------------------------------------
+//  1. Die Bauanleitung lesen – mit einem echten DOM, nicht mit Textsuche
+//
+//  Der Browser baut aus der Datei einen Baum, auch wenn er `<sc-if>` und
+//  `<x-import>` nicht kennt (unbekannte Elemente sind erlaubt und landen ganz
+//  normal im Baum). Damit lässt sich sauber durch die Ebenen gehen, statt mit
+//  Ausdrücken über verschachtelte Klammern zu raten.
+//
+//  Die Skripte der Datei laufen dabei NICHT – wir setzen den Inhalt, ohne ihn
+//  zu laden. Es geht um die Struktur, nicht um die Darstellung.
+// ---------------------------------------------------------------------------
+const browser = await chromium.launch();
+const seite = await browser.newPage();
+
+const designSeiten = await (async () => {
+  await seite.setContent(readFileSync(datei, 'utf-8'), { waitUntil: 'domcontentloaded' });
+  return seite.evaluate(() => {
+    /** Aus einem style-Attribut die zwei Werte holen, auf die es ankommt. */
+    const stilWert = (el, name) => {
+      const roh = el.getAttribute('style') || '';
+      const t = roh.match(new RegExp(`(?:^|;)\\s*${name}\\s*:\\s*([^;]+)`, 'i'));
+      return t ? t[1].trim() : '';
+    };
+    /** Grundfarbe: erst `background`, sonst `background-color`. */
+    const grund = (el) => stilWert(el, 'background') || stilWert(el, 'background-color');
+
+    const seiten = [];
+    for (const sc of document.querySelectorAll('sc-if')) {
+      const schalter = (sc.getAttribute('value') || '').match(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/);
+      if (!schalter) continue;
+      /* Ein Seiten-Schalter steht DIREKT in <main>. Zwei Fallen, beide im
+         ersten Lauf am 29.07.2026 aufgelaufen:
+
+         1. Derselbe Schalter kommt auch in der KOPFLEISTE vor – dort schaltet
+            er den Unterstrich unter dem aktiven Menüpunkt. Ohne diese Prüfung
+            zählte das Werkzeug 16 Seiten statt 11 und verwässerte die
+            Blockzahl mit einzelnen <span>.
+         2. Zustände INNERHALB einer Seite (isSellForm, hasResults, sellDone)
+            sehen genauso aus. Sie sind keine Seiten. */
+      if (!/^is[A-Z]/.test(schalter[1])) continue;
+      if (!sc.parentElement || sc.parentElement.tagName !== 'MAIN') continue;
+
+      /* Fast jedes Design verpackt eine Seite noch einmal in einen Rahmen,
+         der nur die Seitenfarbe trägt – manchmal zwei. Zählt man den, hat
+         jede Seite genau einen „Block" und der Vergleich ist wertlos (im
+         ersten Lauf am 29.07.2026 genau so passiert: „Design: 1 Block,
+         Gebaut: 6").
+
+         Ein RAHMEN erkennt man daran, dass er mehrere Abschnitte enthält und
+         selbst keine Polsterung hat – die Polsterung ist das, was einen
+         echten Block ausmacht. Also so lange hineingehen, bis das nicht mehr
+         zutrifft. Die Grundfarbe des Rahmens zählt dabei NICHT als Merkmal:
+         Sie ist die Seitenfarbe, nicht die eines Blocks. */
+      const hineingehen = (el) => {
+        let e = el;
+        for (let tiefe = 0; tiefe < 3; tiefe++) {
+          const kinder = [...e.children];
+          if (kinder.length < 2) break;
+          if (stilWert(e, 'padding') || stilWert(e, 'padding-block')) break;
+          if (!kinder.every((k) => /^(SECTION|DIV|HEADER|FOOTER|ARTICLE|ASIDE|NAV|SC-IF)$/.test(k.tagName))) break;
+          return kinder;
+        }
+        return [e];
+      };
+
+      const bloecke = [];
+      for (const kind of sc.children) {
+        for (const b of hineingehen(kind)) {
+          /* Nur h1/h2 zählen als Block-Überschrift. h3 trägt im Design die
+             Titel EINZELNER Karten („Ford B-MAX") – die wandern mit dem
+             Bestand und sind kein Merkmal des Blocks.
+             Ausserdem raus: alles aus Schleifen (<sc-for>) und aus Zuständen
+             (<sc-if>) – Wiederholungen bzw. Klick-Zustände, keine Blöcke.
+             Und Platzhalter wie „{{ curTitle }}", die im Design nur
+             stellvertretend stehen. Alle drei erzeugten im Probelauf
+             Falschmeldungen. */
+          const inWiederholung = (h) => {
+            // NUR den Weg INNERHALB des Blocks prüfen. `closest()` lief bis zum
+            // Seiten-Schalter hinauf – und der ist selbst ein <sc-if>, also galt
+            // jede Überschrift als Wiederholung und die Design-Seite kam ohne
+            // eine einzige heraus.
+            let e = h.parentElement;
+            while (e && e !== b) {
+              if (e.tagName === 'SC-FOR' || e.tagName === 'SC-IF') return true;
+              e = e.parentElement;
+            }
+            return false;
+          };
+          const ueberschrift = [...b.querySelectorAll('h1,h2')].find(
+            (h) => !inWiederholung(h) && !h.textContent.includes('{{'),
+          );
+          bloecke.push({
+            tag: b.tagName.toLowerCase(),
+            klasse: b.getAttribute('class') || '',
+            invertiert: /asc-invert|invert/.test(b.getAttribute('class') || ''),
+            grundfarbe: grund(b),
+            polsterung: stilWert(b, 'padding') || stilWert(b, 'padding-block'),
+            ueberschrift: ueberschrift ? ueberschrift.textContent.trim().slice(0, 60) : '',
+            bauteile: [...b.querySelectorAll('x-import[component-from-global-scope]')]
+              .map((x) => (x.getAttribute('component-from-global-scope') || '').split('.').pop())
+              .filter(Boolean),
+            zustaende: [...b.querySelectorAll('sc-if')]
+              .map((x) => ((x.getAttribute('value') || '').match(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/) || [])[1])
+              .filter(Boolean),
+          });
+        }
+      }
+      seiten.push({ schalter: schalter[1], bloecke });
+    }
+
+    /* Der RAHMEN: alles ausserhalb von <main>, also Kopfleiste, Fusszeile und
+       was sonst auf jeder Seite steht (Schwebeknöpfe, globale Dialoge). Genau
+       dort saß im Testlauf der grobste Befund – ein Knopf, der auf keiner der
+       sechzehn Seiten existierte. */
+    const rahmen = [];
+    const wurzel = document.querySelector('x-dc') || document.body;
+    for (const el of wurzel.children) {
+      if (el.tagName === 'MAIN' || el.tagName === 'HELMET' || el.tagName === 'STYLE') continue;
+      const inneres = el.tagName === 'SC-IF' ? el.firstElementChild : el;
+      if (!inneres) continue;
+      rahmen.push({
+        tag: inneres.tagName.toLowerCase(),
+        fest: /position:\s*fixed/i.test(inneres.getAttribute('style') || ''),
+        grundfarbe: grund(inneres),
+        bauteile: [...inneres.querySelectorAll('x-import[component-from-global-scope]')]
+          .map((x) => (x.getAttribute('component-from-global-scope') || '').split('.').pop())
+          .filter(Boolean),
+        kennung:
+          (inneres.getAttribute('aria-label') || '').slice(0, 40) ||
+          (inneres.getAttribute('class') || '').slice(0, 40) ||
+          inneres.tagName.toLowerCase(),
+      });
+    }
+    return { seiten, rahmen };
+  });
+})();
+
+console.log(
+  `  ${designSeiten.seiten.length} Seite(n) im Design, ` +
+    `${designSeiten.seiten.reduce((n, s) => n + s.bloecke.length, 0)} Block/Blöcke, ` +
+    `${designSeiten.rahmen.length} Rahmen-Teil(e)`,
+);
+
+// ---------------------------------------------------------------------------
+//  2. Zuordnung Design-Seite -> Route
+//
+//  DAS IST DIE STELLE, AN DER EIN FRÜHERER VERSUCH GESCHEITERT IST: In einem
+//  Kundenprojekt stand die Zuordnung als Liste IM Skript. Damit war das
+//  Werkzeug nicht ins Template hebbar – und ins Template dürfen ohnehin keine
+//  Kundendaten. Sie gehört also in den Klon, als eigene kleine Datei.
+//
+//  Fehlt sie, wird sie nicht geraten, sondern vorgeschlagen: Das Werkzeug
+//  schreibt einen Entwurf mit allen gefundenen Schaltern und hört auf.
+// ---------------------------------------------------------------------------
+if (!existsSync(ZUORDNUNG)) {
+  const entwurf = Object.fromEntries(designSeiten.seiten.map((s) => [s.schalter, '']));
+  writeFileSync(ZUORDNUNG, JSON.stringify(entwurf, null, 2) + '\n', 'utf-8');
+  console.log(
+    `\n✗ Es fehlt die Zuordnung, welche Design-Seite welche Adresse geworden ist.\n` +
+      `\n  Ein Entwurf liegt jetzt in design/abgleich.json. Trage dort je Schalter\n` +
+      `  die Adresse ein, z. B.:\n` +
+      `\n      "isHome": "/",\n      "isListing": "/fahrzeuge",\n` +
+      `\n  Eine Seite, die es bewusst nicht geben soll, bekommt "" – dann wird sie\n` +
+      `  übersprungen und im Bericht als bewusst weggelassen genannt.`,
+  );
+  await browser.close();
+  process.exit(1);
+}
+
+const zuordnung = JSON.parse(readFileSync(ZUORDNUNG, 'utf-8'));
+const fehlend = designSeiten.seiten.filter((s) => !(s.schalter in zuordnung));
+if (fehlend.length) {
+  console.log(
+    `\n✗ design/abgleich.json kennt ${fehlend.length} Design-Seite(n) nicht: ` +
+      fehlend.map((s) => s.schalter).join(', ') +
+      `\n  Eintragen (Adresse oder "" für bewusst weggelassen).`,
+  );
+  await browser.close();
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+//  3. Die gebaute Seite messen
+// ---------------------------------------------------------------------------
+const DIST = join(WURZEL, 'dist');
+if (!existsSync(DIST)) {
+  console.error('✗ dist/ fehlt. Bitte zuerst "npm run build" ausführen.');
+  await browser.close();
+  process.exit(1);
+}
+const { basis, stop } = await starteDistServer(DIST);
+
+async function gebauteSeite(pfad) {
+  const p = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const antwort = await p.goto(basis + pfad, { waitUntil: 'load' }).catch(() => null);
+  if (!antwort || antwort.status() >= 400) {
+    await p.close();
+    return undefined;
+  }
+  const daten = await p.evaluate(() => {
+    const sichtbar = (el) => {
+      const s = getComputedStyle(el);
+      return s.display !== 'none' && s.visibility !== 'hidden';
+    };
+    const hauptteil = document.querySelector('main') || document.body;
+    const bloecke = [];
+    for (const b of hauptteil.children) {
+      if (!sichtbar(b)) continue;
+      const s = getComputedStyle(b);
+      // Ein reiner Rahmen ohne eigene Fläche zählt nicht als Block – seine
+      // Kinder tun es. Sonst zählte man den Wrapper statt der Abschnitte.
+      /* Gleiche Regel wie auf der Design-Seite: Ein RAHMEN hat mehrere
+         Abschnitte und keine eigene Polsterung. In ihn wird hineingegangen,
+         sonst zählt man den Rahmen statt der Blöcke (im ersten Lauf ergab das
+         „1 statt 5 Blöcke" auf der Detailseite). */
+      const hinein = (el) => {
+        let e = el;
+        for (let tiefe = 0; tiefe < 3; tiefe++) {
+          const kinder = [...e.children].filter(sichtbar);
+          const st = getComputedStyle(e);
+          if (kinder.length < 2) break;
+          if (parseFloat(st.paddingTop) > 8) break;
+          if (!kinder.every((k) => /^(SECTION|DIV|HEADER|FOOTER|ARTICLE|ASIDE|NAV)$/.test(k.tagName))) break;
+          return kinder;
+        }
+        return [e];
+      };
+      for (const x of hinein(b)) {
+        const st = getComputedStyle(x);
+        // Nur h1/h2 – siehe Begründung auf der Design-Seite oben.
+        const h = x.querySelector('h1,h2');
+        bloecke.push({
+          tag: x.tagName.toLowerCase(),
+          klasse: (x.getAttribute('class') || '').slice(0, 60),
+          grundfarbe: st.backgroundColor,
+          grundbild: st.backgroundImage !== 'none',
+          polsterungOben: Math.round(parseFloat(st.paddingTop) || 0),
+          hoehe: Math.round(x.getBoundingClientRect().height),
+          ueberschrift: h ? h.textContent.trim().slice(0, 60) : '',
+        });
+      }
+    }
+    // Der Rahmen: was ausserhalb von <main> steht.
+    const rahmen = [...document.body.querySelectorAll('body > *')]
+      .filter((el) => !['MAIN', 'SCRIPT', 'STYLE', 'TEMPLATE'].includes(el.tagName) && sichtbar(el))
+      .map((el) => ({
+        tag: el.tagName.toLowerCase(),
+        fest: getComputedStyle(el).position === 'fixed',
+        kennung: (el.getAttribute('aria-label') || el.getAttribute('class') || el.tagName).slice(0, 40),
+      }));
+    // Zusätzlich alles fest Positionierte irgendwo im Dokument (Schwebeknöpfe
+    // hängen oft tiefer im Baum).
+    for (const el of document.querySelectorAll('a,button,div')) {
+      if (getComputedStyle(el).position !== 'fixed' || !sichtbar(el)) continue;
+      if (rahmen.some((r) => r.fest && r.kennung === (el.getAttribute('aria-label') || ''))) continue;
+      rahmen.push({
+        tag: el.tagName.toLowerCase(),
+        fest: true,
+        kennung: (el.getAttribute('aria-label') || el.getAttribute('class') || el.tagName).slice(0, 40),
+      });
+    }
+    return { bloecke, rahmen };
+  });
+  await p.close();
+  return daten;
+}
+
+// ---------------------------------------------------------------------------
+//  4. Vergleichen – in BEIDE Richtungen
+// ---------------------------------------------------------------------------
+const befunde = [];
+const zeilen = [];
+const melde = (schwere, seiteName, was, design, gebaut) =>
+  befunde.push({ schwere, seite: seiteName, was, design, gebaut });
+
+/** Ist eine gemessene Farbe dunkel? */
+const istDunkel = (rgb) => {
+  const t = String(rgb).match(/(\d+),\s*(\d+),\s*(\d+)/);
+  if (!t) return false;
+  return (+t[1] * 299 + +t[2] * 587 + +t[3] * 114) / 1000 < 110;
+};
+
+/** Überschrift auf das Vergleichbare eindampfen. */
+const kern = (s) =>
+  String(s || '')
+    .toLowerCase()
+    .replace(/[^a-zäöüß0-9]+/g, ' ')
+    .trim();
+
+for (const dSeite of designSeiten.seiten) {
+  const route = zuordnung[dSeite.schalter];
+  if (!route) {
+    zeilen.push(`  ↷ ${dSeite.schalter.padEnd(16)} bewusst weggelassen`);
+    continue;
+  }
+  const gebaut = await gebauteSeite(route.endsWith('/') ? route : route + '/');
+  if (!gebaut) {
+    melde('schwer', dSeite.schalter, `Die Seite gibt es im Build nicht: ${route}`, `${dSeite.bloecke.length} Blöcke`, 'keine Seite');
+    zeilen.push(`  ✗ ${dSeite.schalter.padEnd(16)} ${route} – nicht gebaut`);
+    continue;
+  }
+
+  const dz = dSeite.bloecke.length;
+  const gz = gebaut.bloecke.length;
+  if (dz !== gz) {
+    melde(
+      Math.abs(dz - gz) > 1 ? 'schwer' : 'mittel',
+      dSeite.schalter,
+      dz > gz ? `${dz - gz} Block/Blöcke fehlen` : `${gz - dz} Block/Blöcke zu viel`,
+      `${dz} Blöcke`,
+      `${gz} Blöcke`,
+    );
+  }
+
+  /* ÜBERSCHRIFTEN VERGLEICHEN – das tragfähigste Merkmal.
+     Sie stehen in der Design-Datei als wörtlicher Text und in der gebauten
+     Seite auch. Damit fällt in einem Durchgang auf: ein fehlender Block, ein
+     erfundener Block, ein vertauschter Block UND ein geänderter Text.
+     (Die naheliegende Alternative – Grundfarben vergleichen – wurde im Bau
+     verworfen: Das Design schreibt Token-Namen wie `var(--surface-sunken)`,
+     deren Wert nur die Token-Datei kennt. Aus dem Namen auf hell/dunkel zu
+     schließen war Raterei und erzeugte im Probelauf sechs Falschmeldungen.) */
+  const dTitel = dSeite.bloecke.map((b) => kern(b.ueberschrift)).filter(Boolean);
+  const gTitel = gebaut.bloecke.map((b) => kern(b.ueberschrift)).filter(Boolean);
+
+  for (const t of dTitel) {
+    if (gTitel.includes(t)) continue;
+    const d = dSeite.bloecke.find((b) => kern(b.ueberschrift) === t);
+    melde('schwer', dSeite.schalter, `Der Block „${d.ueberschrift}" fehlt`, d.ueberschrift, '—');
+  }
+  for (const t of gTitel) {
+    if (dTitel.includes(t)) continue;
+    const g = gebaut.bloecke.find((b) => kern(b.ueberschrift) === t);
+    melde(
+      'mittel',
+      dSeite.schalter,
+      `Der Block „${g.ueberschrift}" steht auf der Seite, im Design gibt es ihn nicht`,
+      '—',
+      g.ueberschrift,
+    );
+  }
+  // Reihenfolge: nur die Titel vergleichen, die es auf beiden Seiten gibt.
+  const gemeinsamD = dTitel.filter((t) => gTitel.includes(t));
+  const gemeinsamG = gTitel.filter((t) => dTitel.includes(t));
+  if (gemeinsamD.join('|') !== gemeinsamG.join('|')) {
+    melde('schwer', dSeite.schalter, 'Die Blöcke stehen in einer anderen Reihenfolge', gemeinsamD.join(' → '), gemeinsamG.join(' → '));
+  }
+
+  /* Grundfarbe nur dort, wo das Design es AUSDRÜCKLICH sagt – über die
+     Umkehr-Klasse, nicht über einen geratenen Farbwert. Ein heller Kasten auf
+     schwarzem Grund (oder umgekehrt) ist der Fehler, den man aus zehn Metern
+     sieht, und die Klasse steht wörtlich in der Datei. */
+  for (const d of dSeite.bloecke) {
+    if (!d.invertiert || !d.ueberschrift) continue;
+    /* ÜBER DIE ÜBERSCHRIFT zuordnen, nicht über die Position. Sobald die
+       Blockzahlen um eins auseinanderliegen, vergleicht ein Positionsindex
+       zwei verschiedene Blöcke – im Probelauf ergab das drei Falschmeldungen
+       („dunkel erwartet, hell gemessen") an Bändern, die in Wirklichkeit
+       schwarz sind. */
+    const g = gebaut.bloecke.find((x) => kern(x.ueberschrift) === kern(d.ueberschrift));
+    if (!g) continue; // Fehlt ganz – steht schon als eigener Befund da.
+    if (istDunkel(g.grundfarbe) || g.grundbild) continue;
+    melde(
+      'schwer',
+      dSeite.schalter,
+      `Der Block „${d.ueberschrift}" ist im Design dunkel, gebaut ist er hell`,
+      'dunkel (Umkehr-Klasse im Design)',
+      g.grundfarbe,
+    );
+  }
+
+  const marke = befunde.filter((b) => b.seite === dSeite.schalter).length;
+  zeilen.push(
+    `  ${marke ? '✗' : '✓'} ${dSeite.schalter.padEnd(16)} ${String(route).padEnd(24)} ` +
+      `${gz}/${dz} Blöcke${marke ? ` – ${marke} Befund(e)` : ''}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+//  5. Der Rahmen – auf EINER Seite prüfen, gilt für alle
+//
+//  Hier saß im Testlauf der gröbste Befund: ein Schwebeknopf, den das Design
+//  auf jeder Seite zeigt und den es im Build auf keiner einzigen gab.
+// ---------------------------------------------------------------------------
+const ersteRoute = Object.values(zuordnung).find(Boolean) || '/';
+const rahmenGebaut = await gebauteSeite(ersteRoute.endsWith('/') ? ersteRoute : ersteRoute + '/');
+if (rahmenGebaut) {
+  const dFest = designSeiten.rahmen.filter((r) => r.fest);
+  const gFest = rahmenGebaut.rahmen.filter((r) => r.fest);
+  if (dFest.length > gFest.length) {
+    melde(
+      'schwer',
+      'Rahmen',
+      `${dFest.length - gFest.length} fest stehende(s) Element(e) fehlen – z. B. Schwebeknöpfe. ` +
+        `Das Design zeigt sie auf JEDER Seite.`,
+      dFest.map((r) => r.kennung).join(', ') || '(unbenannt)',
+      gFest.map((r) => r.kennung).join(', ') || 'keines',
+    );
+  }
+}
+
+stop();
+await browser.close();
+
+// ---------------------------------------------------------------------------
+//  Ergebnis
+// ---------------------------------------------------------------------------
+console.log('');
+for (const z of zeilen) console.log(z);
+console.log('');
+
+const schwer = befunde.filter((b) => b.schwere === 'schwer');
+const mittel = befunde.filter((b) => b.schwere === 'mittel');
+
+if (befunde.length) {
+  for (const b of befunde) {
+    console.log(`${b.schwere === 'schwer' ? '✗' : '⚠'} [${b.seite}] ${b.was}`);
+    console.log(`    Design: ${b.design}`);
+    console.log(`    Gebaut: ${b.gebaut}`);
+  }
+  console.log('');
+}
+
+if (nurBericht) {
+  writeFileSync(
+    join(WURZEL, 'pruefung', 'abgleich.md'),
+    `# Abgleich mit dem Design\n\n${zeilen.join('\n')}\n\n` +
+      befunde.map((b) => `- **[${b.schwere}] ${b.seite}** – ${b.was}\n  - Design: ${b.design}\n  - Gebaut: ${b.gebaut}`).join('\n'),
+    'utf-8',
+  );
+  console.log('pruefung/abgleich.md geschrieben.');
+}
+
+console.log(
+  `Abgeglichen: ${designSeiten.seiten.length} Design-Seite(n) — ` +
+    `${schwer.length} schwer, ${mittel.length} mittel`,
+);
+console.log('');
+console.log('  WAS DIESES TOR NICHT SIEHT (CLAUDE.md Abschnitt 9, Punkt 3c):');
+console.log('  Feinheiten IN einem Block (Schriftgrößen, Radien, Abstände), ob ein');
+console.log('  Text inhaltlich stimmt, und Zustände, die erst ein Klick zeigt.');
+console.log('  Dafür bleiben die Bögen aus `npm run sicht` und das eigene Auge zuständig.');
+
+process.exitCode = schwer.length > 0 ? 1 : 0;

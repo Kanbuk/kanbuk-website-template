@@ -897,7 +897,19 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
 3b. `npm run browser` ist **grün** – die Seite hält die Browser-Untergrenze
    (Abschnitt 4a). Dazu **einmal `npm run altgeraet` und die Bilder ansehen**:
    Erwartet wird „ärmer, aber lesbar und bedienbar" – alles andere ist ein Befund.
-3c. **Abgleich mit der Vorlage.** Seite für Seite die Design-Datei neben die
+3c. **`npm run abgleich` ist grün** – das sechste Tor hält die gebaute Seite
+   gegen die Design-Datei: Fehlt ein Block? Steht einer da, den es im Design
+   nicht gibt? Stimmt die Reihenfolge? Ist ein dunkles Band hell geworden?
+   Es braucht `design/<Projekt>.dc.html` und eine Zuordnung Seite→Adresse in
+   `design/abgleich.json` (der erste Lauf legt einen Entwurf an).
+
+   **Es ersetzt das Auge NICHT.** Gemessen am 29.07.2026: Von elf schweren
+   Befunden eines Handabgleichs findet es die drei zuverlässig, die auf
+   „Block fehlt / Block erfunden" hinauslaufen – also die teuerste Klasse.
+   Feinheiten INNERHALB eines Blocks (Schriftgrößen, Radien, Abstände),
+   Textinhalte und Klick-Zustände sieht es nicht. Deshalb gilt weiter:
+
+3d. **Abgleich mit eigenen Augen.** Seite für Seite die Design-Datei neben die
    Umsetzung legen und Wert für Wert vergleichen: Ist jeder Block da? Steht er
    an der richtigen Stelle? Stimmen Grundfarbe, Abstände, Radien, Schriftgrößen?
    **Grüne Technikprüfungen sagen nichts über Design-Treue** – im Kundenprojekt
@@ -972,6 +984,7 @@ keines optimiert wurde.
 | `npm run sicht` | **Sichtprüfung im echten Browser** – Screenshots + Überlauf-/Fehler-Messung + `pruefung/texte.md` + Bögen |
 | `npm run interaktion` | **Bedien-Prüfung** – fährt jeden Verhaltens-Baustein real (350 + 1440 px) |
 | `npm run browser` | **Browser-Prüfung** – hält den Build gegen `browser-untergrenze.json` (Abschnitt 4a) |
+| `npm run abgleich` | **Design-Prüfung** – hält die gebaute Seite gegen die `.dc.html` (Abschnitt 9, Punkt 3c) |
 | `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
 | `npm run bogen -- --fotos` | Kontaktbögen aller Fotos (Sichtpflicht mit 1–2 Reads statt 20) |
 | `npm run holen -- --url <…> --ziel <pfad>` | Download + Integritätsprüfung (nie Base64 durch den Chat!) |
