@@ -17,7 +17,46 @@ const KATEGORIE_TITEL: Record<string, string> = {
 const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategorie[])
   .map((k) => [k, site.dienste.filter((d) => d.kategorie === k)] as const)
   .filter(([, liste]) => liste.length > 0);
----
+
+/* ---------------------------------------------------------------------------
+ *  WAS DIE SEITE WIRKLICH EINBETTET – aus dem Markup gelesen, nicht behauptet
+ *
+ *  Vorher gab es genau EINEN Absatz („Karte / Anfahrt"), gesteuert von einem
+ *  Handschalter in der Config. Der Baustein `<Einbettung>` ist aber allgemein –
+ *  er trägt Google Maps, ein Video oder einen Instagram-Beitrag. Bettete ein
+ *  Klon ein Video ein, stand dazu KEIN Wort in der Erklärung; es gab nicht
+ *  einmal einen Schalter dafür. Und der Schalter selbst ging schief: In einem
+ *  Kundenprojekt war die 2-Klick-Karte zwanzig Minuten online, während die
+ *  Erklärung wörtlich behauptete „Es wird keine Karte eingebettet".
+ *
+ *  Deshalb wird jetzt der Quelltext der Seiten durchsucht. Die Wahrheit steht
+ *  damit nur noch an EINER Stelle: dort, wo die Einbettung wirklich steht.
+ *  Das Prüf-Tor hält beides zusätzlich gegeneinander.
+ * ------------------------------------------------------------------------ */
+const seitenQuellen = import.meta.glob<string>('/src/**/*.astro', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+const einbettungsAnbieter = [
+  ...new Set(
+    Object.entries(seitenQuellen)
+      // Die Erklärung selbst und der Baustein zählen nicht als Einsatz.
+      .filter(([pfad]) => !/datenschutz\.astro$|Einbettung\.astro$/.test(pfad))
+      .flatMap(([, quelle]) =>
+        [...String(quelle).matchAll(/<Einbettung\b[^>]*?anbieter=["']([^"']+)["']/g)].map((m) => m[1]),
+      ),
+  ),
+].sort();
+
+/* Dienste, die Daten in ein Drittland geben – NAMENTLICH. Vorher entstand der
+   USA-Absatz allein daraus, DASS überhaupt ein Dienst eingetragen war. Bei
+   einem europäischen Werkzeug behauptete die Erklärung damit eine
+   Übermittlung, die es gar nicht gibt – samt falscher Rechtsgrundlage. */
+const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !== 'keines');
+const ohneDrittlandAngabe = site.dienste.filter((d) => !d.drittland);
+------
 
 <RechtsLayout
   titel="Datenschutzerklärung"
@@ -64,7 +103,11 @@ const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategor
       </p>
       <p>
         Ihre Entscheidung speichern wir lokal in Ihrem Browser (localStorage) – dabei
-        werden keine Daten an uns übertragen. Sie können Ihre Einwilligung jederzeit mit
+        werden keine Daten an uns übertragen. Gespeichert werden nur die von Ihnen
+        freigegebenen Kategorien, der Zeitpunkt und eine Kennung der Dienste-Liste.
+        Der Eintrag bleibt, bis Sie ihn selbst löschen <strong>oder wir die Liste der
+        Dienste ändern – dann werden Sie automatisch erneut gefragt</strong>.
+        Sie können Ihre Einwilligung jederzeit mit
         Wirkung für die Zukunft widerrufen:
         {' '}<button type="button" class="ds-widerruf" data-einwilligung-widerruf>Einwilligung widerrufen</button>.
       </p>
@@ -85,34 +128,67 @@ const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategor
           </ul>
         </>
       ))}
+
+      {drittlandDienste.length > 0 && (
+        <>
+          <h3>Übermittlung in Drittländer</h3>
+          <p>
+            Bei den folgenden Diensten werden Daten außerhalb der EU verarbeitet:
+          </p>
+          <ul>
+            {drittlandDienste.map((d) => (
+              <li>
+                <strong>{d.name}</strong> ({d.anbieter}) – {d.drittland}
+              </li>
+            ))}
+          </ul>
+          <p>
+            Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a, Art. 49 Abs. 1
+            lit. a DSGVO). Alle übrigen genannten Dienste verarbeiten ausschließlich
+            innerhalb der EU beziehungsweise des EWR.
+          </p>
+        </>
+      )}
     </>
   )}
 
-  {/* Der Text richtet sich danach, was die Seite WIRKLICH tut. Vorher stand
-      hier fest verdrahtet „Es wird keine Karte eingebettet" – auf einer Seite
-      mit 2-Klick-Karte war das schlicht falsch, und die Übermittlung an Google
-      wurde nirgends erwähnt. `karteEingebettet` in der Config schaltet um. */}
-  <h2>Karte / Anfahrt</h2>
-  {site.karteEingebettet ? (
-    <p>
-      Für die Anfahrt zeigen wir zunächst ein <strong>statisches Bild</strong>
-      (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden). Erst wenn
-      Sie ausdrücklich auf „Google Maps laden“ klicken, wird eine Karte von Google
-      geladen. Dabei werden Ihre <strong>IP-Adresse</strong> und Angaben zu Ihrem
-      Browser an Google übertragen (Google Ireland Limited; eine Übermittlung in die
-      USA an Google LLC ist möglich, abgesichert über die EU-Standardvertragsklauseln
-      und den EU-US Data Privacy Framework). Rechtsgrundlage ist Ihre Einwilligung
-      durch diesen Klick (Art. 6 Abs. 1 lit. a DSGVO). Solange Sie nicht klicken, wird
-      nichts an Google übertragen.
-    </p>
+  {/* Ein Absatz je TATSÄCHLICH eingebettetem Anbieter – siehe Kopf dieser
+      Datei. Kein Handschalter mehr: Was im Markup steht, steht hier. */}
+  {einbettungsAnbieter.length > 0 ? (
+    <>
+      <h2>Eingebettete Inhalte (Zwei-Klick-Lösung)</h2>
+      <p>
+        An einzelnen Stellen binden wir Inhalte fremder Anbieter ein. Sie werden
+        <strong> erst geladen, wenn Sie darauf klicken</strong> – vorher wird nichts
+        übertragen. Der Klick ist Ihre Einwilligung für diesen Fall
+        (Art. 6 Abs. 1 lit. a DSGVO).
+      </p>
+      <ul>
+        {einbettungsAnbieter.map((anbieter) => (
+          <li>
+            <strong>{anbieter}</strong> – beim Klick werden Ihre <strong>IP-Adresse</strong>{' '}
+            und Angaben zu Ihrem Browser an diesen Anbieter übertragen. Es gelten dann
+            zusätzlich dessen Datenschutzbestimmungen.
+          </li>
+        ))}
+      </ul>
+      <p>
+        Für die Anfahrt zeigen wir zusätzlich ein <strong>statisches Kartenbild</strong>
+        (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden) – dabei
+        wird nichts übertragen.
+      </p>
+    </>
   ) : (
-    <p>
-      Für die Anfahrt zeigen wir ein <strong>statisches Bild</strong> (Kartendaten von
-      OpenStreetMap, beim Erstellen der Seite eingebunden). Es wird keine Karte
-      eingebettet, es werden also keine Daten übertragen, solange Sie nicht selbst auf
-      den Link „In Google Maps öffnen“ klicken. Erst dann gelangen Sie zu Google Maps,
-      wo die Datenschutzbestimmungen von Google gelten.
-    </p>
+    <>
+      <h2>Karte / Anfahrt</h2>
+      <p>
+        Für die Anfahrt zeigen wir ein <strong>statisches Bild</strong> (Kartendaten von
+        OpenStreetMap, beim Erstellen der Seite eingebunden). Es wird keine Karte
+        eingebettet, es werden also keine Daten übertragen, solange Sie nicht selbst auf
+        den Link „In Google Maps öffnen" klicken. Erst dann gelangen Sie zu Google Maps,
+        wo die Datenschutzbestimmungen von Google gelten.
+      </p>
+    </>
   )}
 
   <h2>Server-Logfiles (Hosting)</h2>
@@ -147,6 +223,31 @@ const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategor
           </li>
         ))}
       </ul>
+
+      {/* WAS DER MOTOR SONST NOCH TUT – und was hier lange fehlte.
+          Alle drei Punkte stecken in Motor-Dateien (api/contact.ts,
+          src/lib/kontakt.ts), nicht in Kundendaten. Sie treffen also JEDEN
+          Klon; in einem Kundenprojekt mussten sie in mehreren Prüfrunden
+          nachgetragen werden. */}
+      <p>
+        Beim Absenden werden zusätzlich <strong>technisch notwendige Angaben</strong>
+        mitgeschickt: welches Formular es war und wann die Seite geladen wurde. Beides
+        dient ausschließlich der Abwehr automatisierter Massenzusendungen und wird nicht
+        ausgewertet.
+      </p>
+      <p>
+        Ihre <strong>IP-Adresse</strong> wird beim Absenden für kurze Zeit im
+        Arbeitsspeicher unseres Servers gezählt, um zu erkennen, ob aus einer Quelle
+        auffällig viele Anfragen kommen. Sie wird nicht gespeichert, nicht protokolliert
+        und nach wenigen Minuten verworfen (Art. 6 Abs. 1 lit. f DSGVO – Schutz vor
+        Missbrauch).
+      </p>
+      <p>
+        Haben Sie eine E-Mail-Adresse angegeben, senden wir Ihnen eine automatische
+        <strong> Empfangsbestätigung</strong>. Sie enthält <strong>keine</strong> Ihrer
+        Angaben, sondern nur den Hinweis, dass die Anfrage angekommen ist, und unsere
+        Kontaktdaten.
+      </p>
     </>
   )}
 

@@ -26,11 +26,28 @@
 export type Kategorie = 'notwendig' | 'funktional' | 'statistik' | 'marketing';
 
 const SCHLUESSEL = 'kanbuk-einwilligung';
-/** Version hochzählen, wenn sich die Dienste ändern -> erneut fragen (Pflicht). */
-const VERSION = 1;
+
+/**
+ * Die Kennung der Dienste-Liste – sie steht im Markup, nicht hier.
+ *
+ * FRÜHER STAND HIER `const VERSION = 1` mit dem Kommentar „hochzählen, wenn
+ * sich die Dienste ändern (Pflicht)". Nichts erzwang das: Die Dienste stehen
+ * in content.config.ts, die Zahl stand hier – und beim Ausbau öffnet niemand
+ * eine Baustein-Datei. In einem Kundenprojekt wurde ein Dienst eingetragen und
+ * später sein Zweck geändert; die Zahl blieb beide Male auf 1. Die
+ * Datenschutzerklärung versprach derweil wörtlich, bei geänderter Liste erneut
+ * zu fragen.
+ *
+ * Jetzt rechnet der Build die Kennung aus der Liste (siehe `diensteKennung`)
+ * und schreibt sie an den Banner. Ändert sich ein Dienst, passt der
+ * gespeicherte Stand nicht mehr – und es wird automatisch neu gefragt.
+ */
+function standKennung(): string {
+  return document.querySelector<HTMLElement>('[data-einwilligung-stand]')?.dataset.einwilligungStand ?? '';
+}
 
 interface Zustand {
-  version: number;
+  stand: string;
   zeitpunkt: string;
   erlaubt: Kategorie[];
 }
@@ -40,7 +57,8 @@ function lesen(): Zustand | null {
     const roh = localStorage.getItem(SCHLUESSEL);
     if (!roh) return null;
     const z = JSON.parse(roh) as Zustand;
-    if (z.version !== VERSION) return null; // Dienste haben sich geändert -> neu fragen
+    // Dienste haben sich geändert -> die alte Zustimmung gilt nicht mehr.
+    if (z.stand !== standKennung()) return null;
     return z;
   } catch {
     return null;
@@ -51,7 +69,7 @@ function schreiben(erlaubt: Kategorie[]) {
   try {
     localStorage.setItem(
       SCHLUESSEL,
-      JSON.stringify({ version: VERSION, zeitpunkt: new Date().toISOString(), erlaubt } satisfies Zustand),
+      JSON.stringify({ stand: standKennung(), zeitpunkt: new Date().toISOString(), erlaubt } satisfies Zustand),
     );
   } catch {
     /* Privater Modus o. Ä. – dann gilt die Wahl nur für diese Sitzung. */

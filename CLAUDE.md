@@ -707,6 +707,22 @@ Dienst in `content.config.ts → dienste` eintragen – fertig. Automatisch pass
 
 **Nie ein Tracking-Skript direkt ins Markup schreiben.** Das Prüf-Tor blockt es.
 
+**`drittland` ist Pflicht, sobald ein Dienst eingetragen wird** (`'keines'`,
+`'USA'` oder das Land ausgeschrieben). Der Drittland-Absatz der
+Datenschutzerklärung nennt dann **nur die Dienste, die ihn wirklich brauchen**,
+und zwar namentlich. Vorher entstand er allein daraus, DASS überhaupt ein Dienst
+eingetragen war – bei einem europäischen Werkzeug hätte die Erklärung damit eine
+Datenübermittlung behauptet, die es gar nicht gibt, samt falscher
+Rechtsgrundlage.
+
+**Die Einwilligung wird von selbst ungültig, wenn sich die Dienste ändern.** Die
+Kennung der Liste entsteht beim Bauen (`diensteKennung`) und steht am Banner;
+ändert sich Anbieter, Zweck, Quelle oder Land, wird automatisch neu gefragt.
+Das ist keine Formsache: Eine Einwilligung ist **anbieterbezogen** – ein zweiter
+Dienst derselben Kategorie liefe sonst bei allen Besuchern mit, die einer
+anderen Firma zugestimmt haben. Früher hing das an einer handgepflegten Zahl in
+einer Baustein-Datei, die beim Ausbau niemand öffnet.
+
 ### Google Maps, Instagram, YouTube
 
 Ein `<iframe>` lädt sofort und setzt Cookies – deshalb **nie fest ins HTML**.
@@ -717,6 +733,13 @@ Zwei zulässige Wege:
 2. **2-Klick-Einbettung** (`<Einbettung>`) – wenn der Kunde unbedingt eine bediente
    Karte oder ein Video will. Der Rahmen entsteht erst beim Klick; vorher geht kein
    Byte raus. Der Klick ist die Einwilligung für diesen Fall.
+
+   **`anbieter="…"` ist dabei Pflicht und muss den echten Namen tragen.** Die
+   Datenschutzerklärung sucht selbst im Markup nach Einbettungen und schreibt je
+   Anbieter einen Absatz – es gibt keinen Handschalter mehr. Der alte Schalter
+   ging in einem Kundenprojekt schief: Die Karte war zwanzig Minuten online,
+   während die Erklärung wörtlich behauptete „Es wird keine Karte eingebettet".
+   Das Prüf-Tor hält jetzt beides gegeneinander, in beide Richtungen.
 
 **Instagram-Grid:** Kein API-Anschluss im Motor – Meta ändert die Schnittstelle
 ständig, Tokens laufen ab, und ein Klon bekommt keine Updates. Das wäre eine

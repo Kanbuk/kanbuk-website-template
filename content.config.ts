@@ -619,6 +619,26 @@ export interface Dienst {
   skript?: string;
   /** Setzt der Dienst Cookies? Für die Datenschutzerklärung. */
   setztCookies?: boolean;
+  /**
+   * Wohin gehen die Daten? PFLICHTANGABE, sobald ein Dienst eingetragen wird.
+   *
+   *   'keines'  – Anbieter und Server in der EU/im EWR
+   *   'USA'     – Vereinigte Staaten
+   *   sonst     – Land ausschreiben ('Schweiz', 'Vereinigtes Königreich')
+   *
+   * WARUM ES DIESES FELD BRAUCHT: Der Motor schrieb den Drittland-Absatz
+   * („Übermittlung in die USA, abgesichert über das Data Privacy Framework")
+   * allein deshalb, WEIL überhaupt ein zustimmungspflichtiger Dienst
+   * eingetragen war – ohne jede Länderangabe. Bei einem amerikanischen
+   * Anbieter stimmte das zufällig. Trägt ein Klon ein europäisches Werkzeug
+   * ein, behauptet die Erklärung eine Datenübermittlung, die es nicht gibt,
+   * samt falscher Rechtsgrundlage. Eine falsche Datenschutzerklärung ist genau
+   * das Risiko, das der Motor abnehmen soll.
+   *
+   * Jetzt erscheint der Absatz nur für die Dienste, die ihn brauchen – und
+   * nennt sie beim Namen. Fehlt die Angabe, warnt der Build.
+   */
+  drittland?: 'keines' | 'USA' | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -658,6 +678,32 @@ export interface Rechtstexte {
   gewerbe: string;
   firmenbuchnummer: string;
   firmenbuchgericht: string;
+  /**
+   * WAS der Betrieb tut – Pflichtangabe nach § 25 Mediengesetz, auch in der
+   * abgespeckten Fassung für kleine Websites (§ 25 Abs. 5).
+   *
+   * WARUM DAS HIER STEHT: Das Impressum des Motors nannte die Norm im Seitentext
+   * („Offenlegung gemäß § 5 ECG, § 14 UGB und § 25 Mediengesetz") und erfüllte
+   * sie dann nicht – der Unternehmensgegenstand fehlte schlicht. Eine
+   * Pflichtnorm zu nennen und nicht zu erfüllen ist schlechter, als sie gar
+   * nicht zu nennen.
+   *
+   * Ein Satz genügt: 'Handel mit Kraftfahrzeugen', 'Gastronomie',
+   * 'Friseur- und Kosmetikdienstleistungen'. Fehlt er noch:
+   * `PLATZHALTER: Unternehmensgegenstand` – das Prüf-Tor hält den Live-Gang an.
+   */
+  unternehmensgegenstand: string;
+  /**
+   * Grundlegende Richtung (Blattlinie) – nur bei Gesellschaften nötig
+   * (§ 25 Abs. 4 MedienG). Bei einer reinen Firmenwebsite meist ein Satz wie
+   * 'Information über das Unternehmen und seine Leistungen'.
+   */
+  blattlinie?: string;
+  /**
+   * Beteiligungsverhältnisse – nur bei Gesellschaften (§ 25 Abs. 2 MedienG):
+   * wer hält welche Anteile. Beispiel: ['Muster GmbH – 100 %'].
+   */
+  beteiligungen?: string[];
   /**
    * ALLGEMEINE GESCHÄFTSBEDINGUNGEN – optional.
    *
@@ -737,18 +783,6 @@ export interface SiteConfig {
    * stimmt das Bild sofort. Beim Live-Gang wird das Feld schlicht ignoriert.
    */
   vorschauDomain?: string;
-  /**
-   * Wird auf der Seite eine BEDIENTE Karte per 2-Klick eingebettet
-   * (`<Einbettung>` mit Google Maps)? Standard: false – dann zeigt die Anfahrt
-   * nur das statische Kartenbild.
-   *
-   * WARUM ES DAS FELD GIBT: Die Datenschutzerklärung behauptete fest verdrahtet
-   * „Es wird keine Karte eingebettet". Auf einer Seite mit 2-Klick-Karte war das
-   * schlicht falsch – die Erklärung sagte das Gegenteil dessen, was die Seite
-   * tut, und die Übermittlung an Google wurde nirgends erwähnt. Steht das Feld
-   * auf true, beschreibt die Erklärung die Einbettung samt Rechtsgrundlage.
-   */
-  karteEingebettet?: boolean;
   /** Globales OG-Bild (in public/), Standard: '/og.jpg'. */
   ogBild: string;
 }
@@ -969,8 +1003,41 @@ const konfig = {
     gewerbe: 'Mitglied der WKO Wien',
     firmenbuchnummer: 'FN 000000a',
     firmenbuchgericht: 'Handelsgericht Wien',
+    unternehmensgegenstand: 'Beispielbetrieb zur Vorführung des Kanbuk-Motors',
   },
 } satisfies KundenKonfig;
+
+/**
+ * Kennung der DIENSTE-LISTE – daran hängt die Gültigkeit einer Einwilligung.
+ *
+ * WARUM ES DAS GIBT: Die Einwilligung merkte sich früher eine von Hand
+ * gepflegte Versionsnummer in einer Motor-Datei, mit dem Kommentar
+ * „hochzählen, wenn sich die Dienste ändern". Die Dienste stehen aber HIER,
+ * die Nummer stand dort – und niemand öffnet beim Ausbau eine Baustein-Datei.
+ * In einem Kundenprojekt wurde ein Dienst eingetragen und später sein Zweck
+ * geändert; die Nummer blieb beide Male auf 1. Gleichzeitig verspricht die
+ * Datenschutzerklärung wörtlich: „Der Eintrag bleibt, bis Sie ihn selbst
+ * löschen oder wir die Liste der Dienste ändern – dann werden Sie erneut
+ * gefragt." Dieses Versprechen hielt der Motor nicht.
+ *
+ * Und es ist kein Formfehler: Eine Einwilligung ist ANBIETERBEZOGEN. Wer einen
+ * zweiten Dienst derselben Kategorie einträgt, ließe ihn sonst bei allen
+ * Besuchern laufen, die einer ANDEREN Firma zugestimmt haben.
+ *
+ * Jetzt entsteht die Kennung beim Bauen aus dem, was den Besucher betrifft:
+ * Kennung, Kategorie, Anbieter, Zweck und Quelle jedes Dienstes. Ändert sich
+ * irgendetwas davon, wird automatisch neu gefragt.
+ */
+export function diensteKennung(s: SiteConfig): string {
+  const roh = s.dienste
+    .map((d) => [d.id, d.kategorie, d.anbieter, d.zweck, d.quelle ?? d.skript ?? '', d.drittland ?? ''].join('|'))
+    .sort()
+    .join('||');
+  // Kurze, stabile Quersumme – es geht nur um „gleich oder nicht gleich".
+  let h = 5381;
+  for (let i = 0; i < roh.length; i++) h = ((h << 5) + h + roh.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
 
 export const site: SiteConfig = aufloesen(konfig);
 

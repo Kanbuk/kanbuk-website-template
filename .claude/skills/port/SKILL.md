@@ -309,9 +309,10 @@ wird dabei ersetzt.
   Kindelemente in `<Fuss>…</Fuss>`.
 - **`zeigtPreisliste: true`** bei der Seite setzen, auf der die Karte steht – sonst
   landen die strukturierten Speisekarten-Daten auf der Startseite statt dort.
-- **`karteEingebettet: true`** setzen, wenn eine 2-Klick-Karte eingebaut wird. Dann
-  beschreibt die Datenschutzerklärung die Google-Übermittlung; ohne das Feld
-  behauptet sie, es werde keine Karte eingebettet.
+- **Einbettungen brauchen keinen Schalter mehr.** Setzt du `<Einbettung`
+  irgendwo ein, findet die Datenschutzerklärung sie selbst und schreibt je
+  Anbieter einen Absatz – `anbieter="…"` ist deshalb Pflicht und muss den
+  echten Namen tragen. Das Prüf-Tor hält Markup und Text gegeneinander.
 - **Die Fußzeile bekommt `<Signatur />`** (dezenter Kanbuk-Backlink, neben © und
   Rechtslinks). Das ist Geschäftsmodell, keine Deko – das Prüf-Tor blockt bei
   `--live` jede Seite ohne Signatur. Den Ankertext wählt der Baustein selbst

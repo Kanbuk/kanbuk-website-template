@@ -36,6 +36,25 @@ const telHref = 'tel:' + site.betrieb.telefon.replace(/[^+0-9]/g, '');
     {r.aufsichtsbehoerde && <li>Aufsichtsbehörde: {r.aufsichtsbehoerde}</li>}
   </ul>
 
+  {/* OFFENLEGUNG NACH § 25 MEDIENGESETZ.
+      Der Unternehmensgegenstand ist auch in der abgespeckten Fassung für kleine
+      Websites Pflicht (§ 25 Abs. 5). Er fehlte hier lange – während der Text
+      oben die Norm ausdrücklich nannte. Eine Pflichtnorm zu nennen und nicht zu
+      erfüllen ist schlechter, als sie gar nicht zu nennen.
+      Blattlinie (Abs. 4) und Beteiligungen (Abs. 2) betreffen Gesellschaften;
+      sie erscheinen nur, wenn sie gepflegt sind. */}
+  <h2>Offenlegung nach § 25 Mediengesetz</h2>
+  <ul>
+    <li>Unternehmensgegenstand: {r.unternehmensgegenstand}</li>
+    {r.blattlinie && <li>Grundlegende Richtung: {r.blattlinie}</li>}
+    {r.beteiligungen && r.beteiligungen.length > 0 && (
+      <li>
+        Beteiligungsverhältnisse:{' '}
+        {r.beteiligungen.join('; ')}
+      </li>
+    )}
+  </ul>
+
   <h2>Anwendbares Recht</h2>
   <p>Es gilt österreichisches Recht.</p>
 

@@ -188,6 +188,49 @@ genau das Muster, das `npm run preisliste` schon hat.
 
 ## Verlauf
 
+- **2026-07-29** – **Rückfluss Teil 5: Recht und Einwilligung.** Vier Punkte,
+  bei denen der Motor etwas anderes behauptete, als er tat:
+
+  **Impressum.** Der Seitentext nannte „Offenlegung gemäß § 5 ECG, § 14 UGB und
+  § 25 Mediengesetz" – und ließ den **Unternehmensgegenstand** aus, der auch in
+  der abgespeckten Fassung für kleine Websites Pflicht ist (§ 25 Abs. 5). Eine
+  Pflichtnorm zu nennen und nicht zu erfüllen ist schlechter, als sie gar nicht
+  zu nennen. Neu: `unternehmensgegenstand` (Pflichtfeld), dazu `blattlinie` und
+  `beteiligungen` für Gesellschaften (§ 25 Abs. 4 und Abs. 2).
+
+  **Drittland je Dienst.** Der Absatz „Übermittlung in die USA" entstand allein
+  daraus, DASS überhaupt ein zustimmungspflichtiger Dienst eingetragen war –
+  ohne jede Länderangabe. Bei einem amerikanischen Anbieter stimmte das
+  zufällig; bei einem europäischen Werkzeug hätte die Erklärung eine
+  Datenübermittlung behauptet, die es nicht gibt, samt falscher
+  Rechtsgrundlage. Neu: `drittland` je Dienst; der Absatz nennt nur die
+  betroffenen Dienste, und zwar namentlich. Fehlt die Angabe, warnt das Tor.
+
+  **Einwilligung wird von selbst ungültig.** Der Stand hing an einer
+  handgepflegten `VERSION = 1` in einer Baustein-Datei, mit dem Kommentar
+  „hochzählen, wenn sich die Dienste ändern". Die Dienste stehen aber in der
+  Config, und beim Ausbau öffnet niemand eine Baustein-Datei – im Kundenprojekt
+  blieb die Zahl auf 1, während ein Dienst eingetragen und später sein Zweck
+  geändert wurde. Gleichzeitig versprach die Erklärung wörtlich, dann erneut zu
+  fragen. Jetzt entsteht die Kennung beim Bauen aus Kennung, Kategorie,
+  Anbieter, Zweck, Quelle und Land jedes Dienstes. **Gegengeprüft:** nur den
+  Zweck geändert → neue Kennung → wird neu gefragt.
+
+  **Datenschutztext gegen die Wirklichkeit.** Der Einbettungs-Absatz kannte nur
+  den Kartenfall und hing an einem Handschalter; ein eingebettetes Video kam
+  darin gar nicht vor. Im Kundenprojekt war die Karte zwanzig Minuten online,
+  während die Erklärung „Es wird keine Karte eingebettet" behauptete. Der
+  Schalter ist **ersatzlos weg**: Die Erklärung durchsucht den Quelltext der
+  Seiten und schreibt je tatsächlich eingebettetem Anbieter einen Absatz.
+  Dazu die Absätze, die beschreiben, was der MOTOR ohnehin tut und die nirgends
+  standen – die IP-Zählung beim Absenden, die automatische Empfangsbestätigung,
+  die technisch mitgesendeten Felder, Inhalt und Lebensdauer des
+  Einwilligungs-Eintrags.
+
+  **Drei neue Prüf-Regeln**, alle absichtlich zum Anschlagen gebracht:
+  Einbettung im Build ohne Absatz (und umgekehrt), Dienst ohne Drittland-Angabe,
+  Dienste ohne Kennung am Banner.
+
 - **2026-07-29** – **Rückfluss Teil 4: die restlichen Muss-Punkte.** Fünf
   Bereiche, jeder einzeln geprüft:
 

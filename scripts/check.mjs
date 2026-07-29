@@ -1000,6 +1000,79 @@ if (istTemplate) {
 }
 
 // ---------------------------------------------------------------------------
+//  8a3. DATENSCHUTZTEXT GEGEN DIE WIRKLICHKEIT
+//
+//  Eine Datenschutzerklärung ist nur so viel wert, wie sie beschreibt, was die
+//  Seite TATSÄCHLICH tut. Genau das ging in einem Kundenprojekt mehrfach
+//  auseinander: Die 2-Klick-Karte war zwanzig Minuten online, während die
+//  Erklärung wörtlich behauptete „Es wird keine Karte eingebettet". Und ein
+//  Drittland-Absatz erschien allein deshalb, WEIL überhaupt ein Dienst
+//  eingetragen war – ohne dass jemand geprüft hätte, wohin die Daten gehen.
+//
+//  Diese Regeln halten beides gegeneinander.
+// ---------------------------------------------------------------------------
+{
+  const datenschutzSeite = htmlDateien.find((f) => /datenschutz/.test(kurz(f)));
+  const datenschutzText = datenschutzSeite ? readFileSync(datenschutzSeite, 'utf-8') : '';
+
+  // 1. Jede Einbettung im Build braucht ihren Absatz – namentlich.
+  const eingebettet = new Set();
+  for (const f of htmlDateien) {
+    const html = readFileSync(f, 'utf-8');
+    for (const m of html.matchAll(/data-einbettung-anbieter="([^"]+)"/g)) eingebettet.add(m[1]);
+  }
+  for (const anbieter of eingebettet) {
+    if (datenschutzText.includes(anbieter)) continue;
+    fehler(
+      [
+        `Die Seite bettet Inhalte von „${anbieter}" ein, die Datenschutzerklärung nennt ihn nicht.`,
+        '    Beim Klick geht die IP-Adresse des Besuchers dorthin – das gehört benannt.',
+        '    Prüfen: Trägt die <Einbettung> ein `anbieter="…"`? Die Erklärung liest es von dort.',
+      ].join('\n'),
+    );
+  }
+  if (eingebettet.size === 0 && /Eingebettete Inhalte \(Zwei-Klick/.test(datenschutzText)) {
+    fehler(
+      [
+        'Die Datenschutzerklärung beschreibt eingebettete Inhalte – im Build gibt es keine.',
+        '    Eine Erklärung, die mehr behauptet als die Seite tut, ist genauso falsch wie eine,',
+        '    die etwas verschweigt.',
+      ].join('\n'),
+    );
+  }
+
+  // 2. Jeder Dienst braucht eine Drittland-Angabe.
+  const diensteRoh = configText.match(/dienste:\s*\[[\s\S]*?\n\s{2}\]/)?.[0] ?? '';
+  const anzahlDienste = (diensteRoh.match(/\bid:\s*'/g) ?? []).length;
+  const anzahlDrittland = (diensteRoh.match(/\bdrittland:\s*'/g) ?? []).length;
+  if (anzahlDienste > anzahlDrittland) {
+    warnung(
+      [
+        `content.config.ts: ${anzahlDienste - anzahlDrittland} Dienst(e) ohne \`drittland\`-Angabe.`,
+        '    Ohne sie kann die Erklärung nicht sagen, wohin die Daten gehen. Erlaubt:',
+        "    'keines' (EU/EWR), 'USA' oder das Land ausgeschrieben.",
+      ].join('\n'),
+    );
+  }
+
+  // 3. Der Einwilligungs-Stand im Build muss zur Dienste-Liste passen.
+  if (anzahlDienste > 0) {
+    const hatKennung = htmlDateien.some((f) =>
+      /data-einwilligung-stand="[^"]+"/.test(readFileSync(f, 'utf-8')),
+    );
+    if (!hatKennung) {
+      fehler(
+        [
+          'Es gibt Dienste, aber der Einwilligungs-Banner trägt keine Kennung der Dienste-Liste.',
+          '    Ohne sie bleibt eine alte Zustimmung gültig, auch wenn ein Dienst dazukommt –',
+          '    Einwilligung ist aber anbieterbezogen. Siehe diensteKennung() in content.config.ts.',
+        ].join('\n'),
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 //  8a1. CSS-FALLE: :global() gehoert NICHT in eine eigenstaendige .css-Datei
 //
 //  `:global(...)` ist eine Astro-Funktion fuer komponenteneigene <style>-Bloecke.

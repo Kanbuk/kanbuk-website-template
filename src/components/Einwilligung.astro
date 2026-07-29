@@ -13,9 +13,13 @@
  * Das AUSSEHEN kommt aus dem Design – die Klassen hier sind nur Haken.
  * Wird im BaseLayout automatisch eingebunden.
  */
-import { site, brauchtEinwilligung } from '../../content.config';
+import { site, brauchtEinwilligung, diensteKennung } from '../../content.config';
 
 const zeigen = brauchtEinwilligung(site);
+/* Die Kennung der Dienste-Liste wandert ins Markup. Der Baustein vergleicht
+   den gespeicherten Stand dagegen – ändert sich die Liste, wird automatisch
+   neu gefragt. Siehe diensteKennung() in content.config.ts. */
+const kennung = diensteKennung(site);
 const dienste = site.dienste;
 
 /** Kategorien, die tatsächlich vorkommen (ohne "notwendig"). */
@@ -58,6 +62,7 @@ const t =
       role="dialog"
       aria-modal="false"
       aria-labelledby="einwilligung-titel"
+      data-einwilligung-stand={kennung}
     >
       <div class="einwilligung__inhalt">
         <h2 class="einwilligung__titel" id="einwilligung-titel">{t.titel}</h2>

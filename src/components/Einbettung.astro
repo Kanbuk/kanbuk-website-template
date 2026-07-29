@@ -63,6 +63,11 @@ const t =
   class:list={['einbettung', klasse]}
   data-einbettung={url}
   data-einbettung-titel={titel}
+  {/* Der Anbieter steht im Markup, damit die Datenschutzerklärung ihn
+      benennen kann UND das Prüf-Tor beides gegeneinander hält. Vorher
+      lebte diese Angabe nur in einer Eigenschaft und war nach dem Bauen
+      verschwunden. */}
+  data-einbettung-anbieter={anbieter}
   data-einbettung-kategorie={kategorie}
   data-einbettung-format={format}
   style={`aspect-ratio: ${format};`}
