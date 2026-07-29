@@ -50,6 +50,14 @@ const logo = site.betrieb.logo ? bild(site.betrieb.logo) : null;
     /* Fast deckend: Sonst schiebt sich der Inhalt beim Scrollen sichtbar
        hinter der Kopfleiste durch. */
     background: var(--farbe-grund-92);
+    /* Die -webkit-Schreibweise ist Pflicht, nicht Zierde: Safari kennt
+       `backdrop-filter` ohne Präfix erst ab 18, die Zusage des Motors liegt
+       bei 15.4 (browser-untergrenze.json). Ohne sie fehlt auf jedem iPhone
+       zwischen diesen Ständen das Milchglas – und weil der Grund nur zu 92 %
+       deckt, schiebt sich der Inhalt beim Scrollen sichtbar durch.
+       Das fünfte Tor sieht das nicht: Es prüft CSS gegen eine benannte Liste,
+       und eine fehlende Herstellerschreibweise steht dort nicht drin. */
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--farbe-linie);
   }

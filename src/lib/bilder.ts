@@ -8,8 +8,24 @@
  */
 import type { ImageMetadata } from 'astro';
 
+/**
+ * SVG ist bewusst dabei – und war es lange nicht.
+ *
+ * Im ersten Testlauf mit einem echten Kundendesign lieferte das Design-Projekt
+ * sein Logo als SVG (der Normalfall: Logos sind Vektoren). `bild('logo.svg')`
+ * fand nichts, gab `undefined` zurück und schrieb eine Warnung in ein
+ * Bauprotokoll, das niemand liest – die Seite baute grün durch, nur ohne Logo.
+ * Der dokumentierte Weg führte damit für das wichtigste Bild eines Auftritts
+ * ins Leere.
+ *
+ * SVG läuft nicht durch die Bildoptimierung (das braucht es auch nicht) und
+ * behält seine Maße. Wichtig beim Einbinden: ein SVG mit `fill="currentColor"`
+ * nimmt über `<Image>` NICHT die Textfarbe an – dort ist es ein eigenes
+ * Dokument. Soll das Logo in dunklen Abschnitten weiß werden, gehört es
+ * eingebettet statt verlinkt.
+ */
 const fotos = import.meta.glob<{ default: ImageMetadata }>(
-  '/fotos/**/*.{jpg,jpeg,png,webp,avif,JPG,JPEG,PNG,WEBP}',
+  '/fotos/**/*.{jpg,jpeg,png,webp,avif,svg,JPG,JPEG,PNG,WEBP,SVG}',
   { eager: true },
 );
 

@@ -38,9 +38,23 @@ export function mobilmenueStarten(): void {
     }
   });
 
-  // Beim Wechsel auf Desktop-Breite sicher zurücksetzen, damit kein
-  // gesperrtes Scrollen zurückbleibt.
-  window.matchMedia('(min-width: 900px)').addEventListener('change', (e) => {
+  /*
+   * Beim Wechsel auf Desktop-Breite sicher zurücksetzen, damit kein
+   * gesperrtes Scrollen zurückbleibt.
+   *
+   * DIE BREITE KOMMT AUS DEM MARKUP, NICHT AUS DIESER DATEI. Hier stand
+   * `(min-width: 900px)` fest – während der Umschaltpunkt im CSS des jeweiligen
+   * Designs steht. Im ersten Testlauf mit einem echten Kundendesign lag er bei
+   * 1120 px (gemessen an der Breite von Logo + fünf Navigationspunkten). Ergebnis
+   * wäre gewesen: Zwischen 900 und 1120 px schließt sich das Menü beim Drehen
+   * des Geräts, obwohl der Hamburger noch da ist – und die Seitensperre bleibt.
+   * Zwei Zahlen für dieselbe Entscheidung laufen immer auseinander.
+   *
+   * Also: `data-menue-ab="1120px"` an den Schalter schreiben. Fehlt es, bleiben
+   * es 900 px wie bisher.
+   */
+  const abBreite = schalter.getAttribute('data-menue-ab') || '900px';
+  window.matchMedia(`(min-width: ${abBreite})`).addEventListener('change', (e) => {
     if (e.matches) setze(false);
   });
 }

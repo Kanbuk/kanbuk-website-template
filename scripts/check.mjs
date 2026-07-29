@@ -1087,14 +1087,27 @@ if (istTemplate) {
 // ---------------------------------------------------------------------------
 for (const f of alleDateien(join(WURZEL, 'src', 'styles'))) {
   if (extname(f) !== '.css') continue;
-  const zeilen = readFileSync(f, 'utf-8').split(/\r?\n/);
+  const roh = readFileSync(f, 'utf-8');
+  /* Kommentare AUSBLENDEN, aber die Zeilenzahl erhalten – sonst zeigt die
+     Meldung auf die falsche Zeile.
+
+     WARUM DAS SEIN MUSS: Im ersten Testlauf mit einem echten Kundendesign
+     (29.07.2026) meldete diese Regel `src/styles/ds.css:14` – und die
+     Fundstelle war der Kommentar, der genau diese Regel erklärt („KEIN
+     :global() in dieser Datei"). Ein Prüf-Tor, das an seiner eigenen
+     Dokumentation rot wird, bringt einem bei, die Dokumentation wegzulassen
+     statt den Fehler zu beheben. */
+  const zeilen = roh
+    .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
+    .split(/\r?\n/);
+  const originalZeilen = roh.split(/\r?\n/);
   const name = relative(WURZEL, f).replace(/\\/g, '/');
   zeilen.forEach((zeile, i) => {
     if (!/:global\s*\(/.test(zeile)) return;
     fehler(
       [
         `${name}:${i + 1}: :global() in einer eigenständigen CSS-Datei.`,
-        `    „${zeile.trim().slice(0, 80)}"`,
+        `    „${originalZeilen[i].trim().slice(0, 80)}"`,
         '    Das ist eine Astro-Funktion für <style>-Blöcke in Komponenten. Hier ist es',
         '    ungültiges CSS – der Browser verwirft die GANZE Regel, nicht nur den Selektor.',
         '    In einer .css-Datei gilt der Selektor ohnehin überall: :global() weglassen.',
