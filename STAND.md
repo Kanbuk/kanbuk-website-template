@@ -56,14 +56,28 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       schreibt das Formular-Aussehen blind; Sicht- und Bedien-Prüfung bekommen es
       nie zu sehen, und beim Live-Gang erscheint ein nie geprüftes Bedienelement.
       Auch der neue Assistent ist dadurch in keiner Demo vorführbar.
-- [ ] **Kein Werkzeug für den Abgleich mit der Design-Vorlage.** Die Regel steht
-      jetzt (CLAUDE.md 9 Punkt 3c, `/port` Etappe 5 Stufe 6, Deploy-Checkliste
-      4a), das Nebeneinanderlegen ist aber **Handarbeit**. Im Kundenprojekt
-      wurde dafür ein Werkzeug gebaut, das aus der Design-Datei jedes Element
-      mit Inline-Stil sucht und Wert für Wert vergleicht – beim ersten Lauf
-      36 Abweichungen, davon eine grobe. Es ist so aber **nicht** ins Template
-      hebbar: Seitenzuordnung und Anker sind klonspezifisch. Vor dem nächsten
-      Port entscheiden, ob es sich lohnt.
+- [ ] **KEIN WERKZEUG FÜR DEN ABGLEICH MIT DEM DESIGN – die größte Lücke des
+      Motors.** Die Regel steht (CLAUDE.md 9 Punkt 3c, `/port` Etappe 5 Stufe 6,
+      Deploy-Checkliste), das Nebeneinanderlegen ist aber **Handarbeit** – und
+      wird deshalb zuverlässig übersprungen.
+      **Am 29.07.2026 zum ersten Mal gemessen:** Ein Autohaus-Design wurde aus
+      der frischen Vorlage portiert. Nach fünf Korrekturrunden waren `check`,
+      `sicht`, `interaktion`, `browser` und `altgeraet` grün. Ein Abgleich von
+      Hand fand danach **65 Befunde, 11 davon schwer** – ein fehlender
+      Schwebeknopf auf allen Seiten, zwei Rechtsseiten ohne Kopfband, eine
+      fehlende und eine erfundene FAQ-Frage, ein nicht gebauter Formular-Zustand,
+      drei Kartenplätze mit zwei Karten. **Kein einziger davon war von einem Tor
+      gemeldet worden**, und keines kann das: Alle vier prüfen, was DA ist – nie,
+      was fehlen könnte. (Vollständig in `ABGLEICH.md` des Testklons.)
+      **Was fehlen würde:** ein `npm run abgleich` als sechstes Tor – zählt die
+      Blöcke je Seite gegen die `.dc.html`, vergleicht gemessene Grundfarben und
+      Polsterungen, meldet BEIDE Richtungen (fehlt / erfunden). Beide Seiten sind
+      maschinell lesbar, also machbar.
+      **Vorarbeit vorhanden:** In einem Kundenprojekt wurde so ein Werkzeug
+      gebaut (erster Lauf: 36 Abweichungen, eine grobe). Es ist so **nicht**
+      hebbar – Seitenzuordnung und Anker sind klonspezifisch. Genau das ist die
+      zu lösende Aufgabe: die Zuordnung Design-Seite ↔ Route muss aus der Config
+      kommen, nicht aus einer Liste im Skript.
 - [ ] **Kein Ort für bewusste Design-Abweichungen im Klon.** Die Regel sagt
       jetzt, dass Mindest-Schriftgröße und Kontrast das Design schlagen und die
       Abweichung in den Bericht gehört. Ein maschinenlesbarer Ort dafür
@@ -88,18 +102,6 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       gemacht und das Ergebnis dann als Erfahrungswert hierher. Nicht sehen
       kann die Prüfung ohnehin: Laufzeit-Funktionen (`dialog.showModal`,
       `replaceChildren`), Bild- und Schriftformate, Netzwerk.
-- [ ] **Der Motor hat kein Werkzeug für den Abgleich mit dem Design – und das
-      ist seine größte Lücke.** Gemessen am 29.07.2026: Nach fünf
-      Korrekturrunden waren `check`, `sicht`, `interaktion`, `browser` und
-      `altgeraet` grün, und der handgemachte Abgleich fand danach 65 Befunde,
-      11 davon schwer. Kein Tor kann das sehen: Alle vier prüfen, was DA ist –
-      nie, was fehlen könnte. Der Abgleich steht als DoD 3c im Regelwerk, ist
-      aber reine Handarbeit und wird deshalb zuverlässig übersprungen.
-      **Was fehlen würde:** ein `npm run abgleich`, das die `.dc.html` Block für
-      Block gegen die gebauten Seiten hält – zählt Blöcke je Seite, vergleicht
-      Grundfarben und Polsterungen der gemessenen Werte, und meldet BEIDE
-      Richtungen (fehlt / erfunden). Machbar: Die Bauanleitung ist maschinell
-      lesbar, die gebaute Seite auch. Es wäre das sechste Tor.
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
       nach Art. 28 DSGVO. Noch nirgends vorgesehen.
