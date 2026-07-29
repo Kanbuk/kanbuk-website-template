@@ -88,6 +88,18 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       gemacht und das Ergebnis dann als Erfahrungswert hierher. Nicht sehen
       kann die Prüfung ohnehin: Laufzeit-Funktionen (`dialog.showModal`,
       `replaceChildren`), Bild- und Schriftformate, Netzwerk.
+- [ ] **Der Motor hat kein Werkzeug für den Abgleich mit dem Design – und das
+      ist seine größte Lücke.** Gemessen am 29.07.2026: Nach fünf
+      Korrekturrunden waren `check`, `sicht`, `interaktion`, `browser` und
+      `altgeraet` grün, und der handgemachte Abgleich fand danach 65 Befunde,
+      11 davon schwer. Kein Tor kann das sehen: Alle vier prüfen, was DA ist –
+      nie, was fehlen könnte. Der Abgleich steht als DoD 3c im Regelwerk, ist
+      aber reine Handarbeit und wird deshalb zuverlässig übersprungen.
+      **Was fehlen würde:** ein `npm run abgleich`, das die `.dc.html` Block für
+      Block gegen die gebauten Seiten hält – zählt Blöcke je Seite, vergleicht
+      Grundfarben und Polsterungen der gemessenen Werte, und meldet BEIDE
+      Richtungen (fehlt / erfunden). Machbar: Die Bauanleitung ist maschinell
+      lesbar, die gebaute Seite auch. Es wäre das sechste Tor.
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
       nach Art. 28 DSGVO. Noch nirgends vorgesehen.
@@ -201,6 +213,26 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-07-29** – **Erster Testlauf mit einem echten Kundendesign.** Ein
+  Autohaus-Design (11 Seiten, 23 Blöcke, 19 Komponenten) wurde aus der frischen
+  Vorlage portiert – Klon per `degit` über GitHub, also genau der Weg des
+  Kunden. Ergebnis: 15 Routen, alle fünf Tore grün.
+  **Sieben Motor-Fehler gefunden und behoben** (Commits d2bb67b, 4444d4a,
+  b6f7c47, c53496b): Die Sichtprüfung erfand Kontrastwerte für Verläufe
+  (78 von 85 Befunden waren Geister, mit einem Rat, der ein einwandfreies
+  Design kaputtmacht); Konturschrift galt als unlesbar; das Prüf-Tor wurde an
+  seiner eigenen Dokumentation rot; `bild()` kannte kein SVG, also kam das Logo
+  nie an; die Vorlage lieferte eine erzeugte Datei mit, die jeden Klon rot
+  machte; das Mobilmenü schloss an einer fest verdrahteten Breite; fehlende
+  `-webkit-`-Schreibweise beim Milchglas des Kopfes.
+  **Der eigentliche Befund ist aber keiner davon.** Nach fünf Korrekturrunden
+  waren alle Tore grün – und ein Abgleich mit der Design-Vorlage fand danach
+  **65 weitere Befunde (11 schwer)**, von denen **kein einziger** von einem Tor
+  gemeldet worden war: ein fehlender Schwebeknopf auf allen Seiten, zwei
+  Rechtsseiten ohne Kopfband, eine fehlende und eine erfundene FAQ-Frage, ein
+  nicht gebauter Formular-Zustand, drei Kartenplätze mit zwei Karten, eine
+  Einblend-Bewegung ohne Schalter. Vollständig in `ABGLEICH.md` des Testklons.
 
 - **2026-07-29** – **Rückfluss Teil 6: Der Betrieb pflegt selbst.** Der Motor
   hatte dazu kein Rezept – in einem Kundenklon entstanden rund 1.170 Zeilen von
