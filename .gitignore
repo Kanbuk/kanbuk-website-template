@@ -30,3 +30,6 @@ Thumbs.db
 .claude/settings.local.json
 pruefung/
 ../kanbuk-demos/
+
+# Erzeugt von npm run maske - gehoert in den Klon, nicht in die Vorlage
+redaktion/maske.js

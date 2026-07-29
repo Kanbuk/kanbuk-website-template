@@ -1571,6 +1571,14 @@ if (istLive || nurLive) {
   // in einem Nachbarordner, abgeglichen per Handkopie. Erwartbares Ergebnis:
   // Die Abfrage las zwei Felder, die die Maske nicht hatte. Hier wird die
   // Maske deshalb neu erzeugt und verglichen.
+  //
+  // WARUM DIE VORLAGE KEINE maske.js MEHR MITLIEFERT: Sie ist ein ERZEUGTES
+  // Artefakt und entsteht aus der Feldliste UND den `beschriftungen` des
+  // jeweiligen Katalogs. Lag sie in der Vorlage, wurde jeder frische Klon
+  // rot, sobald er eigene Beschriftungen eintrug - auch ohne jedes
+  // Redaktionssystem. Im Testlauf am 29.07.2026 gemessen: erster Klon,
+  // erster Lauf, roter Fehler ohne jede Bedeutung. Ein rotes Tor, das nichts
+  // heisst, bringt einem das Wegsehen bei.
   if (existsSync('redaktion/maske.js')) {
     const erzeugt = spawnSync(process.execPath, ['scripts/maske.mjs', '--pruefen'], { encoding: 'utf-8' });
     if (erzeugt.status !== 0) {
