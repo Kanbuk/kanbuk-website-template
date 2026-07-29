@@ -262,8 +262,22 @@ for (const seite of seiten) {
           zuKlein.push(`${kennung}: ${px.toFixed(1)}px – „${text.slice(0, 30)}"`);
         }
 
-        const vorn = zuRgb(st.color);
-        if (!vorn) continue;
+        /*
+         * KONTURSCHRIFT: `color: transparent` plus `-webkit-text-stroke` ist
+         * eine gängige Design-Technik (ein Wort nur als Umriss). Wer nur
+         * `color` liest, misst „durchsichtig gegen irgendwas" = 1,00:1 und
+         * meldet ein einwandfreies Wort als unlesbar. Im Testlauf am
+         * 29.07.2026 waren das die letzten drei Falschmeldungen von
+         * urspruenglich 85. Sichtbar ist hier die Konturfarbe – also wird die
+         * gemessen.
+         */
+        const strichBreite = parseFloat(st.webkitTextStrokeWidth);
+        const vornRoh = zuRgb(st.color);
+        const vorn =
+          vornRoh && vornRoh.a === 0 && Number.isFinite(strichBreite) && strichBreite > 0
+            ? zuRgb(st.webkitTextStrokeColor)
+            : vornRoh;
+        if (!vorn || vorn.a === 0) continue;
         const deckkraft = parseFloat(st.opacity);
         const grund = hintergrundVon(el);
         /* Kein messbarer Grund -> KEINE erfundene Zahl. Einmal je Seite
