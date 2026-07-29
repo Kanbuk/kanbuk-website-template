@@ -57,7 +57,12 @@ jobs:
   sichern:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Fremde Bausteine bewusst auf dem aktuellen Hauptstand: Ein Klon bekommt
+      # keine Updates. Was hier schon beim Anlegen als veraltet gemeldet wird,
+      # ist in zwei Jahren abgeschaltet – und dann steht die Sicherung still,
+      # ohne dass jemand danach sucht. (Der erste echte Lauf am 29.07.2026
+      # meldete genau das für v4.)
+      - uses: actions/checkout@v7
 
       - name: Hat dieses Projekt überhaupt ein Redaktionssystem?
         id: pruefung
@@ -69,7 +74,7 @@ jobs:
             echo "Kein Redaktionssystem eingerichtet – nichts zu sichern." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.pruefung.outputs.vorhanden == 'ja'
         with:
           node-version: '22'
