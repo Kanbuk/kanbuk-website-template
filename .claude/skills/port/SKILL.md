@@ -114,6 +114,13 @@ in den Kontext zu laden.
   je Eintrag eine eigene Seite** (CLAUDE.md Abschnitt 6a). Notiere: nach welchen
   Merkmalen wird gefiltert, was steht in der Merkmalstabelle, gibt es mehrere Fotos
   je Eintrag.
+- **Ändert sich der Bestand wöchentlich?** Dann kommt früher oder später die
+  Frage „kann ich das selbst pflegen?" – der Redaktions-Baustein steht bereit
+  (CLAUDE.md Abschnitt 6c). **Beim Port nichts davon einrichten**, aber die
+  Kennungen der Katalogeinträge so vergeben, dass sie später bleiben können,
+  und `katalog.beschriftungen` vollständig füllen: Daraus entstehen die
+  Auswahllisten der Eingabemaske. Bei einem Bestand, der sich zweimal im Jahr
+  ändert, ist die richtige Antwort **kein** Redaktionssystem.
 - **Langes Formular?** Ab etwa acht Feldern `formulare[].schritte` setzen und die
   Felder auf Schritte verteilen – der Motor macht daraus einen Assistenten mit
   Fortschritt. Persönliche Daten gehören in den letzten Schritt.

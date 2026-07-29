@@ -15,6 +15,7 @@
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
@@ -1488,6 +1489,158 @@ if (istLive || nurLive) {
         fehler(
           `${name}: Signatur-Anker „${anker.slice(0, 40)}" ist ein Money-Keyword.\n` +
             `    Seitenweite Keyword-Anker wertet Google als Link-Spam – Marken-Text verwenden.`,
+        );
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+//  8c. REDAKTIONSSYSTEM – pflegt der Betrieb selbst, muss es auch ankommen
+//
+//  Der teuerste Fehler dieses Bausteins ist nicht, dass etwas kaputtgeht.
+//  Es ist, dass alles grün aussieht und trotzdem nichts passiert: Der Betrieb
+//  ändert seine Anschrift, sieht „veröffentlicht" – und die Website zeigt
+//  weiter die alte. In einem Kundenprojekt betraf das vier von zehn
+//  angebotenen Impressumsfeldern und sämtliche eingetragenen Feiertage.
+//
+//  Diese Regeln halten die vier Stellen gegeneinander, die zusammenpassen
+//  müssen: Feldliste, Eingabemaske, erzeugte Datei und Website.
+// ---------------------------------------------------------------------------
+{
+  const hatDienst = existsSync('redaktion/dienst.json');
+  const hatInhalte = existsSync('daten/inhalte.json');
+
+  // --- 1. Jedes angebotene Feld muss es im Motor wirklich geben ------------
+  //
+  // Ein Feld in der Maske, das der Motor nicht kennt, ist eine Einladung ins
+  // Leere: Der Betrieb füllt es aus, es wird gespeichert, und es erscheint
+  // nirgends. Der Pfad wird deshalb Stück für Stück durch die Typen der
+  // Config verfolgt.
+  if (existsSync('redaktion/felder.mjs')) {
+    const felderText = readFileSync('redaktion/felder.mjs', 'utf-8');
+
+    /** Die Felder eines `export interface X { … }` als Name -> Typ. */
+    const schnittstelle = (name) => {
+      const block = configText.match(new RegExp(`^export interface ${name} \\{([\\s\\S]*?)^\\}`, 'm'));
+      if (!block) return undefined;
+      const felder = new Map();
+      for (const zeile of block[1].split('\n')) {
+        const t = zeile.match(/^ {2}([A-Za-z0-9_]+)\??:\s*([^;]+);/);
+        if (t) felder.set(t[1], t[2].trim());
+      }
+      return felder;
+    };
+
+    /** Folgt einem Punkt-Pfad durch die Typen. Liefert die Fehlstelle. */
+    const verfolge = (start, pfad) => {
+      let typ = start;
+      const teile = pfad.split('.');
+      for (let i = 0; i < teile.length; i++) {
+        const felder = schnittstelle(typ);
+        if (!felder) return `den Typ „${typ}" gibt es nicht`;
+        const naechster = felder.get(teile[i]);
+        if (!naechster) return `„${teile[i]}" fehlt in „${typ}"`;
+        if (i === teile.length - 1) return undefined;
+        typ = naechster.replace(/\[\]$/, '').split('|')[0].trim();
+      }
+      return undefined;
+    };
+
+    const pfade = [...felderText.matchAll(/pfad:\s*'([^']+)'/g)].map((m) => m[1]);
+    // Die Katalogfelder stehen ohne Vorsatz in der Liste (id, titel, …), die
+    // übrigen mit ihrem vollen Weg durch die Config.
+    for (const pfad of pfade) {
+      const mangel = pfad.includes('.')
+        ? verfolge('SiteConfig', pfad)
+        : verfolge('KatalogEintrag', pfad);
+      if (!mangel) continue;
+      fehler(
+        [
+          `redaktion/felder.mjs bietet „${pfad}" an, aber ${mangel}.`,
+          '    Die Eingabemaske entsteht aus dieser Liste. Ein Feld, das der Motor nicht',
+          '    kennt, füllt der Betrieb aus – und es erscheint nirgends auf der Website.',
+        ].join('\n'),
+      );
+    }
+  }
+
+  // --- 2. Die Maske muss zur Feldliste passen ------------------------------
+  //
+  // In einem Kundenprojekt lag die Maske im Projekt und das laufende Studio
+  // in einem Nachbarordner, abgeglichen per Handkopie. Erwartbares Ergebnis:
+  // Die Abfrage las zwei Felder, die die Maske nicht hatte. Hier wird die
+  // Maske deshalb neu erzeugt und verglichen.
+  if (existsSync('redaktion/maske.js')) {
+    const erzeugt = spawnSync(process.execPath, ['scripts/maske.mjs', '--pruefen'], { encoding: 'utf-8' });
+    if (erzeugt.status !== 0) {
+      fehler(
+        [
+          'redaktion/maske.js passt nicht mehr zur Feldliste in redaktion/felder.mjs.',
+          '    `npm run maske` laufen lassen und die Maske im Studio neu veröffentlichen.',
+          '    Sonst sieht der Betrieb ein Feld nicht, das der Motor erwartet – oder umgekehrt.',
+        ].join('\n'),
+      );
+    }
+  }
+
+  // --- 3. Ohne Sicherung stimmt die Zusage nicht ---------------------------
+  //
+  // Das ganze Rezept steht und fällt damit, dass der gepflegte Stand im
+  // Projekt liegt. Ohne den nächtlichen Ablauf ist der eingecheckte Stand der
+  // vom letzten Handgriff des Betreuers – und driftet ab dem ersten Tag ab,
+  // an dem der Betrieb selbst pflegt. Fällt der Dienst ein halbes Jahr später
+  // aus, baut die Seite mit uraltem Bestand: Verkauftes stünde wieder als
+  // verfügbar da. Das ist schlimmer als ein sichtbarer Ausfall.
+  if ((hatDienst || hatInhalte) && !existsSync('.github/workflows/inhalte-sichern.yml')) {
+    fehler(
+      [
+        'Der Betrieb pflegt Inhalte selbst, aber die nächtliche Sicherung fehlt.',
+        '    .github/workflows/inhalte-sichern.yml liegt dem Motor bei – wurde sie gelöscht?',
+        '    Ohne sie ist der eingecheckte Stand der vom letzten Handgriff, und die Zusage',
+        '    „die Website läuft auch ohne den Dienst weiter" stimmt nicht mehr.',
+      ].join('\n'),
+    );
+  }
+
+  // --- 4. Die erzeugten Dateien müssen wirklich im Projekt liegen ----------
+  if (hatInhalte && existsSync('.gitignore')) {
+    const ignoriert = readFileSync('.gitignore', 'utf-8');
+    for (const pfad of ['daten', 'fotos/inhalte']) {
+      const zeile = ignoriert
+        .split('\n')
+        .find((z) => z.trim() === pfad || z.trim() === `${pfad}/` || z.trim() === `/${pfad}`);
+      if (!zeile) continue;
+      fehler(
+        [
+          `.gitignore schließt „${zeile.trim()}" aus – dort liegen die gepflegten Inhalte.`,
+          '    Damit gäbe es keine Sicherung: Ist der Dienst weg, ist der Bestand weg.',
+        ].join('\n'),
+      );
+    }
+  }
+
+  // --- 5. Gepflegte Fotos müssen auch da sein ------------------------------
+  if (hatInhalte) {
+    let inhalte;
+    try {
+      inhalte = JSON.parse(readFileSync('daten/inhalte.json', 'utf-8'));
+    } catch (e) {
+      fehler(`daten/inhalte.json ist beschädigt (${e.message}). \`npm run inhalte\` neu laufen lassen.`);
+      inhalte = undefined;
+    }
+    const vorhandeneFotos = new Set(
+      alleDateien('fotos').map((f) => f.split(/[\\/]/).pop().toLowerCase()),
+    );
+    for (const eintrag of inhalte?.katalog ?? []) {
+      for (const datei of eintrag.bilder ?? []) {
+        if (vorhandeneFotos.has(String(datei).toLowerCase())) continue;
+        fehler(
+          [
+            `Eintrag „${eintrag.id}" verweist auf das Foto „${datei}", das nicht in fotos/ liegt.`,
+            '    Die Sicherung hat das Bild nicht mitgeholt – der Eintrag erscheint ohne Foto,',
+            '    und beim nächsten Ausfall des Dienstes gibt es keine Ersatzquelle.',
+          ].join('\n'),
         );
       }
     }

@@ -24,7 +24,9 @@
     "bogen": "node scripts/bogen.mjs",
     "holen": "node scripts/holen.mjs",
     "preisliste": "node scripts/preisliste.mjs",
-    "demo": "node scripts/demo-hosten.mjs"
+    "demo": "node scripts/demo-hosten.mjs",
+    "inhalte": "node scripts/inhalte.mjs",
+    "maske": "node scripts/maske.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

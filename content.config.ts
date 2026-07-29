@@ -17,6 +17,7 @@
  *  Preisänderung eine Ein-Datei-Änderung bleibt.
  * =============================================================================
  */
+import { mitGepflegtenInhalten } from './src/lib/inhalte';
 
 import { BRANCHE_JSONLD_TYP } from './src/lib/branchen.js';
 
@@ -793,9 +794,20 @@ type OptionaleFelder = 'ansprache' | 'sprachen' | 'formulare' | 'ogBild' | 'dien
 export type KundenKonfig = Omit<SiteConfig, OptionaleFelder> &
   Partial<Pick<SiteConfig, OptionaleFelder>>;
 
-/** Füllt Standardwerte auf und liefert die fertige Config. */
+/**
+ * Füllt Standardwerte auf und liefert die fertige Config.
+ *
+ * Ganz zum Schluss legt `mitGepflegtenInhalten` das darüber, was der Betrieb
+ * selbst pflegt (siehe src/lib/inhalte.ts). Ohne Redaktionssystem gibt es die
+ * Datei nicht und der Aufruf ändert nichts – das ist der Normalfall.
+ *
+ * WARUM GENAU HIER: Es ist die EINZIGE Stelle, an der gepflegte Werte in die
+ * Config kommen. Wo jeder Klon das Feld für Feld selbst verdrahtet, wird
+ * zuverlässig etwas vergessen – und der Betrieb ändert dann seine Anschrift,
+ * ohne dass sich auf der Website etwas ändert.
+ */
 export function aufloesen(k: KundenKonfig): SiteConfig {
-  return {
+  return mitGepflegtenInhalten({
     ...k,
     ansprache: k.ansprache ?? 'sie',
     sprachen: k.sprachen ?? ['de'],
@@ -804,7 +816,7 @@ export function aufloesen(k: KundenKonfig): SiteConfig {
     // Standard: keine Dienste -> cookiefrei, kein Banner. Das ist Absicht.
     dienste: k.dienste ?? [],
     weiterleitungen: k.weiterleitungen ?? [],
-  };
+  });
 }
 
 /** Schema.org-Typ für die JSON-LD-Auszeichnung. */

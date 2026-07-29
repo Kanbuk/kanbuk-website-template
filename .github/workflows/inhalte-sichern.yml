@@ -1,0 +1,108 @@
+# =============================================================================
+#  Nächtliche Sicherung der gepflegten Inhalte
+# =============================================================================
+#
+#  WOZU: Sobald ein Betrieb seine Inhalte selbst pflegt, liegt der aktuelle
+#  Stand beim Redaktionsdienst – nicht im Projekt. Ohne diesen Ablauf driftet
+#  beides ab dem ersten Tag auseinander, an dem der Betrieb etwas ändert.
+#  Wird der Dienst ein halbes Jahr später gekündigt oder fällt aus, baut die
+#  Website mit uraltem Bestand: verkaufte Dinge stünden wieder als verfügbar
+#  da, alte Preise wären wieder gültig. Das ist schlimmer als ein sichtbarer
+#  Ausfall, weil es plausibel aussieht.
+#
+#  Genau diese Zusage steht in redaktion/README.md: „Auch wenn der Dienst
+#  eines Tages weg ist, bleibt die Website stehen." Sie stimmt nur, solange
+#  dieser Ablauf läuft. Deshalb liefert der Motor ihn mit, statt ihn jedem
+#  Projekt einzeln zu überlassen.
+#
+#  WAS ER TUT: Inhalte UND Bilder holen, und nur dann einchecken, wenn sich
+#  wirklich etwas geändert hat. Der Einchecke-Vorgang stößt bei Vercel
+#  automatisch eine neue Veröffentlichung an – der Betrieb muss nichts tun.
+#
+#  EINRICHTEN (einmalig, im Repo unter Settings):
+#    1. Actions → General → Workflow permissions → „Read and write"
+#    2. Secrets and variables → Actions → Secret `REDAKTION_TOKEN`
+#       (nur nötig, wenn der Datensatz privat ist)
+#    3. Im Redaktionsdienst einen Webhook auf GitHub legen, damit
+#       „Veröffentlichen" sofort wirkt statt erst in der Nacht – Anleitung
+#       in redaktion/README.md.
+#
+#  OHNE REDAKTIONSSYSTEM passiert hier nichts: Der erste Schritt sieht, dass
+#  redaktion/dienst.json fehlt, und bricht den Lauf freundlich ab.
+# =============================================================================
+name: Inhalte sichern
+
+on:
+  schedule:
+    # 03:12 UTC – bewusst eine krumme Minute: Zur vollen Stunde stehen bei
+    # GitHub Zehntausende Abläufe an, und der eigene startet dann mit
+    # Verspätung oder gar nicht.
+    - cron: '12 3 * * *'
+  # Von Hand auslösbar – der Knopf steht im Reiter „Actions".
+  workflow_dispatch:
+  # Vom Redaktionsdienst auslösbar: „Veröffentlichen" wirkt dann sofort.
+  repository_dispatch:
+    types: [inhalte]
+
+# Schreibrecht für den Einchecke-Vorgang. Mehr braucht dieser Ablauf nicht.
+permissions:
+  contents: write
+
+# Zwei Läufe gleichzeitig würden sich beim Einchecken gegenseitig überholen.
+concurrency:
+  group: inhalte-sichern
+  cancel-in-progress: false
+
+jobs:
+  sichern:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Hat dieses Projekt überhaupt ein Redaktionssystem?
+        id: pruefung
+        run: |
+          if [ -f redaktion/dienst.json ]; then
+            echo "vorhanden=ja" >> "$GITHUB_OUTPUT"
+          else
+            echo "vorhanden=nein" >> "$GITHUB_OUTPUT"
+            echo "Kein Redaktionssystem eingerichtet – nichts zu sichern." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.pruefung.outputs.vorhanden == 'ja'
+        with:
+          node-version: '22'
+
+      # Kein `npm ci`: Das Holskript benutzt ausschließlich Bordmittel von
+      # Node. Damit kann die Sicherung nicht daran scheitern, dass ein Paket
+      # nicht mehr installierbar ist – und sie läuft in Sekunden.
+      - name: Inhalte und Bilder holen
+        if: steps.pruefung.outputs.vorhanden == 'ja'
+        env:
+          REDAKTION_TOKEN: ${{ secrets.REDAKTION_TOKEN }}
+        run: node scripts/inhalte.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Nur bei Änderung einchecken
+        if: steps.pruefung.outputs.vorhanden == 'ja'
+        run: |
+          git config user.name  "Inhalte-Sicherung"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Die Bilder MÜSSEN mit: Wer nur die Texte sichert, sichert eine
+          # Website ohne Bestand. Genau daran ist es in einem Kundenprojekt
+          # gescheitert.
+          #
+          # ZWEI getrennte Aufrufe, und das ist kein Schönheitsfehler:
+          # Stehen beide Pfade in EINEM `git add` und einer davon existiert
+          # noch nicht (ein Betrieb, der bisher nur Texte gepflegt hat, hat
+          # keinen Bildordner), bricht der ganze Aufruf ab – und die
+          # Textänderung wird still nicht gesichert. Nachgestellt und gemessen.
+          git add -A -- daten/inhalte.json 2>/dev/null || true
+          git add -A -- fotos/inhalte 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Nichts geändert – kein Einchecken, keine Veröffentlichung." >> "$GITHUB_STEP_SUMMARY"
+          else
+            git commit -m "Inhalte vom Betrieb gesichert (automatisch)"
+            git push
+            echo "Neuer Stand eingecheckt – die Website wird neu veröffentlicht." >> "$GITHUB_STEP_SUMMARY"
+          fi

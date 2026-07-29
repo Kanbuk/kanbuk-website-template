@@ -91,6 +91,18 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
       nach Art. 28 DSGVO. Noch nirgends vorgesehen.
+- [ ] **Der Redaktions-Anschluss war noch nie an einem echten Dienst.** Bewiesen
+      ist er gegen einen selbst gestellten Server, der die Schnittstelle
+      nachbildet – 21 Prüfungen plus die ganze Kette bis aufs gebaute HTML. Was
+      das nicht beweist: dass die Abfragesprache beim echten Anbieter genau so
+      antwortet. Beim ersten echten Einsatz mitschreiben und das Ergebnis
+      hierher. (Gleiche Ehrlichkeit wie bei der Browser-Untergrenze.)
+- [ ] **Zwei Bedienelemente kleben auf der Referenzseite aneinander**
+      („MerkenMeine Merkliste ansehen", Detailseite des Katalogs, in allen drei
+      Breiten). Kein Fehler in der Mechanik – die Referenzseite ist bewusst
+      fast ungestaltet, weil das Design vom Kunden kommt. Trotzdem sieht ein
+      frischer Klon das als Erstes und liest es als kaputt. Ein Abstand im
+      Motor-Grundstil würde reichen.
 
 ## Getroffene Entscheidungen
 
@@ -155,39 +167,64 @@ Zustellweg mit der ärztlichen Verschwiegenheitspflicht vereinbar ist (§ 54
 ÄrzteG kennt – anders als Deutschland – keine allgemeine Ausnahme für
 IT-Dienstleister; die Ausnahme in Abs. 3 gilt nur der Honorarabrechnung).
 
-## Vorgemerkt: Sanity-Anschluss (noch NICHT gebaut)
+## Redaktions-Baustein: gebaut am 2026-07-29
 
-Recherchiert und entworfen am 2026-07-27, bewusst **nicht umgesetzt**. Auslöser
-zum Bauen: sobald ein **zweiter** Kunde eine Liste pflegt, die sich **wöchentlich
-oder öfter** ändert **und Bilder enthält** (Fahrzeugbestand, Immobilien, Blog,
-Kursplan). Bis dahin gilt: Kunde schickt die Änderung, ein Chat pflegt sie ein.
+Die frühere Vormerkung ist **eingelöst** – der Auslöser („ein zweiter Kunde
+pflegt eine wöchentlich wechselnde Liste mit Bildern") ist eingetreten, und
+zwei Kundenklone haben den Anschluss unabhängig voneinander von Grund auf
+gebaut. Der Kernsatz von damals hat sich gehalten und steht jetzt als Regel in
+CLAUDE.md 6c:
 
-**Warum nicht jetzt** (Zahlen aus der Recherche):
-- Einrichtung ~3,5 h pro Kunde, Chat-Pflege ~8 min pro Änderung →
-  Break-even bei ~26 Änderungen. Ein Beisl ändert 2–4× im Jahr.
-- Sanity Free kennt nur „Administrator" oder „Nur-Lesen" – der Kunde bekäme
-  Löschrechte auf seine Inhalte. Die Rolle „darf nur bearbeiten" kostet
-  ~165 €/Jahr pro Kunde.
-- Drei Hauptversionen in elf Monaten. Das widerspricht dem Klon-Gedanken
-  (ein Klon von heute muss in fünf Jahren noch bauen).
+> **Der Dienst schreibt Dateien, der Motor baut aus Dateien.**
 
-**Der Entwurf, falls es so weit ist** – Kernsatz: *Sanity wird nie zur Bauzeit
-von Astro angefragt. Sanity schreibt Dateien, der Motor baut aus Dateien* –
-genau das Muster, das `npm run preisliste` schon hat.
-- Ein Vorlauf-Skript (`inhalt-holen`) holt die Daten, prüft sie gegen das
-  Motor-Schema, lädt Bilder nach `fotos/` und schreibt `daten/inhalt.ts` plus
-  einen Schnappschuss ins Repo. Danach baut Astro komplett offline.
-- Der Schnappschuss ist die Versicherung: Die Seite bleibt baubar, auch wenn
-  das Sanity-Projekt Jahre später gelöscht ist.
-- Bilder dürfen NIE vom Sanity-CDN kommen (fremder Server beim Besucher →
-  das Prüf-Tor blockt es zu Recht, und die Seite wäre nicht mehr cookiefrei).
-- In Sanity gehören nur: Preisliste, Öffnungszeiten, Team, Galerie, Aktuelles.
-  Niemals: Rechtstexte, SEO-Titel, Design-Tokens, Formulare.
-- Im Standard-Klon existiert davon **nichts** – kein Paket, kein Code, keine
-  Verzweigung. Nur ein Rezept, das liest, wer es braucht.
+**Was der Motor jetzt mitbringt** (`redaktion/`, `scripts/inhalte.mjs`,
+`scripts/maske.mjs`, `src/lib/inhalte.ts`, `.github/workflows/`):
+
+- Eine Feldliste (`redaktion/felder.mjs`), aus der Eingabemaske **und** Abfrage
+  entstehen; gelesen wird ohnehin alles, was ankommt.
+- `npm run inhalte` – Texte und Bilder holen, JSON schreiben (nie Code).
+- `npm run maske` – Eingabemaske erzeugen und ins Studio legen, kein `cp`.
+- Die **nächtliche Sicherung** als fertiger Ablauf, mit Bildern, nur bei
+  Änderung, zusätzlich auf Webhook und Knopfdruck auslösbar.
+- Fünf Prüf-Regeln, die die vier Stellen gegeneinander halten.
+
+**Was von der Vormerkung nicht mehr gilt:** Die Bedenken zu Rollenrechten und
+Versionswechseln sind unverändert richtig, betreffen aber die **Entscheidung**
+pro Kunde, nicht die Bauweise. Der Motor ist paketfrei angeschlossen (nur
+HTTP), ein Versionswechsel des Dienstes trifft ihn deshalb nicht. Der Satz
+„im Standard-Klon existiert davon nichts" gilt weiter: Ohne
+`redaktion/dienst.json` ist der Baustein aus.
+
+**Offen:** Der Anschluss ist gegen einen selbst gestellten Server bewiesen
+(21 Prüfungen plus die ganze Kette bis auf die Seite), aber **noch nie gegen
+ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
+beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-07-29** – **Rückfluss Teil 6: Der Betrieb pflegt selbst.** Der Motor
+  hatte dazu kein Rezept – in einem Kundenklon entstanden rund 1.170 Zeilen von
+  Grund auf, ein zweiter baute dasselbe anders und mit derselben Lücke. Jetzt
+  ein branchenneutraler Baustein (`redaktion/`, CLAUDE.md 6c), paketfrei über
+  die HTTP-Schnittstelle. Kernsatz: *Der Dienst schreibt Dateien, der Motor
+  baut aus Dateien* – beim Bauen wird nichts abgefragt.
+  **Der Kernpunkt war die fehlende Sicherung:** Beide Klone versprachen in
+  ihrer Doku, die Website lebe auch ohne den Dienst weiter – und in beiden gab
+  es nichts, was den gepflegten Stand je ins Projekt zurückgeschrieben hätte.
+  Der Motor liefert jetzt den nächtlichen Ablauf mit (Bilder inbegriffen, nur
+  bei Änderung, zusätzlich per Webhook und Knopfdruck), und das Prüf-Tor hält
+  den Live-Gang an, wenn er fehlt. Dazu behoben, bevor es zum ersten Mal
+  auftreten konnte: Fotoname aus dem Bildinhalt statt aus der Position (ein
+  getauschtes Foto kam sonst nie an), jeder Netzzugriff mit Zeitlimit und
+  zweitem Versuch, JSON statt erzeugtem Code, eine einzige Zusammenführung
+  statt Handverdrahtung je Feld, Eingabemaske erzeugt statt handkopiert.
+  Zwei Fehler beim Bauen selbst gefunden und gemessen: `process.exit()` bei
+  offener Netzverbindung stürzt unter Windows ab (der gemeldete Ausfall wäre
+  als Absturz angekommen), und `git add` mit zwei Pfaden bricht ganz ab, wenn
+  einer noch fehlt – ein Betrieb, der nur Texte pflegt, hätte nie eine
+  Sicherung bekommen. Bewiesen: 21 Prüfungen gegen einen selbst gestellten
+  Server, die ganze Kette vom Eingabefeld bis aufs gebaute HTML, und jede der
+  fünf neuen Prüf-Regeln absichtlich zum Anschlagen gebracht.
 - **2026-07-29** – **Rückfluss Teil 5: Recht und Einwilligung.** Vier Punkte,
   bei denen der Motor etwas anderes behauptete, als er tat:
 

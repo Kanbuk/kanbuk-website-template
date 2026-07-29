@@ -173,7 +173,23 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    Zeigt die Ausgabe nötige DNS-Einträge, dem Nutzer eine einfache
    Klick-Anleitung für den Domain-Anbieter des Kunden mitgeben. Die
    `<kunde>.kanbuk.com`-Abnahme-Adresse kann bleiben oder entfernt werden.
-7. Live-URL an den Nutzer.
+7. **Nur bei Redaktionssystem** (`redaktion/dienst.json` vorhanden, CLAUDE.md 6c):
+   die nächtliche Sicherung scharfstellen. **Das ist kein Zubehör** – ohne sie
+   driftet der eingecheckte Stand ab dem ersten Tag ab, an dem der Betrieb
+   selbst pflegt, und die Zusage „die Website läuft auch ohne den Dienst
+   weiter" stimmt nicht mehr. `npm run check -- --live` blockt deshalb, wenn
+   die Ablaufdatei fehlt.
+   - Im Repo unter *Settings → Actions → General* das Schreibrecht für Abläufe
+     einschalten (die Option mit Lese- **und** Schreibrecht).
+   - Nur bei privatem Datensatz: Geheimnis `REDAKTION_TOKEN` hinterlegen.
+   - Einen Lauf von Hand auslösen und nachsehen, dass er grün ist. **Erst dann
+     ist die Zusage belegt** – ein Ablauf, den nie jemand hat laufen sehen, ist
+     genau die Art Sicherung, die im Ernstfall nicht da ist.
+   - Webhook im Redaktionsdienst einrichten, damit „Veröffentlichen" sofort
+     wirkt statt erst in der Nacht (Adresse in `redaktion/README.md`).
+   - Aus `redaktion/ANLEITUNG-VORLAGE.md` die fertige Anleitung für den Betrieb
+     machen: die `<…>`-Lücken **am echten Bildschirm nachsehen**, nicht raten.
+8. Live-URL an den Nutzer.
 
 ---
 

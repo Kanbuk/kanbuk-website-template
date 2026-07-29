@@ -643,6 +643,91 @@ dann an, statt eine erfundene Klausel online gehen zu lassen.
 
 ---
 
+## 6c. Redaktion – der Betrieb pflegt selbst
+
+**Wann:** Der Bestand ändert sich wöchentlich (Fahrzeuge, Immobilien, Kurse,
+Zimmer) und der Betrieb fragt: *„Kann ich das selbst pflegen?"* Bei einer Seite,
+die sich zweimal im Jahr ändert, ist die Antwort **nein** – ein
+Redaktionssystem ist dann zusätzliche Technik ohne Nutzen. Zwei Anrufe pro Jahr
+sind billiger als ein System, das gewartet werden will.
+
+**Standard bleibt: kein Redaktionssystem.** Solange `redaktion/dienst.json`
+fehlt, ist der Baustein aus und die Inhalte stehen in `content.config.ts`.
+
+### Der Grundsatz
+
+> **Der Dienst schreibt Dateien, der Motor baut aus Dateien.**
+
+Beim Bauen wird **nichts** abgefragt. `npm run inhalte` läuft getrennt davon und
+legt die Inhalte (`daten/inhalte.json`) und die Bilder (`fotos/inhalte/`) ins
+Projekt; beides wird eingecheckt. Erst daraus baut die Website.
+
+Der Umweg ist der ganze Punkt. Fragt der Build selbst ab, hängt **jede**
+Veröffentlichung am fremden Dienst – auch eine Textkorrektur oder ein
+Rechtstext. In einem Kundenprojekt reichte dafür eine einzige 403-Antwort des
+Bildservers.
+
+### Die drei Sicherungen
+
+1. **Ohne Zugang passiert nichts** – kein Zugang löscht nichts.
+2. **Eine leere Antwort überschreibt nie.** Sonst löscht ein Aussetzer den
+   gesamten Bestand, und die Seite steht leer da – es sähe nach Absicht aus.
+3. **Ein fehlerhafter Eintrag fällt raus, nicht die ganze Liste.**
+
+Dazu: **geschrieben wird JSON, nie Code.** Ein Generator, der TypeScript
+zusammensetzt, kann bei unerwarteter Eingabe ungültigen Code erzeugen – und
+dann sprengt ein Laie mit „Veröffentlichen" den Build, ohne es je zu erfahren.
+
+### Eine Feldliste, drei Verbraucher
+
+`redaktion/felder.mjs` ist die **einzige** Stelle, an der steht, was der Betrieb
+pflegen darf. Daraus entstehen die Eingabemaske (`npm run maske`) und die
+Abfrage (`npm run inhalte`); gelesen wird ohnehin alles, was ankommt
+(`src/lib/inhalte.ts` überlagert Feld für Feld, ohne eigene Liste).
+
+**Warum das strikt ist:** In einem Kundenprojekt bot die Maske zehn
+Impressumsfelder an, verdrahtet waren sechs. Vier ließen sich ändern, ohne dass
+sich je etwas änderte, und eingetragene Feiertage erschienen überhaupt nie. Der
+Betrieb ändert seine Anschrift, sieht „veröffentlicht" – und die Website zeigt
+weiter die alte. Bei Pflichtangaben nach § 5 ECG ist das ein Rechtsrisiko, und
+es ist der schlimmste Fehlertyp überhaupt, weil alles grün aussieht.
+
+**Nie ein Feld einzeln verdrahten.** Kommt eines dazu: in `felder.mjs`
+eintragen, `npm run maske`, im Studio veröffentlichen. Sonst nichts.
+
+### Bilder: der Name kommt aus dem Inhalt
+
+Ein Foto heißt nach seiner Prüfsumme, nie nach seiner Position. Heißt es
+`eintrag-1.jpg`, bleibt der Name beim Tauschen gleich – und die Website zeigt
+für immer das alte Bild, ohne jede Fehlermeldung. Das trifft die häufigste
+Pflegehandlung überhaupt: ein besseres Foto nachschieben.
+
+### Die nächtliche Sicherung ist Teil des Bausteins, nicht Zubehör
+
+`.github/workflows/inhalte-sichern.yml` liegt bei. Sie holt Inhalte **und
+Bilder**, checkt sie **nur bei Änderung** ein, und das Einchecken stößt die
+Veröffentlichung an. Ohne sie ist der eingecheckte Stand der vom letzten
+Handgriff des Betreuers – und driftet ab dem ersten Tag ab, an dem der Betrieb
+selbst pflegt. Fällt der Dienst ein halbes Jahr später aus, baut die Seite mit
+uraltem Bestand: Verkauftes stünde wieder als verfügbar da, alte Preise wären
+wieder gültig. **Das ist schlimmer als ein sichtbarer Ausfall, weil es
+plausibel aussieht.**
+
+Das Prüf-Tor hält den Live-Gang an, wenn ein Projekt gepflegte Inhalte hat und
+die Sicherung fehlt. Einrichtung und der ehrliche Wortlaut der Zusage stehen in
+`redaktion/README.md`.
+
+### Die Anleitung für den Betrieb
+
+`redaktion/ANLEITUNG-VORLAGE.md` ist eine **Vorlage mit Lücken**, keine fertige
+Anleitung. Die Beschriftungen fremder Oberflächen stehen dort als `<…>` und
+werden beim Einrichten **nachgesehen, nicht geraten** – wer sie aus dem
+Gedächtnis behauptet, kostet den Auftraggeber eine Runde vor dem Bildschirm.
+Gleiche Regel wie überall sonst: keine Befehlszeile, keine Dateipfade.
+
+
+---
+
 ## 7. mode-Logik (`mode: 'demo' | 'live'`)
 
 Der Unterschied ist **nicht die Qualität, sondern nur die Zugänge**. Die Vorschau ist
@@ -890,6 +975,8 @@ keines optimiert wurde.
 | `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
 | `npm run bogen -- --fotos` | Kontaktbögen aller Fotos (Sichtpflicht mit 1–2 Reads statt 20) |
 | `npm run holen -- --url <…> --ziel <pfad>` | Download + Integritätsprüfung (nie Base64 durch den Chat!) |
+| `npm run inhalte` | Gepflegte Inhalte und Bilder vom Redaktionsdienst holen (Abschnitt 6c) |
+| `npm run maske` | Eingabemaske für den Betrieb aus der Feldliste erzeugen |
 | `npm run preisliste` | Preislisten-JSON aus dem Design validieren → `daten/preisliste.ts` |
 | `npm run demo -- --datei <archiv.zip> --kunde "…"` | Design-Projekt-Archiv (oder Standalone) als schickbare Verkaufs-Demo hosten (noindex, Kanbuk-Leiste, Handy-Hinweis, Sicht-Check) |
 | `npm run sicht` | **Sichtprüfung im echten Browser** – Screenshots + Überlauf-/Fehler-Messung |

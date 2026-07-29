@@ -58,3 +58,14 @@ Betriebs-Website wirken unecht und schaden mehr, als sie nützen.
    selbst welche gemacht hast.
 
 Die Kartenbilder aus `npm run karte` landen ebenfalls hier.
+
+---
+
+## Ein Unterordner gehört nicht dir: `inhalte/`
+
+Pflegt der Betrieb seine Inhalte selbst (CLAUDE.md Abschnitt 6c), liegen dessen
+Fotos in `fotos/inhalte/`. **Dieser Ordner wird verwaltet** – `npm run inhalte`
+holt dort Bilder hinein und löscht welche, die kein Eintrag mehr benutzt. Ein
+Foto, das du dort von Hand ablegst, ist beim nächsten Lauf weg.
+
+Alle anderen Fotos legst du wie gewohnt direkt in `fotos/` ab.
