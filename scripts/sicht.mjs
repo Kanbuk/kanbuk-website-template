@@ -203,18 +203,46 @@ for (const seite of seiten) {
         a: 1,
       });
       /** Erste undurchsichtige Hintergrundfarbe von unten nach oben. */
+      /*
+       * Sucht die Fläche HINTER einem Text.
+       *
+       * WARUM DAS ZWEITE RÜCKGABEFELD DA IST: Diese Funktion las früher nur
+       * `backgroundColor`. Ein Verlauf steht aber in `background-image` – und
+       * die Kurzschreibweise `background: radial-gradient(…)` setzt
+       * `background-color` dabei auf `transparent`. Die Messung lief also an
+       * jedem Verlaufsband vorbei bis zur weißen Seite darunter und meldete
+       * weißen Text auf schwarzem Grund als „1,57:1 – Kontrast zu schwach".
+       *
+       * Im ersten Testlauf mit einem echten Kundendesign (29.07.2026) waren
+       * das 78 von 85 Befunden. Zwei Dinge machen es schlimmer als eine
+       * harmlose Falschmeldung:
+       *   1. Der Rat darunter lautet „Farbe aufhellen/abdunkeln". Wer dem bei
+       *      weißem Text auf schwarzem Band folgt, macht ein einwandfreies
+       *      Design kaputt – genau die Design-Treue, die der Motor schützen soll.
+       *   2. Eine lange Liste Geister deckt die echten Befunde zu.
+       *
+       * Dasselbe gilt für Text auf einem FOTO: Auch da gibt es keine Farbe,
+       * gegen die sich rechnen ließe. Die Prüfung sagt jetzt, dass sie es
+       * nicht messen kann, statt eine Zahl zu erfinden.
+       */
       const hintergrundVon = (el) => {
         let k = el;
         while (k && k !== document.documentElement) {
-          const f = zuRgb(getComputedStyle(k).backgroundColor);
-          if (f && f.a === 1) return f;
+          const st = getComputedStyle(k);
+          const f = zuRgb(st.backgroundColor);
+          if (f && f.a === 1) return { farbe: f, unklar: null };
+          const bild = st.backgroundImage;
+          if (bild && bild !== 'none') {
+            return { farbe: null, unklar: /gradient\(/.test(bild) ? 'Verlauf' : 'Bild' };
+          }
           k = k.parentElement;
         }
-        return { r: 255, g: 255, b: 255, a: 1 };
+        return { farbe: { r: 255, g: 255, b: 255, a: 1 }, unklar: null };
       };
 
       const funde = [];
       const zuKlein = [];
+      const unmessbar = [];
       const gesehen = new Set();
       for (const el of document.querySelectorAll('p,li,a,span,td,th,h1,h2,h3,h4,h5,h6,label,button,figcaption,address,dd,dt,small,sup')) {
         const text = (el.textContent ?? '').trim();
@@ -237,8 +265,19 @@ for (const seite of seiten) {
         const vorn = zuRgb(st.color);
         if (!vorn) continue;
         const deckkraft = parseFloat(st.opacity);
-        const effektiv = mischen({ ...vorn, a: vorn.a * (Number.isFinite(deckkraft) ? deckkraft : 1) }, hintergrundVon(el));
-        const hinten = hintergrundVon(el);
+        const grund = hintergrundVon(el);
+        /* Kein messbarer Grund -> KEINE erfundene Zahl. Einmal je Seite
+           gemeldet, nicht je Textstelle: sonst steht dieselbe Sache
+           dreißigmal da und deckt zu, worauf es ankommt. */
+        if (!grund.farbe) {
+          if (!gesehen.has('unmessbar:' + grund.unklar)) {
+            gesehen.add('unmessbar:' + grund.unklar);
+            unmessbar.push(grund.unklar);
+          }
+          continue;
+        }
+        const effektiv = mischen({ ...vorn, a: vorn.a * (Number.isFinite(deckkraft) ? deckkraft : 1) }, grund.farbe);
+        const hinten = grund.farbe;
         const l1 = leucht(effektiv);
         const l2 = leucht(hinten);
         const v = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
@@ -250,7 +289,7 @@ for (const seite of seiten) {
           funde.push(`${kennung}: ${v.toFixed(2)}:1 bei ${px.toFixed(0)}px (nötig ${noetig}) – „${text.slice(0, 30)}"`);
         }
       }
-      return { kontrast: funde.slice(0, 6), zuKlein: zuKlein.slice(0, 4) };
+      return { kontrast: funde.slice(0, 6), zuKlein: zuKlein.slice(0, 4), unmessbar };
     });
 
     const name = `${(seite === '/' ? 'start' : seite.replace(/^\//, '').replace(/\//g, '-'))}-${breite}px.png`;
@@ -289,6 +328,24 @@ for (const seite of seiten) {
     for (const k of lesbarkeit.kontrast) {
       probleme.push(
         `${kennung}: KONTRAST ZU SCHWACH -> ${k}\n      Farbe aufhellen/abdunkeln (content.config.ts -> design.farben) oder eine kräftigere Textstufe verwenden.`,
+      );
+    }
+    /* Ehrlich sagen, was nicht gemessen werden konnte – als HINWEIS, nicht als
+       Fehler. Ein Verlauf oder ein Foto hinter Text lässt sich rechnerisch
+       nicht auflösen; eine Zahl dafür wäre erfunden. Der Rat unten ist auch
+       unabhängig von dieser Prüfung richtig: Eine Grundfarbe unter dem Verlauf
+       ist der korrekte Rückfall, wenn er einmal nicht gemalt wird (Druck,
+       erzwungene Farben, alter Browser unter der Browser-Untergrenze). */
+    for (const u of lesbarkeit.unmessbar ?? []) {
+      hinweise.push(
+        u === 'Verlauf'
+          ? `${kennung}: KONTRAST NICHT MESSBAR -> Text auf einem Verlauf ohne eigene Grundfarbe.\n` +
+              '      `background-color` und `background-image` getrennt setzen statt der Kurzform\n' +
+              '      `background: …gradient(…)` – dann kann die Prüfung rechnen (und der Verlauf\n' +
+              '      hat einen Rückfall, wenn er nicht gemalt wird). MIT EIGENEN AUGEN ANSEHEN.'
+          : `${kennung}: KONTRAST NICHT MESSBAR -> Text auf einem Bild.\n` +
+              '      Rechnerisch nicht auflösbar. MIT EIGENEN AUGEN ANSEHEN: Text auf einem Foto\n' +
+              '      braucht fast immer eine Plakette oder einen Schleier darunter.',
       );
     }
     for (const z of lesbarkeit.zuKlein) {
