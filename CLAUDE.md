@@ -384,6 +384,18 @@ grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 @media (min-width: 800px) { .reihe { grid-template-columns: 1fr 1fr; } }
 ```
 
+> **Eine Inhaltsänderung darf das Layout nicht umschalten.** Eine `:has()`-Regel
+> machte in einem Kundenprojekt die ANZAHL der Einträge zum Layout-Schalter:
+> zwei Karten → zwei Spalten, auf jeder Breite. Am Handy stand im Knopf dann
+> „DETA" statt „Details ansehen". Jede solche Regel gehört in eine
+> Medienabfrage.
+>
+> Die zweite Lehre daraus wiegt schwerer: **Kein Tor hat es gemeldet**, weil die
+> Karte `overflow: hidden` trägt. Der Text läuft dann nicht über, er wird
+> ABGESCHNITTEN – und die Sichtprüfung maß Überlauf. Seit 30.07.2026 misst sie
+> auch abgeschnittenen Text; wer eine ähnliche Falle baut, sollte trotzdem
+> wissen, dass „kein Überlauf" nicht „passt" heißt.
+
 **Die Handy-Ansicht ist deine Entscheidung, nicht die des Designs** – dort gibt es sie
 nicht. Standardregeln: zwei Spalten → eine; vier Spalten → zwei → eine; Bild neben Text →
 Bild über Text; Sticky-Leisten am Handy prüfen (verdecken sie Inhalt?).
