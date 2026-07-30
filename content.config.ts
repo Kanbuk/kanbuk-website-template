@@ -916,8 +916,59 @@ export interface SiteConfig {
    * (der Vorgabewert des Dienstes) – dann bleibt der Text wie bisher.
    */
   versandRegion?: 'EU' | 'USA';
+  /** Wie die Bestätigung an den Absender aussieht. Siehe Bestaetigung. */
+  bestaetigung?: Bestaetigung;
   /** Globales OG-Bild (in public/), Standard: '/og.jpg'. */
   ogBild: string;
+}
+
+/**
+ * DIE BESTÄTIGUNG AN DEN ABSENDER – die einzige Mail, die ein Interessent vom
+ * Betrieb bekommt, bevor jemand antwortet. Sie ist eine Geschäfts-E-Mail.
+ */
+export interface Bestaetigung {
+  /**
+   * DER BETREFF – und hier steckt ein Fehler, den man nur als Empfänger sieht.
+   *
+   * Ohne diese Angabe bekam der Absender den Betreff der INTERNEN
+   * Benachrichtigung in sein Postfach: „Neue Anfrage über die Website".
+   * Das ist die Innensicht des Betriebs – und zwar in genau dem Moment, in dem
+   * jemand gerade seine Telefonnummer und persönliche Angaben hinterlassen hat.
+   *
+   * Standard aus Sicht des ABSENDERS: „Ihre Anfrage bei <Betrieb>".
+   */
+  betreff?: string;
+  /**
+   * DIE ANGABEN IN DER MAIL WIEDERHOLEN? Standard: **nein**.
+   *
+   * Beide Antworten sind vertretbar, und es ist eine Entscheidung PRO KUNDE:
+   *
+   * DAFÜR: Der Interessent sieht schwarz auf weiß, was angekommen ist, und
+   * merkt sofort, wenn er sich vertippt hat. Bei einem Handwerker oder
+   * Händler ist das ein Service.
+   *
+   * DAGEGEN (und deshalb der Standard): Die Empfängeradresse kommt aus dem
+   * Formular und ist von niemandem bestätigt. Bei einem Gesundheitsberuf
+   * gehören Anfrageinhalte nicht in ein unbestätigtes Postfach – und wer den
+   * Endpunkt direkt anspricht, ließe sich sonst beliebigen Text über die
+   * Domain des Betriebs zuschicken.
+   *
+   * Einschalten also nur, wenn der Betrieb es ausdrücklich will UND die
+   * Anfragen unkritisch sind.
+   */
+  angabenWiederholen?: boolean;
+  /**
+   * DAS LOGO IM MAILKOPF – als **PNG** in `public/`, nicht als SVG.
+   *
+   * Gmail und Outlook zeigen SVG nicht an. Erzeugen mit `npm run maillogo`:
+   * Das Skript rendert dieselbe Quelldatei, die auch in der Fußzeile steht
+   * (`betrieb.logo`), in doppelter Anzeigegröße – damit gibt es nicht zwei
+   * Wahrheiten, die auseinanderlaufen.
+   *
+   * Weglassen = keine Grafik, nur der Betriebsname als Text. Das ist die
+   * sichere Wahl: Die meisten Programme blockieren Bilder beim ersten Öffnen.
+   */
+  logo?: string;
 }
 
 /** Felder, die aufloesen() mit Standardwerten füllt. */

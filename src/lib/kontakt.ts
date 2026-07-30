@@ -9,6 +9,8 @@
  */
 // .js-Endung Pflicht (Node-ESM im Serverless-Bundle, s. api/contact.ts).
 import { site } from '../../content.config.js';
+// .js-Endung ebenfalls Pflicht – siehe Hinweis darüber.
+import { bestaetigungBetreff, bestaetigungHtml, bestaetigungText } from './kontakt-mail.js';
 
 export interface KontaktEnv {
   RESEND_API_KEY?: string;
@@ -171,21 +173,6 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
        eine Empfangsbestätigung statt einer Kopie. */
     if (antwortAdresse) {
       const duzen = site.ansprache === 'du';
-      const bestaetigung = [
-        duzen ? 'Danke für deine Nachricht!' : 'Vielen Dank für Ihre Nachricht!',
-        '',
-        duzen
-          ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
-          : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.',
-        '',
-        duzen
-          ? 'Aus Datenschutzgründen wiederholen wir deine Angaben hier nicht. Bei Rückfragen erreichst du uns direkt:'
-          : 'Aus Datenschutzgründen wiederholen wir Ihre Angaben hier nicht. Bei Rückfragen erreichen Sie uns direkt:',
-        '',
-        `${site.betrieb.name}`,
-        `${site.betrieb.adresse.strasse}, ${site.betrieb.adresse.plz} ${site.betrieb.adresse.ort}`,
-        site.betrieb.telefon,
-      ];
       try {
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -197,8 +184,15 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
             from: env.CONTACT_FROM,
             to: [antwortAdresse],
             reply_to: site.betrieb.email,
-            subject: `${formular.betreff} – ${site.betrieb.name}`,
-            text: bestaetigung.join('\n'),
+            /* DER BETREFF DER BESTÄTIGUNG IST NICHT DER INTERNE.
+               Hier stand `formular.betreff` – also die Überschrift der
+               Benachrichtigung AN DEN BETRIEB („Neue Anfrage über die
+               Website"). Der Absender bekam damit die Innensicht des Betriebs
+               in sein Postfach, in genau dem Moment, in dem er gerade seine
+               Telefonnummer und persönliche Angaben hinterlassen hat. */
+            subject: bestaetigungBetreff(),
+            text: bestaetigungText(formular, daten),
+            html: bestaetigungHtml(formular, daten),
           }),
         });
       } catch (e) {

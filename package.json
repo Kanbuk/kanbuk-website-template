@@ -27,7 +27,8 @@
     "demo": "node scripts/demo-hosten.mjs",
     "inhalte": "node scripts/inhalte.mjs",
     "maske": "node scripts/maske.mjs",
-    "abgleich": "node scripts/abgleich.mjs"
+    "abgleich": "node scripts/abgleich.mjs",
+    "maillogo": "node scripts/maillogo.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",
