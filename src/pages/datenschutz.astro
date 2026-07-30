@@ -54,8 +54,11 @@ const einbettungsAnbieter = [
    USA-Absatz allein daraus, DASS überhaupt ein Dienst eingetragen war. Bei
    einem europäischen Werkzeug behauptete die Erklärung damit eine
    Übermittlung, die es gar nicht gibt – samt falscher Rechtsgrundlage. */
+/* Ein Dienst OHNE `drittland`-Angabe taucht hier bewusst nirgends auf: Die
+   Erklärung darf nichts behaupten, was niemand eingetragen hat. Dass die
+   Angabe fehlt, meldet das Prüf-Tor (scripts/check.mjs) – dort gehört sie hin,
+   nicht in eine Rechtsseite, die sie dann irgendwie formulieren müsste. */
 const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !== 'keines');
-const ohneDrittlandAngabe = site.dienste.filter((d) => !d.drittland);
 ---
 
 <RechtsLayout

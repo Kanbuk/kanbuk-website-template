@@ -83,15 +83,11 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
      mit einem Schrägstrich da („RESEND_API_KEY / CONTACT_FROM") – wer das im
      Protokoll liest, prüft beide, findet beide im Dashboard und sucht weiter.
 
-     WAS DAHINTER STECKT und warum diese Meldung zählt: Eine bei Vercel als
-     „Sensitive" markierte Umgebungsvariable steht dem BUILD zur Verfügung,
-     aber NICHT der Serverless-Funktion. Am 30.07.2026 an einer echten
-     Kundenseite belegt: Ein Skript las damit beim Bauen einwandfrei seine
-     Daten, während diese Funktion dieselben Variablen als leer sah. Im
-     Dashboard sieht alles korrekt aus, der Versand ist still tot. Ohne die
-     Markierung neu angelegt: sofort HTTP 200.
-     Deshalb nennt die Protokollzeile den Verdacht ausdrücklich – sonst sucht
-     man ihn nie. */
+     WARUM DIE MELDUNG AUCH SAGT, WO MAN SUCHEN SOLL: Der häufigste Fall ist
+     nicht „vergessen einzutragen", sondern „eingetragen und trotzdem leer".
+     Im Dashboard sieht dann alles korrekt aus, der Versand ist still tot, und
+     ohne Hinweis sucht man an der falschen Stelle. Die Reihenfolge unten ist
+     die aus dem /deploy-Skill. */
   const fehlendeZugaenge = [
     !env.RESEND_API_KEY ? 'RESEND_API_KEY' : '',
     !env.CONTACT_FROM ? 'CONTACT_FROM' : '',
@@ -99,10 +95,13 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
   if (fehlendeZugaenge.length > 0) {
     console.error(
       `[kontakt] Der Versand ist nicht konfiguriert. Es fehlt: ${fehlendeZugaenge.join(' und ')}.\n` +
-        '          Steht die Variable im Vercel-Dashboard und ist trotzdem leer:\n' +
-        '          Ist sie als „Sensitive" markiert? Solche Variablen erreichen den\n' +
-        '          Build, aber NICHT die Serverless-Funktion. Ohne die Markierung\n' +
-        '          neu anlegen (siehe /deploy-Skill).',
+        '          Steht die Variable im Vercel-Dashboard und ist hier trotzdem leer:\n' +
+        '          1. Wurde nach dem Eintragen NEU DEPLOYT? Bestehende Bereitstellungen\n' +
+        '             bekommen eine nachträglich eingetragene Variable nicht.\n' +
+        '          2. Gilt sie auch für DIESE Umgebung (Produktion/Vorschau)?\n' +
+        '          3. Stimmt die Schreibweise exakt, auch Gross-/Kleinschreibung?\n' +
+        '          4. Erst dann: einmal ohne „Sensitive" neu anlegen und deployen.\n' +
+        '          Ausführlich im /deploy-Skill.',
     );
     return {
       status: 500,
@@ -151,8 +150,10 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
        angekommen ist. Ein Fehlschlag hier darf die Hauptmeldung NICHT
        gefährden – die ist beim Betrieb ja bereits angekommen.
 
-       OHNE INHALT, UND DAS MIT ABSICHT (geändert 2026-07-27):
-       Bis hierher standen in dieser Mail ALLE ausgefüllten Felder noch einmal
+       STANDARDMÄSSIG OHNE INHALT, UND DAS MIT ABSICHT (geändert 2026-07-27;
+       seit 30.07.2026 über `bestaetigung.angabenWiederholen` umschaltbar –
+       der Standard bleibt „ohne"):
+       Bis dahin standen in dieser Mail ALLE ausgefüllten Felder noch einmal
        drin. Zwei Gründe, warum das weg musste:
 
        1. MISSBRAUCH. Die Empfängeradresse kommt aus dem Formular und wird nie
@@ -172,7 +173,6 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
        Der Betrieb bekommt die Angaben unverändert – nur der Absender bekommt
        eine Empfangsbestätigung statt einer Kopie. */
     if (antwortAdresse) {
-      const duzen = site.ansprache === 'du';
       try {
         await fetch('https://api.resend.com/emails', {
           method: 'POST',

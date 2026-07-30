@@ -16,6 +16,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { ohneKommentare } from './lib/quelltext.mjs';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
@@ -1387,36 +1388,9 @@ if (istLive || nurLive) {
         (Leerzeichen statt löschen), sonst zeigt die Meldung auf die falsche
         Zeile.
 
-     Beim Ausblenden ein ZUSTANDSAUTOMAT, kein regulärer Ausdruck: In jeder URL
-     stehen zwei Schrägstriche mitten in einer Zeichenkette, und ein Ausdruck
-     hält `https://…` für den Beginn eines Kommentars. */
-  const ohneKommentare = (quelle) => {
-    let raus = '';
-    let zustand = 'code'; // code | zeile | block | text
-    let anfuehrung = '';
-    for (let i = 0; i < quelle.length; i++) {
-      const z = quelle[i];
-      const naechst = quelle[i + 1];
-      if (zustand === 'code') {
-        if (z === '/' && naechst === '/') { zustand = 'zeile'; raus += '  '; i++; continue; }
-        if (z === '/' && naechst === '*') { zustand = 'block'; raus += '  '; i++; continue; }
-        if (z === '"' || z === "'" || z === '`') { zustand = 'text'; anfuehrung = z; }
-        raus += z;
-      } else if (zustand === 'zeile') {
-        if (z === '\n') { zustand = 'code'; raus += z; } else raus += ' ';
-      } else if (zustand === 'block') {
-        if (z === '*' && naechst === '/') { zustand = 'code'; raus += '  '; i++; continue; }
-        raus += z === '\n' ? z : ' ';
-      } else {
-        // In einer Zeichenkette: Escapes überspringen, sonst endet sie zu früh.
-        if (z === '\\') { raus += z + (naechst ?? ''); i++; continue; }
-        if (z === anfuehrung) zustand = 'code';
-        raus += z;
-      }
-    }
-    return raus;
-  };
-
+     Das Ausblenden macht `scripts/lib/quelltext.mjs` – dieselbe Stelle, aus der
+     sich auch der Vorcheck bedient. Zwei eigene Zähler meldeten vorher zwei
+     verschiedene Zahlen für dieselbe Datei. */
   const configOhneKommentare = ohneKommentare(configText);
   const markerTreffer = configOhneKommentare.match(/\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/);
   if (markerTreffer) {
@@ -1680,7 +1654,7 @@ if (istLive || nurLive) {
     ]
       .filter((f) => /\.(astro|ts|tsx)$/.test(f) && existsSync(f))
       .map((f) => readFileSync(f, 'utf-8'))
-      .join(String.fromCharCode(10));
+      .join('\n');
 
     const felderText = readFileSync('redaktion/felder.mjs', 'utf-8');
     for (const m of felderText.matchAll(/pfad:\s*'([^']+)'/g)) {
@@ -1698,7 +1672,7 @@ if (istLive || nurLive) {
           `redaktion/felder.mjs bietet „${m[1]}" an, aber nichts liest „${letzter}".`,
           '    Der Betrieb füllt das Feld aus, sieht „veröffentlicht" – und auf der',
           '    Website ändert sich nichts. Entweder ausgeben oder das Feld entfernen.',
-        ].join(String.fromCharCode(10)),
+        ].join('\n'),
       );
     }
   }

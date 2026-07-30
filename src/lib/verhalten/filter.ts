@@ -184,15 +184,6 @@ export function filterStarten(): void {
 
     function sortieren(wert: string) {
       /* „EMPFOHLEN" MUSS DIE AUSGANGSREIHENFOLGE WIEDERHERSTELLEN.
-         Hier stand `if (!wert) return;` – der Knopf tat also NICHTS. Wer erst
-         nach Preis sortierte und dann zurück auf „Empfohlen" ging, blieb auf
-         der Preisreihenfolge sitzen.
-
-         Warum das keine Prüfung gemerkt hat: Die Bedien-Prüfung klickt und
-         schaut, ob sich etwas ändert. Ein Klick, der nichts ändern SOLL, ist
-         von einem, der nichts ändern KANN, nicht zu unterscheiden. Erst der
-         Vergleich mit der Ausgangsreihenfolge trennt die beiden Fälle. */
-      /* „EMPFOHLEN" MUSS DIE AUSGANGSREIHENFOLGE WIEDERHERSTELLEN.
          Hier stand `if (!wert) return;` – der Eintrag tat also NICHTS. Wer erst
          nach Preis sortierte und dann zurück auf „Empfohlen" ging, blieb auf
          der Preisreihenfolge sitzen. Und „Empfohlen" ist die einzige

@@ -97,6 +97,30 @@ const ICON: Record<string, string> = {
     color: inherit;
     line-height: 0;
   }
+  /* 20 × 20 px waren diese Ziele – am Handy trifft man daneben, und zwar in
+     der Fußzeile, wo sie auf JEDER Seite stehen. Gefunden hat es erst die
+     Tippflächen-Messung, nachdem sie scrollen gelernt hat; vorher sah sie nur
+     den ersten Bildschirm und meldete grün.
+
+     HIER GILT DER SONST ÜBLICHE TRICK NICHT. Der Motor vergrößert Tippziele
+     normalerweise mit einem unsichtbaren Pseudo-Element, damit das Layout
+     stehen bleibt. Bei einer REIHE kleiner Zeichen geht das nicht auf: Die
+     Symbole stehen enger beieinander als 44 px, die vergrößerten Flächen
+     überlappen sich, und wer auf das eine tippt, landet auf dem nächsten.
+     Nachgemessen – das Tor meldete den Fund unverändert weiter, obwohl die
+     Fläche da war.
+
+     Also werden die Ziele wirklich groß. Das kostet in der Fußzeile etwas
+     Höhe; ein Symbol, das den falschen Kanal öffnet, kostet mehr. */
+  @media (max-width: 640px) {
+    .social-links__link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
   .social-links__link svg {
     width: 1.5em;
     height: 1.5em;

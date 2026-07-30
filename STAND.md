@@ -79,21 +79,21 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       mit) gar nicht rendern. Ihn nachzubauen hieße, eine zweite Fassung von
       Claude Design zu pflegen. Und ein Pixelvergleich erstickte ohnehin am
       Rauschen: Das Design zeigt Musterinhalte, die Seite echte.
-- [ ] **Das sechste Tor rauscht noch.** Im Testklon meldet es neben den echten
+- [ ] **Das sechste Tor rauscht noch.** *(kein Blocker)* Im Testklon meldet es neben den echten
       Befunden rund acht, die keine sind – meist „ein Block zu viel", weil die
       Regel zum Erkennen eines reinen Rahmens (mehrere Kinder, keine eigene
       Polsterung) auf beiden Seiten leicht verschieden greift. Es ist damit ein
       Hinweisgeber, kein Blocker: Es endet nur bei „Block fehlt/erfunden" rot.
       Nachschärfen, sobald ein zweites Design vorliegt – an einem einzigen
       Design lässt sich die Regel nicht sauber eichen.
-- [ ] **Kein Ort für bewusste Design-Abweichungen im Klon.** Die Regel sagt
+- [ ] **Kein Ort für bewusste Design-Abweichungen im Klon.** *(kein Blocker)* Die Regel sagt
       jetzt, dass Mindest-Schriftgröße und Kontrast das Design schlagen und die
       Abweichung in den Bericht gehört. Ein maschinenlesbarer Ort dafür
       (`design-abweichungen.md`) fehlt – im Kundenprojekt landete die Ausnahme
       in einer fest einprogrammierten Liste im Prüfskript, mit Kundenfarbwerten
       darin. Das ist der falsche Ort: Ein Klon bekommt keine Template-Updates,
       und ins Template dürfen keine Kundenwerte.
-- [ ] **`npm run sicht` kann einmalig zu Unrecht rot werden.** Beobachtet am
+- [ ] **`npm run sicht` kann einmalig zu Unrecht rot werden.** *(kein Blocker)* Beobachtet am
       2026-07-28: ein roter Lauf, danach sechs grüne ohne jede Änderung. Ursache
       ist mit hoher Wahrscheinlichkeit die LCP-Messung (`scripts/sicht.mjs`,
       Zeile 89 ff.): Welches Element als „größtes sichtbares" gewinnt, hängt am
@@ -102,7 +102,7 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       behoben. **Regel bis dahin: Ein einzelner roter Lauf der Sichtprüfung
       wird wiederholt, bevor daran etwas geändert wird.** Bleibt er rot, ist er
       echt.
-- [ ] **Browser-Untergrenze nie auf einem ECHTEN alten Gerät nachgestellt.**
+- [ ] **Browser-Untergrenze nie auf einem ECHTEN alten Gerät nachgestellt.** *(kein Blocker)*
       Die Ursachen erklären das gemeldete Symptom vollständig, und `npm run
       browser` sowie `npm run altgeraet` decken CSS und Aussehen ab. Ob
       *restlos*, weiß man erst nach einer Sitzung auf einem echten Gerät mit
@@ -113,13 +113,13 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
       nach Art. 28 DSGVO. Noch nirgends vorgesehen.
-- [ ] **Der Redaktions-Anschluss war noch nie an einem echten Dienst.** Bewiesen
+- [ ] **Der Redaktions-Anschluss war noch nie an einem echten Dienst.** *(kein Blocker)* Bewiesen
       ist er gegen einen selbst gestellten Server, der die Schnittstelle
       nachbildet – 21 Prüfungen plus die ganze Kette bis aufs gebaute HTML. Was
       das nicht beweist: dass die Abfragesprache beim echten Anbieter genau so
       antwortet. Beim ersten echten Einsatz mitschreiben und das Ergebnis
       hierher. (Gleiche Ehrlichkeit wie bei der Browser-Untergrenze.)
-- [ ] **Zwei Bedienelemente kleben auf der Referenzseite aneinander**
+- [ ] **Zwei Bedienelemente kleben auf der Referenzseite aneinander** *(kein Blocker)*
       („MerkenMeine Merkliste ansehen", Detailseite des Katalogs, in allen drei
       Breiten). Kein Fehler in der Mechanik – die Referenzseite ist bewusst
       fast ungestaltet, weil das Design vom Kunden kommt. Trotzdem sieht ein
@@ -223,6 +223,61 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-07-31** – **Gegenprüfung des Rückflusses Teil 7 – und die Ernte.** Die
+  Änderungen des Vortags wurden von 103 Prüfläufen gegengelesen, jeder Fund von
+  einem zweiten Lauf mit dem Auftrag, ihn zu widerlegen. Ergebnis: **74 bestätigte
+  Funde, davon 24 schwere.** Alle behoben, jeder mit Gegenprobe.
+  **Der schlimmste war selbstgemacht.** Die neue Tippflächen-Regel setzte
+  `position: relative` auf den Sprung-Link – der ist aber `position: absolute;
+  top: -4rem` und wartet damit über dem sichtbaren Bereich. Als `relative` fiel
+  er in den Textfluss: auf JEDER Seite jedes Klons unter 640 px eine um ~41 px
+  nach unten gerutschte Kopfleiste und ein angeschnittener dunkler Kasten
+  darüber. Kein Tor meldet so etwas – es ist kein Überlauf und kein Skriptfehler.
+  Lehre, die jetzt im Kopf der Regel steht: **In eine Regel, die `position`
+  setzt, gehören nur Elemente, die im normalen Fluss stehen.**
+  **Drei der neuen Messungen waren selbst kaputt** – und das ist der teurere
+  Befund, weil eine falsche Messung schlimmer ist als keine: Die
+  Tippflächen-Messung scrollte nie (sie sah nur den ersten Bildschirm und meldete
+  darunter grün), sie übersprang jedes `<a>` in einem `<li>` und damit die
+  komplette Navigation, und sie prüfte nur senkrecht nach – ein quadratisches
+  Symbol konnte sie nie freisprechen. Die Abschneide-Messung kannte
+  `text-overflow: ellipsis` nicht und hätte jede Katalogkarte mit
+  Auslassungspunkten rot gemeldet.
+  **Repariert fand sie sofort echte Fehler**, die vorher unter dem Bildschirmrand
+  lagen: die Social-Icons der Fußzeile mit 20 × 20 px (auf jeder Seite) und die
+  Brotkrumen der Detailseite mit 31 × 20 px. Nebenbei belegt, dass der sonst
+  übliche Trick mit dem unsichtbaren Pseudo-Element bei einer REIHE kleiner
+  Zeichen nicht trägt: Die vergrößerten Flächen überlappen sich, und der Fund
+  blieb trotz Fläche bestehen. Dort werden die Ziele wirklich groß.
+  **Drei Behauptungen waren falsch und stehen jetzt als das da, was sie sind.**
+  „§ 9b KSchG" – die Bestimmung ist zum 31.12.2021 entfallen; es steht jetzt gar
+  keine Fundstelle mehr da, nach derselben Regel wie bei Menüpunkten fremder
+  Oberflächen. „Alle Katalog-Schematypen sind Unterklassen von `Product`" – für
+  die Mehrheit falsch, die Immobilien- und Zimmertypen stammen von `Place` ab und
+  kennen `offers` gar nicht; wer dem Satz glaubte, wartete vergeblich auf den
+  Preis im Google-Treffer. Die Vercel-„Sensitive"-Falle stand als bewiesene
+  Ursache da, obwohl die Dokumentation sie nicht stützt – jetzt steht die
+  Beobachtung als Beobachtung und davor die wahrscheinlicheren Ursachen
+  (allen voran: nach dem Eintragen nicht neu deployt).
+  **`novalidate` wurde wahr gemacht statt weggeschrieben.** Der Kommentar sagte,
+  das Skript setze es – im Markup stand es unbedingt. Damit hatten Besucher ohne
+  Skript gar keine Feldprüfung mehr. Jetzt setzt es wirklich das Skript, und zwar
+  erst, wenn es die Prüfung übernimmt.
+  **Und der eigentliche Bestandsschutz fehlte.** Die Plausibilitätsschwelle nannte
+  „3 statt 4" als Beispiel und fing genau das nicht (3 ist mehr als die Hälfte).
+  Eine Schwelle kann das auch nicht: Ein einzelner Abgang ist von einem echten
+  Verkauf nicht zu unterscheiden. Stattdessen wird ein im Dienst verschwundener
+  Eintrag jetzt auf „nicht verfügbar" übertragen statt gelöscht – das ist
+  „Verkauft ist nicht gelöscht" (CLAUDE.md 6a) endlich als Mechanik.
+  Dazu aufgeräumt: `npm run studio` entfernt (es doppelte `npm run maske`, dessen
+  Nachprüfung dorthin gewandert ist), der Marker-Zähler steht als
+  `scripts/lib/quelltext.mjs` nur noch an einer Stelle (Vorcheck und Prüf-Tor
+  meldeten vorher verschiedene Zahlen für dieselbe Datei), toter Code und ein
+  doppelter 24-Zeilen-Kommentar raus, zwei Typ-Umgehungen weg – eine davon hatte
+  für die § 14-UGB-Pflichtangaben genau die Prüfung abgeschaltet, deren Fehlen
+  die Lehre des Vortags war.
+  **Alle sechs Tore grün, Typprüfung 0 Fehler.**
 
 - **2026-07-30** – **Rückfluss Teil 7: der Live-Gang selbst.** Abschnitt 000 des
   Berichts plus zwei alte Muss-Punkte. Alles davon ist beim UMSCHALTEN einer

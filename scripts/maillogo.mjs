@@ -20,7 +20,7 @@
  * Text. Das ist die sichere Wahl: Die meisten Programme blockieren Bilder beim
  * ersten Öffnen ohnehin.
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, mkdirSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -29,12 +29,37 @@ const WURZEL = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const ANZEIGE_BREITE = 180; // wie in kontakt-mail.ts
 const ZIEL = join(WURZEL, 'public', 'logo-mail.png');
 
-/** Den Logo-Namen aus der Config lesen – ohne TypeScript zu laden. */
+/**
+ * Den Logo-Namen aus der Config lesen – ohne TypeScript zu laden.
+ *
+ * NUR AUS DEM `betrieb`-BLOCK. Hier stand „nimm den letzten Treffer" – und das
+ * war eine Falle, die dieses Skript sich selbst gestellt hat: Sobald jemand der
+ * Anweisung ganz unten folgt und `bestaetigung: { logo: 'logo-mail.png' }`
+ * einträgt, steht dieser Eintrag WEITER UNTEN in der Datei. Der nächste Lauf
+ * suchte dann sein eigenes Erzeugnis in fotos/, fand es nicht und brach ab.
+ * Also die Stelle festnageln, an der das Logo des Betriebs wirklich steht.
+ */
 function logoName() {
   const config = readFileSync(join(WURZEL, 'content.config.ts'), 'utf-8');
-  // Der letzte Treffer ist der aus dem Kundenblock, nicht der aus dem Typ-Kommentar.
-  const treffer = [...config.matchAll(/^\s*logo:\s*'([^']+)'/gm)];
-  return treffer.length ? treffer[treffer.length - 1][1] : undefined;
+  const block = config.match(/^ {2}betrieb: \{\n([\s\S]*?)^ {2}\},/m);
+  if (!block) return undefined;
+  return block[1].match(/^ {4}logo:\s*'([^']+)'/m)?.[1];
+}
+
+/**
+ * Die Schriftfarbe für das Logo – dieselbe, die die Website auf der Markenfarbe
+ * benutzt. Sie wird NICHT hier nachgerechnet, sondern aus dem fertigen Build
+ * gelesen: `--farbe-auf-primaer` entsteht in src/lib/theme.ts, und zwei Stellen,
+ * die dasselbe ausrechnen, laufen irgendwann auseinander.
+ *
+ * Ohne Build gibt es keinen Wert. Dann bleibt Weiß – zusammen mit einem
+ * deutlichen Hinweis, denn bei einem hellen Markenton (Sonnengelb, Beige) ist
+ * Weiß auf Weiß-nah die falsche Wahl und das Logo verschwindet.
+ */
+function farbeAusBuild() {
+  const start = join(WURZEL, 'dist', 'index.html');
+  if (!existsSync(start)) return undefined;
+  return readFileSync(start, 'utf-8').match(/--farbe-auf-primaer:\s*(#[0-9a-fA-F]{3,8})/)?.[1];
 }
 
 /** Die Datei in fotos/ finden – auch in Unterordnern, wie `bild()` es tut. */
@@ -76,9 +101,10 @@ const istSvg = extname(quelle).toLowerCase() === '.svg';
    in der Mail steht das Logo auf der Markenfarbe. Deshalb wird die Farbe hier
    ausdrücklich gesetzt, bevor gerendert wird. Ohne diesen Schritt hat man ein
    schwarzes Logo auf schwarzem Grund und sieht im Bild gar nichts. */
+const ausBuild = farbeAusBuild();
 const farbe = process.argv.includes('--farbe')
   ? process.argv[process.argv.indexOf('--farbe') + 1]
-  : '#ffffff';
+  : (ausBuild ?? '#ffffff');
 const eingabe = istSvg
   ? Buffer.from(roh.toString('utf-8').replace(/currentColor/g, farbe))
   : roh;
@@ -89,14 +115,22 @@ const info = await sharp(eingabe, { density: 300 })
   .png({ compressionLevel: 9 })
   .toFile(ZIEL);
 
-writeFileSync(ZIEL.replace(/\.png$/, '.txt'), `Erzeugt aus ${name} mit npm run maillogo. Nicht von Hand ändern.\n`);
-
+/* KEIN BEGLEIT-TEXTFILE MEHR NEBEN DEM PNG: Alles in public/ wird mit der
+   Website ausgeliefert. Eine Notiz für Entwickler hat auf dem Server des Kunden
+   nichts verloren – woher das Bild stammt, sagt diese Ausgabe hier. */
 console.log(
   `✓ public/logo-mail.png – ${info.width}×${info.height} px (${Math.round(info.size / 1024)} KB)\n` +
     `  Quelle: ${name}${istSvg ? `, currentColor → ${farbe}` : ''}\n` +
-    `  Angezeigt wird es mit ${ANZEIGE_BREITE} px Breite, also in doppelter Auflösung.\n\n` +
-    `  Jetzt in content.config.ts eintragen:\n` +
+    `  Angezeigt wird es mit ${ANZEIGE_BREITE} px Breite, also in doppelter Auflösung.\n` +
+    (istSvg && !process.argv.includes('--farbe')
+      ? ausBuild
+        ? `  Die Farbe stammt aus dem Build (--farbe-auf-primaer) – wie auf der Website.\n`
+        : `  ! Es gibt noch keinen Build, deshalb Weiß geraten. Ist die Markenfarbe HELL,\n` +
+          `    ist das Logo damit unsichtbar. Einmal \`npm run build\` und dieses Skript\n` +
+          `    erneut – dann nimmt es die Farbe, die auch die Website benutzt.\n`
+      : '') +
+    `\n  Jetzt in content.config.ts eintragen:\n` +
     `      bestaetigung: { logo: 'logo-mail.png' },\n\n` +
-    `  Steht das Logo in der Mail auf einer HELLEN Fläche:\n` +
+    `  Eigene Farbe erzwingen:\n` +
     `      npm run maillogo -- --farbe "#0b0c0d"`,
 );

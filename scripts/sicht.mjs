@@ -167,7 +167,7 @@ for (const seite of seiten) {
       return { breite: doc.scrollWidth, sichtbar: doc.clientWidth, schuldige };
     });
 
-    /* 1c) ABGESCHNITTENER TEXT – der blinde Fleck der Überlauf-Messung.
+    /* 1b) ABGESCHNITTENER TEXT – der blinde Fleck der Überlauf-Messung.
        Eine Karte mit `overflow: hidden` lässt Text nicht überlaufen, sondern
        SCHNEIDET ihn ab. Für die Messung oben ist das unsichtbar: Das Dokument
        scrollt nicht seitlich, also ist alles in Ordnung.
@@ -183,6 +183,20 @@ for (const seite of seiten) {
         if (text.length < 4) continue;
         const s = getComputedStyle(el);
         if (s.display === 'none' || s.visibility === 'hidden') continue;
+        /* AUSLASSUNGSPUNKTE SIND KEIN FEHLER, SONDERN EINE ENTSCHEIDUNG.
+           `text-overflow: ellipsis` kürzt SICHTBAR – mit „…" am Ende. Der
+           Besucher sieht, dass da mehr steht; genau dafür gibt es die
+           Eigenschaft, und praktisch jede Katalogkarte benutzt sie.
+           Ohne diese Zeile meldete die Messung jede solche Karte als harten
+           Fehler und färbte das Tor rot – also genau die Sorte Fehlalarm, die
+           einem das Hinsehen abgewöhnt. Gemeint ist nur das STILLE Kappen. */
+        if (s.textOverflow === 'ellipsis') continue;
+        /* NUR ELEMENTE MIT EIGENER BOX. Bei einem reinen Inline-Element
+           (`<span>`, `<a>` im Text) sind scrollWidth und clientWidth immer 0 –
+           die Prüfung unten wäre dort nicht etwa streng, sondern WIRKUNGSLOS,
+           und das ohne jede Meldung. Lieber ehrlich überspringen: Gekappt wird
+           ohnehin im Kasten drumherum, und der hat eine Box. */
+        if (s.display === 'inline') continue;
         const r = el.getBoundingClientRect();
         if (r.width < 8 || r.height < 8) continue;
         // Mehrzeilig? Dann ist Beschneiden gewollt.
@@ -205,52 +219,103 @@ for (const seite of seiten) {
       return funde;
     });
 
-    /* 1d) TIPPFLÄCHEN – 44 x 44 px ist die empfohlene Fingerfläche.
+    /* 1c) TIPPFLÄCHEN – 44 x 44 px ist die empfohlene Fingerfläche.
        Nur am Handy gemessen: Am Zeigegerät ist ein 20-px-Ziel kein Problem.
        Der schlimmste Fund einer echten Abnahme war ein Schieberegler mit 16 px
-       Höhe – und das ist eine ZIEHbewegung, nicht ein Tippen. */
-    const zuKlein = breite > 500 ? [] : await page.evaluate(() => {
+       Höhe – und das ist eine ZIEHbewegung, nicht ein Tippen.
+
+       DIE MESSUNG SCROLLT, UND ZWAR ZWINGEND: `elementFromPoint` fragt den
+       Browser, was an einer Bildschirmstelle wirklich liegt – die Frage geht
+       also nur fürs SICHTFENSTER. Ohne Scrollen wurde deshalb nur der erste
+       Bildschirm geprüft und alles darunter stillschweigend übersprungen.
+       Auf der Referenzseite des Motors betraf das die Fußzeile und die
+       Formularfelder: Die Messung meldete grün, weil sie gar nicht hingesehen
+       hatte. Das ist der schlimmste Fehlertyp – ein Tor, das nur so tut. */
+    const zuKlein = breite > 500 ? [] : await page.evaluate(async () => {
       const funde = [];
       const gesehen = new Set();
-      for (const el of document.querySelectorAll('a,button,input,select,textarea,summary,[role="button"]')) {
-        const s = getComputedStyle(el);
-        if (s.display === 'none' || s.visibility === 'hidden') continue;
-        if (el.type === 'hidden') continue;
-        const r = el.getBoundingClientRect();
-        if (r.width === 0 || r.height === 0) continue;
-        /* Ausserhalb des Sichtfensters weggeparkte Elemente nicht messen.
-           Der Sprung-Link liegt bis zum Tastaturfokus bei -9999px – dort kann
-           ihn niemand treffen, und elementFromPoint findet ihn nie. */
-        if (r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
-        // Ein Link MITTEN IM FLIESSTEXT ist kein Bedienelement im Sinne der Regel.
-        const imText = el.tagName === 'A' && el.parentElement
-          && /^(P|LI|TD|SPAN|EM|STRONG|DD)$/.test(el.parentElement.tagName);
-        if (imText) continue;
-        if (r.width >= 44 && r.height >= 44) continue;
-        /* Ein unsichtbares Pseudo-Element vergrößert die TREFFERFLÄCHE, ohne
-           das Layout zu verschieben – genau die vorgeschriebene Technik. Es
-           taucht aber in getBoundingClientRect() nicht auf. Also fragen, was
-           der Browser an den Rändern einer 44er-Fläche wirklich trifft. */
-        const mx = r.left + r.width / 2;
-        const my = r.top + r.height / 2;
-        const trifft = (y) => {
-          /* Ins Fenster klemmen: Ein Element ganz oben oder ganz unten hat
-             seinen Prüfpunkt sonst ausserhalb, und elementFromPoint liefert
-             null – ein Fehlalarm, der nichts mit der Tippfläche zu tun hat. */
-          const g = document.elementFromPoint(mx, Math.min(Math.max(y, 1), innerHeight - 1));
-          return !!g && (g === el || el.contains(g) || g.contains(el));
-        };
-        if (r.height < 44 && trifft(my - 21) && trifft(my + 21)) continue;
-        const kennung = `${el.tagName}${el.className ? '.' + String(el.className).split(' ')[0] : ''}`;
-        if (gesehen.has(kennung)) continue;
-        gesehen.add(kennung);
-        funde.push(`${kennung}: ${Math.round(r.width)}×${Math.round(r.height)} px`);
-        if (funde.length >= 6) break;
+      const naechsteBilder = () =>
+        new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig)));
+      const anfangs = window.scrollY;
+      const gesamt = Math.max(document.documentElement.scrollHeight, window.innerHeight);
+      // Deckel gegen sehr lange Seiten – 20 Bildschirme sind reichlich.
+      const schritte = Math.min(Math.ceil(gesamt / window.innerHeight), 20);
+
+      for (let schritt = 0; schritt < schritte && funde.length < 6; schritt++) {
+        window.scrollTo(0, schritt * window.innerHeight);
+        await naechsteBilder();
+
+        for (const el of document.querySelectorAll('a,button,input,select,textarea,summary,[role="button"]')) {
+          const s = getComputedStyle(el);
+          if (s.display === 'none' || s.visibility === 'hidden') continue;
+          if (el.type === 'hidden') continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) continue;
+          /* Was gerade nicht im Sichtfenster liegt, wird in diesem Durchgang
+             nicht gemessen – der nächste Schritt holt es. Weggeparktes (der
+             Sprung-Link wartet über dem Seitenrand) fällt dabei immer heraus:
+             Dort kann niemand hintippen, und elementFromPoint findet es nie. */
+          if (r.bottom < 0 || r.top > window.innerHeight || r.right < 0 || r.left > window.innerWidth) continue;
+          /* Ein Link MITTEN IM FLIESSTEXT ist kein Bedienelement im Sinne der
+             Regel – ein Link, der allein in seinem <li> steht, sehr wohl.
+
+             HIER STAND NUR DER ELTERN-TAGNAME, und weil `LI` in der Liste war,
+             hat die Messung die KOMPLETTE NAVIGATION jeder Seite übersprungen –
+             also ausgerechnet die Bedienelemente, die jeder Besucher zuerst
+             trifft. Entscheidend ist nicht das Eltern-Element, sondern ob
+             wirklich Text darum herum steht. */
+          const eigen = (el.textContent || '').trim();
+          const drumherum = (el.parentElement ? el.parentElement.textContent || '' : '').trim();
+          const imText =
+            el.tagName === 'A' &&
+            !!el.parentElement &&
+            /^(P|LI|TD|SPAN|EM|STRONG|DD)$/.test(el.parentElement.tagName) &&
+            drumherum.length > eigen.length + 3;
+          if (imText) continue;
+          if (r.width >= 44 && r.height >= 44) continue;
+          /* Ein unsichtbares Pseudo-Element vergrößert die TREFFERFLÄCHE, ohne
+             das Layout zu verschieben – genau die vorgeschriebene Technik. Es
+             taucht aber in getBoundingClientRect() nicht auf. Also fragen, was
+             der Browser an den Rändern einer 44er-Fläche wirklich trifft. */
+          const mx = r.left + r.width / 2;
+          const my = r.top + r.height / 2;
+          const trifft = (x, y) => {
+            /* Ins Fenster klemmen: Ein Element ganz oben, unten oder am Rand
+               hat seinen Prüfpunkt sonst ausserhalb, und elementFromPoint
+               liefert null – ein Fehlalarm, der mit der Tippfläche nichts zu
+               tun hat. */
+            const g = document.elementFromPoint(
+              Math.min(Math.max(x, 1), window.innerWidth - 1),
+              Math.min(Math.max(y, 1), window.innerHeight - 1),
+            );
+            return !!g && (g === el || el.contains(g) || g.contains(el));
+          };
+          /* IN BEIDE RICHTUNGEN PRÜFEN. Hier wurde nur oben und unten geprüft –
+             das genügt für einen breiten, flachen Link, aber nicht für ein
+             quadratisches Zeichen. Die Social-Icons der Fußzeile (20 × 20 px)
+             bekamen ihre 44er-Fläche und wurden trotzdem weiter gemeldet, weil
+             die Messung nie nach links und rechts gesehen hat. Geprüft werden
+             die vier Kanten einer 44er-Fläche um die Mitte des Elements. */
+          const nurHoch = r.width >= 44;
+          const nurBreit = r.height >= 44;
+          const senkrecht = nurBreit || (trifft(mx, my - 21) && trifft(mx, my + 21));
+          const waagrecht = nurHoch || (trifft(mx - 21, my) && trifft(mx + 21, my));
+          if (senkrecht && waagrecht) continue;
+          const kennung = `${el.tagName}${el.className ? '.' + String(el.className).split(' ')[0] : ''}`;
+          if (gesehen.has(kennung)) continue;
+          gesehen.add(kennung);
+          funde.push(`${kennung}: ${Math.round(r.width)}×${Math.round(r.height)} px`);
+          if (funde.length >= 6) break;
+        }
       }
+
+      // Zurück an den Anfang: Die Bildschirmfotos danach sollen oben beginnen.
+      window.scrollTo(0, anfangs);
+      await naechsteBilder();
       return funde;
     });
 
-    // 1b) Matsch-Bilder: ein Bild, das breiter angezeigt wird, als seine
+    // 1d) Matsch-Bilder: ein Bild, das breiter angezeigt wird, als seine
     // Datei Pixel hat, wird vom Browser hochgerechnet und sieht verpixelt
     // aus. Klassische Ursache: <Image widths={[…1000]}> unter einem
     // Vollbreiten-Band. Fällt sonst erst dem Kunden am großen Monitor auf.
@@ -270,7 +335,7 @@ for (const seite of seiten) {
         });
     });
 
-    /* 1c) KONTRAST UND SCHRIFTGRÖSSE AM ECHTEN TEXT.
+    /* 1e) KONTRAST UND SCHRIFTGRÖSSE AM ECHTEN TEXT.
        Das Prüf-Tor rechnet den Kontrast nur an zwei Farbwerten aus der Config
        aus (Text auf Hintergrund) – was tatsächlich auf der Seite steht, sah
        bisher niemand. Genau dort entstehen die Verstöße: gedämpfte Farben auf

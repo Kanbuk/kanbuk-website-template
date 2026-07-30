@@ -63,6 +63,22 @@ const gruppen = istAssistent
     }))
   : [{ titel: '', nr: 1, felder: formular.felder }];
 
+/* `pattern` IGNORIERT DER BROWSER bei number/date/time – dort prüft er nach
+   eigenen Regeln. Ein Muster, das dort steht, tut also nichts, und zwar ohne
+   jede Meldung: Der Betrieb glaubt, das Format sei abgesichert, und bekommt
+   Anfragen in jeder erdenklichen Schreibweise. Lieber beim Bauen anhalten. */
+const musterFalsch = formular.felder.find(
+  (f) => f.muster && (f.typ === 'zahl' || f.typ === 'datum' || f.typ === 'zeit'),
+);
+if (musterFalsch) {
+  throw new Error(
+    `Formular "${formular.id}", Feld "${musterFalsch.name}": \`muster\` wirkt bei typ '${musterFalsch.typ}' nicht – ` +
+      'der Browser sieht es dort gar nicht an. Entweder `muster` entfernen, oder das Feld auf ' +
+      "typ 'text' stellen (dann greift das Muster, aber die Eingabehilfe des Geräts fällt weg). " +
+      'Bei Zahlen führen `min`/`max` zum Ziel.',
+  );
+}
+
 // Ein leerer Schritt wäre eine Sackgasse – lieber beim Bauen auffallen.
 const leer = gruppen.find((g) => g.felder.length === 0);
 if (leer) {
@@ -84,7 +100,6 @@ if (leer) {
     class:list={['formular', klasse, istAssistent && 'formular--assistent', istDemo && 'formular--vorschau']}
     method="post"
     action={istDemo ? undefined : '/api/contact'}
-    novalidate
     data-formular={istDemo ? undefined : ''}
     data-formular-vorschau={istDemo ? '' : undefined}
     data-formular-id={formular.id}
@@ -195,7 +210,7 @@ if (leer) {
                 required={f.pflicht}
                 autocomplete={f.autocomplete}
                 inputmode={f.tastatur === 'dezimal' ? 'decimal' : f.tastatur === 'tel' ? 'tel' : undefined}
-                pattern={f.muster}
+                pattern={f.typ === 'zahl' || f.typ === 'datum' || f.typ === 'zeit' ? undefined : f.muster}
                 placeholder={f.platzhalter}
                 min={f.typ === 'datum' && f.minDatum === 'heute' ? new Date().toISOString().slice(0, 10) : (f.minDatum ?? f.min)}
                 max={f.max}

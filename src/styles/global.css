@@ -384,6 +384,22 @@ a {
  *  `position: relative` ist Pflicht am Element selbst – sonst hängt sich das
  *  Pseudo-Element an den nächsten positionierten Vorfahren und deckt die
  *  halbe Seite ab.
+ *
+ *  ==> DESHALB GEHÖREN HIER NUR ELEMENTE HEREIN, DIE IM NORMALEN TEXTFLUSS
+ *      STEHEN. Ein Element, das schon `position: absolute` oder `fixed` hat,
+ *      wird von dieser Regel in den Fluss ZURÜCKGEHOLT – gleiche Spezifität,
+ *      aber später in der Datei, also gewinnt sie.
+ *
+ *      GEMESSEN, weil genau das hier passiert ist: `.skip-link` stand in
+ *      dieser Liste. Er ist `position: absolute; top: -4rem` und wartet damit
+ *      über dem sichtbaren Bereich auf die Tabulatortaste. Als `relative`
+ *      bezieht sich `top: -4rem` plötzlich auf seinen Platz IM Fluss: Die
+ *      Kopfleiste rutschte auf JEDER Seite jedes Klons um ~41 px nach unten,
+ *      und ein angeschnittener dunkler Kasten stand über dem Seitenrand.
+ *      Kein Tor meldet das – es ist kein Überlauf und kein Skriptfehler.
+ *
+ *      Der Sprung-Link ist ohnehin kein Tippziel: Er ist bis zum
+ *      Tastatur-Fokus unsichtbar, und wer ihn benutzt, tippt nicht.
  * ========================================================================= */
 /* Bewusst OHNE `pointer: coarse`: Ein schmales Fenster IST in der Praxis ein
    Handy, und auf einem schmalen Desktop-Fenster kostet die größere Fläche
@@ -391,10 +407,8 @@ a {
    mit der Bedingung hätte die Regel in keiner einzigen Messung gegriffen und
    wäre nie aufgefallen, wenn sie kaputtgeht. */
 @media (max-width: 640px) {
-  .skip-link,
   .fehler__link,
-  .signatur,
-  .danke__zurueck {
+  .signatur {
     /* `inline-block` ist Pflicht: An einem reinen Inline-Element hat
        `position: relative` keinen zuverlässigen Bezugsrahmen, und das
        Pseudo-Element hängt sich an den nächsten positionierten Vorfahren. */
@@ -407,10 +421,8 @@ a {
   .formular__absenden {
     min-height: 44px;
   }
-  .skip-link::after,
   .fehler__link::after,
-  .signatur::after,
-  .danke__zurueck::after {
+  .signatur::after {
     content: '';
     position: absolute;
     left: 0;

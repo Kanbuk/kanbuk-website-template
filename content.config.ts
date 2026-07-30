@@ -320,6 +320,12 @@ export interface FormularFeld {
    *
    * Nur setzen, wo das Format wirklich unveränderlich ist (z. B. eine
    * Postleitzahl). Im Zweifel weglassen und die Angabe im Text erklären.
+   *
+   * WIRKT NUR BEI TEXTARTIGEN FELDERN (text, tel, email, url, search). Bei
+   * `zahl`, `datum` und `zeit` sieht der Browser das Muster gar nicht an –
+   * dort prüft er nach seinen eigenen Regeln. Der Build hält deshalb an, wenn
+   * hier eines steht, statt es still verschwinden zu lassen: Wer ein Muster
+   * einträgt, verlässt sich darauf.
    */
   muster?: string;
   /** Nur für typ 'zahl'. */
@@ -448,10 +454,8 @@ export interface KatalogEintrag {
   statusText?: string;
 }
 
-/** Wie Google die Detailseiten lesen soll. Bestimmt den JSON-LD-Typ. */
 /**
- * Wie Google die Detailseiten liest. Alle sind Unterklassen von `Product` –
- * deshalb steht das Angebot immer unter `offers`.
+ * Wie Google die Detailseiten liest. Bestimmt den JSON-LD-Typ.
  *
  * WARUM DIE LISTE VOLLSTÄNDIG SEIN MUSS: Ein fehlender Untertyp kostet den
  * größten SEO-Hebel, den ein Katalog überhaupt hat. Am 30.07.2026 an einer
@@ -460,47 +464,67 @@ export interface KatalogEintrag {
  * setzen erzeugte einen Typfehler. Gemerkt hat es nur das Bau-Protokoll des
  * Hosters; lokal war alles grün, weil die Typprüfung nicht lief.
  *
- * Die Liste ist jetzt einmal gegen die Branchen gehalten, die der Motor laut
- * CLAUDE.md bedienen soll. Kommt eine Warengruppe dazu, gehört ihr Untertyp
- * hierher – NICHT ein `as any` an die Aufrufstelle.
+ * HIER STAND „Alle sind Unterklassen von `Product` – deshalb steht das Angebot
+ * immer unter `offers`". Das ist für die MEHRHEIT dieser Typen falsch, und die
+ * Folge ist keine Kleinigkeit: Wer den Satz glaubt, wählt für eine Wohnung
+ * `Apartment` und erwartet den Preis im Google-Treffer. Der kommt dort nie an,
+ * weil `Apartment` von `Place` abstammt und `offers` gar nicht kennt. Man sieht
+ * es der Seite nicht an – sie ist einfach nur nicht im Suchergebnis zu sehen.
+ * Deshalb sind die Typen unten nach genau dieser Frage gruppiert.
+ *
+ * Kommt eine Warengruppe dazu, gehört ihr Untertyp hierher – NICHT ein `as any`
+ * an die Aufrufstelle.
  */
 export type KatalogSchema =
+  // =======================================================================
+  //  MIT PREIS IM SUCHERGEBNIS – diese Typen kennen `offers`.
+  // =======================================================================
   /** Der Rückfall, wenn nichts Genaueres passt. */
   | 'Product'
-  // --- Fahrzeuge ---------------------------------------------------------
-  /** Oberbegriff für alles Fahrbare. */
+  // --- Fahrzeuge (alle von `Product` abgeleitet) --------------------------
+  /** Oberbegriff für alles Fahrbare. Auch die richtige Wahl für Wohnmobil,
+      Anhänger, Boot oder Maschine – schema.org hat dafür keinen eigenen Typ. */
   | 'Vehicle'
   /** PKW – der Untertyp, den Google für Autos wirklich auswertet. */
   | 'Car'
   /** Motorrad, Roller. */
   | 'Motorcycle'
-  /** Wohnmobil, Reisemobil. */
+  /** Moped, Kleinkraftrad, E-Bike mit Motorunterstützung.
+      NICHT für Wohnmobile – dafür `Vehicle`. */
   | 'MotorizedBicycle'
-  // --- Immobilien --------------------------------------------------------
-  /** Wohnung. */
-  | 'Apartment'
-  /** Haus. */
-  | 'House'
-  /** Einfamilienhaus. */
-  | 'SingleFamilyResidence'
-  /** Gewerbefläche, Büro, Lager. */
-  | 'Accommodation'
-  /** Zimmer – Pension, Hotel, Ferienwohnung. */
-  | 'Room'
-  /** Ganze Unterkunft (Ferienhaus, Appartement zur Miete). */
-  | 'Suite'
-  // --- Kurse und Termine -------------------------------------------------
+  // --- Kurse, Termine, Leistungen, Werke ---------------------------------
   /** Kurs, Workshop, Ausbildung. */
   | 'Course'
   /** Einzelner Termin einer Reihe (Yoga-Stunde, Vortrag). */
   | 'Event'
-  // --- Leistungen und Werke ----------------------------------------------
   /** Dienstleistung – Handwerk, Beratung, Behandlung. */
   | 'Service'
   /** Referenz, Projekt, Arbeitsprobe (Tischler, Fotograf, Agentur). */
   | 'CreativeWork'
   /** Software, Vorlagen, digitale Güter. */
-  | 'SoftwareApplication';
+  | 'SoftwareApplication'
+  // =======================================================================
+  //  OHNE PREIS IM SUCHERGEBNIS – diese Typen stammen von `Place` ab und
+  //  kennen `offers` NICHT. Der Motor schreibt das Angebot trotzdem mit
+  //  (es schadet nicht), aber Google zeigt daraus keinen Preis an.
+  //
+  //  Soll der Preis in den Treffer, ist `Product` die richtige Wahl – die
+  //  Objektart steht dann ohnehin in Titel und Beschreibung.
+  // =======================================================================
+  /** Wohnung. */
+  | 'Apartment'
+  /** Haus, auch Ferienhaus. */
+  | 'House'
+  /** Einfamilienhaus. */
+  | 'SingleFamilyResidence'
+  /** Allgemeine Fläche oder Einheit, wenn nichts Genaueres passt –
+      auch Büro, Lager, Besprechungsraum. Oberbegriff der vier darunter. */
+  | 'Accommodation'
+  /** Einzelnes Zimmer – Pension, Hotel. */
+  | 'Room'
+  /** Hotel-Suite: mehrere zusammenhängende Räume.
+      NICHT für eine ganze Ferienwohnung – dafür `Apartment` oder `House`. */
+  | 'Suite';
 
 export interface Katalog {
   /** Basispfad OHNE abschließenden Schrägstrich, z. B. '/fahrzeuge'.

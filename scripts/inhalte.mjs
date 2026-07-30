@@ -241,13 +241,16 @@ async function haupt() {
   const vorhanden = existsSync(ZIEL_DATEI) ? JSON.parse(readFileSync(ZIEL_DATEI, 'utf-8')) : undefined;
   const vorherAnzahl = vorhanden?.katalog?.length ?? 0;
 
-  /* PLAUSIBILITÄTSSCHWELLE BEI DER HÄLFTE, nicht bei null.
-     Nur bei NULL Einträgen anzuhalten genügt nicht: Kommen 3 statt 4 zurück,
-     wird die Datei überschrieben – und die Detailseite des fehlenden Eintrags
-     antwortet ab dem nächsten Bauen mit 404. Genau das, was der Grundsatz
-     „vergeben ist nicht gelöscht" (CLAUDE.md 6a) verhindern soll: Der alte
-     Google-Treffer und jeder geteilte Link laufen ins Leere, und niemand hat
-     etwas gelöscht.
+  /* PLAUSIBILITÄTSSCHWELLE BEI DER HÄLFTE – gegen den TECHNISCHEN Ausfall.
+     Verschwindet auf einen Schlag mehr als die Hälfte des Bestands, ist das
+     kein Verkauf, sondern eine umgestellte Abfrage, ein anderer Datensatz oder
+     ein halb durchgelaufener Abruf. Dann wird gar nichts geschrieben.
+
+     WAS SIE NICHT LEISTET, damit sich niemand darauf verlässt: Den Normalfall
+     „ein Eintrag weniger" fängt sie nicht – 3 von 4 sind mehr als die Hälfte.
+     Das ist auch richtig so, denn ein einzelner Abgang ist von einem echten
+     Verkauf nicht zu unterscheiden. Dagegen hilft keine Schwelle, sondern der
+     Übertrag darunter (Schritt 5b).
 
      Ein echter Bestandsabbau um mehr als die Hälfte in einem Schritt kommt
      vor – dann aber bewusst, mit `--erzwingen`. */
@@ -273,6 +276,41 @@ async function haupt() {
       ].join('\n'),
     );
     return 1;
+  }
+
+  // ---------------------------------------------------------------------------
+  //  5b. VERKAUFT IST NICHT GELÖSCHT (CLAUDE.md 6a)
+  // ---------------------------------------------------------------------------
+  /* Ein Eintrag, der im Dienst verschwindet, wird hier NICHT aus der Datei
+     geworfen, sondern auf „nicht verfügbar" gesetzt. Er fällt damit aus der
+     Liste, seine Detailseite bleibt aber erreichbar.
+
+     WARUM DAS DER EIGENTLICHE SCHUTZ IST: Der Betrieb löscht das verkaufte
+     Auto, weil „weg ist weg" die naheliegende Handlung ist – die Unterscheidung
+     zwischen „aus der Liste nehmen" und „Seite abschalten" kennt er nicht, und
+     er soll sie auch nicht kennen müssen. Ohne diesen Übertrag antwortet ab dem
+     nächsten Bauen jeder alte Google-Treffer und jeder per Nachricht geteilte
+     Link mit 404 – also genau die Besucher, die schon Interesse gezeigt haben.
+     Niemand merkt es, weil auf der Website alles richtig aussieht.
+
+     Mit `--erzwingen` wird wirklich gelöscht – für den Fall, dass ein Eintrag
+     versehentlich angelegt wurde und auch nicht als Archiv bleiben soll. */
+  const jetzt = new Set(eintraege.map((e) => e.id));
+  const uebertragen = [];
+  for (const alt of vorhanden?.katalog ?? []) {
+    if (!alt?.id || jetzt.has(alt.id)) continue;
+    if (erzwingen) continue;
+    uebertragen.push(alt.id);
+    eintraege.push({ ...alt, verfuegbar: false });
+  }
+  if (uebertragen.length) {
+    warne(
+      `${uebertragen.length} Eintrag/Einträge sind im Dienst nicht mehr da und stehen jetzt auf ` +
+        `„nicht verfügbar": ${uebertragen.join(', ')}.\n` +
+        '  Sie erscheinen nicht mehr in der Liste, ihre Seite bleibt aber erreichbar –\n' +
+        '  sonst laufen alte Google-Treffer und geteilte Links ins Leere.\n' +
+        '  Wirklich löschen: npm run inhalte -- --erzwingen',
+    );
   }
 
   // ---------------------------------------------------------------------------

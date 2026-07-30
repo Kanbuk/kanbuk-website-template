@@ -213,20 +213,36 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    `vercel env add`): `RESEND_API_KEY` und `CONTACT_FROM` (Absender auf der
    Unterdomain, z. B. `anfrage@formular.<kundendomain>`).
 
-   > ### ⚠ „Sensitive" NICHT ankreuzen – der teuerste stille Fehler des Live-Gangs
+   > ### ⚠ Wenn die Variable im Dashboard steht und die Funktion sie trotzdem nicht sieht
    >
-   > Eine bei Vercel als **Sensitive** markierte Variable erreicht den **Build**,
-   > aber **nicht die Serverless-Funktion**. Der Formularversand ist danach
-   > vollständig tot, und im Dashboard sieht alles korrekt aus.
+   > **Beobachtet am 30.07.2026 an einer echten Kundenseite** – so und nicht
+   > mehr: Beide Variablen standen im Dashboard, ein Skript las sie beim Bauen
+   > einwandfrei, `/api/contact` sah sie als leer. Neu angelegt **ohne** das
+   > Häkchen „Sensitive" → sofort `HTTP 200`.
    >
-   > Am 30.07.2026 an einer echten Kundenseite belegt: Ein Skript las mit
-   > derselben Variable beim Bauen einwandfrei seine Daten (und hat keinen fest
-   > eingebauten Ersatzwert), während `/api/contact` beide Werte als leer sah.
-   > Ohne die Markierung neu angelegt → sofort `HTTP 200`.
+   > **Die Ursache ist damit NICHT bewiesen, und hier stand sie trotzdem als
+   > Tatsache** („Sensitive erreicht den Build, aber nicht die Funktion").
+   > Die Vercel-Dokumentation sagt das nicht: Dort heißt es nur, dass solche
+   > Variablen im Dashboard verborgen sind und in Produktion und Vorschau zur
+   > Verfügung stehen. Beim Neuanlegen wurde außerdem mehr als nur das Häkchen
+   > verändert – jede der Ursachen unten passt genauso gut zur Beobachtung.
    >
-   > Jeder kreuzt „Sensitive" bei einem Schlüssel aus gutem Grund an. Genau
-   > deshalb steht es hier. Der Motor schreibt bei diesem Fehler eine
-   > Protokollzeile, die den Verdacht ausdrücklich nennt.
+   > **Wenn der Versand still tot ist, in dieser Reihenfolge prüfen:**
+   >
+   > 1. **Wurde nach dem Eintragen neu deployt?** Umgebungsvariablen greifen
+   >    für eine Bereitstellung, die es schon gibt, nicht rückwirkend. Das ist
+   >    die häufigste Ursache und die, die am plausibelsten hinter der
+   >    Beobachtung oben steckt.
+   > 2. **Stimmt die Umgebung?** Eine nur für „Production" hinterlegte Variable
+   >    fehlt in jeder Vorschau-Bereitstellung – und getestet wird meist an
+   >    einer Vorschau.
+   > 3. **Stimmt die Schreibweise exakt**, einschließlich Groß-/Kleinschreibung?
+   > 4. **Erst dann**: einmal ohne „Sensitive" neu anlegen und erneut deployen.
+   >    Hilft es, ist der Zusammenhang für diesen Fall belegt – dann gehört er
+   >    als Motor-Meldung zurück, mit dem Beleg.
+   >
+   > Der Motor schreibt bei diesem Fehler eine Protokollzeile mit genau dieser
+   > Liste – sonst sucht man den Fehler nie an der richtigen Stelle.
 
    **Danach einmal WIRKLICH senden** und die Mail im Postfach ansehen – nicht nur
    den Statuscode. Solange das nicht passiert ist, ist der Versand der einzige

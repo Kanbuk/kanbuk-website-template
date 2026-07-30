@@ -700,12 +700,24 @@ wird. Ein reines Kontaktformular braucht keine AGB.
 ### Gewährleistung und Garantie sind ZWEI Dinge – nie „bzw."
 
 Steht auf einer Seite „Gewährleistung bzw. Garantie", setzt sie beides gleich.
-Das ist irreführend (§ 9b KSchG):
+Das ist irreführend:
 
 - **Gewährleistung** ist die *gesetzliche* Haftung für Mängel, die beim Kauf
   schon vorhanden waren. Gegenüber Verbrauchern ist sie nicht abdingbar.
 - **Garantie** ist eine *freiwillige* Zusage obendrauf – oft von einem Dritten
   (Hersteller, Versicherer), nicht vom Betrieb.
+
+> **Hier stand „(§ 9b KSchG)" – diese Bestimmung gibt es nicht mehr.** Sie ist
+> mit der Gewährleistungsreform zum 31.12.2021 entfallen; seit 1.1.2022 gilt
+> für Verbrauchergeschäfte das Verbrauchergewährleistungsgesetz (VGG).
+>
+> **Und deshalb steht hier jetzt gar keine Paragraphenangabe.** Es gilt
+> dieselbe Regel wie für Menüpunkte fremder Oberflächen (Abschnitt 0): entweder
+> belegt nachgeschlagen oder weggelassen. Eine falsche Fundstelle ist schlimmer
+> als keine – sie sieht geprüft aus, und der Inhaber zitiert sie im Zweifel
+> gegenüber seinem Kunden weiter. Wird eine Angabe wirklich gebraucht, gehört
+> sie im Kundenprojekt nachgeschlagen (RIS, WKO), nicht hier aus dem Gedächtnis
+> ergänzt. Der Unterschied selbst ist unstrittig und trägt den Absatz auch ohne.
 
 **Warum das mehr wiegt als eine Formulierung:** Über das FAQ-Schema erscheint so
 eine Antwort direkt im Google-Treffer – als Zusage des Betriebs, an einer Stelle,

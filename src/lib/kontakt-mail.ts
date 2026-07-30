@@ -34,8 +34,9 @@
 /* Die .js-Endung ist PFLICHT, obwohl dort eine .ts-Datei liegt: Vercel baut
    Server-Dateien als Node-ESM. Ohne Endung stürzt die Funktion beim Start ab –
    und zwar erst im Betrieb, nicht im Build. */
-import type { Formular, FormularFeld } from '../../content.config.js';
+import type { Formular } from '../../content.config.js';
 import { site } from '../../content.config.js';
+import { kontrastText } from './theme.js';
 
 /** Längster Wert, der in die Mail übernommen wird. */
 const MAX_WERT = 600;
@@ -63,7 +64,7 @@ const einstellung = site.bestaetigung ?? {};
 /** Die ausgefüllten Felder in der Reihenfolge der Config, Leeres fällt weg. */
 function ausgefuellt(formular: Formular, daten: Record<string, string>) {
   const zeilen: { label: string; wert: string }[] = [];
-  for (const feld of formular.felder as FormularFeld[]) {
+  for (const feld of formular.felder) {
     const wert = (daten[feld.name] ?? '').trim();
     if (wert) zeilen.push({ label: feld.label, wert: wert.slice(0, MAX_WERT) });
   }
@@ -82,9 +83,15 @@ function ausgefuellt(formular: Formular, daten: Record<string, string>) {
  *
  * Alles steht schon in den Rechtstexten; hier wird es nur zusammengesetzt.
  * Fehlt eine Angabe, fällt sie weg statt leer zu erscheinen.
+ *
+ * OHNE UMWEG ÜBER `Record<string, …>`, UND DAS IST HIER WICHTIG: Ein solcher
+ * Umweg schaltet für genau diese vier Zugriffe die Typprüfung ab. Ein Tippfehler
+ * im Feldnamen fiele dann nirgends auf – die Angabe verschwände einfach aus der
+ * Mail, und niemand vergleicht eine Empfangsbestätigung mit § 14 UGB. Sanktion
+ * ist eine Zwangsstrafe, die läuft, bis es jemand merkt. Also direkt zugreifen.
  */
 function pflichtangaben(): string {
-  const r = site.rechtstexte as unknown as Record<string, string | undefined>;
+  const r = site.rechtstexte;
   return [
     r.rechtsform,
     r.firmenbuchnummer && `Firmenbuch ${r.firmenbuchnummer}`,
@@ -152,6 +159,15 @@ const F = {
   grund: site.design.farben.hintergrund,
   text: site.design.farben.text,
   primaer: site.design.farben.primaer,
+  /* DIE SCHRIFTFARBE AUF DEM FARBIGEN KOPF WIRD GERECHNET, NICHT GERATEN.
+     Hier stand die Hintergrundfarbe der Seite – bei einem dunklen Markenton
+     sieht das zufällig richtig aus. Bei einem HELLEN Markenton (Sonnengelb,
+     Pastell, Beige – nichts Ausgefallenes) stünde dann Weiß auf Hellgelb: Der
+     Betriebsname im Kopf der Bestätigung wäre praktisch unlesbar, und zwar in
+     der einzigen Mail, die ein Interessent vor dem ersten Gespräch bekommt.
+     `kontrastText()` ist dieselbe Rechnung, aus der die Website
+     `--farbe-auf-primaer` bekommt – Mail und Seite sehen damit gleich aus. */
+  aufPrimaer: kontrastText(site.design.farben.primaer),
 };
 
 /* Systemschriften. Webschriften laden in Mailprogrammen nicht – wer sie hier
@@ -179,8 +195,8 @@ export function bestaetigungHtml(formular: Formular, daten: Record<string, strin
   const kopf = einstellung.logo
     ? `<img src="${BASIS}/${String(einstellung.logo).replace(/^\//, '')}" alt="${sicher(b.name)}" width="180" ` +
       `style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:180px;` +
-      `font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.grund};">`
-    : `<span style="font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.grund};">${sicher(b.name)}</span>`;
+      `font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.aufPrimaer};">`
+    : `<span style="font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.aufPrimaer};">${sicher(b.name)}</span>`;
 
   const angabenBlock = angaben.length
     ? `<tr><td style="padding:0 28px 8px;font-family:${SCHRIFT};font-size:14px;color:${F.text};">

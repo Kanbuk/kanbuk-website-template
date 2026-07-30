@@ -228,11 +228,25 @@ if (dienst?.studioOrdner) {
   const ziel = join(dienst.studioOrdner, 'schemaTypes', 'index.js');
   if (!existsSync(join(dienst.studioOrdner, 'schemaTypes'))) {
     console.log(`  ! ${ziel} nicht gefunden – Studio-Ordner stimmt nicht?`);
-  } else {
-    copyFileSync(ZIEL, ziel);
-    console.log(`  -> ${ziel}`);
-    console.log('  Jetzt im Studio-Ordner veröffentlichen, sonst sieht der Betrieb die Änderung nicht.');
+    process.exit(1);
   }
+  copyFileSync(ZIEL, ziel);
+  /* NACH DEM KOPIEREN NACHLESEN. Ein Rezept, dessen Richtigkeit an einem
+     gelungenen Kopiervorgang hängt, geht auseinander – im eigenen Projekt stand
+     im Studio noch der alte, irreführende Hilfetext, während der berichtigte
+     längst im Repo lag. Aufgefallen ist es nur durch einen zufälligen
+     Vergleich vor der Zugangsübergabe. Ein schreibgeschützter oder auf einem
+     Netzlaufwerk liegender Ordner meldet sich sonst mit keinem Wort. */
+  if (readFileSync(ZIEL, 'utf-8') !== readFileSync(ziel, 'utf-8')) {
+    console.error(`  ✗ ${ziel} stimmt nach dem Kopieren nicht überein. Schreibrecht?`);
+    process.exit(1);
+  }
+  console.log(`  -> ${ziel} (Inhalt nachgelesen, identisch)`);
+  console.log('  Jetzt im Studio-Ordner veröffentlichen, sonst sieht der Betrieb die Änderung nicht.');
+  console.log(
+    '  Was hier NICHT prüfbar ist: ob die VERÖFFENTLICHTE Maske dem entspricht,\n' +
+      '  was jetzt im Ordner liegt. Das weiß nur der Dienst – im Zweifel dort nachsehen.',
+  );
 } else if (dienst) {
   console.log(
     '  Hinweis: In redaktion/dienst.json steht kein `studioOrdner`.\n' +

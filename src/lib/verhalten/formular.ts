@@ -27,6 +27,7 @@ export function formulareStarten(): void {
      Vorschau. */
   document.querySelectorAll<HTMLFormElement>('[data-formular-vorschau]').forEach((form) => {
     const status = form.querySelector<HTMLElement>('[data-formular-status]');
+    form.noValidate = true;
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       if (!form.checkValidity()) {
@@ -45,6 +46,25 @@ export function formulareStarten(): void {
     const status = form.querySelector<HTMLElement>('[data-formular-status]');
     const absenden = form.querySelector<HTMLButtonElement>('[data-formular-absenden]');
     if (!status || !absenden) return;
+
+    /* AB HIER übernimmt das Skript die Prüfung – erst JETZT wird die des
+       Browsers abgeschaltet, nicht schon im Markup.
+
+       WARUM ÜBERHAUPT ABSCHALTEN: Beim Assistenten sind die Felder der noch
+       nicht erreichten Schritte `hidden`. Ein Pflichtfeld, das der Browser
+       nicht anzeigen kann, kann er auch nicht anspringen – er bricht das
+       Absenden dann still ab und schreibt nur in die Entwicklerkonsole.
+       Der Besucher klickt auf „Senden" und es passiert nichts.
+
+       WARUM NICHT IM MARKUP: Dort stand es unbedingt – also auch für Besucher
+       OHNE Skript. Die bekamen damit gar keine Feldprüfung mehr: Eine
+       unvollständige Anfrage ging bis zum Server und der Besucher landete auf
+       der Fehlerseite, statt sofort am leeren Feld zu stehen. Ohne Skript ist
+       auch kein Schritt versteckt – der Grund fürs Abschalten fällt dort weg.
+
+       Steigt der Baustein oben aus (kein Status-Feld, kein Absende-Knopf),
+       bleibt die Browser-Prüfung ebenfalls an. Das ist der bessere Rückfall. */
+    form.noValidate = true;
 
     const t = form.dataset;
 

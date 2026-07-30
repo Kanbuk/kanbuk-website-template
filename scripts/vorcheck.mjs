@@ -31,6 +31,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { pruefeDatei } from './lib/integritaet.mjs';
+import { ohneKommentare } from './lib/quelltext.mjs';
 
 const WURZEL = process.cwd();
 const CONFIG = join(WURZEL, 'content.config.ts');
@@ -41,17 +42,12 @@ const PUBLIC = join(WURZEL, 'public');
 //  Text-Werkzeuge
 // ---------------------------------------------------------------------------
 
-/**
- * Entfernt Kommentare, damit Beispiel-Werte aus den JSDoc-Blöcken
- * (z. B. `name: 'Meta-Pixel'` in der Dienst-Doku) nicht als echte
- * Config-Werte durchgehen. „https://…" bleibt erhalten: ein `//` direkt
- * hinter einem Doppelpunkt ist Teil einer URL, kein Kommentar.
- */
-function ohneKommentare(text) {
-  return text
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|[^:'"\\])\/\/.*$/gm, '$1');
-}
+/* Kommentare ausblenden macht `lib/quelltext.mjs` – dieselbe Stelle wie im
+   Prüf-Tor. Hier stand eine eigene, schwächere Fassung aus zwei regulären
+   Ausdrücken: Sie erkannte URLs nur an dem Doppelpunkt davor und zählte anders
+   als `check.mjs`, sodass beide für dieselbe Datei verschiedene Zahlen
+   meldeten. Der Zustandsautomat dort weiß, was in einer Zeichenkette steht,
+   und lässt die Zeilennummern stehen. */
 
 /** Erster als String notierter Wert eines Feldes ( feld: '…' ), sonst null. */
 function feldWert(text, feld) {
@@ -117,7 +113,10 @@ export function pruefeConfigText(configText, { inPublic, inFotos }) {
 
   // --- 4. PLATZHALTER nur zählen – Marker sind erlaubt, sie gehören aber
   //        ins Lücken-Inventar (STAND.md) und blockieren erst den Live-Gang.
-  const marker = (configText.match(/PLATZHALTER/g) ?? []).length;
+  //        OHNE KOMMENTARE, wie im Prüf-Tor: Sonst zählt der Vorcheck die
+  //        Erklärungen mit, die einem Klon gerade erst beibringen, wie man
+  //        einen Platzhalter setzt – und meldet eine andere Zahl als `check`.
+  const marker = (ohneKommentare(configText).match(/PLATZHALTER/g) ?? []).length;
   if (marker > 0) {
     infos.push(`${marker} PLATZHALTER-Marker in content.config.ts – gehören ins Lücken-Inventar (STAND.md); erst der Live-Gang verlangt echte Werte.`);
   }

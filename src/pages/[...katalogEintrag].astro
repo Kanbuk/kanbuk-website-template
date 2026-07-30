@@ -116,8 +116,11 @@ const beschreibung = kuerzeAufWort(beschreibungRoh, 158);
 const absolut = (pfad: string) => new URL(pfad, site.domain).href;
 
 /* Produkt-Schema: So erscheinen Preis und Verfuegbarkeit direkt im Google-
-   Treffer. `Vehicle` u. a. sind Unterklassen von Product - deshalb steht das
-   Angebot immer unter `offers`. */
+   Treffer - jedenfalls bei den Typen, die von `Product`, `CreativeWork`,
+   `Service` oder `Event` abstammen. Die Immobilien- und Zimmertypen stammen
+   von `Place` ab und kennen `offers` nicht; dort steht das Angebot zwar in der
+   Auszeichnung, Google zeigt daraus aber keinen Preis. Welcher Typ was kann,
+   steht bei `KatalogSchema` in content.config.ts. */
 const zusatzLd: Record<string, unknown> | undefined = eintrag
   ? {
       '@context': 'https://schema.org',
@@ -302,6 +305,19 @@ const absatzTrenner = /\n\s*\n/;
     display: grid;
     gap: var(--raum-m);
     padding-block: var(--raum-l);
+  }
+  /* Die Brotkrumen sind der WEG ZURUECK zur Liste - auf einer Detailseite der
+     meistbenutzte Link ueberhaupt. Als reiner Text mass „Start" 31 x 20 px;
+     am Handy trifft man daneben und landet auf dem Trennzeichen. Am Zeigegeraet
+     bleibt es Text, dort stoert die groessere Flaeche nur. */
+  @media (max-width: 640px) {
+    .katalog-detail__weg a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
   .katalog-detail__bilder {
     display: grid;

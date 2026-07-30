@@ -172,11 +172,15 @@ const sortierungen = sortierOptionen();
          „SUV") maß 25 px. Die Höhe allein hilft dort nichts. */
       min-width: 44px;
     }
-    /* Der Merk-Knopf liegt ueber einem Foto - die Breite zaehlt hier genauso
-       wie die Hoehe. `min-width` allein reicht nicht, wenn der Knopf in einem
-       Raster steckt; `width` setzt sie durch. */
+    /* Der Merk-Knopf liegt über einem Foto – die Breite zählt hier genauso wie
+       die Höhe.
+
+       HIER STAND `width: 44px`, UND DAS WAR FALSCH: Eine feste Breite ist eine
+       OBERgrenze. Trägt der Knopf im Design ein Wort statt eines Symbols
+       („Merken", „Vormerken"), presst sie es auf 44 px zusammen und die
+       Beschriftung bricht mitten im Wort um. `min-width` ist genau das
+       Richtige: Es hebt zu kleine Knöpfe an und lässt breitere in Ruhe. */
     .katalog__karte button[data-merken] {
-      width: 44px;
       min-width: 44px;
       min-height: 44px;
     }

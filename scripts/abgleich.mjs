@@ -113,6 +113,29 @@ const designSeiten = await (async () => {
     /** Grundfarbe: erst `background`, sonst `background-color`. */
     const grund = (el) => stilWert(el, 'background') || stilWert(el, 'background-color');
 
+    /**
+     * Trägt der Inline-Stil eine Eigenschaft, deren Name auf `muster` passt und
+     * die wirklich etwas ANSCHALTET? `none`, `0` und `initial` zählen nicht –
+     * wer sie schreibt, schaltet die Sache ausdrücklich ab.
+     *
+     * Es wird der WERT geprüft, nicht der Text davor umschifft: Eine
+     * Vorschau-Bedingung („darf nicht `none` folgen") lässt sich mit einem
+     * vorangestellten `\s*` aushebeln, weil der Ausdruck die Leerzeichen wieder
+     * hergeben darf und die Bedingung dann vor einem Leerzeichen prüft.
+     */
+    const hatEigenschaft = (el, muster) => {
+      const roh = el.getAttribute('style') || '';
+      for (const t of roh.matchAll(/(?:^|;)\s*([a-zA-Z-]+)\s*:\s*([^;]*)/g)) {
+        if (!muster.test(t[1].trim().toLowerCase())) continue;
+        const wert = t[2].trim().toLowerCase();
+        if (!wert || wert === 'none' || wert === 'initial' || wert === 'unset') continue;
+        if (/^0(?:[a-z%]*)?$/.test(wert)) continue;
+        if (/(?:^|\s)none(?:\s|$)/.test(wert)) continue;
+        return true;
+      }
+      return false;
+    };
+
     const seiten = [];
     for (const sc of document.querySelectorAll('sc-if')) {
       const schalter = (sc.getAttribute('value') || '').match(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/);
@@ -185,12 +208,12 @@ const designSeiten = await (async () => {
             grundfarbe: grund(b),
             polsterung: stilWert(b, 'padding') || stilWert(b, 'padding-block'),
             ueberschrift: ueberschrift ? ueberschrift.textContent.trim().slice(0, 60) : '',
-            /* VIER EIGENSCHAFTEN, DIE DAS TOR BIS ZUM 30.07.2026 GAR NICHT ANSAH
+            /* DREI EIGENSCHAFTEN, DIE DAS TOR BIS ZUM 30.07.2026 GAR NICHT ANSAH
                (nachgezählt: je null Treffer im Skript). Ein Design konnte sich
-               in Schatten, Schriftfamilie, Rahmenfarbe und Bildzuschnitt
-               unterscheiden, und der Abgleich blieb grün.
+               in Schatten, Rahmen und Bildzuschnitt unterscheiden, und der
+               Abgleich blieb grün.
 
-               Bei dreien wird nur das VORHANDENSEIN verglichen, nicht der Wert:
+               Bei zweien wird nur das VORHANDENSEIN verglichen, nicht der Wert:
                Das Design schreibt Token-Namen (`var(--shadow-md)`), deren Wert
                nur die Token-Datei kennt – aus dem Namen einen Zahlenwert zu
                raten hat sich beim Bau schon einmal gerächt.
@@ -201,9 +224,21 @@ const designSeiten = await (async () => {
                (CLAUDE.md Abschnitt 4): `:global()` in einer .css-Datei
                verwirft die GANZE Regel, `object-fit: cover` fiel weg, und jedes
                Bild mit unpassendem Seitenverhältnis bekam schwarze Balken. */
-            hatSchatten: /box-shadow\s*:\s*(?!none)/i.test(b.getAttribute('style') || ''),
-            hatSchriftfamilie: /font-family\s*:/i.test(b.getAttribute('style') || ''),
-            hatRahmen: /(?:^|;)\s*border(?:-[a-z]+)?\s*:\s*(?!none|0)/i.test(b.getAttribute('style') || ''),
+            hatSchatten: hatEigenschaft(b, /^box-shadow$/),
+            /* NUR ECHTE RAHMEN-EIGENSCHAFTEN. Der Ausdruck hier war
+               `border(?:-[a-z]+)?` und traf damit auch `border-radius` – also
+               ausgerechnet die Eigenschaft, die fast jede Karte trägt und die
+               mit einem Rahmen nichts zu tun hat. Ergebnis: „Rahmen fehlt" bei
+               jedem abgerundeten Block, obwohl im Design nie einer war.
+               Zweiter Fehler in derselben Zeile: `\s*(?!none|0)` hat den
+               Ausschluss nie durchgesetzt, weil der Ausdruck die Leerzeichen
+               zurückgeben und die Vorschau vor dem Wert ansetzen konnte –
+               `border: none` galt damit als Rahmen. Deshalb wird der Wert
+               jetzt geholt und geprüft, statt ihn zu umschiffen. */
+            hatRahmen: hatEigenschaft(
+              b,
+              /^border(?:-(?:top|right|bottom|left|block|inline|width|style|color))?$/,
+            ),
             bildZuschnitt: [
               ...new Set(
                 [b, ...b.querySelectorAll('*')]
@@ -367,10 +402,15 @@ async function gebauteSeite(pfad) {
           polsterungOben: Math.round(parseFloat(st.paddingTop) || 0),
           hoehe: Math.round(x.getBoundingClientRect().height),
           ueberschrift: h ? h.textContent.trim().slice(0, 60) : '',
-          // Gegenstücke zu den vier Eigenschaften der Design-Seite.
+          /* Gegenstücke zu den Eigenschaften der Design-Seite.
+             DIE SCHRIFTFAMILIE FEHLT HIER MIT ABSICHT: Sie wurde zwar erhoben,
+             aber nie verglichen – und ein Vergleich wäre auch nicht möglich
+             gewesen. Auf der Design-Seite steht ein Inline-Stil (gesetzt oder
+             nicht), auf der gebauten Seite steht der GERECHNETE Wert, und der
+             ist immer gesetzt, weil er vom Körper geerbt wird. Beides
+             gegeneinanderzuhalten hätte jeden Block als Abweichung gemeldet.
+             Welche Schrift wirklich geladen wird, prüft `npm run check`. */
           hatSchatten: st.boxShadow !== 'none' && st.boxShadow !== '',
-          hatSchriftfamilie: true, // gerechnet immer gesetzt – siehe Vergleich unten
-          schriftfamilie: (st.fontFamily || '').split(',')[0].replace(/["']/g, '').trim(),
           hatRahmen: ['Top', 'Right', 'Bottom', 'Left'].some(
             (s) => parseFloat(st[`border${s}Width`]) > 0,
           ),
