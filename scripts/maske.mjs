@@ -194,7 +194,15 @@ export default schemaTypes;
    um zu merken, wenn jemand die Feldliste geändert und die Maske vergessen
    hat – der Fall, der im Kundenprojekt zu „unbekannte Felder" geführt hat. */
 if (process.argv.includes('--pruefen')) {
-  const gleich = existsSync(ZIEL) && readFileSync(ZIEL, 'utf-8') === quelltext;
+  /* Gibt es die Maske gar nicht, ist das KEIN Fehler: In der Vorlage ist das
+     der Normalfall (sie ist ein erzeugtes Artefakt und liegt nicht im Repo).
+     „passt NICHT" wäre hier eine Meldung ohne Bedeutung – und genau die
+     gewöhnt einem das Hinsehen ab. */
+  if (!existsSync(ZIEL)) {
+    console.log(`${ZIEL} gibt es noch nicht – nichts zu vergleichen. Erzeugen: npm run maske`);
+    process.exit(0);
+  }
+  const gleich = readFileSync(ZIEL, 'utf-8') === quelltext;
   console.log(gleich ? `${ZIEL} passt zur Feldliste.` : `${ZIEL} passt NICHT zur Feldliste.`);
   process.exit(gleich ? 0 : 1);
 }

@@ -1659,6 +1659,50 @@ if (istLive || nurLive) {
     }
   }
 
+  /* --- 1b. KEIN FELD DARF EINE ATTRAPPE SEIN ------------------------------
+     Jedes Feld, das die Eingabemaske ANBIETET, muss auch irgendwo ausgegeben
+     werden. Zweiter Fall dieser Art in einem Klon: Beim Berichtigen des
+     Impressums fiel eine Zeile weg – und damit wurde ein Maskenfeld zur
+     Attrappe. Der Betrieb füllt es, sieht „veröffentlicht", und nichts
+     passiert. (Der erste Fall war ein Menüpunkt, den keine Abfrage las.)
+
+     REGEL: Wer eine Ausgabe entfernt, sucht danach das zugehörige
+     Eingabefeld – entweder wird es woanders angezeigt oder es kommt weg.
+
+     Gesucht wird der LETZTE Pfadteil im Quelltext der Seiten: `sitz` findet
+     `r.sitz`, `betrieb.telefon` findet `.telefon`. Das ist bewusst grob –
+     eine strengere Suche würde bei jeder Umbenennung Fehlalarme werfen, und
+     ein Fehlalarm hier kostet mehr als ein übersehener Sonderfall. */
+  if (existsSync('redaktion/felder.mjs')) {
+    const quellen = [
+      ...alleDateien(join(WURZEL, 'src')),
+      join(WURZEL, 'content.config.ts'),
+    ]
+      .filter((f) => /\.(astro|ts|tsx)$/.test(f) && existsSync(f))
+      .map((f) => readFileSync(f, 'utf-8'))
+      .join(String.fromCharCode(10));
+
+    const felderText = readFileSync('redaktion/felder.mjs', 'utf-8');
+    for (const m of felderText.matchAll(/pfad:\s*'([^']+)'/g)) {
+      const letzter = m[1].split('.').pop();
+      // Katalogfelder liest der Motor generisch (KatalogEintrag) – dort ist
+      // ein Feld nie eine Attrappe, es steht im Typ.
+      if (!m[1].includes('.')) continue;
+      /* KEIN Template-Literal für ein Suchmuster: Dort wird `\b` zum
+         BACKSPACE-Zeichen statt zur Wortgrenze, und `\[` verliert seinen
+         Backslash. Das Muster trifft dann nie – und eine Regel, die nie
+         trifft, meldet jedes Feld als Attrappe. Beim Bauen genau so passiert. */
+      if (new RegExp('[.\\[\'"]' + letzter + '\\b').test(quellen)) continue;
+      warnung(
+        [
+          `redaktion/felder.mjs bietet „${m[1]}" an, aber nichts liest „${letzter}".`,
+          '    Der Betrieb füllt das Feld aus, sieht „veröffentlicht" – und auf der',
+          '    Website ändert sich nichts. Entweder ausgeben oder das Feld entfernen.',
+        ].join(String.fromCharCode(10)),
+      );
+    }
+  }
+
   // --- 2. Die Maske muss zur Feldliste passen ------------------------------
   //
   // In einem Kundenprojekt lag die Maske im Projekt und das laufende Studio

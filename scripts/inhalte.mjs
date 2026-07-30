@@ -144,19 +144,45 @@ async function haupt() {
 
     // Pflichtfelder. Ohne Kennung gäbe es keine Adresse, ohne Titel keine
     // Überschrift – beides würde die Seite kaputtbauen.
-    if (!/^[a-z0-9-]+$/.test(kennung)) {
+    /* KENNUNG NORMALISIEREN, NICHT VERWERFEN.
+       Hier wurde jede Kennung mit Punkt, Umlaut oder Grossbuchstabe schlicht
+       uebersprungen - und der Lauf ging GRUEN weiter. Der Eintrag fehlte
+       danach lautlos auf der Website, und niemand hatte einen Anhaltspunkt.
+
+       Warum das jeden Betrieb trifft: Der Kennungs-Generator des
+       Redaktionssystems erzeugt aus jedem Namen mit Zahl, Punkt oder Umlaut
+       genau so eine Kennung - und Namen mit Zahlen sind ueberall normal
+       (Kursnummern, Typenbezeichnungen, Groessen, Baujahre).
+
+       Also: umschreiben, was sich umschreiben laesst, und es MELDEN. Nur wenn
+       gar nichts uebrig bleibt, faellt der Eintrag raus. */
+    const kennungSauber = kennung
+      .toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    if (!kennungSauber) {
       warne(`Eintrag „${titel || '(ohne Titel)'}" hat keine brauchbare Kennung („${roh.id ?? ''}") – übersprungen.`);
       continue;
+    }
+    if (kennungSauber !== kennung) {
+      warne(
+        [
+          `Eintrag „${titel}": Kennung „${kennung}" wurde zu „${kennungSauber}" umgeschrieben.`,
+          '    Die Kennung ist die Internetadresse. Steht der Eintrag schon online,',
+          '    ändert sich damit sein Google-Treffer – dann gehört eine Weiterleitung gesetzt.',
+        ].join('\n'),
+      );
     }
     if (!titel) {
       warne(`Eintrag „${kennung}" hat keinen Titel – übersprungen.`);
       continue;
     }
-    if (kennungen.has(kennung)) {
-      warne(`Kennung „${kennung}" kommt zweimal vor – der zweite Eintrag wurde übersprungen.`);
+    if (kennungen.has(kennungSauber)) {
+      warne(`Kennung „${kennungSauber}" kommt zweimal vor – der zweite Eintrag wurde übersprungen.`);
       continue;
     }
-    kennungen.add(kennung);
+    kennungen.add(kennungSauber);
 
     const eintrag = {};
     for (const [name, wert] of Object.entries(roh)) {
@@ -190,6 +216,7 @@ async function haupt() {
       }
       eintrag[name] = wert;
     }
+    eintrag.id = kennungSauber;
     eintraege.push(eintrag);
   }
 
@@ -212,11 +239,38 @@ async function haupt() {
   //  5. Eine leere Antwort überschreibt nie
   // ---------------------------------------------------------------------------
   const vorhanden = existsSync(ZIEL_DATEI) ? JSON.parse(readFileSync(ZIEL_DATEI, 'utf-8')) : undefined;
-  if (eintraege.length === 0 && (vorhanden?.katalog?.length ?? 0) > 0) {
+  const vorherAnzahl = vorhanden?.katalog?.length ?? 0;
+
+  /* PLAUSIBILITÄTSSCHWELLE BEI DER HÄLFTE, nicht bei null.
+     Nur bei NULL Einträgen anzuhalten genügt nicht: Kommen 3 statt 4 zurück,
+     wird die Datei überschrieben – und die Detailseite des fehlenden Eintrags
+     antwortet ab dem nächsten Bauen mit 404. Genau das, was der Grundsatz
+     „vergeben ist nicht gelöscht" (CLAUDE.md 6a) verhindern soll: Der alte
+     Google-Treffer und jeder geteilte Link laufen ins Leere, und niemand hat
+     etwas gelöscht.
+
+     Ein echter Bestandsabbau um mehr als die Hälfte in einem Schritt kommt
+     vor – dann aber bewusst, mit `--erzwingen`. */
+  const erzwingen = process.argv.includes('--erzwingen');
+  if (!erzwingen && vorherAnzahl > 0 && eintraege.length < vorherAnzahl / 2) {
     console.error(
-      `\nDer Dienst liefert 0 Einträge, im Projekt liegen ${vorhanden.katalog.length}.\n` +
-        'Das sieht nach einem Aussetzer aus, nicht nach einer Absicht – es wurde nichts verändert.\n' +
-        'Sind wirklich alle Einträge gelöscht, die Datei einmal von Hand leeren.',
+      [
+        '',
+        `Der Dienst liefert ${eintraege.length} Eintrag/Einträge, im Projekt liegen ${vorherAnzahl}.`,
+        'Das ist weniger als die Hälfte – es wurde NICHTS verändert.',
+        '',
+        'Die häufigsten Ursachen, in dieser Reihenfolge:',
+        '  1. Einträge stehen noch als Entwurf da und sind nicht veröffentlicht.',
+        '  2. Ein Filter oder Datensatz im Dienst wurde umgestellt.',
+        '  3. Der Zugang liest einen anderen Datensatz als gedacht.',
+        '  4. Es wurde wirklich aufgeräumt.',
+        '',
+        'Ist es Fall 4: `npm run inhalte -- --erzwingen`.',
+        'ACHTUNG dabei: Ein Eintrag, der aus der Liste verschwindet, verliert auch',
+        'seine Detailseite. Wer ihn nur nicht mehr anbieten will, setzt ihn im',
+        'Dienst auf „nicht verfügbar" – dann bleibt die Seite erreichbar und der',
+        'Google-Treffer lebt weiter.',
+      ].join('\n'),
     );
     return 1;
   }

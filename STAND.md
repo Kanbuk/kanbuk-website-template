@@ -224,6 +224,29 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-07-30** – **Rückfluss Teil 7: der Live-Gang selbst.** Abschnitt 000 des
+  Berichts plus zwei alte Muss-Punkte. Alles davon ist beim UMSCHALTEN einer
+  echten Kundenseite aufgefallen, nicht beim Bauen – und keine der Prüfungen
+  hätte es gefunden.
+  **Die Typprüfung lief nie** (sie hing an einer Bedingung und meldete
+  „übersprungen"): erster Lauf, 50 Fehler. Darunter die Geo-Koordinaten, die
+  unter einem Feldnamen gelesen wurden, den es nie gab – der ganze geo-Block
+  fiel still weg, obwohl `npm run karte` die Werte extra ausgibt. Dazu eine
+  kaputte Frontmatter-Grenze und ein Katalog-Eintrag, der auf der ganzen Seite
+  typlos war (39 Folgefehler aus einem Wort).
+  **Der Versand** liegt jetzt auf einer eigenen Unterdomain (der SPF-Eintrag
+  der Hauptdomain trägt die gesamte Geschäftspost), die „Sensitive"-Falle steht
+  als Warnkasten in der Anleitung, und die Resend-Region hängt am Rechtstext.
+  **Vier Fehlalarme** abgestellt, darunter der teuerste: Die Marker-Suche fand
+  „XXX" in der BIC jeder Bank – **jeder Kunde mit Bankverbindung** wäre am
+  Live-Gang gehindert worden.
+  **Die Bestätigungsmail** ist gestaltet und trägt nicht mehr den Betreff der
+  internen Benachrichtigung; **die Sichtprüfung** misst jetzt abgeschnittenen
+  Text und Tippflächen und fährt eine vierte Breite (430 px); **das
+  Redaktionssystem** schließt Entwürfe aus, schreibt Kennungen um statt sie zu
+  verwerfen und hält bei einem Schwund um mehr als die Hälfte an.
+  Zwölf Commits, jeder Punkt gegengeprüft.
+
 - **2026-07-29** – **Erster Testlauf mit einem echten Kundendesign.** Ein
   Autohaus-Design (11 Seiten, 23 Blöcke, 19 Komponenten) wurde aus der frischen
   Vorlage portiert – Klon per `degit` über GitHub, also genau der Weg des

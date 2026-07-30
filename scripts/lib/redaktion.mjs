@@ -144,9 +144,16 @@ export function abfrage() {
   const eintrag = DOKUMENTE.find((d) => d.typ === 'eintrag');
   return (
     '{' +
-    `"betrieb": *[_type == "betrieb"][0]{${teil(betrieb)}},` +
-    `"impressum": *[_type == "impressum"][0]{${teil(impressum)}},` +
-    `"eintraege": *[_type == "eintrag"]{${teil(eintrag)}}` +
+    /* `!(_id in path("drafts.**"))` ist PFLICHT, nicht Feinschliff.
+       UNVEROEFFENTLICHTE ENTWUERFE KONNTEN SONST OEFFENTLICH GEHEN: Der Dienst
+       legt jede Bearbeitung als Entwurf mit eigener Kennung an. Ohne diese
+       Bedingung liefert die Abfrage beide Fassungen - und wer gerade an einem
+       Text arbeitet, hat ihn damit schon veroeffentlicht. Genau umgekehrt zu
+       dem, was der Betrieb erwartet, wenn er auf "Speichern" statt auf
+       "Veroeffentlichen" drueckt. */
+    `"betrieb": *[_type == "betrieb" && !(_id in path("drafts.**"))][0]{${teil(betrieb)}},` +
+    `"impressum": *[_type == "impressum" && !(_id in path("drafts.**"))][0]{${teil(impressum)}},` +
+    `"eintraege": *[_type == "eintrag" && !(_id in path("drafts.**"))]{${teil(eintrag)}}` +
     '}'
   );
 }
