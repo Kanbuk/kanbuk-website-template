@@ -185,6 +185,32 @@ const designSeiten = await (async () => {
             grundfarbe: grund(b),
             polsterung: stilWert(b, 'padding') || stilWert(b, 'padding-block'),
             ueberschrift: ueberschrift ? ueberschrift.textContent.trim().slice(0, 60) : '',
+            /* VIER EIGENSCHAFTEN, DIE DAS TOR BIS ZUM 30.07.2026 GAR NICHT ANSAH
+               (nachgezählt: je null Treffer im Skript). Ein Design konnte sich
+               in Schatten, Schriftfamilie, Rahmenfarbe und Bildzuschnitt
+               unterscheiden, und der Abgleich blieb grün.
+
+               Bei dreien wird nur das VORHANDENSEIN verglichen, nicht der Wert:
+               Das Design schreibt Token-Namen (`var(--shadow-md)`), deren Wert
+               nur die Token-Datei kennt – aus dem Namen einen Zahlenwert zu
+               raten hat sich beim Bau schon einmal gerächt.
+
+               `object-fit` ist der Sonderfall und der wertvollste: Es sind
+               feste Schlüsselwörter (cover/contain/fill), also direkt
+               vergleichbar. Und genau daran hing die dokumentierte Falle
+               (CLAUDE.md Abschnitt 4): `:global()` in einer .css-Datei
+               verwirft die GANZE Regel, `object-fit: cover` fiel weg, und jedes
+               Bild mit unpassendem Seitenverhältnis bekam schwarze Balken. */
+            hatSchatten: /box-shadow\s*:\s*(?!none)/i.test(b.getAttribute('style') || ''),
+            hatSchriftfamilie: /font-family\s*:/i.test(b.getAttribute('style') || ''),
+            hatRahmen: /(?:^|;)\s*border(?:-[a-z]+)?\s*:\s*(?!none|0)/i.test(b.getAttribute('style') || ''),
+            bildZuschnitt: [
+              ...new Set(
+                [b, ...b.querySelectorAll('*')]
+                  .map((x) => stilWert(x, 'object-fit'))
+                  .filter(Boolean),
+              ),
+            ].sort(),
             bauteile: [...b.querySelectorAll('x-import[component-from-global-scope]')]
               .map((x) => (x.getAttribute('component-from-global-scope') || '').split('.').pop())
               .filter(Boolean),
@@ -220,9 +246,24 @@ const designSeiten = await (async () => {
           inneres.tagName.toLowerCase(),
       });
     }
-    return { seiten, rahmen };
+    /* Welche Schriften nennt das Design ueberhaupt? Gezaehlt werden die
+       verschiedenen `font-family`-Werte in der ganzen Datei – meist zwei:
+       eine fuer Ueberschriften, eine fuer Fliesstext. */
+    const schriften = new Set();
+    for (const el of document.querySelectorAll('[style*="font-family"]')) {
+      const t = (el.getAttribute('style') || '').match(/font-family\s*:\s*([^;]+)/i);
+      if (t) schriften.add(t[1].trim());
+    }
+    for (const st of document.querySelectorAll('style')) {
+      for (const m of (st.textContent || '').matchAll(/font-family\s*:\s*([^;}]+)/gi)) {
+        schriften.add(m[1].trim());
+      }
+    }
+    return { seiten, rahmen, schriften: [...schriften] };
   });
 })();
+
+const designSchriften = new Set(designSeiten.schriften ?? []);
 
 console.log(
   `  ${designSeiten.seiten.length} Seite(n) im Design, ` +
@@ -326,6 +367,21 @@ async function gebauteSeite(pfad) {
           polsterungOben: Math.round(parseFloat(st.paddingTop) || 0),
           hoehe: Math.round(x.getBoundingClientRect().height),
           ueberschrift: h ? h.textContent.trim().slice(0, 60) : '',
+          // Gegenstücke zu den vier Eigenschaften der Design-Seite.
+          hatSchatten: st.boxShadow !== 'none' && st.boxShadow !== '',
+          hatSchriftfamilie: true, // gerechnet immer gesetzt – siehe Vergleich unten
+          schriftfamilie: (st.fontFamily || '').split(',')[0].replace(/["']/g, '').trim(),
+          hatRahmen: ['Top', 'Right', 'Bottom', 'Left'].some(
+            (s) => parseFloat(st[`border${s}Width`]) > 0,
+          ),
+          bildZuschnitt: [
+            ...new Set(
+              [x, ...x.querySelectorAll('img,picture>img,video')]
+                .map((el) => getComputedStyle(el).objectFit)
+                // `fill` ist der Vorgabewert des Browsers – nur was ABWEICHT zählt.
+                .filter((v) => v && v !== 'fill'),
+            ),
+          ].sort(),
         });
       }
     }
@@ -348,7 +404,16 @@ async function gebauteSeite(pfad) {
         kennung: (el.getAttribute('aria-label') || el.getAttribute('class') || el.tagName).slice(0, 40),
       });
     }
-    return { bloecke, rahmen };
+    /* Welche Schriftfamilien rendert die Seite wirklich? Erste Familie der
+       Liste, ueber Ueberschriften und Fliesstext. */
+    const schriften = [
+      ...new Set(
+        [...document.querySelectorAll('h1,h2,h3,p,li,button,a')]
+          .map((el) => (getComputedStyle(el).fontFamily || '').split(',')[0].replace(/["']/g, '').trim())
+          .filter(Boolean),
+      ),
+    ];
+    return { bloecke, rahmen, schriften };
   });
   await p.close();
   return daten;
@@ -439,6 +504,72 @@ for (const dSeite of designSeiten.seiten) {
      Umkehr-Klasse, nicht über einen geratenen Farbwert. Ein heller Kasten auf
      schwarzem Grund (oder umgekehrt) ist der Fehler, den man aus zehn Metern
      sieht, und die Klasse steht wörtlich in der Datei. */
+  /* DIE VIER EIGENSCHAFTEN, die das Tor bis zum 30.07.2026 nicht ansah.
+     Zuordnung über die Überschrift, nie über die Position – siehe unten. */
+  for (const d of dSeite.bloecke) {
+    if (!d.ueberschrift) continue;
+    const g = gebaut.bloecke.find((x) => kern(x.ueberschrift) === kern(d.ueberschrift));
+    if (!g) continue; // Fehlt ganz – steht schon als eigener Befund da.
+
+    /* Bei den übrigen dreien wird nur das VORHANDENSEIN verglichen: Das Design
+       schreibt Token-Namen, deren Wert nur die Token-Datei kennt. „Design sagt
+       Schatten, gebaut ist keiner" ist trotzdem ein echter Befund – und war
+       bisher unsichtbar. */
+    if (d.hatSchatten && !g.hatSchatten) {
+      melde('mittel', dSeite.schalter, `„${d.ueberschrift}" hat im Design einen Schatten, gebaut keinen`, 'box-shadow gesetzt', 'none');
+    }
+    if (d.hatRahmen && !g.hatRahmen) {
+      melde('mittel', dSeite.schalter, `„${d.ueberschrift}" hat im Design einen Rahmen, gebaut keinen`, 'border gesetzt', '0px');
+    }
+  }
+
+  /* BILDZUSCHNITT – seitenweit, nicht je Block.
+     Der einzige der vier, bei dem sich WERTE vergleichen lassen: cover und
+     contain sind feste Schlüsselwörter, keine Token. Genau daran hing die
+     dokumentierte Falle (CLAUDE.md Abschnitt 4): `:global()` in einer
+     .css-Datei verwirft die GANZE Regel, `object-fit: cover` fällt weg, und
+     jedes Bild mit unpassendem Seitenverhältnis bekommt schwarze Balken.
+
+     WARUM SEITENWEIT: Beim ersten Lauf je Block verglichen – und sofort ein
+     Fehlalarm. Bilder liegen tief im Baum; wo die Blockgrenze zwischen Design
+     und gebauter Seite um eine Ebene abweicht, landet dasselbe Bild in einem
+     anderen Block. Der Zuschnitt war da, nur woanders gezählt. Auf Seitenebene
+     ist die Frage die richtige: Kommt der Zuschnitt, den das Design verlangt,
+     auf dieser Seite überhaupt vor? */
+  {
+    const dZuschnitt = [
+      ...new Set(dSeite.bloecke.flatMap((b) => (b.bildZuschnitt || []).filter((v) => v !== 'fill'))),
+    ].sort();
+    const gZuschnitt = [...new Set(gebaut.bloecke.flatMap((b) => b.bildZuschnitt || []))].sort();
+    for (const wert of dZuschnitt) {
+      if (gZuschnitt.includes(wert)) continue;
+      melde(
+        'schwer',
+        dSeite.schalter,
+        `Kein Bild auf dieser Seite hat den Zuschnitt „${wert}", den das Design verlangt`,
+        wert,
+        gZuschnitt.join(', ') || '(keiner – Bilder werden verzerrt oder bekommen Balken)',
+      );
+    }
+  }
+
+  /* SCHRIFTFAMILIE – seitenweit, nicht je Block. Je Block verglichen sagt sie
+     nichts: Das Design schreibt `var(--font-display)`, gerechnet steht dort ein
+     aufgelöster Name, und ohne die Token-Datei ist das nicht vergleichbar.
+     Was sich sehr wohl prüfen lässt: Nennt das Design ZWEI Schriften (fast
+     jedes tut das – eine für Überschriften, eine für Fließtext) und rendert die
+     gebaute Seite nur EINE, dann ist die Überschriftenschrift nie angekommen.
+     Das sieht man sofort, wenn man es weiss – und gar nicht, wenn nicht. */
+  if (designSchriften.size >= 2 && gebaut.schriften.length === 1) {
+    melde(
+      'schwer',
+      dSeite.schalter,
+      'Das Design nennt zwei Schriften, die Seite rendert nur eine',
+      [...designSchriften].join(' und '),
+      gebaut.schriften[0],
+    );
+  }
+
   for (const d of dSeite.bloecke) {
     if (!d.invertiert || !d.ueberschrift) continue;
     /* ÜBER DIE ÜBERSCHRIFT zuordnen, nicht über die Position. Sobald die
