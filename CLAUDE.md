@@ -918,6 +918,10 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
    auf der Seite etwas, das im Design gar nicht vorkommt?
 4. Lighthouse-Ziel **≥ 95** in allen vier Kategorien.
 5. **STAND.md ist aktuell** (Phase, Lücken, Verlaufszeile dieser Sitzung).
+   Ein offener Punkt `- [ ]` sperrt den Live-Gang. Soll einer bewusst offen
+   bleiben, gehört **`(kein Blocker)`** in die Zeile – dann wird daraus ein
+   Hinweis. So steht die Entscheidung schriftlich in der Datei, statt dass
+   jeder Klon sich eine eigene Handhabung ausdenkt.
 6. Committen und pushen (ein Kunde = ein Repo/Branch).
 
 > **Eine Ausnahme im Prüf-Tor, die einen Mangel des MOTORS deckt, ist keine

@@ -24,7 +24,13 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 
 ## Lücken-Inventar (vor dem Live-Gang zu erledigen)
 
-<!-- Beim Port füllt Claude Code diese Liste. Erledigtes abhaken [x], nie löschen. -->
+<!-- Beim Port füllt Claude Code diese Liste. Erledigtes abhaken [x], nie löschen.
+
+     KONVENTION: Ein offener Punkt `- [ ]` SPERRT den Live-Gang.
+     Soll er bewusst offen bleiben und trotzdem nicht verloren gehen, gehört
+     `(kein Blocker)` in die Zeile – dann macht das Prüf-Tor einen Hinweis
+     daraus statt eines Fehlers. Die Entscheidung steht damit schriftlich hier
+     und nicht im Gedächtnis einer Person. -->
 
 - [ ] *(wird beim Port gefüllt – z. B.: „hero.jpg ist ein Stock-Platzhalter, echtes Foto nötig")*
 

@@ -1355,10 +1355,61 @@ for (const f of htmlDateien) {
 //  9. LIVE-PFLICHTEN (nur bei mode: 'live' oder --live)
 // ---------------------------------------------------------------------------
 if (istLive || nurLive) {
-  // Bewusst GROSSGESCHRIEBEN geprüft: Marker werden als "PLATZHALTER: UID" gesetzt.
-  // (Kleingeschrieben würde das Schema-Feld `platzhalter` jeden Live-Gang blockieren.)
-  if (/PLATZHALTER|TODO|XXX/.test(configText)) {
-    fehler('content.config.ts enthält noch Marker (PLATZHALTER/TODO) – vor dem Live-Gang ersetzen');
+  /* MARKER IN DER CONFIG – zwei Fallen, beide am 30.07.2026 aufgelaufen.
+     Bewusst GROSSGESCHRIEBEN geprüft: Marker werden als "PLATZHALTER: UID"
+     gesetzt. (Kleingeschrieben würde das Schema-Feld `platzhalter` jeden
+     Live-Gang blockieren.)
+
+     1. WORTGRENZEN. Ohne sie fand die Regel „XXX" mitten in einer Zeichenkette –
+        und die letzten drei Zeichen eines BIC bezeichnen die Hauptstelle und
+        lauten bei sehr vielen Banken genau so (Beispielform MUSTAT2LXXX).
+        JEDER Kunde mit hinterlegter Bankverbindung wäre am Live-Gang
+        gehindert worden, mit einer Meldung, die auf einen vergessenen
+        Platzhalter deutet. Siebzehn Zeilen weiter unten macht es die Prüfung
+        der fertigen Seite längst richtig.
+     2. KOMMENTARE ZÄHLEN NICHT MIT. Das Wort stand auch dort, wo die Regel
+        ERKLÄRT wird – also in genau den Kommentaren, die einem Klon sagen, wie
+        ein Platzhalter zu setzen ist. Ausgeblendet wird ZEILENZAHL-ERHALTEND
+        (Leerzeichen statt löschen), sonst zeigt die Meldung auf die falsche
+        Zeile.
+
+     Beim Ausblenden ein ZUSTANDSAUTOMAT, kein regulärer Ausdruck: In jeder URL
+     stehen zwei Schrägstriche mitten in einer Zeichenkette, und ein Ausdruck
+     hält `https://…` für den Beginn eines Kommentars. */
+  const ohneKommentare = (quelle) => {
+    let raus = '';
+    let zustand = 'code'; // code | zeile | block | text
+    let anfuehrung = '';
+    for (let i = 0; i < quelle.length; i++) {
+      const z = quelle[i];
+      const naechst = quelle[i + 1];
+      if (zustand === 'code') {
+        if (z === '/' && naechst === '/') { zustand = 'zeile'; raus += '  '; i++; continue; }
+        if (z === '/' && naechst === '*') { zustand = 'block'; raus += '  '; i++; continue; }
+        if (z === '"' || z === "'" || z === '`') { zustand = 'text'; anfuehrung = z; }
+        raus += z;
+      } else if (zustand === 'zeile') {
+        if (z === '\n') { zustand = 'code'; raus += z; } else raus += ' ';
+      } else if (zustand === 'block') {
+        if (z === '*' && naechst === '/') { zustand = 'code'; raus += '  '; i++; continue; }
+        raus += z === '\n' ? z : ' ';
+      } else {
+        // In einer Zeichenkette: Escapes überspringen, sonst endet sie zu früh.
+        if (z === '\\') { raus += z + (naechst ?? ''); i++; continue; }
+        if (z === anfuehrung) zustand = 'code';
+        raus += z;
+      }
+    }
+    return raus;
+  };
+
+  const configOhneKommentare = ohneKommentare(configText);
+  const markerTreffer = configOhneKommentare.match(/\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/);
+  if (markerTreffer) {
+    const zeile = configOhneKommentare.slice(0, markerTreffer.index).split('\n').length;
+    fehler(
+      `content.config.ts:${zeile} enthält noch den Marker „${markerTreffer[1]}" – vor dem Live-Gang ersetzen`,
+    );
   }
 
   /* … und dasselbe auf der FERTIGEN Seite.
@@ -1400,8 +1451,24 @@ if (istLive || nurLive) {
     const offen = [...stand.matchAll(/^\s*-\s*\[ \]\s*(.+)$/gm)]
       .map((m) => m[1].trim())
       .filter((z) => !z.startsWith('*(')); // die Beispielzeile der Vorlage zählt nicht
+    /* NICHT JEDER OFFENE PUNKT SPERRT DEN LIVE-GANG.
+       Im Lücken-Inventar stehen zwei verschiedene Sorten nebeneinander: Dinge,
+       die vor dem Umschalten erledigt sein MÜSSEN (fehlende UID, Stock-Foto
+       statt Kundenfoto), und Dinge, die bewusst offen bleiben und trotzdem
+       nicht verloren gehen sollen (ein Altgerät, das nie beschafft wurde; eine
+       Verbesserung für später). Die zweite Sorte hat jeden Live-Gang blockiert.
+
+       KONVENTION statt Ermessen: Steht „(kein Blocker)" in der Zeile, wird
+       daraus ein Hinweis. Damit steht die Entscheidung SCHRIFTLICH in der
+       Datei – wer sie später liest, sieht, dass jemand sie bewusst getroffen
+       hat. Ohne benannte Konvention erfindet jeder Klon eine eigene, und die
+       nächste Person weiß nicht, ob ein Punkt vergessen oder abgewogen wurde. */
     for (const punkt of offen) {
-      fehler(`STAND.md: offener Punkt vor dem Live-Gang -> "${punkt.slice(0, 90)}"`);
+      if (/\(kein Blocker\)/i.test(punkt)) {
+        warnung(`STAND.md: bewusst offen (kein Blocker) -> "${punkt.slice(0, 90)}"`);
+      } else {
+        fehler(`STAND.md: offener Punkt vor dem Live-Gang -> "${punkt.slice(0, 90)}"`);
+      }
     }
   } else {
     warnung('STAND.md fehlt – das Lücken-Inventar dieses Projekts ist nirgends festgehalten.');
