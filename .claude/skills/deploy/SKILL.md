@@ -161,8 +161,76 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    - Fußzeile enthält `<Signatur />` (Kanbuk-Backlink – Schritt 2 blockt sonst rot).
 2. **Neu bauen:** `npm run check -- --live` muss grün sein (blockt bei offenen
    STAND.md-Punkten und Platzhaltern).
-3. **Formular-Versand:** im Vercel-Dashboard (bzw. `vercel env add`) `RESEND_API_KEY` und
-   `CONTACT_FROM` hinterlegen. `npm run build` muss weiter fehlerfrei sein.
+3. **Formular-Versand – über eine EIGENE Unterdomain, nie über die Hauptdomain.**
+
+   > **Warum das keine Feinheit ist.** Der SPF-Eintrag der Hauptdomain trägt die
+   > **gesamte Geschäftspost** des Betriebs. Bei einem Kunden stand er auf `-all`
+   > („alles, was nicht hier steht, ist Fälschung") – ihn zu erweitern, damit ein
+   > Kontaktformular senden darf, wäre das teuerste Risiko des ganzen Umzugs
+   > gewesen: Ein Tippfehler, und die Rechnungen des Betriebs landen im Spam.
+   > Mit einer eigenen Unterdomain bleibt der Eintrag der Hauptdomain **unberührt**.
+
+   **Unterdomain:** `formular.<kundendomain>` (frei wählbar, aber einheitlich halten).
+
+   **Die drei DNS-Einträge, die der Kunde bei seinem Anbieter anlegt.** Ohne diese
+   Liste ist der Punkt ein Hinweis und keine Anleitung – die genauen Werte zeigt
+   der Versanddienst nach dem Eintragen der Unterdomain an:
+
+   | Typ | Name | Wert |
+   | --- | --- | --- |
+   | TXT | `resend._domainkey.formular` | der lange Schlüssel aus dem Dienst (DKIM) |
+   | MX  | `send.formular` | der vom Dienst genannte Empfangsserver, Priorität 10 |
+   | TXT | `send.formular` | `v=spf1 include:<vom Dienst genannt> ~all` |
+
+   *(Der Anbieter hängt die Domain meist selbst an – dann heißt der Name im
+   Formular nur `resend._domainkey.formular`, nicht `…formular.kundendomain.at`.
+   Zeigt seine Maske den vollen Namen an, den vollen eintragen.)*
+
+   > **Der MX-Eintrag sieht gefährlicher aus, als er ist – das dem Kunden sagen.**
+   > Er steht auf `send.formular.<domain>`, also auf einem **anderen Namen** als
+   > der MX der Hauptdomain. Die Geschäftspost läuft unverändert weiter. Wer das
+   > nicht dazusagt, bekommt an dieser Stelle einen berechtigten Schreck – und im
+   > schlimmsten Fall bricht der Kunde den Umzug ab.
+
+   **Zwei Dinge, die der Dienst anbietet und die NICHT gemacht werden:**
+
+   - **Kein DMARC-Eintrag.** Der Dienst bietet ihn an, aber er läge auf der
+     **Hauptdomain** und wäre damit eine Richtlinie für die **gesamte
+     Geschäftspost**. Ohne Berichtsadresse ist er wirkungslos, aber folgenreich.
+     Das ist eine Entscheidung des Betriebs über seine Mail-Infrastruktur, nicht
+     ein Nebenschritt beim Website-Umzug.
+   - **Klick-Zählung AUS.** Sie schreibt jeden Link in der Mail auf einen
+     Zählserver um. Das widerspricht der cookiefreien Zusage, gehört sonst in die
+     Datenschutzerklärung – und macht aus jeder Bestätigungsmail eine Messung.
+
+   **Region festlegen** (im Dienst beim Freischalten): EU oder USA. Danach
+   `versandRegion: 'EU'` bzw. `'USA'` in `content.config.ts` eintragen – die
+   Datenschutzerklärung formuliert den Absatz danach. Ohne diesen Schritt
+   behauptet sie eine Übermittlung in ein Drittland, die es womöglich gar nicht
+   gibt.
+
+   **Dann die zwei Umgebungsvariablen** im Vercel-Dashboard (bzw.
+   `vercel env add`): `RESEND_API_KEY` und `CONTACT_FROM` (Absender auf der
+   Unterdomain, z. B. `anfrage@formular.<kundendomain>`).
+
+   > ### ⚠ „Sensitive" NICHT ankreuzen – der teuerste stille Fehler des Live-Gangs
+   >
+   > Eine bei Vercel als **Sensitive** markierte Variable erreicht den **Build**,
+   > aber **nicht die Serverless-Funktion**. Der Formularversand ist danach
+   > vollständig tot, und im Dashboard sieht alles korrekt aus.
+   >
+   > Am 30.07.2026 an einer echten Kundenseite belegt: Ein Skript las mit
+   > derselben Variable beim Bauen einwandfrei seine Daten (und hat keinen fest
+   > eingebauten Ersatzwert), während `/api/contact` beide Werte als leer sah.
+   > Ohne die Markierung neu angelegt → sofort `HTTP 200`.
+   >
+   > Jeder kreuzt „Sensitive" bei einem Schlüssel aus gutem Grund an. Genau
+   > deshalb steht es hier. Der Motor schreibt bei diesem Fehler eine
+   > Protokollzeile, die den Verdacht ausdrücklich nennt.
+
+   **Danach einmal WIRKLICH senden** und die Mail im Postfach ansehen – nicht nur
+   den Statuscode. Solange das nicht passiert ist, ist der Versand der einzige
+   unbewiesene Teil der Seite.
 4. **Stand hochladen.** Das private Repo steht seit Schritt B.0 – hier genügt
    `git add -A && git commit && git push`. Falls es wider Erwarten noch keines
    gibt, jetzt nachholen (Befehle siehe B.0) und im Bericht als versäumten

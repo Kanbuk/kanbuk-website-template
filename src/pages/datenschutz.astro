@@ -210,8 +210,12 @@ const ohneDrittlandAngabe = site.dienste.filter((d) => !d.drittland);
         Wenn Sie uns über {site.formulare.length > 1 ? 'eines unserer Formulare' : 'das Kontaktformular'}
         {' '}schreiben, verarbeiten wir die von Ihnen angegebenen Daten, um Ihre Anfrage zu
         beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Der Versand an unser Postfach
-        erfolgt über den Dienst <strong>Resend</strong> (Resend, Inc., USA – abgesichert
-        über die EU-Standardvertragsklauseln). Wir geben Ihre Daten nicht ohne Ihre
+        erfolgt über den Dienst <strong>Resend</strong>
+        {site.versandRegion === 'EU' ? (
+          <> (Resend, Inc.; die Verarbeitung findet in der Europäischen Union statt)</>
+        ) : (
+          <> (Resend, Inc., USA – abgesichert über die EU-Standardvertragsklauseln)</>
+        )}. Wir geben Ihre Daten nicht ohne Ihre
         Einwilligung an weitere Dritte weiter und speichern sie nur so lange, wie es zur
         Bearbeitung Ihrer Anfrage erforderlich ist.
       </p>

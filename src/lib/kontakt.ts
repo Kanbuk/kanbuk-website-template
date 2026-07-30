@@ -76,11 +76,37 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     return { status: 400, json: { fehler: 'Bitte geben Sie eine gültige E-Mail-Adresse an.' } };
   }
 
-  // 5) Serverkonfiguration prüfen
-  if (!env.RESEND_API_KEY || !env.CONTACT_FROM) {
+  /* 5) Serverkonfiguration prüfen.
+     DIE MELDUNG MUSS SAGEN, WELCHE ANGABE FEHLT. Vorher standen beide Namen
+     mit einem Schrägstrich da („RESEND_API_KEY / CONTACT_FROM") – wer das im
+     Protokoll liest, prüft beide, findet beide im Dashboard und sucht weiter.
+
+     WAS DAHINTER STECKT und warum diese Meldung zählt: Eine bei Vercel als
+     „Sensitive" markierte Umgebungsvariable steht dem BUILD zur Verfügung,
+     aber NICHT der Serverless-Funktion. Am 30.07.2026 an einer echten
+     Kundenseite belegt: Ein Skript las damit beim Bauen einwandfrei seine
+     Daten, während diese Funktion dieselben Variablen als leer sah. Im
+     Dashboard sieht alles korrekt aus, der Versand ist still tot. Ohne die
+     Markierung neu angelegt: sofort HTTP 200.
+     Deshalb nennt die Protokollzeile den Verdacht ausdrücklich – sonst sucht
+     man ihn nie. */
+  const fehlendeZugaenge = [
+    !env.RESEND_API_KEY ? 'RESEND_API_KEY' : '',
+    !env.CONTACT_FROM ? 'CONTACT_FROM' : '',
+  ].filter(Boolean);
+  if (fehlendeZugaenge.length > 0) {
+    console.error(
+      `[kontakt] Der Versand ist nicht konfiguriert. Es fehlt: ${fehlendeZugaenge.join(' und ')}.\n` +
+        '          Steht die Variable im Vercel-Dashboard und ist trotzdem leer:\n' +
+        '          Ist sie als „Sensitive" markiert? Solche Variablen erreichen den\n' +
+        '          Build, aber NICHT die Serverless-Funktion. Ohne die Markierung\n' +
+        '          neu anlegen (siehe /deploy-Skill).',
+    );
     return {
       status: 500,
-      json: { fehler: 'Der E-Mail-Versand ist nicht konfiguriert (RESEND_API_KEY / CONTACT_FROM).' },
+      json: {
+        fehler: `Der E-Mail-Versand ist nicht konfiguriert – es fehlt ${fehlendeZugaenge.join(' und ')}.`,
+      },
     };
   }
 
