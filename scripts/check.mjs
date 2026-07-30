@@ -1340,12 +1340,26 @@ for (const f of htmlDateien) {
     try {
       for (const w of JSON.parse(readFileSync(vj, 'utf-8')).redirects ?? []) {
         const zielPfad = String(w.destination || '').split('#')[0];
-        if (zielPfad.startsWith('/') && !findetZiel(zielPfad)) {
-          fehler(
-            `Weiterleitung ${w.source} zeigt auf ${w.destination} – diese Seite gibt es im Build nicht.\n` +
-              `    Der alte Google-Treffer würde auf einer Fehlerseite landen.`,
+        if (!zielPfad.startsWith('/') || findetZiel(zielPfad)) continue;
+
+        /* DIE SITEMAP IST DER SONDERFALL – sie entsteht NUR im live-Modus.
+           Die Standard-Weiterleitung der alten Sitemap-Adresse (CLAUDE.md 7b)
+           zeigt in der Vorschau deshalb zwangsläufig ins Leere, ganz ohne
+           Fehler des Klons. Ohne diese Unterscheidung wurde jede
+           Vorschau-Prüfung rot, sobald jemand die Regel befolgt hatte.
+           Beim Live-Gang gilt sie voll: Dort MUSS die Sitemap da sein. */
+        if (/sitemap/i.test(zielPfad) && !istLive && !nurLive) {
+          warnung(
+            `Weiterleitung ${w.source} zeigt auf ${w.destination} – die Sitemap entsteht erst im live-Modus.\n` +
+              `    In der Vorschau ist das erwartet. Beim Live-Gang wird daraus ein Fehler.`,
           );
+          continue;
         }
+
+        fehler(
+          `Weiterleitung ${w.source} zeigt auf ${w.destination} – diese Seite gibt es im Build nicht.\n` +
+            `    Der alte Google-Treffer würde auf einer Fehlerseite landen.`,
+        );
       }
     } catch { /* JSON-Fehler meldet bereits die vercel.json-Regel */ }
   }

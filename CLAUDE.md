@@ -860,6 +860,39 @@ Standard ist 301 – das vererbt das Ranking. Adressen mit Fragezeichen
 Pfad + `has`-Bedingung zerlegt; ohne das liefen die alten Google-Treffer still
 ins Leere.
 
+### Die Bestandsaufnahme VOR dem Umschalten – drei Pflichtschritte
+
+„Alte Adressen erfassen" ist zu wenig. Am 30.07.2026 an einer echten
+Domainumstellung nachgemessen – jeder der drei Schritte fand etwas, das die
+beiden anderen nicht gefunden hätten.
+
+**(a) Die alte Sitemap-Adresse selbst weiterleiten.** WordPress mit Yoast legt
+`sitemap_index.xml` an – mit **Unterstrich** – und nennt Google diese Adresse in
+seiner `robots.txt`. Der Motor erzeugt `sitemap-index.xml` mit **Bindestrich**.
+Ohne Weiterleitung holt Google am Tag nach dem Umschalten eine 404 auf die
+einzige Sitemap, die es kennt. Das gehört als Standard-Eintrag ins Rezept, nicht
+in die Handarbeit jedes Klons:
+
+```ts
+{ von: '/sitemap_index.xml', nach: '/sitemap-index.xml' },
+```
+
+**(b) Den Search-Console-Export auswerten, nicht nur die Sitemap.** Die Sitemap
+zeigt nur, was die alte Seite **heute** listet. Der Export zeigt, was Google
+**ausliefert** – und das ist mehr. Im Kundenprojekt fand er drei Adressen
+längst entfernter Einträge, eine davon auf der ersten Ergebnisseite. Das trifft
+**jeden Betrieb mit wechselndem Angebot**: ausgelaufene Kurse, vergebene
+Objekte, alte Aktionsseiten, abgesagte Termine. Genau die Adressen sind aus der
+Sitemap verschwunden und stehen trotzdem noch bei Google.
+
+**(c) Die DNS-Zone beim Anbieter EXPORTIEREN, nicht von außen abfragen.** Eine
+Abfrage zeigt, was gerade beantwortet wird; der Export zeigt, was eingetragen
+ist. Im Kundenprojekt: Abfrage sieben Einträge, Export acht. Es fehlte
+`imap.` als CNAME – ohne den funktioniert **kein Mailprogramm mehr**, bei
+völlig unverändertem MX-Eintrag. Der Export gehört als Wiederherstellungspunkt
+ins Repo (`dns-vorher-<datum>.txt`), mit einem Kopf, der in zwei Sätzen sagt,
+was geändert wird und was ausdrücklich **nicht**.
+
 ---
 
 ## 8. Das Portier-Rezept

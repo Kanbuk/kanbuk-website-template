@@ -140,6 +140,23 @@ in den Kontext zu laden.
   dreizehn Adressen hatten sich geändert, darunter alle Detailseiten. Der
   Schaden – über Nacht verlorene Google-Treffer – trifft ausgerechnet die
   Kunden mit der längsten Historie und fällt erst Wochen später auf.
+
+  **Die Sitemap allein reicht nicht.** Drei Schritte, alle Pflicht (Begründung
+  und Messwerte in CLAUDE.md 7b):
+  1. **Die alte Sitemap-Adresse selbst weiterleiten.** WordPress/Yoast:
+     `sitemap_index.xml` mit **Unterstrich**, Motor: `sitemap-index.xml` mit
+     **Bindestrich**. Standard-Eintrag setzen, in jedem Projekt mit
+     Vorgänger-Website.
+  2. **Search-Console-Export auswerten.** Die Sitemap zeigt nur, was die alte
+     Seite HEUTE listet – der Export zeigt, was Google AUSLIEFERT. Bei jedem
+     Betrieb mit wechselndem Angebot (Kurse, Objekte, Aktionen) sind das genau
+     die Adressen, die aus der Sitemap verschwunden sind und trotzdem noch
+     Treffer bringen.
+  3. **DNS-Zone beim Anbieter EXPORTIEREN**, nicht von außen abfragen, und den
+     Export als Wiederherstellungspunkt ins Repo legen. Eine Abfrage zeigt, was
+     gerade beantwortet wird; der Export zeigt, was eingetragen ist. Im
+     Kundenprojekt war der Unterschied ein fehlender `imap.`-Eintrag – ohne den
+     funktioniert kein Mailprogramm mehr, bei völlig unverändertem MX.
 - **Lücken:** Platzhalterbilder? Fehlende Preise? Fehlende Rechtsdaten?
 
 **Nichts erfinden.** Was nicht im Design oder in den Unterlagen steht, fehlt – und
