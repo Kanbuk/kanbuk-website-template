@@ -301,11 +301,47 @@ export interface FormularFeld {
    * für gestern (der häufigste Unsinn in Reservierungsformularen).
    */
   minDatum?: 'heute' | string;
-  /** Platzhalter im Feld. */
+  /**
+   * Platzhalter im Feld.
+   *
+   * BEIM UMSTELLEN VON FREIWILLIG AUF PFLICHT MITPRÜFEN: In einem Klon stand
+   * hier noch „optional", während das Feld längst Pflicht war.
+   */
   platzhalter?: string;
+  /**
+   * KEIN erzwungenes Eingabemuster bei Feldern, deren Format sich historisch
+   * GEÄNDERT hat – Identnummern, Registernummern, Normbezeichnungen,
+   * Fahrgestellnummern, alte Kennzeichen.
+   *
+   * Eine strenge Prüfung sperrt genau die älteren Fälle aus, und die sind oft
+   * die interessanten: das Fahrzeug von 1987, die Immobilie mit der alten
+   * Einlagezahl, der Kurs nach der Vorgängernorm. Der Interessent kommt dann
+   * nicht durch das Formular und ruft auch nicht an.
+   *
+   * Nur setzen, wo das Format wirklich unveränderlich ist (z. B. eine
+   * Postleitzahl). Im Zweifel weglassen und die Angabe im Text erklären.
+   */
+  muster?: string;
   /** Nur für typ 'zahl'. */
   min?: number;
   max?: number;
+  /**
+   * WELCHE TASTATUR AM HANDY AUFGEHT.
+   *
+   * Ein Textfeld, in das nur Ziffern gehören (Postleitzahl, Kilometerstand,
+   * Personenzahl, Hausnummer), öffnet ohne diese Angabe die
+   * BUCHSTABENtastatur. Der Besucher schaltet dann bei jedem Feld selbst um –
+   * am Handy die Hälfte aller Abbrüche in langen Formularen.
+   *
+   * `'dezimal'` -> Zifferntastatur mit Komma. `'tel'` -> Telefontastatur.
+   *
+   * BEWUSST NICHT SETZEN bei Feldern, deren Format zwar nach Zahlen aussieht,
+   * aber ein Trennzeichen braucht: „MM / JJJJ", „12/2024", Kennzeichen. Die
+   * Zifferntastatur hat keinen Schrägstrich – das Feld wäre dann NICHT
+   * ausfüllbar. Genau deshalb ist es eine Angabe je Feld und keine
+   * automatische Ableitung aus dem Feldtyp.
+   */
+  tastatur?: 'dezimal' | 'tel';
   /**
    * Nur bei mehrstufigen Formularen (siehe `Formular.schritte`): In welchem
    * Schritt steht das Feld? 1-basiert, fehlt = Schritt 1.

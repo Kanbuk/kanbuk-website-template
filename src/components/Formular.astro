@@ -123,7 +123,26 @@ if (leer) {
           <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
             <span class="formular__label">
               {f.label}
-              {/* Das Leerzeichen ausdrücklich setzen: Zwischen zwei Ausdrücken
+              {/* DER MOTOR KENNZEICHNET DIE FREIWILLIGEN FELDER, NICHT DIE
+                  PFLICHTFELDER. Das ist eine UMKEHR-Konvention, und wer sie
+                  nicht kennt, baut zwei Konventionen in ein Formular:
+
+                  Sobald ALLE Felder Pflicht sind, steht hier gar nichts mehr –
+                  und ein Sternchen, das jemand „zur Sicherheit" ergänzt, sagt
+                  dann dasselbe wie das Fehlen von „(optional)". Der Besucher
+                  sieht zwei Systeme nebeneinander.
+
+                  Wer trotzdem Sternchen will (das Design verlangt es
+                  gelegentlich), beachtet drei Dinge:
+                  1. Sternchen mit `aria-hidden` – Screenreader sagen das
+                     `required` am Feld ohnehin an, sonst hört man es doppelt.
+                  2. Die Farbe gehört in die Design-Datei des Klons, nicht in
+                     diese Motor-Komponente.
+                  3. Beim Umstellen freiwillig -> Pflicht den PLATZHALTERTEXT
+                     mitprüfen: In einem Klon stand dort noch „optional",
+                     während das Feld längst Pflicht war.
+
+                  Das Leerzeichen ausdrücklich setzen: Zwischen zwei Ausdrücken
                   fällt der Zeilenumbruch weg, und auf der Seite stand
                   „Telefon(optional)". */}
               {!f.pflicht && <> <em class="formular__optional">(optional)</em></>}
@@ -158,6 +177,13 @@ if (leer) {
                 ))}
               </span>
             ) : (
+              /* `inputmode`: Ohne die Angabe geht am Handy die
+                 BUCHSTABENtastatur auf, auch bei einem reinen Zahlenfeld.
+                 Bewusst NICHT aus `f.typ` abgeleitet – ein Feld im Format
+                 „MM / JJJJ" braucht den Schrägstrich, den die Zifferntastatur
+                 nicht hat; es wäre dann nicht mehr ausfüllbar.
+                 Und dieser Kommentar steht VOR dem Element: Ein geschweifter
+                 JSX-Kommentar zwischen Attributen bricht die Typprüfung. */
               <input
                 type={
                   f.typ === 'datum' ? 'date'
@@ -168,6 +194,8 @@ if (leer) {
                 name={f.name}
                 required={f.pflicht}
                 autocomplete={f.autocomplete}
+                inputmode={f.tastatur === 'dezimal' ? 'decimal' : f.tastatur === 'tel' ? 'tel' : undefined}
+                pattern={f.muster}
                 placeholder={f.platzhalter}
                 min={f.typ === 'datum' && f.minDatum === 'heute' ? new Date().toISOString().slice(0, 10) : (f.minDatum ?? f.min)}
                 max={f.max}

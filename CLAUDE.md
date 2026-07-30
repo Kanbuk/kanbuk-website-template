@@ -70,6 +70,55 @@ das Template frisch klont?"**
 Ein Klon bekommt keine Template-Updates — die Meldung ist der einzige Weg, auf dem
 ein Fix ins Template zurückfindet.
 
+### Vier Regeln, die in Kundenprojekten Geld gekostet haben
+
+**1. Eine Suchanfrage ist kein Beweis, dass sie dem Kunden gehört.**
+In einem Kundenprojekt hatte eine Gruppe von Anfragen mit sehr guten Werten
+(dreistellige Impressionen, zweistellige Klickrate, zwei davon auf Position 1)
+einem **anderen Betrieb mit ähnlichem Namen am selben Ort** gehört. Gemeldet
+wurde sie als Inhaltslücke – und stellte damit eine richtige
+Branchen-Entscheidung des Kunden in Frage.
+
+> Jede Anfrage erst beim Betrieb gegenprüfen („bieten Sie das überhaupt an?"),
+> bevor daraus eine Empfehlung wird. Und die Begründung einer
+> Branchen-Entscheidung so festhalten, dass ein späterer Durchgang sie nicht
+> aus Statistik heraus umdreht.
+
+**2. Jede Anleitung zu einer FREMDEN Oberfläche braucht einen Beleg oder ein
+Datum.** Dritter Fall in vier Tagen: Eine Anleitung behauptete, ein Dienst biete
+im kostenlosen Tarif „nur Administrator oder Nur-Lesen". Am echten
+Einladungsfenster nachgesehen: sechs Rollen, darunter die richtige – und eine
+falsch klingende, die nur Entwürfe bearbeiten darf (und Entwürfe erscheinen
+absichtlich nicht auf der Website). Wer sich auf die Doku verlässt, gibt einem
+Betrieb zu viele Rechte.
+
+> Entweder ein Beleg oder der Satz „am &lt;Datum&gt; nachgesehen". Ohne das ist
+> es eine Vermutung im Anleitungston – und der Betreuer steht davor und findet
+> es nicht. (Gilt zusätzlich zur Regel aus Abschnitt 0: keine Befehlszeile,
+> keine Bezeichnungen aus dem Gedächtnis.)
+
+**3. Ein Beispiel im Hilfetext wird zur Wahrheit in jedem Datensatz.**
+Ein Feld für einen Preiszusatz war ein freies Textfeld, im Hilfetext stand ein
+Beispiel – und genau dieser Wert stand danach bei **allen** Einträgen. Bei
+mehreren war er sachlich falsch.
+
+> Wo es genau zwei oder drei richtige Formulierungen gibt, nimm eine **Auswahl
+> mit fertigen Werten**, kein Freitextfeld mit Beispiel. Bei rechtlich
+> relevanten Angaben zusätzlich als Pflichtfeld – dann kann sie niemand
+> übersehen.
+
+**4. Ein Hilfetext erklärt nicht das Geschäft des Kunden.**
+In einem Klon standen bei den Fotos Ratschläge zur Bildauswahl und bei der
+Beschreibung die Aufforderung, nichts Falsches zu behaupten. Der Betrieb ist
+Fachmann in seiner Branche – solche Sätze sind bestenfalls überflüssig und
+schlimmstenfalls herablassend.
+
+> Ein Hilfetext sagt **was** einzutragen ist (Format, Beispiel) und **was damit
+> auf der Website passiert**. Nichts darüber hinaus.
+> **Der Test:** Kann der Betrieb das selbst wissen? Dann weglassen. Kann er es
+> NICHT wissen – etwa dass der erste Satz der Beschreibung als Google-Text dient
+> und auf 158 Zeichen gekürzt wird –, dann gehört genau das hin.
+
 ---
 
 ## 1. Was dieses Repo ist
