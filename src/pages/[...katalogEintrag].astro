@@ -48,7 +48,14 @@ export async function getStaticPaths() {
   /* Die ÜBERSICHT entsteht aus derselben Datei. Zwei getrennte Sammel-Routen
      würden sich gegenseitig überdecken – und ohne Übersicht zeigten der
      Zurück-Link jeder Detailseite und die Navigation ins Leere. */
-  const seiten: { params: { katalogEintrag: string }; props: { eintrag?: unknown } }[] = [
+  /* `eintrag?: KatalogEintrag`, NICHT `unknown`.
+     Astro leitet die Eigenschaften einer Seite aus `getStaticPaths` ab – die
+     `Props`-Schnittstelle weiter unten wird dabei überstimmt. Stand hier
+     `unknown`, war der Eintrag auf der GANZEN Seite typlos: 39 Typfehler aus
+     einem einzigen Wort, und jeder Zugriff (`eintrag.titel`, `eintrag.bilder`)
+     ungeprüft. Gemerkt hat es niemand, weil die Typprüfung in der Vorlage bis
+     zum 30.07.2026 gar nicht lief. */
+  const seiten: { params: { katalogEintrag: string }; props: { eintrag?: KatalogEintrag } }[] = [
     { params: { katalogEintrag: basis }, props: {} },
   ];
 
@@ -225,12 +232,6 @@ const absatzTrenner = /\n\s*\n/;
                       src={b.quelle}
                       alt={b.alt}
                       widths={[400, 800, 1280, 1600]}
-                      {/* Die Bildbreite hängt davon ab, WIE VIELE Bilder es
-                          gibt: Bei mehreren stehen sie nebeneinander (halbe
-                          Breite), bei einem einzigen füllt es die ganze Spalte.
-                          Ohne diese Unterscheidung lud der Browser für ein
-                          Einzelbild die halb so große Datei und zeigte sie
-                          hochskaliert – die Sichtprüfung meldete „verpixelt". */}
                       sizes={
                         bilder.filter((x) => x.quelle).length > 1
                           ? '(min-width: 800px) 50vw, 100vw'

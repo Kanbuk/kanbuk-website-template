@@ -227,7 +227,21 @@ export default defineConfig({
        Adressen entstehen). Ein Angleichen über `serialize` ist nicht möglich:
        die Sitemap-Erweiterung entfernt den Schrägstrich danach wieder.
        Die Prüf-Regel in scripts/check.mjs kennt diesen Fall. */
-    ...(istLive ? [sitemap()] : []),
+    /* SEITEN MIT noindex GEHÖREN NICHT IN DIE SITEMAP.
+       Die Erweiterung schließt von sich aus nur Fehlerseiten (404, 500) aus –
+       nicht die Danke-Seite und nicht die Anfrage-Fehlerseite, die der Motor
+       beide bewusst auf `noindex` setzt. Folge: In der Relaunch-Woche steht in
+       der Search Console der rote Fehler „Übermittelte URL als ‚noindex'
+       gekennzeichnet" – ausgerechnet dann, wenn der Inhaber das erste Mal
+       hinsieht und wissen will, ob der Umzug geklappt hat.
+       Beim Ergänzen einer weiteren noindex-Seite gehört sie hier dazu. */
+    ...(istLive
+      ? [
+          sitemap({
+            filter: (seite) => !/\/(danke|anfrage-fehler)\/?$/.test(seite),
+          }),
+        ]
+      : []),
     auslieferungsRegeln(),
   ],
   /**

@@ -1,0 +1,78 @@
+---
+/**
+ * Anfrage fehlgeschlagen – das Ziel, wenn eine Formular-Sendung NICHT ankam.
+ *
+ * WARUM ES EINE EIGENE SEITE IST UND KEIN ZUSATZ AN DER ADRESSE:
+ * Bis zum 30.07.2026 führten Erfolg und Fehler beide auf `/danke`, und der
+ * Unterschied stand als `?fehler=…` in der Adresse. Ausgewertet hat ihn ein
+ * Skript – ausgerechnet auf dem Weg, den **ausschließlich Besucher OHNE
+ * Skript** gehen. Eine statisch gebaute Seite kann die Adresszeile nicht
+ * lesen. Ergebnis: Wem die Anfrage gerade misslungen war, dem dankte die Seite
+ * dafür. Er ging zufrieden weg und hat nie wieder angefragt.
+ *
+ * Die ROUTE entscheidet, nicht ein Zusatz: Erfolg → /danke, Fehler → hier.
+ * Das funktioniert ohne eine Zeile JavaScript.
+ *
+ * WARUM EIN TEXT FÜR BEIDE URSACHEN: Ohne Skript prüft der Browser die
+ * Pflichtfelder selbst (siehe Formular.astro – `novalidate` setzt erst das
+ * Skript). Eine unvollständige Sendung erreicht den Server also praktisch nur
+ * noch bei einem sehr alten Browser. Zwei Fehlerseiten für einen Fall, den es
+ * fast nicht gibt, wären zwei Stellen zum Pflegen.
+ *
+ * Nicht indexiert: Diese Seite in den Suchergebnissen wäre für niemanden
+ * nützlich, und sie gehört auch nicht in die Sitemap.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/anfrage-fehler"
+  titel="Die Anfrage kam nicht an"
+  beschreibung="Die Nachricht konnte nicht entgegengenommen werden. Hier stehen die direkten Kontaktwege."
+  noindex
+>
+  <Kopf aktuell="/anfrage-fehler" />
+  <main id="inhalt" class="danke">
+    <div class="container container--schmal">
+      <h1 class="danke__titel">Das hat leider nicht geklappt</h1>
+      <p class="danke__text">
+        {duzen
+          ? 'Deine Nachricht konnte gerade nicht entgegengenommen werden. Entweder hat eine Angabe gefehlt, oder bei uns ist etwas schiefgegangen. Bitte versuche es noch einmal – oder melde dich direkt:'
+          : 'Ihre Nachricht konnte gerade nicht entgegengenommen werden. Entweder hat eine Angabe gefehlt, oder bei uns ist etwas schiefgegangen. Bitte versuchen Sie es noch einmal – oder melden Sie sich direkt:'}
+      </p>
+      <p class="danke__text">
+        {site.mode === 'live' ? (
+          <a href={`tel:${site.betrieb.telefon.replace(/[^+0-9]/g, '')}`}>{site.betrieb.telefon}</a>
+        ) : (
+          <span>{site.betrieb.telefon}</span>
+        )}
+        {' · '}
+        <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
+      </p>
+      <p><a class="danke__zurueck" href="/">← {duzen ? 'Zurück zur Startseite' : 'Zurück zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<style>
+  .danke {
+    padding-block: var(--raum-2xl);
+  }
+  .danke__titel {
+    font-size: var(--schrift-2xl);
+    margin-bottom: var(--raum-s);
+  }
+  .danke__text {
+    margin-bottom: var(--raum-s);
+  }
+  .danke__zurueck {
+    display: inline-block;
+    margin-top: var(--raum-s);
+  }
+</style>

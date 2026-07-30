@@ -109,7 +109,22 @@ const sortierungen = sortierOptionen();
         <article class="katalog__karte" {...katalogAttribute(e)}>
           {foto && (
             <a href={katalogAdresse(e)} tabindex="-1" aria-hidden="true">
-              {/* <Picture> mit JPEG-Ersatzfassung - siehe index.astro. */}
+              {/* <Picture> mit JPEG-Ersatzfassung - siehe index.astro.
+
+                  Das erste Bild ist auf einer Katalogseite fast immer das, was
+                  den ersten Eindruck bestimmt (LCP). Mit `lazy` startet es erst
+                  spät und die Seite wirkt träge – die Sichtprüfung schlug genau
+                  deshalb an. Deshalb `eager` und `fetchpriority="high"` beim
+                  ersten Eintrag.
+
+                  ACHTUNG, sonst bricht die Typprüfung: Dieser Kommentar steht
+                  VOR dem Element, nicht zwischen seinen Attributen. Ein
+                  geschweifter JSX-Kommentar ist nur als KIND eines Elements
+                  gültig; Astro rendert ihn zwar auch zwischen Attributen,
+                  `astro check` bricht dort aber mit „Unterminated string
+                  literal" ab – und reisst den Typ der ganzen Datei mit. Am
+                  30.07.2026 an drei Motor-Dateien gemessen, als die Typprüfung
+                  zum ersten Mal lief. */}
               <Picture
                 formats={['webp']}
                 fallbackFormat="jpeg"
@@ -117,10 +132,6 @@ const sortierungen = sortierOptionen();
                 alt=""
                 widths={[300, 600, 900]}
                 sizes="(min-width: 800px) 33vw, 100vw"
-                {/* Das erste Bild ist auf einer Katalogseite fast immer das,
-                    was den ersten Eindruck bestimmt (LCP). Mit `lazy` startet
-                    es erst spät und die Seite wirkt träge – die Sichtprüfung
-                    schlug genau deshalb an. */}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchpriority={i === 0 ? 'high' : undefined}
               />

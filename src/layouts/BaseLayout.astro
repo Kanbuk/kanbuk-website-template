@@ -331,11 +331,17 @@ const jsonLd = {
     addressLocality: site.betrieb.adresse.ort,
     addressCountry: site.betrieb.adresse.land ?? 'AT',
   },
-  ...(site.betrieb.breitengrad !== undefined && site.betrieb.laengengrad !== undefined && {
+  /* Die Koordinaten stehen unter betrieb.ADRESSE, nicht direkt unter betrieb.
+     Hier stand `site.betrieb.breitengrad` – ein Feld, das es nie gab. Der
+     ganze geo-Block fiel damit still weg, und `npm run karte` gibt die Werte
+     am Ende extra aus, damit sie jemand einträgt. Ergebnis: eingetragen, aber
+     nie ausgeliefert – und das ist eines der stärksten Signale für „in meiner
+     Nähe". Gefunden von der Typprüfung, kaum dass sie zum ersten Mal lief. */
+  ...(site.betrieb.adresse.breitengrad !== undefined && site.betrieb.adresse.laengengrad !== undefined && {
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: site.betrieb.breitengrad,
-      longitude: site.betrieb.laengengrad,
+      latitude: site.betrieb.adresse.breitengrad,
+      longitude: site.betrieb.adresse.laengengrad,
     },
     hasMap: site.betrieb.adresse.googleMapsUrl,
   }),

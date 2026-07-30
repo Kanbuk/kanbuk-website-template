@@ -35,7 +35,9 @@
     "sharp": "^0.35.3"
   },
   "devDependencies": {
-    "playwright": "^1.61.1"
+    "@astrojs/check": "^0.9.10",
+    "playwright": "^1.61.1",
+    "typescript": "^6.0.3"
   },
   "iconBibliothek": {
     "lucide": "1.27.0",

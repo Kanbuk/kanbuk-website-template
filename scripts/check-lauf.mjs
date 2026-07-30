@@ -79,13 +79,22 @@ if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html
      Feldname bricht deshalb erst zur Laufzeit ab – und wenn er in einem
      optionalen Ausdruck steht (`site.betrieb?.nam`), rendert die Stelle still
      LEER und niemand merkt es.
-     WARUM BEDINGT: `astro check` braucht @astrojs/check + typescript und
-     FRAGT INTERAKTIV nach, wenn sie fehlen. Ein solcher Dialog mitten in der
-     Prüfkette würde den Ein-Rutsch-Ablauf einfrieren – schlimmer als die
-     fehlende Prüfung. Wer sie will: `npm i -D @astrojs/check typescript`,
-     danach läuft sie automatisch mit. */
+     SEIT 30.07.2026 LIEGEN DIE WERKZEUGE BEI (@astrojs/check + typescript als
+     devDependencies). Vorher hing die Prüfung an einer Bedingung und meldete
+     „übersprungen" – die Vorlage war damit genau in dem Zustand, den CLAUDE.md
+     selbst verbietet („Eine übersprungene Prüfung ist kein grünes Tor").
+     Was der erste echte Lauf sofort fand: 50 Fehler, darunter eine kaputte
+     Frontmatter-Grenze, ein Katalog-Eintrag ohne Typ (39 Folgefehler aus einem
+     Wort) und die Geo-Koordinaten des Betriebs, die unter einem Feldnamen
+     gelesen wurden, den es nie gab – der ganze geo-Block fiel still weg.
+     Nichts davon hat der Build gemeldet, und keines der anderen Tore konnte es.
+
+     Die Bedingung bleibt trotzdem stehen: Ein Klon kann die Entwickler-Pakete
+     abgeräumt haben. Dann ist es aber kein stiller Hinweis mehr, sondern beim
+     Live-Gang ein Abbruch. */
   const typenDa = existsSync(join(WURZEL, 'node_modules', '@astrojs', 'check'));
   if (typenDa) {
+    console.log('Typprüfung (astro check) …');
     const typen = spawnSync('npx astro check --minimumSeverity error', {
       stdio: 'inherit',
       shell: true,
@@ -94,8 +103,21 @@ if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html
       console.error('\n✗ Typprüfung fehlgeschlagen – bitte die gemeldeten Stellen beheben.');
       process.exit(typen.status);
     }
+    console.log('✓ Typprüfung bestanden.\n');
+  } else if (process.argv.includes('--live')) {
+    console.error(
+      '\n✗ Die Typprüfung fehlt – und vor dem Live-Gang ist das ein Abbruch.\n' +
+        '  Die Vorlage liefert @astrojs/check und typescript mit; hier fehlen sie.\n' +
+        '  Nachholen: npm i -D @astrojs/check typescript\n' +
+        '  Grund: Ein falsch geschriebener Feldname bricht sonst erst beim Besucher ab –\n' +
+        '  und steht er in einem optionalen Ausdruck, rendert die Stelle einfach LEER.',
+    );
+    process.exit(1);
   } else {
-    console.log('↷ Typprüfung übersprungen (npm i -D @astrojs/check typescript schaltet sie ein).');
+    console.log(
+      '⚠ Typprüfung übersprungen – das ist KEIN grünes Tor (CLAUDE.md Abschnitt 9).\n' +
+        '  Einschalten: npm i -D @astrojs/check typescript',
+    );
   }
   npxLauf(['astro', 'build']);
   writeFileSync(MARKE, JSON.stringify({ marke: quellMarke() }) + '\n', 'utf-8');

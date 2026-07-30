@@ -32,11 +32,13 @@ const duzen = site.ansprache === 'du';
   <Kopf aktuell="/danke" />
   <main id="inhalt" class="danke">
     <div class="container container--schmal">
-      {/* Der Fehlerfall wird per Skript aus der Adresszeile geholt – ohne
-          Skript bleibt die Erfolgsmeldung stehen. Beides ist besser als eine
-          rohe Datenzeile, und der Besucher hat immer einen Weg zurück. */}
+      {/* HIER STEHT NUR DER ERFOLGSFALL. Der Fehlerfall hat seine eigene
+          Route (/anfrage-fehler). Bis zum 30.07.2026 führten beide hierher und
+          ein Skript machte aus `?fehler=…` den richtigen Text – ausgerechnet
+          auf dem Weg, den ausschließlich Besucher OHNE Skript gehen. Wem die
+          Anfrage misslungen war, dem dankte die Seite dafür. */}
       <h1 class="danke__titel">{duzen ? 'Danke für deine Nachricht!' : 'Vielen Dank für Ihre Nachricht!'}</h1>
-      <p class="danke__text" data-danke-text>
+      <p class="danke__text">
         {duzen
           ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
           : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.'}
@@ -56,25 +58,6 @@ const duzen = site.ansprache === 'du';
   </main>
   <Fuss />
 </BaseLayout>
-
-<script>
-  /* Kam die Weiterleitung mit einem Fehler, ehrlich benennen statt zu danken.
-     Die Adresse trägt nur ein Kurzzeichen – der Text entsteht hier. So steht
-     nie eine Feldbeschriftung im Browserverlauf oder im Server-Protokoll. */
-  const codes = {
-    eingabe: 'Es hat eine Angabe gefehlt oder war unvollständig.',
-    versand: 'Die Nachricht konnte gerade nicht gesendet werden.',
-  };
-  const fehler = new URLSearchParams(location.search).get('fehler');
-  if (fehler) {
-    const titel = document.querySelector('.danke__titel');
-    const text = document.querySelector('[data-danke-text]');
-    if (titel) titel.textContent = 'Das hat leider nicht geklappt';
-    const satz = codes[fehler] ?? 'Die Anfrage konnte nicht entgegengenommen werden.';
-    if (text) text.textContent = `${satz} Bitte versuchen Sie es erneut oder rufen Sie uns an.`;
-  }
-</script>
-
 <style>
   .danke {
     padding-block: var(--raum-2xl);
