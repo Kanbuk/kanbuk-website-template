@@ -14,6 +14,11 @@ const telHref = 'tel:' + site.betrieb.telefon.replace(/[^+0-9]/g, '');
 >
   <p>Offenlegung gemäß § 5 ECG, § 14 UGB und § 25 Mediengesetz.</p>
 
+  {/* GENAU EIN MEDIENINHABER. § 25 MedienG verlangt eine eindeutige Angabe.
+      Stünde hier oben die Gesellschaft und weiter unten noch eine Person als
+      zweiter „Inhaber", wäre genau das nicht mehr eindeutig – ein Fall, der in
+      einem Kundenprojekt so im Impressum stand. Wer vertritt, steht deshalb
+      getrennt als „Vertretungsbefugt" bei den Unternehmensdaten. */}
   <h2>Medieninhaber &amp; Diensteanbieter</h2>
   <address>
     <strong>{r.firmenwortlaut}</strong><br />
@@ -29,6 +34,13 @@ const telHref = 'tel:' + site.betrieb.telefon.replace(/[^+0-9]/g, '');
   <h2>Unternehmensdaten</h2>
   <ul>
     <li>Rechtsform: {r.rechtsform}</li>
+    {/* Sitz = GEMEINDE (§ 14 UGB), nicht die vollständige Anschrift. Bei
+        kleinen Betrieben ist der Firmenbuch-Sitz oft eine Wohnadresse; ohne
+        diese Trennung veröffentlicht man entweder sie oder lässt eine
+        Pflichtangabe weg. Fehlt das Feld, sagt die Anschrift oben beides. */}
+    {r.sitz && <li>Sitz: {r.sitz}</li>}
+    {/* „Inhaber" gibt es bei OG, KG und GmbH nicht – dort vertritt jemand. */}
+    {r.vertretungsbefugt && <li>Vertretungsbefugt: {r.vertretungsbefugt}</li>}
     {r.uid && <li>UID-Nummer: {r.uid}</li>}
     {r.firmenbuchnummer && <li>Firmenbuchnummer: {r.firmenbuchnummer}</li>}
     {r.firmenbuchgericht && <li>Firmenbuchgericht: {r.firmenbuchgericht}</li>}

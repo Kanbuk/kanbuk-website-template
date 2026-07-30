@@ -413,13 +413,58 @@ export interface KatalogEintrag {
 }
 
 /** Wie Google die Detailseiten lesen soll. Bestimmt den JSON-LD-Typ. */
+/**
+ * Wie Google die Detailseiten liest. Alle sind Unterklassen von `Product` –
+ * deshalb steht das Angebot immer unter `offers`.
+ *
+ * WARUM DIE LISTE VOLLSTÄNDIG SEIN MUSS: Ein fehlender Untertyp kostet den
+ * größten SEO-Hebel, den ein Katalog überhaupt hat. Am 30.07.2026 an einer
+ * echten Kundenseite aufgelaufen: Der Untertyp, den Google für diese
+ * Warengruppe tatsächlich auswertet, stand nicht in der Liste – und ihn zu
+ * setzen erzeugte einen Typfehler. Gemerkt hat es nur das Bau-Protokoll des
+ * Hosters; lokal war alles grün, weil die Typprüfung nicht lief.
+ *
+ * Die Liste ist jetzt einmal gegen die Branchen gehalten, die der Motor laut
+ * CLAUDE.md bedienen soll. Kommt eine Warengruppe dazu, gehört ihr Untertyp
+ * hierher – NICHT ein `as any` an die Aufrufstelle.
+ */
 export type KatalogSchema =
+  /** Der Rückfall, wenn nichts Genaueres passt. */
   | 'Product'
+  // --- Fahrzeuge ---------------------------------------------------------
+  /** Oberbegriff für alles Fahrbare. */
   | 'Vehicle'
-  | 'Course'
+  /** PKW – der Untertyp, den Google für Autos wirklich auswertet. */
+  | 'Car'
+  /** Motorrad, Roller. */
+  | 'Motorcycle'
+  /** Wohnmobil, Reisemobil. */
+  | 'MotorizedBicycle'
+  // --- Immobilien --------------------------------------------------------
+  /** Wohnung. */
   | 'Apartment'
+  /** Haus. */
   | 'House'
-  | 'Service';
+  /** Einfamilienhaus. */
+  | 'SingleFamilyResidence'
+  /** Gewerbefläche, Büro, Lager. */
+  | 'Accommodation'
+  /** Zimmer – Pension, Hotel, Ferienwohnung. */
+  | 'Room'
+  /** Ganze Unterkunft (Ferienhaus, Appartement zur Miete). */
+  | 'Suite'
+  // --- Kurse und Termine -------------------------------------------------
+  /** Kurs, Workshop, Ausbildung. */
+  | 'Course'
+  /** Einzelner Termin einer Reihe (Yoga-Stunde, Vortrag). */
+  | 'Event'
+  // --- Leistungen und Werke ----------------------------------------------
+  /** Dienstleistung – Handwerk, Beratung, Behandlung. */
+  | 'Service'
+  /** Referenz, Projekt, Arbeitsprobe (Tischler, Fotograf, Agentur). */
+  | 'CreativeWork'
+  /** Software, Vorlagen, digitale Güter. */
+  | 'SoftwareApplication';
 
 export interface Katalog {
   /** Basispfad OHNE abschließenden Schrägstrich, z. B. '/fahrzeuge'.
@@ -672,6 +717,38 @@ export interface Rechtstexte {
   rechtsform: string;
   /** Kann von der Kontaktadresse abweichen (Sitz laut Firmenbuch). */
   adresse: string;
+  /**
+   * DER SITZ IST NICHT DIE ANSCHRIFT – und diese Unterscheidung schützt eine
+   * Privatadresse.
+   *
+   * § 14 UGB verlangt den **Sitz**, also die GEMEINDE. Bei kleinen Betrieben
+   * ist der Firmenbuch-Sitz aber häufig die WOHNADRESSE eines Gesellschafters.
+   * Wer beides gleichsetzt, hat nur zwei Möglichkeiten – und beide sind
+   * falsch: Er veröffentlicht eine Privatanschrift, oder er lässt eine
+   * Pflichtangabe weg.
+   *
+   * Hier steht die Gemeinde: `'Wien'`, `'Graz'`, `'Hagenberg'`. Die Anschrift,
+   * unter der der Betrieb erreichbar ist, steht getrennt (`adresse`) und
+   * erfüllt § 5 ECG.
+   *
+   * WEGLASSEN, wenn Sitz und Betriebsstätte derselbe Ort sind – dann sagt
+   * `adresse` beides.
+   */
+  sitz?: string;
+  /**
+   * WER DEN BETRIEB VERTRITT – bei Gesellschaften.
+   *
+   * „Inhaber" ist bei einer Personengesellschaft (OG, KG) und bei einer GmbH
+   * schlicht der falsche Begriff: Dort gibt es keinen Inhaber, sondern
+   * Gesellschafter und eine vertretungsbefugte Person. Die gehört getrennt
+   * genannt – und NICHT als zweiter Medieninhaber. § 25 MedienG verlangt eine
+   * eindeutige Angabe, wer Medieninhaber ist; stehen oben die Gesellschaft und
+   * unten eine Person, ist genau das nicht mehr eindeutig.
+   *
+   * Beispiel: `'Maria Muster (Geschäftsführerin)'`.
+   * Bei einem Einzelunternehmen weglassen.
+   */
+  vertretungsbefugt?: string;
   /** UID-Nummer, falls vorhanden. */
   uid: string;
   aufsichtsbehoerde: string;

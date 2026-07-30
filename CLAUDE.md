@@ -636,6 +636,29 @@ Feld weglassen → es gibt sie nicht.
 **Nötig**, sobald über die Website verkauft, verbindlich gebucht oder bestellt
 wird. Ein reines Kontaktformular braucht keine AGB.
 
+### Gewährleistung und Garantie sind ZWEI Dinge – nie „bzw."
+
+Steht auf einer Seite „Gewährleistung bzw. Garantie", setzt sie beides gleich.
+Das ist irreführend (§ 9b KSchG):
+
+- **Gewährleistung** ist die *gesetzliche* Haftung für Mängel, die beim Kauf
+  schon vorhanden waren. Gegenüber Verbrauchern ist sie nicht abdingbar.
+- **Garantie** ist eine *freiwillige* Zusage obendrauf – oft von einem Dritten
+  (Hersteller, Versicherer), nicht vom Betrieb.
+
+**Warum das mehr wiegt als eine Formulierung:** Über das FAQ-Schema erscheint so
+eine Antwort direkt im Google-Treffer – als Zusage des Betriebs, an einer Stelle,
+an der niemand das Kleingedruckte danebenstellen kann.
+
+Bei jedem Betrieb, der verkauft, gilt deshalb: die beiden Begriffe getrennt
+halten und beim Kunden nachfragen, **wer** die Garantie gibt (Hersteller,
+Drittanbieter, er selbst). Davon hängt ab, was auf der Seite stehen darf.
+
+**Und generell: erst fragen, dann umschreiben.** Ein vermuteter Widerspruch
+zwischen Seite und AGB löste sich in einem Kundenprojekt auf, sobald der Kunde
+gefragt wurde – die Seite hatte recht. AGB sind Vertragsrecht; wer sie
+„glattzieht", ändert einen Vertrag.
+
 **Den Text erfindet der Motor nicht.** AGB sind Vertragsrecht; er kommt vom
 Betrieb (Anwalt, WKO-Muster, Steuerberater). Fehlt er noch:
 `PLATZHALTER: AGB-Text vom Kunden` eintragen – das Prüf-Tor hält den Live-Gang
@@ -677,6 +700,21 @@ Bildservers.
 Dazu: **geschrieben wird JSON, nie Code.** Ein Generator, der TypeScript
 zusammensetzt, kann bei unerwarteter Eingabe ungültigen Code erzeugen – und
 dann sprengt ein Laie mit „Veröffentlichen" den Build, ohne es je zu erfahren.
+
+> **Wo ein Skript Code erzeugt, gelten dieselben Regeln wie für Handarbeit –
+> erzeugte Dateien liest niemand nach.** Am 30.07.2026 an einer Kundenseite
+> aufgelaufen, beide Male nur im Bau-Protokoll des Hosters sichtbar, während
+> der Build als erfolgreich galt:
+>
+> - Ein `as const` an einem erzeugten Export machte daraus ein
+>   **readonly-Tupel**, das dem Motor-Typ `string[]` nicht zuweisbar war. Es
+>   war überflüssig – der Typ verlangt keine feste Wertemenge.
+> - Ein erzeugter **Import ohne `.js`-Endung** – genau die Falle, vor der der
+>   Kommentar in `api/contact.ts` warnt, nur eben in generiertem Code.
+>
+> Beides ist **zweimal** zu beheben: im Generator UND in den bereits erzeugten
+> Dateien. Sonst stimmen sie beim nächsten Lauf wieder nicht überein, und
+> niemand weiß, welche Fassung die richtige war.
 
 ### Eine Feldliste, drei Verbraucher
 
