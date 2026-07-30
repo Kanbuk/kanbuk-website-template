@@ -154,6 +154,34 @@ const sortierungen = sortierOptionen();
 </div>
 
 <style>
+  /* TIPPFLÄCHEN AM HANDY – 44 px, in der Komponente statt im Grundstil.
+     Diese Beispiel-Liste ist bewusst fast ungestaltet (das Aussehen kommt vom
+     Design), aber BEDIENBAR muss sie sein: Ihre Knöpfe und Auswahlfelder maßen
+     bei 350 px zwischen 20 und 25 px Höhe. Der Merk-Knopf auf der Karte war
+     mit 25 × 25 px der schlimmste – er liegt über einem Foto, daneben tippt
+     man zuverlässig.
+     Hier ist `min-height` richtig und kein Pseudo-Element nötig: Es gibt keine
+     Design-Vorgabe, an der sich etwas verschieben könnte. Wer die Liste beim
+     Port ersetzt, nimmt die Regel mit. */
+  @media (max-width: 640px) {
+    .katalog button,
+    .katalog select,
+    .katalog input[type='range'] {
+      min-height: 44px;
+      /* Auch die BREITE: Ein Filterknopf mit kurzer Beschriftung („A", „XL",
+         „SUV") maß 25 px. Die Höhe allein hilft dort nichts. */
+      min-width: 44px;
+    }
+    /* Der Merk-Knopf liegt ueber einem Foto - die Breite zaehlt hier genauso
+       wie die Hoehe. `min-width` allein reicht nicht, wenn der Knopf in einem
+       Raster steckt; `width` setzt sie durch. */
+    .katalog__karte button[data-merken] {
+      width: 44px;
+      min-width: 44px;
+      min-height: 44px;
+    }
+  }
+
   /* Nur das Nötige, damit die Liste ohne Design brauchbar ist und bei 350 px
      nicht überläuft. min() ist Pflicht – sonst schiebt die Spaltenbreite. */
   .katalog {

@@ -2,7 +2,7 @@
  * =============================================================================
  *  SICHT – die automatische Sichtprüfung vor jedem Launch
  * =============================================================================
- *  Öffnet JEDE gebaute Seite in einem echten Browser bei 350 / 768 / 1440 px,
+ *  Öffnet JEDE gebaute Seite in einem echten Browser bei 350 / 430 / 768 / 1440 px,
  *  macht Screenshots und prüft dabei automatisch:
  *
  *   1. HORIZONTALER ÜBERLAUF – die Seite darf auf keiner Breite seitlich
@@ -37,7 +37,16 @@ const wert = (name, standard) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : standard;
 };
-const BREITEN = wert('breiten', '350,768,1440').split(',').map((b) => Number(b.trim()));
+/* VIER BREITEN, und 430 ist die wichtigste Ergänzung.
+   Zwischen 350 und 768 lag eine Lücke – und genau dort kommen die meisten
+   Besucher an: Aktuelle Handys im Hochformat messen 390 bis 440 px. Dort
+   kippen ausserdem die Raster von einer auf zwei Spalten, also genau die
+   Stelle, an der ein Layout bricht.
+   Am 30.07.2026 an einer echten Kundenseite belegt: Ein abgeschnittener Knopf
+   („DETA" statt „Details ansehen") lag in dieser Lücke und wurde von keiner
+   Breite erwischt.
+   350 bleibt: das schmalste Gerät, das noch vorkommt. */
+const BREITEN = wert('breiten', '350,430,768,1440').split(',').map((b) => Number(b.trim()));
 
 if (!existsSync(DIST)) {
   console.error('✗ dist/ fehlt. Zuerst "npm run check" (baut und prüft), dann "npm run sicht".');
@@ -156,6 +165,89 @@ for (const seite of seiten) {
         }
       }
       return { breite: doc.scrollWidth, sichtbar: doc.clientWidth, schuldige };
+    });
+
+    /* 1c) ABGESCHNITTENER TEXT – der blinde Fleck der Überlauf-Messung.
+       Eine Karte mit `overflow: hidden` lässt Text nicht überlaufen, sondern
+       SCHNEIDET ihn ab. Für die Messung oben ist das unsichtbar: Das Dokument
+       scrollt nicht seitlich, also ist alles in Ordnung.
+       Am 30.07.2026 an einer echten Kundenseite: Im Knopf stand „DETA" statt
+       „Details ansehen". Kein Tor hat es gemeldet, kein Mensch hat es gesehen.
+       Gemessen wird nur EINZEILIGER Text – bei mehrzeiligem ist ein Rest unter
+       der Kante normal und gewollt (Zeilenklemme). */
+    const abgeschnitten = await page.evaluate(() => {
+      const funde = [];
+      for (const el of document.querySelectorAll('button,a,span,h1,h2,h3,li,label,td,th')) {
+        if (el.children.length > 0) continue; // nur Blätter, sonst zählt man doppelt
+        const text = (el.textContent || '').trim();
+        if (text.length < 4) continue;
+        const s = getComputedStyle(el);
+        if (s.display === 'none' || s.visibility === 'hidden') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8) continue;
+        // Mehrzeilig? Dann ist Beschneiden gewollt.
+        const zeilenhoehe = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.4;
+        if (r.height > zeilenhoehe * 1.6) continue;
+        if (el.scrollWidth <= el.clientWidth + 1) continue;
+        // Läuft der Text aus einem Vorfahren mit overflow:hidden heraus?
+        let versteckt = false;
+        for (let p = el; p && p !== document.body; p = p.parentElement) {
+          const ps = getComputedStyle(p);
+          if (ps.overflowX === 'hidden' || ps.overflowX === 'clip') { versteckt = true; break; }
+        }
+        if (!versteckt) continue;
+        funde.push(
+          `${el.tagName}${el.className ? '.' + String(el.className).split(' ')[0] : ''}: „${text.slice(0, 40)}" ` +
+            `(${Math.round(el.scrollWidth)}px Text auf ${Math.round(el.clientWidth)}px Platz)`,
+        );
+        if (funde.length >= 5) break;
+      }
+      return funde;
+    });
+
+    /* 1d) TIPPFLÄCHEN – 44 x 44 px ist die empfohlene Fingerfläche.
+       Nur am Handy gemessen: Am Zeigegerät ist ein 20-px-Ziel kein Problem.
+       Der schlimmste Fund einer echten Abnahme war ein Schieberegler mit 16 px
+       Höhe – und das ist eine ZIEHbewegung, nicht ein Tippen. */
+    const zuKlein = breite > 500 ? [] : await page.evaluate(() => {
+      const funde = [];
+      const gesehen = new Set();
+      for (const el of document.querySelectorAll('a,button,input,select,textarea,summary,[role="button"]')) {
+        const s = getComputedStyle(el);
+        if (s.display === 'none' || s.visibility === 'hidden') continue;
+        if (el.type === 'hidden') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        /* Ausserhalb des Sichtfensters weggeparkte Elemente nicht messen.
+           Der Sprung-Link liegt bis zum Tastaturfokus bei -9999px – dort kann
+           ihn niemand treffen, und elementFromPoint findet ihn nie. */
+        if (r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+        // Ein Link MITTEN IM FLIESSTEXT ist kein Bedienelement im Sinne der Regel.
+        const imText = el.tagName === 'A' && el.parentElement
+          && /^(P|LI|TD|SPAN|EM|STRONG|DD)$/.test(el.parentElement.tagName);
+        if (imText) continue;
+        if (r.width >= 44 && r.height >= 44) continue;
+        /* Ein unsichtbares Pseudo-Element vergrößert die TREFFERFLÄCHE, ohne
+           das Layout zu verschieben – genau die vorgeschriebene Technik. Es
+           taucht aber in getBoundingClientRect() nicht auf. Also fragen, was
+           der Browser an den Rändern einer 44er-Fläche wirklich trifft. */
+        const mx = r.left + r.width / 2;
+        const my = r.top + r.height / 2;
+        const trifft = (y) => {
+          /* Ins Fenster klemmen: Ein Element ganz oben oder ganz unten hat
+             seinen Prüfpunkt sonst ausserhalb, und elementFromPoint liefert
+             null – ein Fehlalarm, der nichts mit der Tippfläche zu tun hat. */
+          const g = document.elementFromPoint(mx, Math.min(Math.max(y, 1), innerHeight - 1));
+          return !!g && (g === el || el.contains(g) || g.contains(el));
+        };
+        if (r.height < 44 && trifft(my - 21) && trifft(my + 21)) continue;
+        const kennung = `${el.tagName}${el.className ? '.' + String(el.className).split(' ')[0] : ''}`;
+        if (gesehen.has(kennung)) continue;
+        gesehen.add(kennung);
+        funde.push(`${kennung}: ${Math.round(r.width)}×${Math.round(r.height)} px`);
+        if (funde.length >= 6) break;
+      }
+      return funde;
     });
 
     // 1b) Matsch-Bilder: ein Bild, das breiter angezeigt wird, als seine
@@ -334,6 +426,24 @@ for (const seite of seiten) {
     if (ueberlauf) {
       probleme.push(
         `${kennung}: HORIZONTALER ÜBERLAUF (${ueberlauf.breite}px Inhalt auf ${ueberlauf.sichtbar}px)\n      ${ueberlauf.schuldige.join('\n      ') || '(Verursacher nicht eingrenzbar)'}`,
+      );
+    }
+    for (const a of abgeschnitten) {
+      probleme.push(
+        [
+          `${kennung}: TEXT ABGESCHNITTEN -> ${a}`,
+          '      Ein Vorfahre hat overflow:hidden – der Text läuft nicht über, er wird',
+          '      GEKAPPT. Die Überlauf-Messung sieht das nicht. Platz schaffen oder umbrechen.',
+        ].join('\n'),
+      );
+    }
+    for (const z of zuKlein) {
+      hinweise.push(
+        [
+          `${kennung}: TIPPFLÄCHE ZU KLEIN -> ${z} (empfohlen 44×44)`,
+          '      Vergrößern mit einem unsichtbaren Pseudo-Element, NICHT mit Innenabstand –',
+          '      sonst verschiebt sich das Layout und der Design-Abgleich reißt. Nur am Handy.',
+        ].join('\n'),
       );
     }
     for (const f of [...new Set(jsFehler)]) probleme.push(`${kennung}: JS-Fehler -> ${f.slice(0, 140)}`);

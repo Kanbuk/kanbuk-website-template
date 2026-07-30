@@ -364,3 +364,61 @@ a {
     word-break: break-all;
   }
 }
+
+/* =========================================================================
+ *  TIPPFLÄCHEN – 44 × 44 px, aber OHNE das Layout zu verschieben
+ * =========================================================================
+ *  44 px ist die empfohlene Fingerfläche. Darunter tippt man daneben – und
+ *  bei einem Schieberegler, der 16 px hoch ist, wird aus einer ZIEHbewegung
+ *  ein Glücksspiel. Bei einer echten Abnahme lagen sieben Bedien-Elemente
+ *  darunter, alle erst bei 350 px sichtbar.
+ *
+ *  WARUM EIN PSEUDO-ELEMENT UND NICHT INNENABSTAND: Innenabstand vergrößert
+ *  das Element wirklich – die Zeile wird höher, alles darunter rutscht, und
+ *  der Design-Abgleich reißt an einer Stelle, die gar nicht gemeint war. Ein
+ *  unsichtbares Pseudo-Element liegt DARÜBER und ändert nichts am Layout.
+ *
+ *  NUR AM HANDY: Am Zeigegerät ist ein 22-px-Ziel kein Problem, und die
+ *  vergrößerten Flächen würden sich dort gegenseitig überlappen.
+ *
+ *  `position: relative` ist Pflicht am Element selbst – sonst hängt sich das
+ *  Pseudo-Element an den nächsten positionierten Vorfahren und deckt die
+ *  halbe Seite ab.
+ * ========================================================================= */
+/* Bewusst OHNE `pointer: coarse`: Ein schmales Fenster IST in der Praxis ein
+   Handy, und auf einem schmalen Desktop-Fenster kostet die größere Fläche
+   nichts. Dazu ein handfester Grund: Der Prüfbrowser meldet `pointer: fine` –
+   mit der Bedingung hätte die Regel in keiner einzigen Messung gegriffen und
+   wäre nie aufgefallen, wenn sie kaputtgeht. */
+@media (max-width: 640px) {
+  .skip-link,
+  .fehler__link,
+  .signatur,
+  .danke__zurueck {
+    /* `inline-block` ist Pflicht: An einem reinen Inline-Element hat
+       `position: relative` keinen zuverlässigen Bezugsrahmen, und das
+       Pseudo-Element hängt sich an den nächsten positionierten Vorfahren. */
+    display: inline-block;
+    position: relative;
+  }
+  /* Der Absende-Knopf des Motors maß 50 × 25 px – bei einem Formular ist das
+     das WICHTIGSTE Bedienelement der ganzen Seite. Hier keine Trickserei mit
+     einem Pseudo-Element: Ein Knopf DARF größer sein, das ist überall so. */
+  .formular__absenden {
+    min-height: 44px;
+  }
+  .skip-link::after,
+  .fehler__link::after,
+  .signatur::after,
+  .danke__zurueck::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    /* Von der Mitte aus auf mindestens 44 px aufziehen. */
+    top: 50%;
+    transform: translateY(-50%);
+    min-height: 44px;
+    height: 100%;
+  }
+}

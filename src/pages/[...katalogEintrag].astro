@@ -29,6 +29,7 @@ import Fuss from '../components/Fuss.astro';
 import Formular from '../components/Formular.astro';
 import { site, type KatalogEintrag } from '../../content.config';
 import { bild } from '../lib/bilder';
+import { kuerzeAufWort } from '../lib/text';
 import { katalogAdresse, preisText, katalogEintraege } from '../lib/katalog';
 import KatalogListe from '../components/KatalogListe.astro';
 
@@ -98,16 +99,19 @@ const preis = eintrag ? preisText(eintrag) : '';
 
 /* Description: eigener Satz je Eintrag statt einer fuer alle. Google wirft
    doppelte Descriptions weg - bei 200 Fahrzeugen waere das der ganze Vorteil. */
-const beschreibung = eintrag
+const beschreibungRoh = eintrag
   ? (
       eintrag.kurz ??
       eintrag.beschreibung?.split(/\n/)[0] ??
       `${eintrag.titel} bei ${site.betrieb.name}.`
     )
       .replace(/\s+/g, ' ')
-      .slice(0, 158)
+      /* NICHT `.slice(0, 158)` – das schneidet mitten im Wort und genau das
+         steht danach im Google-Treffer („… und Navigatio"). */
+      .trim()
   : (listenSeite?.metaBeschreibung ??
       `Alle ${katalog.mehrzahl} von ${site.betrieb.name} auf einen Blick - mit Filter, Preis und Details.`);
+const beschreibung = kuerzeAufWort(beschreibungRoh, 158);
 
 const absolut = (pfad: string) => new URL(pfad, site.domain).href;
 

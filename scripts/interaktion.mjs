@@ -263,6 +263,14 @@ for (const seite of seiten) {
         // 4. Sortierung: steht die Reihenfolge danach wirklich?
         const sortierung = box.querySelector('[data-filter-sortierung]');
         if (sortierung) {
+          /* Die Reihenfolge VOR dem ersten Sortieren merken – sie ist die
+             Bedeutung von „Empfohlen". Ohne sie ist ein Knopf, der nichts
+             aendern SOLL, von einem, der nichts aendern KANN, nicht zu
+             unterscheiden. Genau daran ist diese Pruefung schon einmal
+             vorbeigelaufen: `if (!wert) return;` im Filter-Baustein, und die
+             Ruecksetz-Option tat gar nichts. */
+          const ausgang = sichtbare().map((el) => el.dataset.katalogEintrag || el.id || '');
+
           for (const option of [...sortierung.options].filter((o) => o.value)) {
             zuruecksetzen();
             sortierung.value = option.value;
@@ -275,6 +283,22 @@ for (const seite of seiten) {
               i === 0 || (richtung === 'ab' ? werte[i - 1] >= w : werte[i - 1] <= w),
             );
             if (!geordnet) fehler.push(`Sortierung "${option.value}" ordnet nicht: ${werte.join(', ')}`);
+          }
+
+          /* Und zurueck auf die leere Option ("Empfohlen"): Sie muss die
+             Ausgangsreihenfolge WIEDERHERSTELLEN. Vorher wurde sie ueber
+             `.filter((o) => o.value)` gar nicht erst angefahren. */
+          const leere = [...sortierung.options].find((o) => !o.value);
+          if (leere && ausgang.length > 1) {
+            sortierung.value = leere.value;
+            sortierung.dispatchEvent(new Event('change', { bubbles: true }));
+            const jetzt = sichtbare().map((el) => el.dataset.katalogEintrag || el.id || '');
+            if (jetzt.join('|') !== ausgang.join('|')) {
+              fehler.push(
+                `"${leere.textContent.trim()}" stellt die Ausgangsreihenfolge nicht wieder her ` +
+                  `(war ${ausgang.join(', ')}, ist ${jetzt.join(', ')})`,
+              );
+            }
           }
           zuruecksetzen();
         }

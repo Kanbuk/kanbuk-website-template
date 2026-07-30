@@ -183,7 +183,34 @@ export function filterStarten(): void {
     }
 
     function sortieren(wert: string) {
-      if (!wert) return;
+      /* „EMPFOHLEN" MUSS DIE AUSGANGSREIHENFOLGE WIEDERHERSTELLEN.
+         Hier stand `if (!wert) return;` – der Knopf tat also NICHTS. Wer erst
+         nach Preis sortierte und dann zurück auf „Empfohlen" ging, blieb auf
+         der Preisreihenfolge sitzen.
+
+         Warum das keine Prüfung gemerkt hat: Die Bedien-Prüfung klickt und
+         schaut, ob sich etwas ändert. Ein Klick, der nichts ändern SOLL, ist
+         von einem, der nichts ändern KANN, nicht zu unterscheiden. Erst der
+         Vergleich mit der Ausgangsreihenfolge trennt die beiden Fälle. */
+      /* „EMPFOHLEN" MUSS DIE AUSGANGSREIHENFOLGE WIEDERHERSTELLEN.
+         Hier stand `if (!wert) return;` – der Eintrag tat also NICHTS. Wer erst
+         nach Preis sortierte und dann zurück auf „Empfohlen" ging, blieb auf
+         der Preisreihenfolge sitzen. Und „Empfohlen" ist die einzige
+         Sortierung, die der BETRIEB selbst bestimmt: die Reihenfolge, in der
+         die Einträge in der Config stehen.
+
+         Warum keine Prüfung das gemerkt hat: Die Bedien-Prüfung klickt und
+         schaut, ob sich etwas ändert. Ein Klick, der nichts ändern SOLL, ist
+         von einem, der nichts ändern KANN, nicht zu unterscheiden. Erst der
+         Vergleich mit der gemerkten Ausgangsreihenfolge trennt die Fälle –
+         `scripts/interaktion.mjs` tut das jetzt.
+
+         `urReihenfolge` gibt es in dieser Datei schon: „Zurücksetzen" braucht
+         sie aus demselben Grund. */
+      if (!wert) {
+        urReihenfolge.forEach((el) => ziel.appendChild(el));
+        return;
+      }
       const teile = wert.split('-');
       const merkmal = teile[0];
       const faktor = teile[1] === 'ab' ? -1 : 1;
