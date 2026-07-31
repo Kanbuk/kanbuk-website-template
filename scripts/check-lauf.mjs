@@ -73,52 +73,69 @@ if (existsSync(join(WURZEL, 'scripts', 'vorcheck.mjs'))) {
 const marke = quellMarke();
 const alteMarke = existsSync(MARKE) ? JSON.parse(readFileSync(MARKE, 'utf-8')).marke : null;
 
-if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html'))) {
-  /* Typprüfung VOR dem Bauen – aber NUR, wenn das Werkzeug schon da ist.
-     WARUM ÜBERHAUPT: Astro entfernt Typen beim Bauen. Ein falsch geschriebener
-     Feldname bricht deshalb erst zur Laufzeit ab – und wenn er in einem
-     optionalen Ausdruck steht (`site.betrieb?.nam`), rendert die Stelle still
-     LEER und niemand merkt es.
-     SEIT 30.07.2026 LIEGEN DIE WERKZEUGE BEI (@astrojs/check + typescript als
-     devDependencies). Vorher hing die Prüfung an einer Bedingung und meldete
-     „übersprungen" – die Vorlage war damit genau in dem Zustand, den CLAUDE.md
-     selbst verbietet („Eine übersprungene Prüfung ist kein grünes Tor").
-     Was der erste echte Lauf sofort fand: 50 Fehler, darunter eine kaputte
-     Frontmatter-Grenze, ein Katalog-Eintrag ohne Typ (39 Folgefehler aus einem
-     Wort) und die Geo-Koordinaten des Betriebs, die unter einem Feldnamen
-     gelesen wurden, den es nie gab – der ganze geo-Block fiel still weg.
-     Nichts davon hat der Build gemeldet, und keines der anderen Tore konnte es.
-
-     Die Bedingung bleibt trotzdem stehen: Ein Klon kann die Entwickler-Pakete
-     abgeräumt haben. Dann ist es aber kein stiller Hinweis mehr, sondern beim
-     Live-Gang ein Abbruch. */
-  const typenDa = existsSync(join(WURZEL, 'node_modules', '@astrojs', 'check'));
-  if (typenDa) {
-    console.log('Typprüfung (astro check) …');
-    const typen = spawnSync('npx astro check --minimumSeverity error', {
-      stdio: 'inherit',
-      shell: true,
-    });
-    if (typen.status !== 0 && typen.status !== null) {
-      console.error('\n✗ Typprüfung fehlgeschlagen – bitte die gemeldeten Stellen beheben.');
-      process.exit(typen.status);
-    }
-    console.log('✓ Typprüfung bestanden.\n');
-  } else if (process.argv.includes('--live')) {
+/* ---------------------------------------------------------------------------
+ *  TYPPRÜFUNG – IMMER, NICHT NUR WENN GEBAUT WIRD
+ * ---------------------------------------------------------------------------
+ *  WARUM ÜBERHAUPT: Astro entfernt Typen beim Bauen. Ein falsch geschriebener
+ *  Feldname bricht deshalb erst zur Laufzeit ab – und wenn er in einem
+ *  optionalen Ausdruck steht (`site.betrieb?.nam`), rendert die Stelle still
+ *  LEER und niemand merkt es. Der erste echte Lauf am 30.07.2026 fand sofort
+ *  50 Fehler, darunter die Geo-Koordinaten des Betriebs, die unter einem
+ *  Feldnamen gelesen wurden, den es nie gab.
+ *
+ *  WARUM SIE HIER OBEN STEHT UND NICHT MEHR IM BAU-ZWEIG (berichtigt am
+ *  31.07.2026): Sie lag bis dahin INNERHALB der Bedingung „nur bauen, wenn sich
+ *  Quellen geändert haben". Damit lief sie beim ersten Lauf – und danach nie
+ *  wieder, ohne ein Wort. Der Wiederholungslauf war dadurch LEISER als der alte
+ *  Zustand: Früher stand wenigstens „⚠ Typprüfung übersprungen" da, danach gar
+ *  nichts, und die Kette endete mit „✓ Prüf-Tor bestanden".
+ *
+ *  Schlimmer noch: Die Bau-Marke unten kennt `api/`, `scripts/` und
+ *  `redaktion/` gar nicht – sie beeinflussen das Bau-Ergebnis nicht. Die
+ *  Typprüfung deckt sie aber sehr wohl ab (`tsconfig.json` nimmt alles). Wer
+ *  also NUR `api/contact.ts` ändert, baute nicht neu und wurde nicht geprüft.
+ *  Ausgerechnet diese Datei baut `astro build` bei `output: 'static'` nie mit –
+ *  hier ist die einzige Stelle, an der sie lokal überhaupt geprüft wird, und es
+ *  ist die Datei, vor deren `.js`-Endungs-Falle der Motor ausdrücklich warnt.
+ * ------------------------------------------------------------------------- */
+const typenDa = existsSync(join(WURZEL, 'node_modules', '@astrojs', 'check'));
+if (typenDa) {
+  console.log('Typprüfung (astro check) …');
+  const typen = spawnSync('npx astro check --minimumSeverity error', {
+    stdio: 'inherit',
+    shell: true,
+  });
+  /* `status === null` heißt ABGEBROCHEN (Signal), nicht bestanden. Das galt
+     hier als Erfolg – ein per Strg+C oder vom Betriebssystem beendeter Lauf
+     meldete „✓ Typprüfung bestanden". Die beiden Hilfsfunktionen oben machen
+     es genau umgekehrt; jetzt auch diese Stelle. */
+  if (typen.status !== 0) {
     console.error(
-      '\n✗ Die Typprüfung fehlt – und vor dem Live-Gang ist das ein Abbruch.\n' +
-        '  Die Vorlage liefert @astrojs/check und typescript mit; hier fehlen sie.\n' +
-        '  Nachholen: npm i -D @astrojs/check typescript\n' +
-        '  Grund: Ein falsch geschriebener Feldname bricht sonst erst beim Besucher ab –\n' +
-        '  und steht er in einem optionalen Ausdruck, rendert die Stelle einfach LEER.',
+      typen.status === null
+        ? '\n✗ Die Typprüfung wurde abgebrochen – das ist kein bestandener Lauf.'
+        : '\n✗ Typprüfung fehlgeschlagen – bitte die gemeldeten Stellen beheben.',
     );
-    process.exit(1);
-  } else {
-    console.log(
-      '⚠ Typprüfung übersprungen – das ist KEIN grünes Tor (CLAUDE.md Abschnitt 9).\n' +
-        '  Einschalten: npm i -D @astrojs/check typescript',
-    );
+    process.exit(typen.status ?? 1);
   }
+  console.log('✓ Typprüfung bestanden.\n');
+} else if (live) {
+  console.error(
+    '\n✗ Die Typprüfung fehlt – und vor dem Live-Gang ist das ein Abbruch.\n' +
+      '  Die Vorlage liefert @astrojs/check und typescript mit; hier fehlen sie.\n' +
+      '  Nachholen: npm i -D @astrojs/check typescript\n' +
+      '  Grund: Ein falsch geschriebener Feldname bricht sonst erst beim Besucher ab –\n' +
+      '  und steht er in einem optionalen Ausdruck, rendert die Stelle einfach LEER.',
+  );
+  process.exit(1);
+} else {
+  console.log(
+    '⚠ Typprüfung übersprungen – das ist KEIN grünes Tor (CLAUDE.md Abschnitt 9).\n' +
+      '  Einschalten: npm i -D @astrojs/check typescript',
+  );
+}
+
+// --- 2b. Bauen – nur wenn nötig ------------------------------------------------
+if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html'))) {
   npxLauf(['astro', 'build']);
   writeFileSync(MARKE, JSON.stringify({ marke: quellMarke() }) + '\n', 'utf-8');
 } else {

@@ -698,7 +698,14 @@ for (const f of htmlDateien) {
      Danke-Seite. Beide stehen nicht in der Seiten-Config, gehören also gar
      nicht in Googles Index – eine Danke-Seite im Suchergebnis nützt niemandem
      und erscheint ohne Zusammenhang. */
-  const istHilfsseite = /^(404|danke)/.test(kurz(f));
+  /* `anfrage-fehler` gehört seit 30.07.2026 dazu und stand hier NICHT: Beim Bau
+     der Seite wurde die Sitemap-Filterzeile ergänzt (astro.config.ts), diese
+     Ausnahmeliste aber vergessen. Wirkung: Sobald ein Klon auf `mode: 'live'`
+     steht, meldet das Tor einen FEHLER für eine Seite, die der Motor selbst
+     absichtlich auf noindex baut – bei jedem Klon, bei jedem Live-Gang, ohne
+     dass irgendetwas kaputt wäre. Wer eine noindex-Hilfsseite ergänzt, muss
+     BEIDE Stellen anfassen. */
+  const istHilfsseite = /^(404|danke|anfrage-fehler)/.test(kurz(f));
   if (istLive && noindex && !istHilfsseite) {
     fehler(`${kurz(f)}: mode ist 'live', aber die Seite steht auf noindex`);
   }
