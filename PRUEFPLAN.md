@@ -137,6 +137,41 @@ Sitzungen**:
 
 ---
 
+## Vorher: drei Entscheidungen, die nur der Inhaber treffen kann
+
+Ohne sie prüft Sitzung A ins Blaue – bei Over-Engineering ist die Frage nicht
+technisch, sondern geschäftlich.
+
+1. **Bleibt das Redaktionssystem?** Es kostet Wartung, war nie an einem echten
+   Dienst, und 10 der 33 offenen Punkte stecken darin. Drei mögliche Antworten:
+   *bleibt und wird fertiggemacht* · *bleibt, wird aber eingefroren und erst bei
+   einem zahlenden Kunden angefasst* · *fliegt raus*.
+2. **Welche der 25 Werkzeuge wurden je an einem echten Kunden benutzt?** Was nie
+   lief, ist ungeprüfter Code mit Wartungslast. Die Liste steht in
+   `package.json → scripts`.
+3. **Wie viel Pflichtlektüre ist gerechtfertigt?** ~2.000 Zeilen liest jeder
+   Chat, bevor er irgendetwas tut – bei jedem Kundenprojekt, jedes Mal. Soll die
+   Prüfung vorschlagen, was Regel bleibt und was in ein Archiv wandert?
+
+## Was ohne Claude schon vorbereitet werden kann
+
+Spart in Sitzung C (Yuri Nabi) direkt Zeit:
+
+- **Auftragsverarbeitungsvertrag nach Art. 28 DSGVO** besorgen (Anwalt, WKO).
+  Steht als echter Blocker in STAND.md und betrifft **jeden** zahlenden Kunden,
+  sobald Kanbuk den Versand-Schlüssel hält und deployt. Kein Code – nur der
+  Inhaber kann das.
+- **Design-Projekt vollständig ablegen:** `<Projekt>.dc.html` **und**
+  `_ds_bundle.js` samt `tokens/*.css`. Wer nur eines von beidem hat, baut
+  garantiert falsch (CLAUDE.md Abschnitt 4).
+- **Fotos** in den Ordner `fotos/` legen – sie haben Vorrang vor allem anderen.
+- **Von der bestehenden Website:** Adressliste der alten Seiten, dazu den
+  Search-Console-Export (nicht nur die Sitemap – der Export zeigt, was Google
+  wirklich ausliefert).
+- **DNS-Zone beim Anbieter exportieren**, bevor irgendetwas umgestellt wird.
+  Exportieren, nicht von außen abfragen: Im letzten Projekt zeigte die Abfrage
+  sieben Einträge, der Export acht – der fehlende war der für das Mailprogramm.
+
 ## Das Abbruchkriterium
 
 Nicht „Claude findet nichts mehr" – eine Prüfung ohne Auslöser findet **immer**
