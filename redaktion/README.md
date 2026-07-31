@@ -125,12 +125,25 @@ Sie holt Inhalte **und Bilder**, checkt sie **nur bei einer Änderung** ein, und
 der Einchecke-Vorgang stößt bei Vercel automatisch eine neue Veröffentlichung
 an. Sie läuft nachts, auf Knopfdruck und auf den Webhook hin.
 
-**Einmalig im Repo einstellen:**
+**Einmalig im Repo einstellen** – zwei Dinge, beide in den Einstellungen des
+Repos beim Hoster:
 
-1. *Settings → Actions → General → Workflow permissions* auf **„Read and
-   write"**
-2. Nur bei privatem Datensatz: *Settings → Secrets and variables → Actions* →
-   Secret `REDAKTION_TOKEN`
+1. **Abläufe brauchen Schreibrecht.** In den Einstellungen des Repos gibt es
+   einen Bereich für automatische Abläufe und darin die Berechtigung, mit der
+   sie laufen. Sie muss auf **Lesen UND Schreiben** stehen – ohne das kann die
+   Sicherung zwar Inhalte holen, sie aber nicht einchecken, und genau das ist
+   ihr Zweck.
+2. **Nur bei einem nicht-öffentlichen Datensatz:** Der Lesezugang des
+   Redaktionsdienstes wird als verschlüsselter Wert im Repo hinterlegt (bei den
+   Einstellungen für Abläufe, Abschnitt für Geheimnisse), unter dem Namen
+   `REDAKTION_TOKEN`.
+
+> **Warum hier keine Klickpfade stehen** (Regel aus CLAUDE.md Abschnitt 0):
+> Die Menübezeichnungen des Hosters ändern sich, und eine falsche Klickanleitung
+> ist teurer als gar keine – der Betreuer sucht dann eine Option, die es unter
+> dem Namen nicht gibt. Beschrieben ist deshalb das ZIEL. Wer die Stelle
+> tatsächlich sucht: In der Suche der Repo-Einstellungen nach „workflow" bzw.
+> „secret" suchen.
 
 **Was ehrlich dazugehört:** Läuft die Sicherung, ist der eingecheckte Stand
 höchstens einen Tag alt – dann stimmt „Auch wenn der Dienst eines Tages weg
@@ -144,8 +157,11 @@ sichtbarer Ausfall, weil es plausibel aussieht.
 Das Prüf-Tor meldet es, wenn ein Projekt gepflegte Inhalte hat und die
 Sicherung fehlt.
 
-**Nachsehen, ob sie läuft:** im Repo unter *Actions → Inhalte sichern*. Schlägt
-ein Lauf fehl, wird der Repo-Eigentümer von GitHub benachrichtigt – das ist der
+**Nachsehen, ob sie läuft:** Der Hoster führt die vergangenen Läufe automatischer
+Abläufe im Repo auf; der hier heißt **„Inhalte sichern"** (der Name steht in
+`.github/workflows/inhalte-sichern.yml` und ist damit belegbar – die Bezeichnung
+des Menüpunkts drumherum absichtlich nicht, siehe Kasten oben). Schlägt ein Lauf
+fehl, benachrichtigt der Hoster den Repo-Eigentümer per E-Mail – das ist der
 Rückkanal, der sonst vollständig fehlt.
 
 ---

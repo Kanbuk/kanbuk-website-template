@@ -42,12 +42,48 @@
  *  an denen die elf groben Befunde hingen – und sie sind unempfindlich gegen
  *  andere Inhalte.
  *
- *  WAS ES NICHT SIEHT (ehrlich benannt, damit sich niemand in Sicherheit wiegt):
- *    - Feinheiten innerhalb eines Blocks (Schriftgrößen, Radien, Zeilenhöhen).
- *      Dafür bleibt das Auge zuständig – `npm run sicht` liefert die Bögen.
- *    - Ob ein Text inhaltlich stimmt. Es zählt Blöcke, es liest nicht Korrektur.
- *    - Zustände, die erst ein Klick zeigt (offene Tabs, gesendetes Formular).
- *    - Alles, was das Design nur in einer Zeichnung andeutet.
+ * =============================================================================
+ *  WAS DAS TOR VERGLEICHT – und was ausdrücklich NICHT
+ * =============================================================================
+ *  Diese Liste ist am 31.07.2026 einmal vollständig gegen CLAUDE.md Abschnitt 4
+ *  gehalten worden („Die Inline-Stile jedes Blocks werden Wert für Wert
+ *  übernommen: Innenabstände, Höhen, Schriftgrößen, Radien, Zeilenhöhen,
+ *  Sperrungen, Farben, Verläufe, Deckkraft, Übergänge").
+ *
+ *  ANLASS: Bis dahin sammelte das Skript sechs Merkmale ein, die es nie ansah –
+ *  darunter die Innenabstände, obwohl der Abschnitt sie ausdrücklich verlangt.
+ *  Wer ins Skript sah, hielt sie für geprüft. Deshalb steht hier jetzt eine
+ *  Liste statt eines Gefühls. **Wer ein Merkmal ergänzt, ergänzt sie mit.**
+ *
+ *  VERGLICHEN WIRD:
+ *    ✓ Blockzahl je Seite
+ *    ✓ Überschriften-Folge (fehlender / erfundener / vertauschter Block)
+ *    ✓ Reihenfolge der gemeinsamen Blöcke
+ *    ✓ Dunkle Bänder (über die Umkehr-Klasse, nicht über einen Farbwert)
+ *    ✓ Fest stehende Elemente im Rahmen (Schwebeknöpfe)
+ *    ✓ Schatten – nur VORHANDEN/NICHT (das Design schreibt Token-Namen)
+ *    ✓ Rahmen  – nur VORHANDEN/NICHT, aus demselben Grund
+ *    ✓ Bildzuschnitt (object-fit) – seitenweit, Werte vergleichbar
+ *    ✓ Schriftenzahl – zwei im Design, eine gebaut = Überschriftenschrift fehlt
+ *    ✓ Innenabstand oben je Block – NUR bei glattem Pixelwert, Toleranz 8 px
+ *
+ *  AN DAS AUGE ÜBERGEBEN (nicht maschinell vergleichbar, aber ausgegeben):
+ *    → Bauteile je Seite (`<x-import>`); die gebaute Seite trägt keine Spur davon
+ *    → Klick-Zustände je Seite (`<sc-if>` INNERHALB eines Blocks)
+ *
+ *  BEWUSST NICHT VERGLICHEN – und warum:
+ *    ✗ Schriftgrößen, Radien, Zeilenhöhen, Sperrungen, Deckkraft, Übergänge,
+ *      Verläufe, Spaltenaufteilung, gap: Das Design schreibt sie fast immer als
+ *      Token (`var(--space-l)`, `clamp(...)`). Ohne die Token-Datei ist der
+ *      Sollwert unbekannt, und aus dem NAMEN einen Wert zu raten hat in
+ *      früheren Läufen genau die Falschmeldungen erzeugt, die einem das
+ *      Hinsehen abgewöhnen. Lieber schweigen als raten.
+ *    ✗ Grundfarbe als WERT (nur die Umkehr-Klasse zählt) – gleicher Grund.
+ *    ✗ Ob ein Text inhaltlich stimmt. Es zählt Blöcke, es liest nicht Korrektur.
+ *    ✗ Alles, was das Design nur in einer Zeichnung andeutet.
+ *
+ *  Für all das bleibt Punkt 3d der Definition of Done zuständig: Design-Datei
+ *  neben die Umsetzung legen und mit eigenen Augen vergleichen.
  */
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
@@ -464,6 +500,8 @@ async function gebauteSeite(pfad) {
 // ---------------------------------------------------------------------------
 const befunde = [];
 const zeilen = [];
+/** Was das Tor NICHT vergleichen kann, aber dem Auge übergibt (siehe unten). */
+const sichtliste = [];
 const melde = (schwere, seiteName, was, design, gebaut) =>
   befunde.push({ schwere, seite: seiteName, was, design, gebaut });
 
@@ -561,6 +599,37 @@ for (const dSeite of designSeiten.seiten) {
     if (d.hatRahmen && !g.hatRahmen) {
       melde('mittel', dSeite.schalter, `„${d.ueberschrift}" hat im Design einen Rahmen, gebaut keinen`, 'border gesetzt', '0px');
     }
+
+    /* INNENABSTAND – der einzige MASS, das sich wirklich vergleichen lässt.
+       CLAUDE.md Abschnitt 4 verlangt Innenabstände ausdrücklich Wert für Wert;
+       das Tor hat sie bis zum 31.07.2026 zwar EINGESAMMELT und nie angesehen.
+       Genau daraus entsteht der Fehler, den der Abschnitt beschreibt: eine
+       Seite aus lauter richtigen Bauteilen, deren Bänder zu eng oder zu weit
+       stehen – sie wirkt fertig und ist es nicht.
+
+       NUR BEI EINEM GLATTEN PIXELWERT. Bringt das Design `clamp()`, `var()`
+       oder eine Prozentangabe mit, ist der Sollwert ohne die Token-Datei nicht
+       bekannt – dann lieber schweigen als raten. Genau das Raten hat in
+       früheren Läufen die Falschmeldungen erzeugt.
+
+       TOLERANZ 8 px: Die Skala des Motors trifft die Design-Werte bei 1280 px
+       nur ungefähr (CLAUDE.md, Umrechnungstabelle), und fluide Werte wandern
+       mit der Fensterbreite. Gemeint ist der grobe Fehler – 92 px im Design,
+       24 px gebaut –, nicht die letzte Nachkommastelle. */
+    const dPad = String(d.polsterung || '').trim().match(/^(\d+(?:\.\d+)?)px\b/);
+    if (dPad && typeof g.polsterungOben === 'number') {
+      const soll = Math.round(parseFloat(dPad[1]));
+      const ist = g.polsterungOben;
+      if (Math.abs(soll - ist) > 8) {
+        melde(
+          Math.abs(soll - ist) > 24 ? 'mittel' : 'leicht',
+          dSeite.schalter,
+          `„${d.ueberschrift}": Der Innenabstand oben weicht ab`,
+          `${soll}px`,
+          `${ist}px`,
+        );
+      }
+    }
   }
 
   /* BILDZUSCHNITT – seitenweit, nicht je Block.
@@ -629,6 +698,28 @@ for (const dSeite of designSeiten.seiten) {
     );
   }
 
+  /* ZWEI MERKMALE, DIE DAS TOR NICHT VERGLEICHEN KANN – aber melden muss.
+     Sie standen bis zum 31.07.2026 nur im Speicher: eingesammelt, nie
+     angesehen, nie ausgegeben. Das ist die schlechteste aller Möglichkeiten,
+     denn beide sind für einen Port hochwertig:
+
+     BAUTEILE: Welche Design-Komponente in einem Block steckt, steht wörtlich
+     in der .dc.html (`<x-import component-from-global-scope="…">`). Die
+     gebaute Seite hat davon keine Spur mehr – ein maschineller Vergleich ist
+     also unmöglich. Ein Mensch mit der Liste in der Hand braucht dagegen
+     Sekunden: „Chip, Karte, Knopf – ist das alles drin?" Genau hier ist im
+     Kundenprojekt nach Augenmaß nachempfunden worden, während die exakte
+     Definition die ganze Zeit im Projekt lag.
+
+     ZUSTÄNDE: Ein `<sc-if>` INNERHALB eines Blocks ist ein Klick-Zustand
+     (Formular abgeschickt, Treffer vorhanden). Das Tor sieht immer nur den
+     Ausgangszustand – aber es kann sagen, wonach zu klicken ist. */
+  const bauteile = [...new Set(dSeite.bloecke.flatMap((b) => b.bauteile || []))].sort();
+  const zustaende = [...new Set(dSeite.bloecke.flatMap((b) => b.zustaende || []))].sort();
+  if (bauteile.length || zustaende.length) {
+    sichtliste.push({ seite: dSeite.schalter, route, bauteile, zustaende });
+  }
+
   const marke = befunde.filter((b) => b.seite === dSeite.schalter).length;
   zeilen.push(
     `  ${marke ? '✗' : '✓'} ${dSeite.schalter.padEnd(16)} ${String(route).padEnd(24)} ` +
@@ -681,11 +772,40 @@ if (befunde.length) {
   console.log('');
 }
 
+/* DIE SICHTLISTE – was das Tor nicht kann, gibt es weiter statt es wegzuwerfen. */
+const sichtText = sichtliste.length
+  ? sichtliste
+      .map(
+        (s) =>
+          `### ${s.seite} (${s.route})\n` +
+          (s.bauteile.length
+            ? `- **Bauteile laut Design:** ${s.bauteile.join(', ')}\n` +
+              `  Ihre exakte Definition steht im \`_ds_bundle.js\` – dort nachlesen,\n` +
+              `  nicht vom Bildschirmfoto ableiten (CLAUDE.md Abschnitt 4, Punkt 4).\n`
+            : '') +
+          (s.zustaende.length
+            ? `- **Klick-Zustände laut Design:** ${s.zustaende.join(', ')}\n` +
+              `  Das Tor sieht immer nur den Ausgangszustand. Diese hier durchklicken.\n`
+            : ''),
+      )
+      .join('\n')
+  : '';
+
+if (sichtliste.length) {
+  console.log('  FÜR DAS AUGE – das Tor kann es nicht vergleichen, aber es weiß davon:');
+  for (const s of sichtliste) {
+    if (s.bauteile.length) console.log(`   · ${s.seite}: Bauteile ${s.bauteile.join(', ')}`);
+    if (s.zustaende.length) console.log(`   · ${s.seite}: Klick-Zustände ${s.zustaende.join(', ')}`);
+  }
+  console.log('');
+}
+
 if (nurBericht) {
   writeFileSync(
     join(WURZEL, 'pruefung', 'abgleich.md'),
     `# Abgleich mit dem Design\n\n${zeilen.join('\n')}\n\n` +
-      befunde.map((b) => `- **[${b.schwere}] ${b.seite}** – ${b.was}\n  - Design: ${b.design}\n  - Gebaut: ${b.gebaut}`).join('\n'),
+      befunde.map((b) => `- **[${b.schwere}] ${b.seite}** – ${b.was}\n  - Design: ${b.design}\n  - Gebaut: ${b.gebaut}`).join('\n') +
+      (sichtText ? `\n\n## Für das Auge – vom Tor nicht vergleichbar\n\n${sichtText}` : ''),
     'utf-8',
   );
   console.log('pruefung/abgleich.md geschrieben.');
@@ -697,8 +817,10 @@ console.log(
 );
 console.log('');
 console.log('  WAS DIESES TOR NICHT SIEHT (CLAUDE.md Abschnitt 9, Punkt 3c):');
-console.log('  Feinheiten IN einem Block (Schriftgrößen, Radien, Abstände), ob ein');
-console.log('  Text inhaltlich stimmt, und Zustände, die erst ein Klick zeigt.');
-console.log('  Dafür bleiben die Bögen aus `npm run sicht` und das eigene Auge zuständig.');
+console.log('  Schriftgrößen, Radien, Zeilenhöhen, Sperrungen, Verläufe, Deckkraft,');
+console.log('  Übergänge, Spaltenaufteilung – und ob ein Text inhaltlich stimmt.');
+console.log('  Die vollständige Liste steht im Kopf dieser Datei, Abschnitt „Was das');
+console.log('  Tor vergleicht". Dafür bleiben die Bögen aus `npm run sicht` und das');
+console.log('  eigene Auge zuständig (Definition of Done, Punkt 3d).');
 
 process.exitCode = schwer.length > 0 ? 1 : 0;

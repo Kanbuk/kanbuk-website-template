@@ -37,11 +37,16 @@ trägt den Namen inklusive Präfix, also wie das Repo.
 **Vercel-Realität (im Piloten gelernt, alle drei Punkte prüfen):**
 - Zugang: `npx vercel whoami` – falls nicht eingeloggt, den Nutzer durch
   `npx vercel login` führen (Firmen- bzw. eigenes Konto).
-- **Plan:** Der Hobby-Plan verbietet JEDE kommerzielle Nutzung – und jedes
-  Kundenprojekt ist per Vercel-Definition kommerziell („receiving payment to
-  create the site"). Vor dem ersten Deploy sicherstellen, dass das Ziel-Team
-  auf **Pro** läuft; sonst den Nutzer darauf hinweisen, bevor irgendetwas
-  hochgeht.
+- **Tarif:** Der kostenlose Tarif des Hosters ist für private Projekte gedacht
+  und schließt kommerzielle Nutzung aus. Ein bezahltes Kundenprojekt fällt
+  darunter. **Vor dem ersten Deploy prüfen, auf welchem Tarif das Ziel-Team
+  läuft**, und den Nutzer darauf hinweisen, bevor etwas hochgeht.
+  > Die genaue Formulierung steht in den Nutzungsbedingungen des Anbieters,
+  > nicht in seiner technischen Doku – **hier bewusst nicht zitiert.** Eine aus
+  > dem Gedächtnis wiedergegebene Vertragsklausel sieht geprüft aus, und der
+  > Inhaber gibt sie im Zweifel gegenüber seinem Kunden weiter (gleiche Regel
+  > wie bei Paragraphenangaben, CLAUDE.md Abschnitt 6b). Im Zweifelsfall beim
+  > Anbieter nachlesen und das Ergebnis mit Datum hierher.
 - **Team bewusst wählen:** beim Erstanlegen NICHT blind `--yes` – das Projekt
   landet sonst in dem Team, das die CLI zufällig gewählt hat. Vorher
   `npx vercel switch` (bzw. `--scope <team>`).
@@ -95,11 +100,21 @@ Für Vorschau-Demos wird **kein** GitHub-Repo angelegt – direkt zu Vercel:
    im DNS auflöst, ist also noch lange nicht zeigbar.
 5. Die URL an den Nutzer geben. Keine Umgebungsvariablen nötig (Formular ist im Demo aus).
 
-**Welche URL man dem Lead schickt:** Ist im Vercel-Team „Deployment Protection"
-aktiv, ist NUR der kurze Alias öffentlich (`https://<projekt>.vercel.app`) – die
-längeren Deploy-URLs führen Fremde auf eine Vercel-Anmeldemaske. Deshalb immer
-den kurzen Alias herausgeben und **einmal selbst im privaten Fenster öffnen**,
-bevor er verschickt wird.
+**Welche URL man dem Lead schickt:** Immer den **kurzen** Alias
+(`https://<projekt>.vercel.app`), nie eine der längeren Adressen einzelner
+Bereitstellungen. Der Hoster kann einen Zugriffsschutz aktiv haben; dann führen
+die längeren Adressen Fremde auf eine Anmeldemaske, während der kurze Alias
+öffentlich bleibt. Der Lead sieht dann eine Anmeldung statt seiner Seite.
+
+> **Wie der Schutz beim Anbieter heißt, steht hier bewusst nicht** – das ändert
+> sich, und die Bezeichnung aus dem Gedächtnis wäre eine Vermutung im
+> Anleitungston (CLAUDE.md Abschnitt 0). Es braucht sie auch nicht: Der
+> verlässliche Test ist ohnehin der nächste Satz.
+
+**Und deshalb Pflicht, egal wie es heißt:** Die Adresse **einmal selbst in einem
+privaten Fenster öffnen**, bevor sie hinausgeht. Das prüft die Wirkung statt der
+Einstellung – und es ist der einzige Schritt, der auch dann noch stimmt, wenn
+der Anbieter morgen etwas umbenennt.
 
 ---
 
@@ -123,9 +138,11 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    Aus `demo-` wird `kunde-`, der Bezeichner `<betrieb>` bleibt derselbe:
    - Ordner verschieben: `kanbuk-demos/<betrieb>` → `kanbuk-kunden/<betrieb>`
      (der Ordnername ändert sich nicht, nur der Elternordner).
-   - Vercel-Projekt umbenennen: `demo-<betrieb>` → `kunde-<betrieb>`
-     (Dashboard → Settings → General → Project Name). Risikofrei: Domains,
-     Umgebungsvariablen und Deploy-Verlauf hängen an der Projekt-ID, nicht am Namen.
+   - Vercel-Projekt umbenennen: `demo-<betrieb>` → `kunde-<betrieb>`. Das geht
+     in den Einstellungen des Projekts beim Hoster, im allgemeinen Bereich (der
+     Menüpfad steht hier absichtlich nicht – siehe Kasten oben). Risikofrei:
+     Domains, Umgebungsvariablen und Deploy-Verlauf hängen an der Projekt-ID,
+     nicht am Namen.
    - `package.json` → `"name": "kunde-<betrieb>"`.
    - Adresse eine Stufe weiterschalten (Adress-Stufen, CLAUDE.md Abschnitt 7):
      `npx vercel domains add <betrieb>.kanbuk.com kunde-<betrieb>` – aus der
@@ -146,7 +163,9 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
      gab es in genau dieser Zeit weder Backup noch Verlauf noch eine Möglichkeit
      zurückzurollen. Im Kundenprojekt entstand das Repo tatsächlich erst, als die
      Seite längst auf der Abnahme-Adresse stand.
-   - In Notion: Walk-in-Karte auf „Unterschrieben", Projekt-Art auf „Kundenprojekt".
+   - Im eigenen Projektverzeichnis (Notion o. ä.) den Lead als gewonnen und das
+     Projekt als Kundenprojekt kennzeichnen. Wie die Felder dort genau heißen,
+     weiß nur das jeweilige Verzeichnis – hier nicht aus dem Gedächtnis nennen.
    Läuft daneben ein Claude-Code-Verlauf für den Ordner, wandert er NICHT automatisch
    mit: Claude leitet den Verlaufspfad aus dem Ordnerpfad ab. Vor dem Verschieben in
    `~/.claude/projects/` nachsehen und den passenden Ordner mitbenennen, sonst sind
@@ -176,15 +195,21 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    Liste ist der Punkt ein Hinweis und keine Anleitung – die genauen Werte zeigt
    der Versanddienst nach dem Eintragen der Unterdomain an:
 
-   | Typ | Name | Wert |
-   | --- | --- | --- |
-   | TXT | `resend._domainkey.formular` | der lange Schlüssel aus dem Dienst (DKIM) |
-   | MX  | `send.formular` | der vom Dienst genannte Empfangsserver, Priorität 10 |
-   | TXT | `send.formular` | `v=spf1 include:<vom Dienst genannt> ~all` |
+   **Die Werte NICHT aus dieser Tabelle abschreiben.** Der Versanddienst zeigt
+   nach dem Anlegen der Unterdomain seine eigene Liste an – **die** ist die
+   Quelle, sie ist kontobezogen und kann sich ändern. Die Tabelle hier sagt nur,
+   **wie viele** Einträge zu erwarten sind und **wofür** jeder da ist, damit
+   niemand einen übersieht:
 
-   *(Der Anbieter hängt die Domain meist selbst an – dann heißt der Name im
-   Formular nur `resend._domainkey.formular`, nicht `…formular.kundendomain.at`.
-   Zeigt seine Maske den vollen Namen an, den vollen eintragen.)*
+   | Typ | wofür | typische Form des Namens |
+   | --- | --- | --- |
+   | TXT | Signatur der Mails (DKIM) | ein Schlüsselname vor der Versand-Unterdomain |
+   | MX  | Empfang für den Versanddienst | ein eigener Name unter der Versand-Unterdomain |
+   | TXT | Absender-Berechtigung (SPF) | derselbe Name wie der MX, Wert beginnt mit `v=spf1`, endet mit `~all` |
+
+   *(Zwei Fallen bei der Eingabe: Manche Anbieter hängen die Domain selbst an –
+   dann darf im Formular nur der vordere Teil stehen, nicht der volle Name. Und
+   der SPF-Wert endet auf `~all`, nicht `-all`; siehe Warnung unten.)*
 
    > **Der MX-Eintrag sieht gefährlicher aus, als er ist – das dem Kunden sagen.**
    > Er steht auf `send.formular.<domain>`, also auf einem **anderen Namen** als
