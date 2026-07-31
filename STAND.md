@@ -110,6 +110,24 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       gemacht und das Ergebnis dann als Erfahrungswert hierher. Nicht sehen
       kann die Prüfung ohnehin: Laufzeit-Funktionen (`dialog.showModal`,
       `replaceChildren`), Bild- und Schriftformate, Netzwerk.
+- [ ] **33 Punkte der Rückfluss-Liste sind halb oder offen.** *(kein Blocker
+      für den Demo-Weg)* Am 31.07.2026 gegen den echten Stand gemessen, jeder
+      Fund gegengeprüft. Aufteilung: **13 Live-Gang** (Weiterleitungs-Rezept,
+      DNS-Export, Bestätigungsmail-Feinheiten, Pflichtfeld-Kennzeichnung,
+      Gewährleistung/Garantie, die vier Abweisungen in `api/contact.ts`, die
+      ohne JavaScript rohe Datenzeilen liefern), **10 Redaktions-Baustein**
+      (standardmäßig aus – Auswahlfelder statt Freitext, Hilfetexte,
+      Attrappen-Prüfung für Katalogfelder, Veröffentlichen-Schritt), **7 Doku**
+      und **3 Abgleich** (border-color als Wert, Statuszeile kennt
+      abgeschnittenen Text nicht).
+      **Reihenfolge mit Absicht:** Diese Punkte werden NICHT in einer weiteren
+      Template-Runde abgearbeitet, sondern dann, wenn ein echtes Projekt über
+      sie stolpert – über eine Motor-Meldung. Begründung im Verlauf zum
+      31.07.2026.
+- [ ] **Vier Bausteine vergrößern Tippziele auch am Zeigegerät.** *(kein
+      Blocker)* Navigation, Kopf, Fuß und Einbettung setzen `min-height: 44px`
+      ohne Handy-Medienabfrage. Nach der eigenen Regel („NUR am Handy") eine
+      Abweichung, praktisch folgenlos. Bewusst offen gelassen.
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
       nach Art. 28 DSGVO. Noch nirgends vorgesehen.
@@ -223,6 +241,63 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-07-31 (zweiter Teil)** – **Die Punkteliste des Auftrags gegen den echten
+  Stand gehalten.** Nicht der Bericht, sondern die *Arbeitsanweisung* selbst:
+  17 Punkte, zerlegt in **89 einzelne Anforderungen**. Ergebnis: 44 ganz
+  erledigt, 34 halb, 11 offen – und **21 „erledigt" hielten der Gegenprobe
+  nicht stand**. Der erste Durchgang hatte Kommentare für Umsetzung gehalten.
+
+  **Zwei Regressionen aus Teil 7 gefunden, beide sofort behoben:**
+  - Die Typprüfung, am 30.07. „eingeschaltet", lag INNERHALB der Bedingung
+    „nur bauen, wenn sich Quellen geändert haben". Sie lief einmal und danach
+    nie wieder – **ohne ein Wort**. Der Wiederholungslauf war damit leiser als
+    der alte Zustand: vorher „⚠ übersprungen", danach gar nichts und ein „✓
+    Prüf-Tor bestanden" darunter. Dazu kennt die Bau-Marke `api/`, `scripts/`
+    und `redaktion/` nicht – wer nur `api/contact.ts` ändert, wurde nie
+    geprüft, und das ist bei statischem Bau die einzige Stelle, an der diese
+    Datei lokal überhaupt geprüft wird.
+  - Das Prüf-Tor kannte `/anfrage-fehler` nicht. Beim Bau der Seite wurde die
+    Sitemap gefiltert, die Ausnahmeliste des Tors nicht: **jeder Klon wäre beim
+    Live-Gang rot geworden**, für eine Seite, die der Motor selbst absichtlich
+    auf noindex baut. Im Live-Modus nachgestellt und geprüft.
+
+  **Punkt 0b nachgeholt:** Der Abgleich sammelte sechs Merkmale ein und sah
+  keines davon an – darunter die Innenabstände, die CLAUDE.md Abschnitt 4
+  ausdrücklich Wert für Wert verlangt. Sie werden jetzt verglichen (nur bei
+  glattem Pixelwert, Toleranz 8 px). Bauteile und Klick-Zustände gehen an das
+  Auge, statt weggeworfen zu werden. Der Kopf der Datei führt jetzt die
+  **vollständige Liste**: was verglichen wird, was ans Auge geht, was bewusst
+  nicht verglichen wird und warum.
+
+  **Punkt 9 – das Template hielt seine eigene Regel an acht Stellen nicht ein.**
+  „Keine Bezeichnungen fremder Oberflächen aus dem Gedächtnis" steht in
+  CLAUDE.md und im deploy-Skill – drei Zeilen darunter stand ein
+  Vercel-Menüpfad. Alle acht beschreiben jetzt das ZIEL statt den Klickweg.
+  Die Tarif-Behauptung ist bewusst **nicht** mehr zitiert: Sie steht in den
+  Nutzungsbedingungen, nicht in der Doku, und wäre aus dem Gedächtnis dasselbe
+  wie eine falsche Paragraphenangabe.
+
+  **Was NICHT angefasst wurde, mit Absicht:** Vier Bausteine (Navigation, Kopf,
+  Fuß, Einbettung) setzen Tippziele auf 44 px auch am Zeigegerät statt nur am
+  Handy. Nach der eigenen Regel eine Abweichung, praktisch ohne Wirkung –
+  niemand sieht es, nichts geht kaputt. *(kein Blocker)* Bewusst stehen
+  gelassen, um nicht die nächste Runde daraus zu machen.
+
+  **Die Lehre dieser Sitzung, und sie wiegt mehr als jeder Einzelfund:** Die
+  letzten beiden Runden fanden fast nur Fehler, die **die Runde davor erzeugt
+  hatte**. Teil 7 waren 28 Dateien und 1.800 Zeilen an einem Tag; jedes Paket
+  dieser Größe bringt seine eigene Fehlerquote mit. Die Kur ist nicht mehr
+  Prüfung, sondern kleinere Pakete – und **kein Template-Durchgang mehr ohne
+  Anlass aus einem echten Kundenprojekt.** Eine Prüfung ohne Auslöser findet
+  immer etwas; solange „es wird nichts mehr gefunden" das Abbruchkriterium ist,
+  endet es nie. Das Abbruchkriterium ist ab jetzt: **ein Port erzeugt keine
+  Motor-Meldung mehr.** Bei ASC waren es 19.
+
+  **Stand danach:** Der Demo-Weg ist frei – von den 33 verbliebenen Punkten
+  betreffen 13 den Live-Gang, 10 den (standardmäßig ausgeschalteten)
+  Redaktions-Baustein, 7 die Doku und 3 den Abgleich. Keiner blockiert das
+  Erstellen einer Vorschau.
 
 - **2026-07-31** – **Gegenprüfung des Rückflusses Teil 7 – und die Ernte.** Die
   Änderungen des Vortags wurden von 103 Prüfläufen gegengelesen, jeder Fund von
