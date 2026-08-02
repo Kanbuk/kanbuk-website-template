@@ -86,9 +86,15 @@ die Referenzdaten aus der Config raus sind. Vorher wäre Rot kein Signal.)
 > | `<Projekt>.dc.html` | **welche Bauteile wo stehen** – Seiten, Blöcke, Reihenfolge, Abstände, Texte, Grundfarben |
 > | `_ds_bundle.js` + `tokens/*.css` | **wie ein Bauteil aussieht** – je Komponente das exakte Style-Objekt |
 >
-> **Beide lokal ablegen** (z. B. unter `design/`). Aus dem Bundle die
-> Style-Objekte **jeder verwendeten** Komponente herausziehen und als Merkzettel
-> speichern. **Erst danach anfangen zu bauen.**
+> **Beide lokal ablegen, und zwar in `design/`** – nicht „z. B.", wie es hier
+> stand. Das sechste Tor (`npm run abgleich`) sucht dort und nur dort; liegt die
+> `.dc.html` woanders, bricht es ab. Beim ersten Lauf legt es außerdem
+> `design/abgleich.json` als Entwurf an – dort steht, welche Design-Seite zu
+> welcher Adresse gehört. Diese Zuordnung einmal durchsehen und ergänzen, sonst
+> vergleicht das Tor die falschen Seiten miteinander.
+>
+> Aus dem Bundle die Style-Objekte **jeder verwendeten** Komponente
+> herausziehen und als Merkzettel speichern. **Erst danach anfangen zu bauen.**
 >
 > **Warum das ganz vorne steht:** In einem Kundenprojekt wurde das Design-System
 > sauber ausgelesen und die Sache damit für erledigt gehalten – die `.dc.html`
@@ -248,7 +254,11 @@ entstehen dann automatisch, CLAUDE.md 7a), `branche`, `ansprache`, `sprachen`,
 - **Öffnungszeiten** zusätzlich maschinenlesbar (`tageISO`, `vonISO`, `bisISO`) – sonst
   fehlen sie im JSON-LD.
 - **Allergene** bei Gastro nicht vergessen (österreichische Pflicht).
-- **Große Preislisten** nach `daten/preisliste.ts` auslagern und importieren.
+- **Große Preislisten** nicht abtippen: `npm run preisliste` liest die
+  Positionen aus dem Design ein, prüft sie und schreibt `daten/preisliste.ts`.
+  Es zählt dabei mit – eine verrutschte Zeile fällt auf. Von Hand abgetippte
+  Preise sieht kein Tor an, und bei einem Wirt sind sie rechtlich relevant.
+  (Hier stand nur „auslagern und importieren", also Handarbeit.)
 - Fehlende Rechtsdaten als **klar markierte Platzhalter** (`PLATZHALTER: UID`) – das
   Prüf-Tor blockt sie beim Umschalten auf `live`.
 

@@ -63,13 +63,19 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
    abgenommene Seite live, die auf älteren Geräten keine Navigation hatte.**
 4. **Mit eigenen Augen:** `pruefung/texte.md` lesen (Rechtschreibung, Ansprache),
    Bögen ansehen (Layout über alle Breiten), Verdachtsfälle im Einzel-Screenshot
-4a. **Abgleich mit der Design-Vorlage** (nur bei portierten Kundenseiten):
-   Seite für Seite die `.dc.html` daneben legen. Ist jeder Block da, an der
-   richtigen Stelle, mit der richtigen Grundfarbe? Und steht umgekehrt etwas auf
-   der Seite, das im Design nicht vorkommt? **Grüne Technikprüfungen sagen
-   nichts über Design-Treue** – im Kundenprojekt waren alle Tore grün, während
-   Bänder die falsche Farbe hatten und Abschnitte fehlten. Verbleibende
-   Abweichungen gehören begründet in den Bericht (`/port`-Skill, Etappe 5).
+4a. **`npm run abgleich` grün** (nur bei portierten Kundenseiten) – das SECHSTE
+   Tor, seit 29.07.2026. Es hält die gebaute Seite gegen die `.dc.html`:
+   Blockzahl, Überschriften-Folge, Reihenfolge, dunkle Bänder, Innenabstände.
+   Fehlt die Design-Datei, bricht es ab – ein grünes Tor ohne Vergleich gibt es
+   nicht mehr.
+4b. **Und danach mit eigenen Augen:** Seite für Seite die `.dc.html` daneben
+   legen. Ist jeder Block da, an der richtigen Stelle, mit der richtigen
+   Grundfarbe? Und steht umgekehrt etwas auf der Seite, das im Design nicht
+   vorkommt? **Grüne Technikprüfungen sagen nichts über Design-Treue** – im
+   Kundenprojekt waren alle Tore grün, während Bänder die falsche Farbe hatten
+   und Abschnitte fehlten. Das Werkzeug findet „Block fehlt / Block erfunden",
+   das Auge alles darin; beides ist Pflicht. Verbleibende Abweichungen gehören
+   begründet in den Bericht (`/port`-Skill, Etappe 5).
 5. Beim Live-Gang zusätzlich: `npm run check -- --live` (Platzhalter, offene
    STAND.md-Punkte, Sitemap) und `npm audit --omit=dev` – Funde mit Schweregrad
    high/critical stoppen den Launch (dem Nutzer melden)
@@ -78,9 +84,30 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
 
 ## A) Demo-Vorschau veröffentlichen (schnell, ohne GitHub)
 
+> **Nicht zu verwechseln mit `npm run demo`.** Das ist der andere Weg: Es
+> hostet ein Design-Projekt-Archiv als **Verkaufs**-Demo, bevor überhaupt ein
+> Klon existiert, und belegt dabei selbst `demo-<betrieb>.kanbuk.com`.
+> Hier geht es um den **gebauten Klon** vor der Abnahme.
+>
+> **Adress-Stufen (CLAUDE.md Abschnitt 7), damit sich die beiden nicht ins
+> Gehege kommen:**
+>
+> | Stufe | Adresse | wodurch |
+> | --- | --- | --- |
+> | Verkaufs-Demo | `demo-<betrieb>.kanbuk.com` | `npm run demo` |
+> | Abnahme-Vorschau des Klons | `<betrieb>.kanbuk.com` | dieser Abschnitt |
+> | live | eigene Domain des Kunden | Weg B |
+
 Für Vorschau-Demos wird **kein** GitHub-Repo angelegt – direkt zu Vercel:
 
-1. Sicherstellen: `content.config.ts` hat `mode: 'demo'` (Demo-Balken, Formular aus, noindex).
+1. Sicherstellen: `content.config.ts` hat `mode: 'demo'`.
+   Das heißt: Demo-Balken oben, `noindex` als Meta **und** als HTTP-Kopfzeile,
+   Telefonnummer nicht als `tel:`-Link, `robots.txt` sperrt alles.
+   **Das Formular ist NICHT aus.** Es ist sichtbar und bedienbar, mit einem
+   Hinweis darüber und ohne Versandziel im Markup. Hier stand zweimal
+   „Formular aus" – wer das beim Wort nimmt, baut es aus dem Design gar nicht
+   erst nach. Dann sieht der Kunde bei der Abnahme nicht, was er bekommt, und
+   beide Prüfungen fahren es nie an (CLAUDE.md Abschnitt 7).
 2. `npx vercel` ausführen. Beim ersten Mal führt Vercel durch Login + Projekt-Setup
    (Framework „Astro" wird erkannt, Output `dist`). **Als Projektnamen `demo-<betrieb>`
    eingeben – NICHT den vorgeschlagenen Ordnernamen bestätigen.** Der Ordner heißt
@@ -88,17 +115,24 @@ Für Vorschau-Demos wird **kein** GitHub-Repo angelegt – direkt zu Vercel:
    Nicht-interaktiv: `npx vercel link --yes --project demo-<betrieb>`.
 3. Für die teilbare URL: `npx vercel --prod`.
 4. **Marken-Adresse anbinden** (Adress-Stufen, CLAUDE.md Abschnitt 7):
-   `npx vercel domains add demo-<betrieb>.kanbuk.com demo-<betrieb>` – als
-   **Projekt-Domain**, nie per `alias set` (ein Alias landet hinter dem
-   Vercel-Zugriffsschutz und zeigt Fremden eine Anmeldemaske). Danach die
-   Adresse selbst abrufen: Sie muss ohne Login mit HTTP 200 antworten.
+   `npx vercel domains add <betrieb>.kanbuk.com demo-<betrieb>`
+
+   **Ohne `demo-` davor** – das ist die ABNAHME-Stufe. `demo-<betrieb>.kanbuk.com`
+   gehört der Verkaufs-Demo aus `npm run demo`; wer sie hier vergibt, weist
+   dieselbe Adresse einem zweiten Vercel-Projekt zu und schießt die laufende
+   Verkaufs-Demo ab.
+
+   Immer als **Projekt-Domain**, nie per `alias set` (ein Alias landet hinter
+   dem Zugriffsschutz und zeigt Fremden eine Anmeldemaske). Danach die Adresse
+   selbst abrufen: Sie muss ohne Login mit HTTP 200 antworten.
 
    **Erst abrufen, dann herausgeben.** `*.kanbuk.com` ist eine DNS-Wildcard: jeder
    erfundene Name löst auf, auch ohne Projekt. Zusammen mit HSTS `includeSubDomains`
    auf kanbuk.com heißt das – solange Vercel kein Zertifikat ausgestellt hat, bricht
    der Browser die Verbindung hart ab, ohne „Trotzdem fortfahren". Eine Adresse, die
    im DNS auflöst, ist also noch lange nicht zeigbar.
-5. Die URL an den Nutzer geben. Keine Umgebungsvariablen nötig (Formular ist im Demo aus).
+5. Die URL an den Nutzer geben. Keine Umgebungsvariablen noetig: Das Formular
+   ist sichtbar und bedienbar, verschickt aber nichts (kein `action` im Markup).
 
 **Welche URL man dem Lead schickt:** Immer den **kurzen** Alias
 (`https://<projekt>.vercel.app`), nie eine der längeren Adressen einzelner
@@ -237,6 +271,32 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    **Dann die zwei Umgebungsvariablen** im Vercel-Dashboard (bzw.
    `vercel env add`): `RESEND_API_KEY` und `CONTACT_FROM` (Absender auf der
    Unterdomain, z. B. `anfrage@formular.<kundendomain>`).
+
+   **Und die Bestätigung an den Absender einrichten – sie geht sonst nackt raus.**
+   Jeder, der das Formular ausfüllt, bekommt eine Mail zurück; das ist die
+   einzige Nachricht vom Betrieb, bevor jemand persönlich antwortet.
+
+   1. `npm run maillogo` – erzeugt aus **derselben** Logo-Datei, die die
+      Fußzeile zeigt, eine PNG-Fassung in doppelter Größe
+      (`public/logo-mail.png`). Ein SVG zeigen Gmail und Outlook nicht an, und
+      ein von Hand exportiertes PNG läuft beim nächsten Logo-Wechsel weg.
+      Nach einem Build laufen lassen: Dann nimmt es die Schriftfarbe, die auch
+      die Website auf der Markenfarbe benutzt.
+   2. In `content.config.ts` den `bestaetigung`-Block setzen:
+      ```ts
+      bestaetigung: {
+        logo: 'logo-mail.png',
+        betreff: 'Ihre Anfrage bei <Betriebsname>',   // aus SICHT DES ABSENDERS
+        angabenWiederholen: false,                     // siehe unten
+      },
+      ```
+   3. **`angabenWiederholen` ist eine Entscheidung PRO KUNDE.** `true` ist ein
+      Service (der Absender sieht seinen Vertipper). `false` ist Pflicht,
+      sobald die Anfragen inhaltlich heikel sind – bei einem Gesundheitsberuf
+      gehören Anfrageinhalte nicht in ein unbestätigtes Postfach. Standard ist
+      `false`. Beide Begründungen stehen ausführlich am Config-Feld.
+   4. **Einmal wirklich absenden** und die Mail im Postfach ansehen – auch die
+      Bestätigung, nicht nur die Benachrichtigung an den Betrieb.
 
    > ### ⚠ Wenn die Variable im Dashboard steht und die Funktion sie trotzdem nicht sieht
    >
