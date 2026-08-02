@@ -27,6 +27,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import { starteDistServer } from './lib/dist-server.mjs';
+import { verlangeAktuellesDist } from './lib/bau-marke.mjs';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
@@ -48,10 +49,7 @@ const wert = (name, standard) => {
    350 bleibt: das schmalste Gerät, das noch vorkommt. */
 const BREITEN = wert('breiten', '350,430,768,1440').split(',').map((b) => Number(b.trim()));
 
-if (!existsSync(DIST)) {
-  console.error('✗ dist/ fehlt. Zuerst "npm run check" (baut und prüft), dann "npm run sicht".');
-  process.exit(1);
-}
+verlangeAktuellesDist(WURZEL, 'npm run sicht');
 
 // --- Server + Seitenliste aus der geteilten Bibliothek (nutzt auch interaktion.mjs)
 const { basis: BASIS, seiten, stop } = await starteDistServer(DIST);

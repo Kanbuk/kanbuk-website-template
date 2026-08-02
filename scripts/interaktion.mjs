@@ -43,6 +43,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { starteDistServer } from './lib/dist-server.mjs';
+import { verlangeAktuellesDist } from './lib/bau-marke.mjs';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
@@ -56,10 +57,7 @@ const wert = (name, standard) => {
 // Breite bringt für die MECHANIK nichts Neues – die prüft npm run sicht visuell.
 const BREITEN = wert('breiten', '350,1440').split(',').map((b) => Number(b.trim()));
 
-if (!existsSync(DIST)) {
-  console.error('✗ dist/ fehlt. Zuerst "npm run check" (baut und prüft), dann "npm run interaktion".');
-  process.exit(1);
-}
+verlangeAktuellesDist(WURZEL, 'npm run interaktion');
 
 // Nummerierung nur ab dem zweiten Vorkommen – bei einem einzigen Tabs-Block
 // wäre „Tabs #1" nur Rauschen im Bericht.

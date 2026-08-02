@@ -19,36 +19,19 @@
  * liegt IN dist/ – wer dist/ löscht, löscht die Marke mit, und dann wird
  * gebaut. Grundsatz: Im Zweifel bauen.
  */
-import { readdirSync, statSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+/* Die Marke liegt seit dem 03.08.2026 in scripts/lib/ – sie wird von ALLEN
+   Toren gebraucht, nicht nur hier. Vorher kannte nur diese Datei sie, und die
+   fünf anderen Tore massen dist/ ohne zu wissen, ob es noch passt. */
+import { quellMarke, markePfad, schreibeMarke } from './lib/bau-marke.mjs';
 
 const WURZEL = process.cwd();
-const MARKE = join(WURZEL, 'dist', '.kanbuk-marke.json');
+const MARKE = markePfad(WURZEL);
 const args = process.argv.slice(2);
 const force = args.includes('--force');
 const live = args.includes('--live');
-
-// --- Was zählt als Quelle? Alles, was das Bau-Ergebnis beeinflusst. ---------
-const QUELLEN = ['content.config.ts', 'astro.config.ts', 'package.json', 'tsconfig.json', 'browser-untergrenze.json', 'src', 'fotos', 'public', 'daten'];
-
-function sammle(pfad, zeilen) {
-  if (!existsSync(pfad)) return;
-  const st = statSync(pfad);
-  if (st.isDirectory()) {
-    for (const e of readdirSync(pfad)) sammle(join(pfad, e), zeilen);
-  } else {
-    zeilen.push(`${relative(WURZEL, pfad).replace(/\\/g, '/')}|${st.size}|${st.mtimeMs}`);
-  }
-}
-
-function quellMarke() {
-  const zeilen = [];
-  for (const q of QUELLEN) sammle(join(WURZEL, q), zeilen);
-  zeilen.sort();
-  return createHash('sha1').update(zeilen.join('\n')).digest('hex');
-}
 
 /** node direkt starten – NIE über die Shell: der Node-Pfad enthält unter
     Windows ein Leerzeichen ("C:\Program Files\…") und cmd zerlegt ihn daran. */
@@ -70,7 +53,7 @@ if (existsSync(join(WURZEL, 'scripts', 'vorcheck.mjs'))) {
 }
 
 // --- 2. Bauen – nur wenn nötig ------------------------------------------------
-const marke = quellMarke();
+const marke = quellMarke(WURZEL);
 const alteMarke = existsSync(MARKE) ? JSON.parse(readFileSync(MARKE, 'utf-8')).marke : null;
 
 /* ---------------------------------------------------------------------------
@@ -137,7 +120,7 @@ if (typenDa) {
 // --- 2b. Bauen – nur wenn nötig ------------------------------------------------
 if (force || marke !== alteMarke || !existsSync(join(WURZEL, 'dist', 'index.html'))) {
   npxLauf(['astro', 'build']);
-  writeFileSync(MARKE, JSON.stringify({ marke: quellMarke() }) + '\n', 'utf-8');
+  schreibeMarke(WURZEL);
 } else {
   console.log('↷ Quellen unverändert – Build übersprungen (npm run check -- --force erzwingt ihn).');
 }

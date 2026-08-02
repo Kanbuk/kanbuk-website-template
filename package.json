@@ -7,7 +7,6 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "echo \"Deploy: npx vercel --prod – siehe README.md / .claude/skills/deploy\"",
     "platzhalter": "node scripts/platzhalter.mjs",
     "stock": "node scripts/stock.mjs",
     "check": "node scripts/check-lauf.mjs",

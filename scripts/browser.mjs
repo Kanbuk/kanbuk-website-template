@@ -47,16 +47,14 @@
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { verlangeAktuellesDist } from './lib/bau-marke.mjs';
 import { transformSync as jsPruefen } from 'esbuild';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
 const GRENZDATEI = join(WURZEL, 'browser-untergrenze.json');
 
-if (!existsSync(DIST)) {
-  console.error('\n✖ Es gibt keinen dist-Ordner. Zuerst bauen: npm run build\n');
-  process.exit(1);
-}
+verlangeAktuellesDist(WURZEL, 'npm run browser');
 if (!existsSync(GRENZDATEI)) {
   console.error('\n✖ browser-untergrenze.json fehlt – ohne Zusage gibt es nichts zu prüfen.\n');
   process.exit(1);

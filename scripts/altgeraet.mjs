@@ -29,15 +29,13 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { starteDistServer } from './lib/dist-server.mjs';
+import { verlangeAktuellesDist } from './lib/bau-marke.mjs';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
 const ZIEL = join(WURZEL, 'pruefung');
 
-if (!existsSync(DIST)) {
-  console.error('\n✖ Kein dist-Ordner. Zuerst bauen: npm run build\n');
-  process.exit(1);
-}
+verlangeAktuellesDist(WURZEL, 'npm run altgeraet');
 mkdirSync(ZIEL, { recursive: true });
 
 const grenzdatei = join(WURZEL, 'browser-untergrenze.json');

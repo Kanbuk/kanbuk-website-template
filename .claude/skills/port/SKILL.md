@@ -368,7 +368,21 @@ wird dabei ersetzt.
 
 ## Etappe 5 – Die Launch-Prüfung (sechs Stufen, alle Pflicht)
 
-**Stufe 5 ist `npm run browser`** – sie hält den Build gegen die
+**Die sechs Stufen, in dieser Reihenfolge:**
+
+| | Befehl | prüft |
+| --- | --- | --- |
+| 1 | `npm run check` | baut, Typen, Standard der fertigen Seite |
+| 2 | `npm run sicht` | echter Browser bei 350/430/768/1440 px + Bögen ansehen |
+| 3 | `npm run interaktion` | jedes Bedienelement wird wirklich geklickt |
+| 4 | `npm run browser` | Browser-Untergrenze + `npm run altgeraet` ansehen |
+| 5 | **`npm run abgleich`** | gebaute Seite gegen die Design-Datei |
+| 6 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Etappe 5c) |
+
+> Stufe 5 und 6 sind BEIDE Pflicht und ersetzen einander nicht: Das Werkzeug
+> findet „Block fehlt / Block erfunden", das Auge alles darin.
+
+**Stufe 4 ist `npm run browser`** – sie hält den Build gegen die
 Browser-Untergrenze (CLAUDE.md Abschnitt 4a). Sie kam dazu, weil eine
 abgenommene Seite auf einem älteren Gerät unbenutzbar war, während alle vier
 anderen Stufen grün waren: Die fahren alle dasselbe aktuelle Chromium.
@@ -401,8 +415,19 @@ modernen CSS-Merkmal.
 >    nicht zwangsläufig dem Design (CLAUDE.md Abschnitt 6a).
 > 3. **Jede verbleibende Abweichung** steht mit Grund im Bericht.
 >
-> Diese Stufe ist heute Handarbeit. Ein Werkzeug dafür ist vorgemerkt
-> (STAND.md) – bis es da ist, ersetzt nichts das Nebeneinanderlegen.
+> **Dafür gibt es seit 29.07.2026 ein Werkzeug: `npm run abgleich`** – das
+> sechste Tor. Hier stand jahrelang „ein Werkzeug ist vorgemerkt"; wer dem Skill
+> folgte, machte den Handabgleich und wusste nicht, dass 40 KB gebautes Werkzeug
+> danebenliegen. Es braucht `design/<Projekt>.dc.html` und eine Zuordnung
+> Seite→Adresse in `design/abgleich.json` (der erste Lauf legt einen Entwurf an).
+>
+> **Es ersetzt das Auge NICHT.** Gemessen: Von elf schweren Befunden eines
+> Handabgleichs findet es die drei zuverlässig, die auf „Block fehlt / Block
+> erfunden" hinauslaufen – also die teuerste Klasse. Feinheiten INNERHALB eines
+> Blocks, Textinhalte und Klick-Zustände sieht es nicht. Was es kann und was
+> nicht, steht vollständig im Kopf von `scripts/abgleich.mjs`.
+>
+> Also beides: erst das Werkzeug, dann das Nebeneinanderlegen.
 
 
 

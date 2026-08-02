@@ -90,6 +90,7 @@ import { join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { starteDistServer } from './lib/dist-server.mjs';
+import { verlangeAktuellesDist } from './lib/bau-marke.mjs';
 
 const WURZEL = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DESIGN = join(WURZEL, 'design');
@@ -411,11 +412,8 @@ if (fehlend.length) {
 //  3. Die gebaute Seite messen
 // ---------------------------------------------------------------------------
 const DIST = join(WURZEL, 'dist');
-if (!existsSync(DIST)) {
-  console.error('✗ dist/ fehlt. Bitte zuerst "npm run build" ausführen.');
-  await browser.close();
-  process.exit(1);
-}
+if (!existsSync(join(DIST, 'index.html'))) await browser.close(); // Browser schliessen, bevor unten abgebrochen wird
+verlangeAktuellesDist(WURZEL, 'npm run abgleich');
 const { basis, stop } = await starteDistServer(DIST);
 
 async function gebauteSeite(pfad) {
