@@ -31,7 +31,7 @@ const force = args.includes('--force');
 const live = args.includes('--live');
 
 // --- Was zählt als Quelle? Alles, was das Bau-Ergebnis beeinflusst. ---------
-const QUELLEN = ['content.config.ts', 'astro.config.ts', 'package.json', 'tsconfig.json', 'src', 'fotos', 'public', 'daten'];
+const QUELLEN = ['content.config.ts', 'astro.config.ts', 'package.json', 'tsconfig.json', 'browser-untergrenze.json', 'src', 'fotos', 'public', 'daten'];
 
 function sammle(pfad, zeilen) {
   if (!existsSync(pfad)) return;

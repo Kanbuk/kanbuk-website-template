@@ -287,10 +287,31 @@ function istAbgesichert(code, treffer) {
   let blockStart = start;
   while (blockStart > 0 && code[blockStart - 1] !== '{' && code[blockStart - 1] !== '}') blockStart--;
 
-  return code
+  const hatErsatzwert = code
     .slice(blockStart, start)
     .split(';')
     .some((d) => d.trim().startsWith(eigenschaft + ':'));
+  if (!hatErsatzwert) return false;
+
+  /* EIN ERSATZWERT RETTET NICHT, WENN DIE MODERNE ZEILE EIN `var()` ENTHÄLT.
+     Das ist keine Feinheit, sondern in CLAUDE.md Abschnitt 4a nachgemessen:
+     Eine Zeile mit `var()` kann der Browser beim EINLESEN nicht prüfen. Er
+     behält sie, setzt später die Variable ein, stellt dann fest, dass das
+     Ergebnis ungültig ist – und setzt die Eigenschaft auf NICHTS. Der
+     Ersatzwert davor wird dabei mitgelöscht. Gemessen: Rahmen 0px statt 1px.
+
+     Bis hierher hat diese Funktion genau solche Fälle als „abgesichert"
+     durchgewinkt – sie verglich nur Eigenschaftsnamen. Damit bestätigte das
+     fünfte Tor eine Absicherung, von der die eigene Regel im selben Repo
+     festhält, dass sie nicht wirkt. Für solche Fälle ist `@supports` der
+     einzige tragfähige Weg (CLAUDE.md 4a, Weg 3); ein `@supports` darüber
+     erkennt die Prüfung am umgebenden Block. */
+  const deklaration = code.slice(start, code.indexOf(';', treffer) === -1 ? undefined : code.indexOf(';', treffer));
+  if (/var\(/.test(deklaration)) {
+    const davor = code.slice(Math.max(0, blockStart - 400), blockStart);
+    if (!/@supports[^{]*\{[^{}]*$/.test(davor)) return false;
+  }
+  return true;
 }
 
 /*

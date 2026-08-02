@@ -41,20 +41,35 @@ try {
  *     baut gegen 15.0, waehrend das Tor gegen 15.4 misst - genau das
  *     Auseinanderlaufen, das die eine gemeinsame Datei verhindern soll.
  */
-const BROWSER = ['safari', 'ios_saf', 'chrome', 'firefox', 'edge', 'android', 'samsung'] as const;
+const BROWSER = ['safari', 'chrome', 'firefox', 'edge'] as const;
 
-/** 15.4 -> (15 << 16) | (4 << 8), so erwartet es Lightning CSS. */
-function codiere(version: number): number {
-  const haupt = Math.floor(version);
-  const neben = Math.round((version - haupt) * 10);
-  return (haupt << 16) | (neben << 8);
+/* HIER STAND EINE UMRECHNUNG INS LIGHTNING-CSS-FORMAT (`15.4` -> Bitmuster)
+   samt einer daraus gebauten `cssZiele`-Tabelle. Beides war TOT: Vite benutzt
+   Lightning CSS nur, wenn `css.transformer` ausdruecklich darauf gesetzt ist -
+   die Vorgabe ist postcss, und die Tabelle wurde stillschweigend verworfen.
+   Gebaut wird mit esbuild, und das erwartet die Namensliste unten. Beide
+   Ziele - JavaScript und CSS - stehen deshalb im selben Format. */
+
+/* JEDE ZAHL DER GRENZ-DATEI MUSS AUCH WIRKEN.
+   Bis zum 02.08.2026 standen dort `ios_saf`, `android` und `samsung` - gelesen
+   hat sie NIEMAND, weder der Build noch `npm run browser`. Wer `samsung`
+   senkte, aenderte nichts und erfuhr es nie. Genau die stille Sorte Fehler,
+   gegen die es diese Datei ueberhaupt gibt.
+   Sie sind jetzt draussen; iOS laeuft auf Safari, Android und Samsung Internet
+   auf Chromium - die Zahlen oben decken sie mit ab. Und der Build haelt an,
+   sobald eine Angabe dazukommt, die kein Ziel erreicht. */
+const unbekannt = Object.keys(grenze).filter(
+  (k) => !k.startsWith('_') && k !== 'vollstaendig_ab_safari' && !(BROWSER as readonly string[]).includes(k),
+);
+if (unbekannt.length) {
+  throw new Error(
+    `browser-untergrenze.json: unbekannte Angabe(n) ${unbekannt.join(', ')}.\n` +
+      `Erlaubt sind ${BROWSER.join(', ')} sowie vollstaendig_ab_safari.\n` +
+      `Ein Name, den niemand liest, senkt die Grenze nicht - er sieht nur so aus.`,
+  );
 }
 
-const cssZiele = Object.fromEntries(
-  BROWSER.filter((name) => typeof grenze[name] === 'number').map((name) => [name, codiere(grenze[name])]),
-);
-
-/** esbuild erwartet Namen wie "safari12". `ios_saf` kennt es nicht - iOS laeuft ohnehin auf Safari. */
+/** esbuild erwartet Namen wie "safari12". */
 const jsZiele = [
   'safari' + grenze.safari,
   'chrome' + grenze.chrome,
@@ -292,9 +307,24 @@ export default defineConfig({
    * Anleitung zum Aendern. `npm run browser` misst den fertigen Build dagegen.
    */
   vite: {
-    // JavaScript: Was der Browser nicht LESEN kann, killt das ganze Buendel.
-    build: { target: jsZiele },
-    // CSS: verhindert die Kurzformen und ergaenzt noetige Hersteller-Praefixe.
-    css: { lightningcss: { targets: cssZiele } },
+    build: {
+      // JavaScript: Was der Browser nicht LESEN kann, killt das ganze Buendel.
+      target: jsZiele,
+      /* CSS AUSDRUECKLICH SETZEN, NICHT ERBEN.
+         Hier stand stattdessen `css: { lightningcss: { targets: cssZiele } }`
+         mit dem Kommentar, das verhindere die Kurzformen. Das war WIRKUNGSLOS:
+         Vite benutzt lightningcss nur, wenn `css.transformer` darauf gesetzt
+         ist - die Vorgabe ist postcss, und die Angabe wurde stillschweigend
+         verworfen. Geschuetzt hat in Wahrheit `build.target`, von dem
+         `build.cssTarget` erbt.
+
+         Das ist genau die Falle, wegen der es die Browser-Untergrenze gibt:
+         Der Verdichter schreibt `@media (min-width: 900px)` in die Kurzform
+         `@media (width>=900px)` um, die Safari erst ab 16.4 kennt - und wer
+         sie nicht kennt, verwirft den GANZEN Regelblock. Eine geerbte
+         Vorgabe ist dafuer zu wenig: Sie kann sich mit einer Vite-Version
+         aendern, ohne dass es jemandem auffaellt. */
+      cssTarget: jsZiele,
+    },
   },
 });

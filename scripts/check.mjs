@@ -243,7 +243,18 @@ for (const f of htmlDateien) {
      ist Bedingung der ODbL, nicht Höflichkeit. Ohne den Hinweis nutzt der
      Kunde fremde Kartendaten unlizenziert auf seiner Geschäftsseite. Bisher
      stand die Pflicht nur als Konsolen-Hinweis im Werkzeug. */
-  if (/karte[.\w-]*\.(webp|jpe?g|png|avif)/i.test(html) && !/OpenStreetMap/i.test(html)) {
+  /* NUR DIE VOM WERKZEUG ERZEUGTE DATEI, NICHT JEDES WORT AUF „…karte".
+     Das Muster hiess `karte[.\w-]*\.(webp|jpe?g|png|avif)` und traf damit
+     speisekarte.jpg, weinkarte.png, getraenkekarte.webp, visitenkarte.jpg –
+     beim Wirt, der Leitbranche des Motors, heisst das Hero-Foto mit hoher
+     Wahrscheinlichkeit genau so. Ergebnis waere ein HARTER Fehler
+     („Diese Seite darf so nicht raus") wegen einer Kartenlizenz, mit der eine
+     Speisekarte nichts zu tun hat.
+     `npm run karte` legt standardmaessig `karte.jpg` an (scripts/karte.mjs:49);
+     der Dateiname darf ueber --datei abweichen, muss dann aber mit „karte"
+     BEGINNEN, damit diese Regel greift. Astro haengt beim Optimieren einen
+     Hash an, deshalb der Teil dahinter. */
+  if (/(^|[/"'\s])karte[-.\w]*\.(webp|jpe?g|png|avif)/i.test(html) && !/OpenStreetMap/i.test(html)) {
     fehler(
       `${name}: Kartenbild ohne Lizenzhinweis.
 ` +
@@ -688,7 +699,17 @@ for (const f of dateien) {
 //  7. MODE-KONSISTENZ (demo vs. live)
 // ---------------------------------------------------------------------------
 const configText = existsSync(CONFIG) ? readFileSync(CONFIG, 'utf-8') : '';
-const istLive = /mode:\s*'live'/.test(configText);
+/* WERTE WERDEN AUS DEM KOMMENTARFREIEN TEXT GELESEN, NICHT AUS DEM ROHTEXT.
+   Für die Marker-Suche wurde `ohneKommentare()` eigens eingeführt, weil
+   Erklärtexte mitgezählt wurden – diese Lehre ist an allen übrigen
+   Config-Auswertungen vorbeigegangen. Folge: Ein Kommentar wie
+   „// zum Live-Gang mode: 'live' setzen" kippt das GESAMTE Tor in den
+   Live-Zweig (Signatur-Pflicht, noindex-Regel, Sitemap, Domainprüfung) –
+   an einer Vorschau, die gar nicht live ist. Umgekehrt genauso: eine
+   auskommentierte Beispiel-Domain wird für die echte gehalten.
+   Der Rohtext bleibt nur dort, wo die Kommentare selbst geprüft werden. */
+const configWerte = ohneKommentare(configText);
+const istLive = /mode:\s*'live'/.test(configWerte);
 const robots = existsSync(join(DIST, 'robots.txt')) ? readFileSync(join(DIST, 'robots.txt'), 'utf-8') : '';
 
 for (const f of htmlDateien) {
@@ -843,7 +864,7 @@ if (referenzReste.length > 0) {
 // Leere Pflichtfelder
 for (const feld of ['name', 'claim', 'kurzbeschreibung', 'telefon', 'email', 'domain']) {
   const re = new RegExp(`${feld}:\\s*['"]\\s*['"]`);
-  if (re.test(configText)) fehler(`content.config.ts: Feld "${feld}" ist leer`);
+  if (re.test(configWerte)) fehler(`content.config.ts: Feld "${feld}" ist leer`);
 }
 
 // ---------------------------------------------------------------------------
@@ -1054,10 +1075,34 @@ if (istTemplate) {
     );
   }
 
-  // 2. Jeder Dienst braucht eine Drittland-Angabe.
-  const diensteRoh = configText.match(/dienste:\s*\[[\s\S]*?\n\s{2}\]/)?.[0] ?? '';
-  const anzahlDienste = (diensteRoh.match(/\bid:\s*'/g) ?? []).length;
-  const anzahlDrittland = (diensteRoh.match(/\bdrittland:\s*'/g) ?? []).length;
+  /* 2. Jeder Dienst braucht eine Drittland-Angabe.
+
+     DEN BLOCK ÜBER KLAMMERZÄHLUNG ABGRENZEN, NICHT ÜBER EINRÜCKUNG.
+     Hier stand `dienste:\s*\[[\s\S]*?\n\s{2}\]` – das verlangt GENAU zwei
+     Leerzeichen vor der schließenden Klammer. Nachgemessen: Bei vier
+     Leerzeichen trifft es gar nicht, und dann sind es still „null Dienste".
+     Alle drei daran hängenden Regeln laufen ins Leere – die Pflichtangabe
+     `drittland` wird nicht mehr eingefordert, und die Einwilligungs-Kennung
+     wird nicht geprüft. Ein Klon, der seine Config einmal anders formatiert
+     (ein Formatierer genügt), verliert damit lautlos die halbe DSGVO-Prüfung.
+     Ebenso zählten `id:` und `drittland:` nur mit EINFACHEN Anführungszeichen. */
+  const diensteRoh = (() => {
+    const start = configWerte.search(/\bdienste:\s*\[/);
+    if (start < 0) return '';
+    const ab = configWerte.indexOf('[', start);
+    let tiefe = 0;
+    for (let i = ab; i < configWerte.length; i++) {
+      const z = configWerte[i];
+      if (z === '[') tiefe++;
+      else if (z === ']') {
+        tiefe--;
+        if (tiefe === 0) return configWerte.slice(ab, i + 1);
+      }
+    }
+    return configWerte.slice(ab);
+  })();
+  const anzahlDienste = (diensteRoh.match(/\bid:\s*['"`]/g) ?? []).length;
+  const anzahlDrittland = (diensteRoh.match(/\bdrittland:\s*['"`]/g) ?? []).length;
   if (anzahlDienste > anzahlDrittland) {
     warnung(
       [
@@ -1097,7 +1142,14 @@ if (istTemplate) {
 //  Kachel passte, bekam schwarze Balken. Keine der Pruefungen hat es bemerkt -
 //  die Regel war ja da, sie galt nur nicht.
 // ---------------------------------------------------------------------------
-for (const f of alleDateien(join(WURZEL, 'src', 'styles'))) {
+/* ALLE .css-DATEIEN UNTER src/, NICHT NUR src/styles/.
+   Der dokumentierte Schadensfall (`:global()` in einer eigenständigen
+   .css-Datei verwirft die GANZE Regel, `object-fit: cover` fällt weg, jedes
+   Bild bekommt schwarze Balken) hängt nicht am Ordner, sondern daran, DASS es
+   eine eigenständige .css-Datei ist. Ein Design-Bundle, das ein Port nach
+   src/css/, neben eine Komponente oder in einen Unterordner legt, war bisher
+   unsichtbar – und genau so kommen Design-Dateien an. */
+for (const f of alleDateien(join(WURZEL, 'src'))) {
   if (extname(f) !== '.css') continue;
   const roh = readFileSync(f, 'utf-8');
   /* Kommentare AUSBLENDEN, aber die Zeilenzahl erhalten – sonst zeigt die
@@ -1187,7 +1239,7 @@ let bildzeichenImBuild = 0;
 //  soll, nur eine Ebene tiefer.
 // ---------------------------------------------------------------------------
 {
-  const farbBlock = configText.match(/farben:\s*\{[^}]*\}/)?.[0] ?? '';
+  const farbBlock = configWerte.match(/farben:\s*\{[^}]*\}/)?.[0] ?? '';
   for (const m of farbBlock.matchAll(/(\w+)\s*:\s*'([^']+)'/g)) {
     const name = m[1];
     const wert = m[2];
@@ -1447,8 +1499,31 @@ if (istLive || nurLive) {
   const standDatei = join(WURZEL, 'STAND.md');
   if (existsSync(standDatei)) {
     const stand = readFileSync(standDatei, 'utf-8');
-    const offen = [...stand.matchAll(/^\s*-\s*\[ \]\s*(.+)$/gm)]
-      .map((m) => m[1].trim())
+    /* DEN GANZEN PUNKT LESEN, NICHT NUR DIE ERSTE ZEILE.
+       Hier stand `^\s*-\s*\[ \]\s*(.+)$` mit /m – das liest bis zum ersten
+       Zeilenumbruch. Ein Eintrag im Lücken-Inventar ist aber fast immer
+       mehrzeilig, und damit rutschte die Konvention „(kein Blocker)" auf die
+       Folgezeile und wurde nie gesehen.
+
+       GEMESSEN am 02.08.2026 im unveränderten Template: `npm run check --live`
+       meldete vier Probleme, drei davon Punkte des MOTORS – zwei davon trugen
+       die Markierung ausdrücklich. Die Datei sagte also wörtlich das Gegenteil
+       dessen, was das Tor daraus machte. Ein Klon startet so mit einem roten
+       Live-Tor aus Gründen, die mit seiner Seite nichts zu tun haben.
+
+       Ein Punkt reicht jetzt bis zum nächsten Aufzählungszeichen, zur nächsten
+       Überschrift, zum nächsten Kommentar, zur nächsten Leerzeile oder zum
+       Textende – also bis dorthin, wo für einen Leser der nächste Punkt beginnt.
+
+       DAS TEXTENDE IST `(?![\s\S])`, NICHT `$`. Unter dem /m-Schalter ist `$`
+       das Ende einer ZEILE, nicht des Textes – der Ausdruck hätte damit sofort
+       am ersten Umbruch abgebrochen und genau den Fehler wiederholt, den er
+       beheben soll. Beim ersten Versuch am 02.08.2026 genau so passiert. */
+    const offen = [...stand.matchAll(
+      /^([ \t]*)-[ \t]*\[ \][ \t]*([\s\S]*?)(?=\n[ \t]*-[ \t]*\[[ x]\]|\n#{1,6} |\n<!--|\n[ \t]*\n|(?![\s\S]))/gm,
+    )]
+      .map((m) => m[2].replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
       .filter((z) => !z.startsWith('*(')); // die Beispielzeile der Vorlage zählt nicht
     /* NICHT JEDER OFFENE PUNKT SPERRT DEN LIVE-GANG.
        Im Lücken-Inventar stehen zwei verschiedene Sorten nebeneinander: Dinge,
@@ -1462,8 +1537,12 @@ if (istLive || nurLive) {
        Datei – wer sie später liest, sieht, dass jemand sie bewusst getroffen
        hat. Ohne benannte Konvention erfindet jeder Klon eine eigene, und die
        nächste Person weiß nicht, ob ein Punkt vergessen oder abgewogen wurde. */
+    /* Ein Zusatz IN der Klammer zählt mit: „(kein Blocker für den Demo-Weg)"
+       ist genauer als „(kein Blocker)" und soll nicht dafür bestraft werden,
+       genauer zu sein. Vorher verlangte das Muster die schließende Klammer
+       unmittelbar dahinter – zwei Punkte im Template selbst fielen darüber. */
     for (const punkt of offen) {
-      if (/\(kein Blocker\)/i.test(punkt)) {
+      if (/\(kein Blocker[^)]*\)/i.test(punkt)) {
         warnung(`STAND.md: bewusst offen (kein Blocker) -> "${punkt.slice(0, 90)}"`);
       } else {
         fehler(`STAND.md: offener Punkt vor dem Live-Gang -> "${punkt.slice(0, 90)}"`);
@@ -1477,7 +1556,7 @@ if (istLive || nurLive) {
      zeigen sämtliche Canonicals, die Sitemap und das Vorschaubild auf einen
      fremden Host – die Seite bewirbt dann dauerhaft die Vorschau statt sich
      selbst, und Google indexiert sie unter der falschen Adresse. */
-  const domain = configText.match(/domain:\s*['"]([^'"]+)['"]/)?.[1] ?? '';
+  const domain = configWerte.match(/domain:\s*['"]([^'"]+)['"]/)?.[1] ?? '';
   if (/kanbuk\.com|\.vercel\.app|\.example(\/|$)/.test(domain)) {
     fehler(
       `content.config.ts: domain steht beim Live-Gang noch auf „${domain}".\n` +
@@ -1485,7 +1564,7 @@ if (istLive || nurLive) {
     );
   }
 
-  if (!/uid:\s*'AT[UO]\d/.test(configText)) {
+  if (!/uid:\s*'AT[UO]\d/.test(configWerte)) {
     warnung('Rechtstexte: UID-Nummer sieht nicht nach einer echten österreichischen UID aus');
   }
   const sitemapDatei = join(DIST, 'sitemap-0.xml');
