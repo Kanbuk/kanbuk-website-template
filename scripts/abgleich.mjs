@@ -106,8 +106,28 @@ function designDatei() {
   return treffer.length ? join(DESIGN, treffer[0]) : undefined;
 }
 
+/* IM KLON IST EINE FEHLENDE DESIGN-DATEI KEIN GRUENES TOR, SONDERN EINE SPERRE.
+   Bis zum 02.08.2026 endete dieses Tor ohne .dc.html mit Erfolg. Damit war
+   Punkt 3c der Definition of Done („npm run abgleich ist gruen") erfuellt,
+   solange NIEMAND die Datei ablegt - das Tor war per Bauart gruen und hatte
+   nichts verglichen. CLAUDE.md sagt an anderer Stelle selbst: „Eine
+   uebersprungene Pruefung ist kein gruenes Tor."
+
+   Im TEMPLATE ist das anders und richtig: Dort gibt es kein Kundendesign und
+   soll auch keines geben. Unterschieden wird am Paketnamen - dieselbe Regel,
+   nach der auch das Pruef-Tor scharf wird (CLAUDE.md Abschnitt 8, Schritt 3). */
+function istTemplate() {
+  try {
+    const p = JSON.parse(readFileSync(join(WURZEL, 'package.json'), 'utf-8'));
+    return p.name === 'kanbuk-website-template';
+  } catch {
+    return false;
+  }
+}
+
 const datei = designDatei();
 if (!datei) {
+  const vorlage = istTemplate();
   console.log(
     'Kein Design zum Abgleichen gefunden.\n' +
       '\n' +
@@ -116,9 +136,16 @@ if (!datei) {
       '\n' +
       'Beim Portieren wird sie ohnehin dort abgelegt (siehe /port, Etappe 1,\n' +
       'Schritt 0). Ohne sie kann niemand prüfen, ob die Seite dem Design\n' +
-      'entspricht – auch kein Mensch.',
+      'entspricht – auch kein Mensch.' +
+      (vorlage
+        ? '\n\nDies ist das Referenz-Template – hier gibt es kein Kundendesign.\n' +
+          'Beim Kunden wird daraus ein Abbruch.'
+        : '\n\n✗ DAS IST KEIN GRÜNES TOR (CLAUDE.md Abschnitt 9).\n' +
+          '  Die Design-Datei aus dem Claude-Design-Projekt nach design/ legen\n' +
+          '  und erneut laufen lassen. Solange sie fehlt, ist Punkt 3c der\n' +
+          '  Definition of Done NICHT erfüllt – auch wenn nichts rot ist.'),
   );
-  process.exit(0);
+  process.exit(vorlage ? 0 : 1);
 }
 
 console.log(`Design: ${basename(datei)}`);
@@ -436,7 +463,10 @@ async function gebauteSeite(pfad) {
           grundfarbe: st.backgroundColor,
           grundbild: st.backgroundImage !== 'none',
           polsterungOben: Math.round(parseFloat(st.paddingTop) || 0),
-          hoehe: Math.round(x.getBoundingClientRect().height),
+          /* `hoehe` stand hier und wurde nie gelesen. Sie ist auch nicht
+             vergleichbar: Die Design-Datei hat keine gerechnete Höhe (sie wird
+             nie gerendert), und die gebaute Höhe hängt an der Textlänge des
+             echten Inhalts. Ein Vergleich hätte bei jedem Block angeschlagen. */
           ueberschrift: h ? h.textContent.trim().slice(0, 60) : '',
           /* Gegenstücke zu den Eigenschaften der Design-Seite.
              DIE SCHRIFTFAMILIE FEHLT HIER MIT ABSICHT: Sie wurde zwar erhoben,
@@ -747,6 +777,17 @@ if (rahmenGebaut) {
       dFest.map((r) => r.kennung).join(', ') || '(unbenannt)',
       gFest.map((r) => r.kennung).join(', ') || 'keines',
     );
+  }
+
+  /* DIE BAUTEILE VON KOPF UND FUSS GEHEN AN DAS AUGE – wie die der Blöcke.
+     Sie wurden hier eingesammelt (`bauteile` beim Rahmen) und dann verworfen.
+     Am 31.07.2026 wurde genau diese Falle für die BLÖCKE behoben und im
+     Dateikopf für erledigt erklärt – für den Rahmen blieb sie stehen. Dabei
+     wiegt sie hier schwerer: Kopfleiste und Fußzeile stehen auf JEDER Seite,
+     ein dort fehlendes Bauteil fällt also überall aus. */
+  const rahmenBauteile = [...new Set(designSeiten.rahmen.flatMap((r) => r.bauteile || []))].sort();
+  if (rahmenBauteile.length) {
+    sichtliste.push({ seite: 'Rahmen (Kopf/Fuß)', route: 'jede Seite', bauteile: rahmenBauteile, zustaende: [] });
   }
 }
 

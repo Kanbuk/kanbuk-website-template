@@ -178,7 +178,17 @@ for (const seite of seiten) {
     const abgeschnitten = await page.evaluate(() => {
       const funde = [];
       for (const el of document.querySelectorAll('button,a,span,h1,h2,h3,li,label,td,th')) {
-        if (el.children.length > 0) continue; // nur Blätter, sonst zählt man doppelt
+        /* NUR BLÄTTER – ABER EIN SYMBOL MACHT AUS EINEM KNOPF KEIN NICHT-BLATT.
+           Hier stand `if (el.children.length > 0) continue`. Damit fiel genau
+           das Muster heraus, für das die Messung gebaut wurde: Der Anlass war
+           der Knopf, in dem „DETA" statt „Details ansehen" stand – und ein
+           Knopf im Design ist fast immer `<button><svg/>Details ansehen</button>`,
+           weil CLAUDE.md Abschnitt 5a für jedes Symbol ein `<Symbol>` vorsieht.
+           Ein Kind, das selbst keinen Text trägt (Symbol, Bild, Trenner), zählt
+           deshalb nicht als Verschachtelung. Ein Kind MIT Text schon – sonst
+           misst man denselben Text zweimal, einmal außen und einmal innen. */
+        const kinderMitText = [...el.children].filter((k) => (k.textContent || '').trim().length > 0);
+        if (kinderMitText.length > 0) continue;
         const text = (el.textContent || '').trim();
         if (text.length < 4) continue;
         const s = getComputedStyle(el);
@@ -199,9 +209,18 @@ for (const seite of seiten) {
         if (s.display === 'inline') continue;
         const r = el.getBoundingClientRect();
         if (r.width < 8 || r.height < 8) continue;
-        // Mehrzeilig? Dann ist Beschneiden gewollt.
+        /* MEHRZEILIG? Dann ist Beschneiden gewollt (Zeilenklemme).
+           GERECHNET WIRD OHNE INNENABSTAND. Hier stand die Aussenhoehe, und
+           damit hat der Filter genau seine Zielgruppe weggeworfen: Ein
+           gestalteter Knopf hat Innenabstand. Nachgemessen an einer Probe –
+           16px Schrift, Zeilenhoehe 26,4, Grenze also 42,2 – kam der EINZEILIGE
+           Knopf auf 42,4 Aussenhoehe und galt als mehrzeilig. Jeder Knopf mit
+           `padding: 12px 20px` faellt so heraus, und das ist der Normalfall
+           jedes Designs. Der Anlass der ganzen Messung war ein Knopf. */
         const zeilenhoehe = parseFloat(s.lineHeight) || parseFloat(s.fontSize) * 1.4;
-        if (r.height > zeilenhoehe * 1.6) continue;
+        const innen =
+          el.clientHeight - (parseFloat(s.paddingTop) || 0) - (parseFloat(s.paddingBottom) || 0);
+        if (innen > zeilenhoehe * 1.6) continue;
         if (el.scrollWidth <= el.clientWidth + 1) continue;
         // Läuft der Text aus einem Vorfahren mit overflow:hidden heraus?
         let versteckt = false;
@@ -547,6 +566,32 @@ for (const seite of seiten) {
         `${kennung}: GRÖSSTES BILD LÄDT VERZÖGERT -> ${lcp.datei} (LCP nach ${lcp.zeit} ms)\n` +
           `      Das Bild, das den ersten Eindruck bestimmt, hat loading="lazy" und startet erst spät.\n` +
           `      Abhilfe: loading="eager" + fetchpriority="high" (bei <Image>: loading="eager" fetchpriority="high").`,
+      );
+    }
+
+    /* DIE LADEZEIT WURDE GEMESSEN UND GEGEN NICHTS GEHALTEN.
+       `lcp.zeit` stand bisher nur im Text der Meldung oben – ausgewertet wurde
+       allein `lcp.lazy`. Eine Seite mit 8 Sekunden LCP und richtig gesetztem
+       `eager` kam damit ohne ein Wort durch, obwohl die Definition of Done
+       Lighthouse >= 95 zusagt (also auch Performance).
+
+       DIE GRENZEN SIND BEWUSST GROSSZUEGIG: Gemessen wird gegen einen lokalen
+       Server, ohne Netz, ohne Latenz. Was hier langsam ist, ist beim Besucher
+       viel langsamer. Ein lokaler Wert ueber 2,5 s bedeutet nicht „knapp", er
+       bedeutet, dass etwas grundsaetzlich nicht stimmt - ein riesiges Bild, ein
+       blockierendes Skript, eine Schrift ohne `display: swap`.
+       Das ersetzt Lighthouse NICHT (kein Netzprofil, keine Rechenbremse) und
+       behauptet es auch nicht - es faengt nur den groben Fall. */
+    if (typeof lcp?.zeit === 'number' && lcp.zeit > 4000) {
+      probleme.push(
+        `${kennung}: LADEZEIT ZU HOCH -> groesstes Element nach ${lcp.zeit} ms (lokal gemessen, ohne Netz)\n` +
+          `      Beim Besucher ist es deutlich mehr. Ursache meist: ein sehr grosses Bild,\n` +
+          `      ein blockierendes Skript oder eine Schrift ohne \`font-display: swap\`.`,
+      );
+    } else if (typeof lcp?.zeit === 'number' && lcp.zeit > 2500) {
+      hinweise.push(
+        `${kennung}: Ladezeit ${lcp.zeit} ms fuer das groesste Element (lokal, ohne Netz).\n` +
+          `      Unter 2500 ms sollte es lokal bleiben - beim Besucher kommt die Leitung dazu.`,
       );
     }
 

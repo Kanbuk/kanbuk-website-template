@@ -70,6 +70,37 @@ const { basis: BASIS, seiten, stop } = await starteDistServer(DIST);
 const probleme = [];
 let geprueft = 0;
 
+/* WELCHE PRUEFUNGEN HABEN UEBERHAUPT ETWAS GEFUNDEN?
+   Die Zeile „✓ Alle Bedien-Elemente funktionieren (34 Prüfungen)" las sich wie
+   eine Aussage über alle Bausteine. Gemessen am 02.08.2026 auf dem
+   unveränderten Template: Nur sieben der vierzehn Prüfungen sind je gelaufen –
+   Tabs, Filter, Slider, Vergleich, Dialog, Assistent und die Formular-Struktur
+   kamen auf keiner gebauten Seite vor. Deren Code hat niemand je ausgeführt;
+   ein falsches Attribut oder eine falsche Erwartung darin fällt zum ersten Mal
+   BEIM KUNDEN auf. Beim Wirt ist die Speisekarte ein Tab-Baustein, beim Händler
+   der Vergleich – also genau dort.
+   Deshalb nennt der Schlussbericht jetzt, was NICHT vorkam. */
+const ALLE_PRUEFUNGEN = [
+  'Tabs',
+  'Filter',
+  'Katalog-Filter',
+  'Merkliste',
+  'Dialog',
+  'Assistent',
+  'Assistent (Bewegung)',
+  'Akkordeon (exklusiv)',
+  'Akkordeon (Bewegung)',
+  'Vergleich',
+  'Slider',
+  'Lightbox',
+  'Mobilmenü',
+  'Formular',
+  'Formular (Vorschau)',
+  'Formular (Demo-Hinweis)',
+  'Formular (Struktur)',
+];
+const gesehen = new Set();
+
 const browser = await chromium.launch();
 console.log(`Interaktionstest: ${seiten.length} Seite(n) × ${BREITEN.length} Breiten (${BREITEN.join(', ')} px)\n`);
 
@@ -511,6 +542,21 @@ for (const seite of seiten) {
           const erwartet = vor ? (vorher + 1) % punkte.length : 1;
           const nachher = aktivIndex();
           if (nachher !== erwartet) fehler.push(`aktiver Punkt bleibt bei ${vorher + 1}, erwartet Punkt ${erwartet + 1}`);
+          /* AUCH BEI PUNKTEN MUSS SICH DIE SPUR BEWEGEN.
+             `scrollVorher` wurde oben erhoben und hier weggeworfen: Sobald es
+             Punkte gibt, galt allein das ARIA-Attribut als Beweis. Der Baustein
+             ruft aber `spur.scrollTo(...)` und danach `markiere(n)` – ohne
+             Rückmeldung, ob wirklich gescrollt wurde. Setzt das Design
+             `overflow-x: hidden` auf die Spur (verbreitet, weil Slider ohne
+             Scrollbalken gezeigt werden), bewegt sich NICHTS, der Punkt wandert
+             trotzdem weiter – und die Prüfung meldet grün, während der Besucher
+             immer dasselbe Bild sieht. */
+          if (spur.scrollWidth > spur.clientWidth + 2 && Math.abs(spur.scrollLeft - scrollVorher) < 2) {
+            fehler.push(
+              'der aktive Punkt wandert, die Spur bewegt sich aber nicht – ' +
+                'meist `overflow-x: hidden` auf der Spur (nötig ist `auto` oder `scroll`)',
+            );
+          }
         } else if (spur.scrollWidth > spur.clientWidth + 2) {
           if (Math.abs(spur.scrollLeft - scrollVorher) < 2) fehler.push('Spur bewegt sich nach Klick auf den Vor-Knopf nicht');
         } else {
@@ -793,6 +839,8 @@ for (const seite of seiten) {
 
     // --- Bericht für diese Seite × Breite ------------------------------------
     geprueft += ergebnisse.length;
+    // Welche Baustein-Art kam überhaupt jemals vor? (siehe Schlussbericht)
+    for (const e of ergebnisse) gesehen.add(String(e.baustein).replace(/ #\d+$/, ''));
     const kennung = `${seite} @ ${breite}px`;
     const alleFehler = [...new Set(jsFehler)];
 
@@ -826,3 +874,15 @@ Zuordnung (Tab ohne Panel, Filterwert ohne Kategorie).`);
   process.exit(1);
 }
 console.log(`✓ Alle Bedien-Elemente funktionieren (${geprueft} Prüfung(en), ${seiten.length} Seite(n) × ${BREITEN.join('/')} px).`);
+
+const nieGefahren = ALLE_PRUEFUNGEN.filter((p) => !gesehen.has(p));
+if (nieGefahren.length) {
+  console.log('');
+  console.log(`  NICHT GEPRÜFT – auf dieser Seite kam ${nieGefahren.length} Baustein-Art nicht vor:`);
+  console.log(`  ${nieGefahren.join(' · ')}`);
+  console.log('');
+  console.log('  Das ist kein Fehler: Was die Seite nicht hat, kann nicht geprüft werden.');
+  console.log('  Es heißt aber, dass „alle Bedien-Elemente funktionieren" sich NUR auf die');
+  console.log('  tatsächlich vorhandenen bezieht. Baut das Design einen dieser Bausteine');
+  console.log('  ein, läuft seine Prüfung hier zum ERSTEN Mal – Ergebnis dann genau ansehen.');
+}
