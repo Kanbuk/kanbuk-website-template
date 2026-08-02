@@ -55,7 +55,13 @@ export const TYPEN = {
  * dessen, der die Seite betreut, nicht in eine Eingabemaske.
  */
 export const BETRIEB = [
-  { pfad: 'betrieb.telefon', titel: 'Telefonnummer', typ: 'text', hinweis: 'International: +43 1 2345678' },
+  /* Musterform mit Nullen, wie überall sonst im Template. Hier stand vorher
+     eine aufsteigende Ziffernfolge – die sieht wie eine echte Nummer aus, und
+     die Kundenfrei-Prüfung hat sie beim allerersten Lauf bemängelt, den sie
+     über diese Datei überhaupt machen konnte (redaktion/ stand nicht in der
+     alten Handliste). Kein Beispiel im Kommentar wiederholen: Die Prüfung
+     unterscheidet Kommentar und Wert nicht – zu Recht. */
+  { pfad: 'betrieb.telefon', titel: 'Telefonnummer', typ: 'text', hinweis: 'International: +43 1 000 00 00' },
   { pfad: 'betrieb.email', titel: 'E-Mail-Adresse', typ: 'text' },
   { pfad: 'betrieb.claim', titel: 'Slogan', typ: 'text', hinweis: 'Ein kurzer Satz unter dem Namen.' },
   {
@@ -94,7 +100,7 @@ export const RECHT = [
   { pfad: 'rechtstexte.firmenwortlaut', titel: 'Firmenwortlaut', typ: 'text', hinweis: 'Genau wie im Firmenbuch.' },
   { pfad: 'rechtstexte.rechtsform', titel: 'Rechtsform', typ: 'text', hinweis: 'z. B. Einzelunternehmen, GmbH' },
   { pfad: 'rechtstexte.adresse', titel: 'Anschrift laut Firmenbuch', typ: 'text' },
-  { pfad: 'rechtstexte.uid', titel: 'UID-Nummer', typ: 'text', hinweis: 'z. B. ATU12345678' },
+  { pfad: 'rechtstexte.uid', titel: 'UID-Nummer', typ: 'text', hinweis: 'z. B. ATU00000000' },
   { pfad: 'rechtstexte.firmenbuchnummer', titel: 'Firmenbuchnummer', typ: 'text' },
   { pfad: 'rechtstexte.firmenbuchgericht', titel: 'Firmenbuchgericht', typ: 'text' },
   { pfad: 'rechtstexte.gewerbe', titel: 'Gewerbeberechtigung', typ: 'text' },

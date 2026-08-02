@@ -853,25 +853,29 @@ for (const feld of ['name', 'claim', 'kurzbeschreibung', 'telefon', 'email', 'do
 //      Deshalb: im Template sind nur Musterdaten erlaubt.
 // ---------------------------------------------------------------------------
 if (istTemplate) {
-  const motorDateien = [
-    ...alleDateien(join(WURZEL, 'src')),
-    ...alleDateien(join(WURZEL, 'scripts')),
-    ...alleDateien(join(WURZEL, '.claude')),
-    ...alleDateien(join(WURZEL, 'vorlagen')),
-    join(WURZEL, 'content.config.ts'),
-    join(WURZEL, 'CLAUDE.md'),
-    join(WURZEL, 'README.md'),
-    // STAND.md gehört ausdrücklich dazu: Genau dort rutschten am 2026-07-27
-    // drei Betriebsnamen durch – in der Verlaufszeile, wo man beim Schreiben
-    // an die Arbeit denkt und nicht an die Regel.
-    join(WURZEL, 'STAND.md'),
-    /* Die Bau-Konfiguration und die Grenz-Datei gehoerten frueher NICHT dazu -
-       ausgerechnet die beiden Dateien, die der letzte Rueckfluss angelegt hat.
-       Ein Kundenname in einem Kommentar dort waere durchgerutscht. */
-    join(WURZEL, 'astro.config.ts'),
-    join(WURZEL, 'browser-untergrenze.json'),
-    join(WURZEL, 'package.json'),
-  ].filter((f) => existsSync(f) && ['.ts', '.astro', '.mjs', '.md', '.css', '.json'].includes(extname(f)));
+  /* ALLES, WAS GIT VERFOLGT – KEINE HANDGEPFLEGTE LISTE MEHR.
+     Hier standen die Ordner und Dateien einzeln aufgezählt, und die Liste ist
+     dreimal nachgetragen worden (STAND.md, dann astro.config.ts und
+     browser-untergrenze.json). Beim vierten Mal ging es schief: Am 31.07.2026
+     entstand `PRUEFPLAN.md` im Wurzelverzeichnis, mit dem Namen eines echten
+     Auftraggebers darin – und wurde committet, ohne dass diese Regel ein Wort
+     sagte. Sie hatte die Datei schlicht nie geöffnet.
+
+     Eine Aufzählung ist bei einer Sicherheitsregel die falsche Bauform: Sie ist
+     genau so lange vollständig, bis jemand eine Datei anlegt. Deshalb fragt die
+     Regel jetzt git, was zum Repo gehört – und damit auch, was `degit` in jeden
+     Kundenordner kopiert. Das ist dieselbe Menge, um die es geht.
+
+     Ohne git (heruntergeladenes Archiv) fällt sie auf den Verzeichnisdurchlauf
+     zurück, damit sie nicht stillschweigend nichts prüft. */
+  const AUSGENOMMEN = /^(node_modules|dist|\.astro|\.git|fotos|pruefung)\//;
+  const ENDUNGEN = ['.ts', '.astro', '.mjs', '.js', '.md', '.css', '.json', '.yml', '.yaml'];
+  const ausGit = spawnSync('git', ['ls-files', '-z'], { cwd: WURZEL, encoding: 'utf-8' });
+  const motorDateien = (
+    ausGit.status === 0 && ausGit.stdout
+      ? ausGit.stdout.split('\0').filter(Boolean).filter((p) => !AUSGENOMMEN.test(p)).map((p) => join(WURZEL, p))
+      : alleDateien(WURZEL).filter((f) => !AUSGENOMMEN.test(relative(WURZEL, f).replace(/\\/g, '/')))
+  ).filter((f) => existsSync(f) && ENDUNGEN.includes(extname(f)));
 
   /* BETRIEBSNAMEN – der Fall, den kein allgemeines Muster findet.
      Telefonnummern und E-Mail-Adressen haben eine erkennbare Form, ein

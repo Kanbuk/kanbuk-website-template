@@ -128,8 +128,9 @@ Sitzungen**:
    gegengeprüft. **Noch nichts reparieren.**
 2. **Sitzung B – reparieren**, was Sitzung A als „müsste ein Chat selbst bauen"
    eingestuft hat. Kleine Pakete, nach jedem Paket alle sechs Tore.
-3. **Sitzung C – Yuri Nabi**, im eigenen Klon. Jeder Motor-Fund dort geht als
-   **Motor-Meldung** in dessen STAND.md, nicht in eine neue Template-Runde.
+3. **Sitzung C – der nächste echte Relaunch**, im eigenen Klon. Jeder Motor-Fund
+   dort geht als **Motor-Meldung** in dessen STAND.md, nicht in eine neue
+   Template-Runde.
 
 > **Warum getrennt:** Am 30.07. wurden 28 Dateien und 1.800 Zeilen an einem Tag
 > geändert. Die beiden folgenden Prüfungen fanden fast nur Fehler, die genau
@@ -155,7 +156,7 @@ technisch, sondern geschäftlich.
 
 ## Was ohne Claude schon vorbereitet werden kann
 
-Spart in Sitzung C (Yuri Nabi) direkt Zeit:
+Spart in Sitzung C (der nächste Relaunch) direkt Zeit:
 
 - **Auftragsverarbeitungsvertrag nach Art. 28 DSGVO** besorgen (Anwalt, WKO).
   Steht als echter Blocker in STAND.md und betrifft **jeden** zahlenden Kunden,
