@@ -18,11 +18,29 @@ export function mobilmenueStarten(): void {
   schalter.setAttribute('aria-expanded', 'false');
   if (navi.id) schalter.setAttribute('aria-controls', navi.id);
 
+  /* Alles außerhalb der Kopfleiste stilllegen, solange das Menü offen ist.
+     WARUM: Sobald ein Design das Panel vollflächig aufziehen lässt – bei
+     modernen Entwürfen der Normalfall –, ist der Inhalt dahinter unsichtbar,
+     bleibt mit der Tabulatortaste aber erreichbar. Nach dem letzten Menüpunkt
+     wandert der Fokus dann unsichtbar durch die Seite darunter: Man tabbt ins
+     Nichts und weiß nicht mehr, wo man ist. An einem Beauty-Piloten live gemessen.
+     `inert` nimmt einen Teilbaum aus Fokus, Klick und Vorlesereihenfolge –
+     genau dafür gibt es das Attribut. */
+  const kopf = navi.closest('header') ?? navi.parentElement;
+  function stilllegen(offen: boolean) {
+    for (const el of Array.from(document.body.children)) {
+      if (el === kopf || el.contains(navi!)) continue;
+      if (offen) el.setAttribute('inert', '');
+      else el.removeAttribute('inert');
+    }
+  }
+
   function setze(offen: boolean) {
     schalter!.setAttribute('aria-expanded', String(offen));
     schalter!.classList.toggle('ist-offen', offen);
     navi!.classList.toggle('ist-offen', offen);
     document.documentElement.classList.toggle('menue-offen', offen);
+    stilllegen(offen);
   }
 
   const offen = () => schalter.getAttribute('aria-expanded') === 'true';

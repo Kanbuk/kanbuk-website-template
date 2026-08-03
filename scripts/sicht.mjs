@@ -363,7 +363,20 @@ for (const seite of seiten) {
       const zuRgb = (s) => {
         const m = s.match(/[\d.]+/g);
         if (!m) return null;
-        return { r: +m[0], g: +m[1], b: +m[2], a: m[3] === undefined ? 1 : +m[3] };
+        /* `color(srgb r g b / a)` hat Kanäle von 0 bis 1, nicht 0 bis 255 –
+           und Chrome rechnet JEDES color-mix() genau dahin aus. Ohne diese
+           Umrechnung las der Parser aus `color(srgb 1 1 1 / .72)`, also aus
+           reinem Weiß, die Werte 1,1,1 und damit fast Schwarz. Ergebnis beim
+           Beauty-Pilot: 268 gemeldete Kontrastfehler auf Text, der in
+           Wahrheit bei 10,6:1 liegt. Das ist die gefährlichste Sorte Fehler –
+           man gewöhnt sich an rote Meldungen und übersieht die echte darin. */
+        const faktor = /^color\(\s*srgb\b/i.test(s.trim()) ? 255 : 1;
+        return {
+          r: +m[0] * faktor,
+          g: +m[1] * faktor,
+          b: +m[2] * faktor,
+          a: m[3] === undefined ? 1 : +m[3],
+        };
       };
       const kanal = (c) => {
         const s = c / 255;
@@ -481,6 +494,33 @@ for (const seite of seiten) {
     });
 
     const name = `${(seite === '/' ? 'start' : seite.replace(/^\//, '').replace(/\//g, '-'))}-${breite}px.png`;
+
+    /* Vor dem Ganzseiten-Screenshot alles sichtbar machen und WARTEN, bis die
+       Bilder wirklich malbar sind.
+
+       WARUM: `fullPage: true` fotografiert die ganze Seite, stößt aber kein
+       Nachladen an und wartet nicht darauf. Alles mit loading="lazy" unterhalb
+       des ersten Bildschirms landete deshalb als LEERER KASTEN im Bogen – also
+       in genau dem Bild, mit dem laut Ablauf „mit eigenen Augen" geprüft wird.
+       Bei einem zweisprachigen Beauty-Piloten sahen so fünf Produktfotos aus wie fehlende Bilder;
+       im Browser waren sie da. Beide Richtungen sind schlimm: Der falsche Alarm
+       kostet Zeit, und umgekehrt erkennt man ein WIRKLICH fehlendes Bild nicht
+       mehr, weil leere Kästen normal aussehen.
+
+       `loading = 'eager'` stößt das Laden sofort an, `decode()` wartet, bis das
+       Bild fertig dekodiert ist – erst dann malt es der Screenshot. */
+    await page.evaluate(async () => {
+      document.querySelectorAll('img[loading="lazy"]').forEach((i) => {
+        i.loading = 'eager';
+      });
+      // Einblende-Animationen abschließen, sonst steht opacity: 0 im Bild.
+      document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('ist-sichtbar'));
+      await Promise.all(
+        [...document.images].map((i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve())),
+      );
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+
     await page.screenshot({ path: join(ZIEL, name), fullPage: true });
 
     // 2b) Text-Dump – NACH dem Screenshot (der zeigt den echten Zustand) und

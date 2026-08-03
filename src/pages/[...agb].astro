@@ -35,6 +35,22 @@ export async function getStaticPaths() {
 }
 
 const abschnitte: AgbAbschnitt[] = site.rechtstexte.agb ?? [];
+
+/**
+ * Trägt der Titel schon eine Nummer, bleibt SIE stehen.
+ *
+ * Vorher nummerierte die Seite stur nach Position im Array. Übernimmt ein Klon
+ * die AGB des Betriebs 1:1 – und genau so soll er es tun, AGB sind
+ * Vertragsrecht –, dann tragen die Überschriften ihre Nummern bereits mit:
+ * Auf der Seite stand „1. 1. Allgemeines".
+ *
+ * Schlimmer ist der zweite Fall. Bei einem zweisprachigen Beauty-Piloten sprang die Nummerierung
+ * des Originals von 9 auf 11 (eine Klausel war gestrichen worden, ohne neu zu
+ * nummerieren). Eine Zählung nach Position hätte daraus stillschweigend
+ * „10. Sonstiges" gemacht – also einen VERTRAGSTEXT umnummeriert, ohne dass es
+ * jemandem auffällt. Die Nummer gehört dem Betrieb, nicht dem Zähler.
+ */
+const hatNummer = (titel: string) => /^\s*\d+[.)]/.test(titel);
 ---
 
 <RechtsLayout
@@ -44,7 +60,7 @@ const abschnitte: AgbAbschnitt[] = site.rechtstexte.agb ?? [];
 >
   {abschnitte.map((a, i) => (
     <>
-      <h2>{i + 1}. {a.titel}</h2>
+      <h2>{hatNummer(a.titel) ? a.titel : `${i + 1}. ${a.titel}`}</h2>
       {a.absaetze.map((p) => <p>{p}</p>)}
     </>
   ))}

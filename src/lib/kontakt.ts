@@ -134,7 +134,13 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
           (duzt
             ? 'Das Formular ist gerade nicht erreichbar. Bitte melde dich direkt – '
             : 'Das Formular ist gerade nicht erreichbar. Bitte melden Sie sich direkt – ') +
-          `Telefon ${site.betrieb.telefon}, E-Mail ${site.betrieb.email}.`,
+          /* Klammern sind hier PFLICHT: `a ? x : y` bindet schwächer als `+`.
+             Ohne sie wäre die ganze vorangehende Verkettung die Bedingung –
+             also immer wahr – und der Satz nennte auch dann eine Telefonnummer,
+             wenn keine hinterlegt ist. */
+          (site.betrieb.telefon
+            ? `Telefon ${site.betrieb.telefon}, E-Mail ${site.betrieb.email}.`
+            : `E-Mail ${site.betrieb.email}.`),
       },
     };
   }

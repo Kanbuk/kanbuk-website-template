@@ -263,6 +263,73 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-03 (abends)** – **Rückfluss aus einem zweisprachigen Beauty-Piloten
+  (Relaunch, Deutsch + Englisch, 16 Seiten).** Elf Funde, alle im Klon zuerst
+  behoben und hier nachgezogen. Zwei davon machten die PRÜFUNG selbst
+  unzuverlässig – das ist die schlimmste Sorte, weil man sich an falsche rote
+  Meldungen gewöhnt und darin die echte übersieht:
+
+  - **Die Kontrast-Prüfung konnte modernes Farb-Syntax nicht lesen.**
+    `zuRgb` in `sicht.mjs` las aus `color(srgb 1 1 1 / .72)` – also reinem Weiß –
+    die Werte 1,1,1 und damit fast Schwarz. Chrome rechnet JEDES `color-mix()`
+    genau dahin aus. Ergebnis im Piloten: **268 gemeldete Kontrastfehler** auf
+    Text, der in Wahrheit bei 10,6:1 liegt. Gegenprobe nach dem Fix: 1,00:1 →
+    10,54:1, und `rgba()` liefert unverändert dasselbe.
+  - **Der Ganzseiten-Screenshot zeigte lazy geladene Bilder als leere Kästen.**
+    `fullPage: true` fotografiert alles, stößt aber kein Nachladen an. Damit war
+    ausgerechnet der Bogen unbrauchbar – das Bild, mit dem laut Ablauf „mit
+    eigenen Augen" geprüft wird. Im Piloten sahen fünf Produktfotos aus wie
+    fehlende Bilder. Umgekehrt genauso schlimm: Ein wirklich fehlendes Bild
+    erkennt man nicht mehr, weil leere Kästen normal aussehen. Jetzt werden
+    Bilder vor dem Auslösen auf `eager` gestellt und über `decode()` abgewartet.
+  - **Descriptions mit Apostroph wurden zu kurz gemessen.** Die Regel las
+    `content=["']([^"']*)["']` – die Zeichenklasse bricht am ersten Apostroph ab.
+    Eine 139 Zeichen lange englische Description galt als 43 Zeichen und wurde
+    beanstandet. Gegenprobe: 38 → 77 Zeichen.
+
+  Dazu acht Funde am Motor selbst:
+
+  - **Zweisprachigkeit hörte bei den Motor-Texten auf.** Der Motor baut seit
+    Juli englische Routen – sein eigenes Formular blieb deutsch: „Vorname",
+    „Senden", deutscher Datenschutzhinweis. Neu: englische Fassung in
+    `texte.ts`, `sprache`-Prop am Formular, optionales `labelEn` je Feld.
+  - **Das FAQ-Schema ignorierte die Sprache.** Die englische Seite übergibt
+    denselben `pfad` und bekam die deutschen Fragen ins JSON-LD, während
+    sichtbar die englischen standen – genau das, was Google als „Markup, das
+    der Nutzer nicht sieht" verbietet. Neu: `faq`-Prop am BaseLayout.
+  - **`og:image:alt` war fest deutsch** und nannte den Betrieb doppelt (er
+    steht schon in `og:site_name` direkt darüber). Folgt jetzt der Seitensprache.
+  - **Das Mobilmenü hatte keine Fokus-Sperre.** Bei einem vollflächigen Panel –
+    im modernen Design der Normalfall – wanderte der Tastatur-Fokus nach dem
+    letzten Menüpunkt unsichtbar in die Seite dahinter. Jetzt `inert`.
+  - **Die AGB-Seite nummerierte nach Array-Position.** Trägt der übernommene
+    Text seine Nummern selbst, stand „1. 1. Allgemeines" auf der Seite. Und
+    springt die Nummerierung des Originals (im Piloten 9 → 11, eine Klausel war
+    gestrichen worden), nummerierte die Seite einen **Vertragstext
+    stillschweigend um**. Jetzt bleibt eine vorhandene Nummer stehen.
+  - **`telefon` war Pflichtfeld – ist aber keines.** Nicht jeder Betrieb
+    veröffentlicht eine Nummer, und § 5 ECG verlangt keine (die E-Mail-Adresse
+    genügt). Die Regel zwang dazu, eine Nummer zu erfinden oder dauerhaft einen
+    PLATZHALTER stehen zu lassen, der den Live-Gang blockiert. Impressum,
+    Danke-Seite, Fehler-Seite, Kontakt-Text und JSON-LD lassen den Punkt jetzt
+    weg, wenn das Feld leer ist.
+  - **Im Impressum fehlte § 5 Abs. 1 Z 6 ECG** – die anwendbaren
+    berufsrechtlichen Vorschriften samt Zugang dazu. Von acht Punkten war das
+    der einzige fehlende, ausgerechnet auf einer Seite, die die Norm selbst
+    zitiert. Neuer Abschnitt mit RIS-Link.
+  - **`npm run platzhalter` überschrieb ein vorhandenes OG-Bild.** Das
+    Port-Rezept lässt erst `npm run og` mit einem echten Foto laufen und danach
+    `platzhalter` fürs Favicon – genau dann war das Vorschaubild wieder weg.
+    Gemerkt hätte man es erst beim Verschicken per WhatsApp. Jetzt wie
+    `karte.jpg`: Vorhandenes bleibt (mit `--force` weiterhin überschreibbar).
+
+  Beim Einpflegen hat das Template selbst zugeschlagen: Die Kundenfrei-Regel
+  fand den Namen des Piloten in meinen Kommentaren und machte den Check rot.
+  Genau dafür gibt es sie – die Stellen heißen jetzt „Beauty-Pilot".
+
+  `check`, `sicht` und `interaktion` sind grün; beide Prüf-Fixes wurden mit
+  Positiv- UND Negativprobe belegt.
+
 - **2026-08-03 (Nacht, später)** – **Der Redaktions-Baustein hat einen Weg
   HINEIN** (Block 11 der Gesamtprüfung, `5f60c89`).
 

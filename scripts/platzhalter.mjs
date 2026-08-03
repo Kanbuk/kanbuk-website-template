@@ -142,9 +142,18 @@ await jpg(galerieSvg(900, 900, darken(p.primaer, 0.8), p.sekundaer), join(rawDir
 await jpg(galerieSvg(900, 900, darken(p.primaer, 0.6), darken(p.sekundaer, 0.85)), join(rawDir, 'galerie-4.jpg'));
 await jpg(karteSvg(1000, 750), join(rawDir, 'karte.jpg'), 78);
 
-// OG-Bild immer neu (spiegelt Name/Farben der aktuellen Demo).
-await sharp(ogSvg(1200, 630)).jpeg({ quality: 82 }).toFile(join(publicDir, 'og.jpg'));
-console.log('  erzeugt: og.jpg');
+/* OG-Bild wie jede andere Datei behandeln: vorhandenes NICHT überschreiben
+   (mit --force schon).
+
+   Vorher stand hier „immer neu". Das Port-Rezept lässt aber zuerst
+   `npm run og -- --bild fotos/<hero>.jpg` laufen – das schneidet ein ECHTES
+   Foto auf 1200×630 – und danach oft `npm run platzhalter` für Favicon und
+   App-Icon. Genau dann ersetzte diese Zeile das fertige Vorschaubild
+   kommentarlos durch ein generiertes. Gemerkt hätte man es erst, wenn der
+   Link per WhatsApp verschickt wird und dort das Musterbild erscheint.
+   `karte.jpg` überspringt das Skript ein paar Zeilen weiter oben aus genau
+   demselben Grund längst – die Ausnahme war schlicht vergessen worden. */
+await jpg(ogSvg(1200, 630), join(publicDir, 'og.jpg'), 82);
 
 // Favicon aus Initial + Primärfarbe.
 const initial = esc((name.trim()[0] || 'K').toUpperCase());

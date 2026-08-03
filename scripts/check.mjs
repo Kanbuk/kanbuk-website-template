@@ -377,7 +377,14 @@ for (const f of htmlDateien) {
   const name = kurz(f);
 
   const titel = html.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim();
-  const desc = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']*)["']/i)?.[1]?.trim();
+  /* Bis zum GLEICHEN Anführungszeichen lesen, mit dem der Wert beginnt.
+     Vorher stand hier `content=["']([^"']*)["']` – die Zeichenklasse bricht am
+     ersten Apostroph ab. Eine 139 Zeichen lange Description mit „Vienna's"
+     wurde dadurch als 43 Zeichen gemessen und als „zu kurz" beanstandet.
+     Betrifft jeden Text mit Apostroph, also praktisch jede englische Seite. */
+  const desc = html
+    .match(/<meta\s+name=["']description["']\s+content=(["'])([\s\S]*?)\1/i)?.[2]
+    ?.trim();
   const canonical = html.match(/<link\s+rel=["']canonical["']\s+href=["']([^"']*)["']/i)?.[1];
   const ogBild = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']*)["']/i)?.[1];
 
@@ -897,8 +904,15 @@ if (referenzReste.length > 0) {
   }
 }
 
-// Leere Pflichtfelder
-for (const feld of ['name', 'claim', 'kurzbeschreibung', 'telefon', 'email', 'domain']) {
+/* Leere Pflichtfelder.
+   `telefon` gehört NICHT dazu: Nicht jeder Betrieb veröffentlicht eine Nummer
+   (ein Studio, das Termine nur über Instagram vergibt, hat keine), und § 5 ECG
+   verlangt auch keine – gefordert sind Angaben für eine schnelle elektronische
+   Kontaktaufnahme, die E-Mail-Adresse erfüllt das. Als Pflichtfeld zwang die
+   Regel dazu, eine Nummer zu erfinden oder dauerhaft einen PLATZHALTER stehen
+   zu lassen, der dann den Live-Gang blockiert.
+   Dieselbe Änderung steht in scripts/vorcheck.mjs. */
+for (const feld of ['name', 'claim', 'kurzbeschreibung', 'email', 'domain']) {
   const re = new RegExp(`${feld}:\\s*['"]\\s*['"]`);
   if (re.test(configWerte)) fehler(`content.config.ts: Feld "${feld}" ist leer`);
 }

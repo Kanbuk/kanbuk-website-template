@@ -45,12 +45,18 @@ const duzen = site.ansprache === 'du';
       </p>
       <p class="danke__text">
         {duzen ? 'Du erreichst uns auch direkt:' : 'Sie erreichen uns auch direkt:'}{' '}
-        {site.mode === 'live' ? (
-          <a href={`tel:${site.betrieb.telefon.replace(/[^+0-9]/g, '')}`}>{site.betrieb.telefon}</a>
-        ) : (
-          <span>{site.betrieb.telefon}</span>
+        {/* Telefon nur, wenn es eine Nummer gibt – sonst stünde hier ein
+            einsamer Trennpunkt vor der E-Mail-Adresse. */}
+        {site.betrieb.telefon && (
+          <>
+            {site.mode === 'live' ? (
+              <a href={`tel:${site.betrieb.telefon.replace(/[^+0-9]/g, '')}`}>{site.betrieb.telefon}</a>
+            ) : (
+              <span>{site.betrieb.telefon}</span>
+            )}
+            {' · '}
+          </>
         )}
-        {' · '}
         <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
       </p>
       <p><a class="danke__zurueck" href="/">← {duzen ? 'Zurück zur Startseite' : 'Zurück zur Startseite'}</a></p>

@@ -25,7 +25,7 @@
  * Verwendung:  <Formular id="kontakt" />
  */
 import { site } from '../../content.config';
-import { motorTexte } from '../lib/texte';
+import { motorTexte, motorBeschriftungen } from '../lib/texte';
 
 interface Props {
   /** ID aus content.config.ts -> formulare */
@@ -37,8 +37,10 @@ interface Props {
    * der Interessent muss nicht abtippen, worum es geht.
    */
   bezug?: string;
+  /** Sprache DIESER Seite – steuert die Motor-Beschriftungen. Standard 'de'. */
+  sprache?: 'de' | 'en';
 }
-const { id, class: klasse, bezug } = Astro.props;
+const { id, class: klasse, bezug, sprache = 'de' } = Astro.props;
 
 const formular = site.formulare.find((f) => f.id === id);
 if (!formular) {
@@ -47,7 +49,8 @@ if (!formular) {
   );
 }
 
-const t = motorTexte(site.ansprache);
+const t = motorTexte(site.ansprache, sprache);
+const b = motorBeschriftungen(sprache);
 const istDemo = site.mode === 'demo';
 
 /* Mehrstufig? Dann die Felder auf die Schritte verteilen. Ein Feld ohne
@@ -90,7 +93,7 @@ if (leer) {
 
 {istDemo && (
   <div class:list={['formular-demo', klasse]} role="note" data-formular-demo>
-    <strong>Vorschau: Es wird nichts verschickt</strong>
+    <strong>{b.vorschauTitel}</strong>
     <p>{t.formularDemo}</p>
   </div>
 )}
@@ -152,7 +155,7 @@ if (leer) {
         {gruppe.felder.map((f) => (
           <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
             <span class="formular__label">
-              {f.label}
+              {sprache === 'en' ? (f.labelEn ?? f.label) : f.label}
               {/* DER MOTOR KENNZEICHNET DIE FREIWILLIGEN FELDER, NICHT DIE
                   PFLICHTFELDER. Das ist eine UMKEHR-Konvention, und wer sie
                   nicht kennt, baut zwei Konventionen in ein Formular:
@@ -175,7 +178,7 @@ if (leer) {
                   Das Leerzeichen ausdrücklich setzen: Zwischen zwei Ausdrücken
                   fällt der Zeilenumbruch weg, und auf der Seite stand
                   „Telefon(optional)". */}
-              {!f.pflicht && <> <em class="formular__optional">(optional)</em></>}
+              {!f.pflicht && <> <em class="formular__optional">{b.optional}</em></>}
             </span>
 
             {f.typ === 'textarea' ? (
@@ -187,7 +190,7 @@ if (leer) {
               />
             ) : f.typ === 'auswahl' ? (
               <select name={f.name} required={f.pflicht}>
-                <option value="">Bitte wählen</option>
+                <option value="">{b.bitteWaehlen}</option>
                 {(f.optionen ?? []).map((o) => <option value={o}>{o}</option>)}
               </select>
             ) : f.typ === 'haekchen' ? (
@@ -198,7 +201,7 @@ if (leer) {
               /* Mehrfachauswahl: mehrere Kästchen mit demselben Feldnamen.
                  Der Browser sendet sie als wiederholten Schlüssel; der
                  Formular-Baustein fasst sie zu „A, B" zusammen. */
-              <span class="formular__mehrfach" role="group" aria-label={f.label}>
+              <span class="formular__mehrfach" role="group" aria-label={sprache === 'en' ? (f.labelEn ?? f.label) : f.label}>
                 {(f.optionen ?? []).map((o) => (
                   <label class="formular__mehrfach-option">
                     <input type="checkbox" name={f.name} value={o} />
@@ -244,26 +247,26 @@ if (leer) {
     {/* Honeypot gegen Spam: für Menschen unsichtbar, für Bots verlockend. */}
     <div class="formular__honeypot" aria-hidden="true">
       <label>
-        Bitte dieses Feld frei lassen
+        {b.honeypot}
         <input type="text" name="webseite" tabindex="-1" autocomplete="off" />
       </label>
     </div>
 
     {istAssistent && (
       <div class="formular__navigation">
-        <button type="button" class="formular__zurueck" data-assistent-zurueck hidden>Zurück</button>
-        <button type="button" class="formular__weiter" data-assistent-weiter>Weiter</button>
+        <button type="button" class="formular__zurueck" data-assistent-zurueck hidden>{b.zurueck}</button>
+        <button type="button" class="formular__weiter" data-assistent-weiter>{b.weiter}</button>
       </div>
     )}
 
     <button type="submit" class="formular__absenden" data-formular-absenden>
-      Senden
+      {b.senden}
     </button>
 
     <p class="formular__status" role="status" aria-live="polite" data-formular-status></p>
 
     <p class="formular__hinweis">
-      {t.einwilligung}<a href="/datenschutz">Datenschutzerklärung</a>.
+      {t.einwilligung}<a href={b.datenschutzPfad}>{b.datenschutz}</a>.
     </p>
   </form>
 )}

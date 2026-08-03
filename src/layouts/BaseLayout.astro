@@ -65,6 +65,15 @@ interface Props {
    * einer Katalog-Detailseite. Wird als eigener JSON-LD-Block ausgegeben.
    */
   zusatzLd?: Record<string, unknown>;
+  /**
+   * Häufige Fragen DIESER Seite – überschreibt `site.faq` für das FAQ-Schema.
+   *
+   * Braucht man, sobald es die Seite in zwei Sprachen gibt: Die englische
+   * Fassung übergibt denselben `pfad` (daraus entstehen Adresse und hreflang)
+   * und bekäme sonst die deutschen Fragen ins JSON-LD, während sichtbar die
+   * englischen stehen.
+   */
+  faq?: { frage: string; antwort: string }[];
 }
 
 const {
@@ -76,6 +85,7 @@ const {
   ogBildUrl,
   ogBildAlt,
   zusatzLd,
+  faq: faqEigen,
 } = Astro.props;
 
 const seite = site.seiten.find((s) => s.pfad === pfad);
@@ -265,7 +275,15 @@ const menuLd = (() => {
  * das nichts mit dem Sichtbaren zu tun hat – das wertet Google ab).
  */
 const faqLd = (() => {
-  const eintraege = site.faq ?? [];
+  /* `faq` als Prop schlägt `site.faq`.
+     WARUM: Das Schema wird nur über den PFAD zugeordnet, nicht über die
+     Sprache. Eine englische Seite übergibt aber denselben `pfad` (daraus
+     entstehen Adresse und hreflang) – und bekam damit die DEUTSCHEN Fragen ins
+     JSON-LD, während sichtbar die englischen standen. Genau das verbietet
+     Google ausdrücklich („Markup, das der Nutzer nicht sieht"), und es ist
+     dieselbe Regel, die dieser Block wenige Zeilen weiter oben selbst
+     begründet. An einem zweisprachigen Piloten aufgefallen. */
+  const eintraege = faqEigen ?? site.faq ?? [];
   if (eintraege.length === 0) return null;
   /* KEIN STILLER RUECKFALL AUF EINE ADRESSE, DIE ES NICHT GIBT.
      Hier stand `?? '/faq'` - eine Seite, die der Motor nirgends anlegt. Wer
@@ -389,7 +407,10 @@ const jsonLd = {
   name: site.betrieb.name,
   description: site.betrieb.kurzbeschreibung,
   url: basisAdresse,
-  telephone: site.betrieb.telefon,
+  /* Nur ausgeben, wenn es wirklich eine Nummer gibt. Ein leeres `telephone`
+     im JSON-LD wäre eine Falschangabe an Google – lieber weglassen. Nicht jeder
+     Betrieb veröffentlicht eine Nummer (§ 5 ECG verlangt auch keine). */
+  ...(site.betrieb.telefon && { telephone: site.betrieb.telefon }),
   email: site.betrieb.email,
   image: ogBild,
   address: {
@@ -476,14 +497,20 @@ const jsonLd = {
     {/* site_name erscheint in der Vorschau über dem Titel; die Bild-
         Beschreibung liest ein Screenreader beim geteilten Link vor.
         X/Twitter wertet og:image:alt NICHT aus – dort braucht es die
-        eigene Angabe, sonst bleibt das Bild dort unbeschriftet. */}
+        eigene Angabe, sonst bleibt das Bild dort unbeschriftet.
+
+        DIE BESCHREIBUNG FOLGT DER SPRACHE DIESER SEITE. Vorher stand hier fest
+        „<Betriebsname> – <deutsche Kurzbeschreibung>": auf einer englischen
+        Seite also deutscher Text, und der Name doppelt (er steht schon in
+        og:site_name direkt darüber). Fällt niemandem auf, weil man Meta-Angaben
+        selten liest – Screenreader und X lesen sie aber vor. */}
     <meta property="og:site_name" content={site.betrieb.name} />
-    <meta property="og:image:alt" content={ogBildAlt ?? `${site.betrieb.name} – ${site.betrieb.kurzbeschreibung}`} />
+    <meta property="og:image:alt" content={ogBildAlt ?? desc} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={vollerTitel} />
     <meta name="twitter:description" content={desc} />
     <meta name="twitter:image" content={ogBild} />
-    <meta name="twitter:image:alt" content={`${site.betrieb.name} – ${site.betrieb.kurzbeschreibung}`} />
+    <meta name="twitter:image:alt" content={ogBildAlt ?? desc} />
 
     <meta name="theme-color" content={site.design.farben.primaer} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />

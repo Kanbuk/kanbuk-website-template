@@ -310,6 +310,15 @@ export interface FormularFeld {
   /** Feldname, landet so in der E-Mail. */
   name: string;
   label: string;
+  /**
+   * Beschriftung auf den englischen Seiten (/en/…).
+   *
+   * Ohne sie steht auf einer fertigen englischen Seite ein deutsch
+   * beschriftetes Formular – bei einem zweisprachigen Beauty-Piloten der auffälligste Fehler der
+   * englischen Fassung. Fehlt das Feld, gilt weiterhin `label`; wer
+   * einsprachig baut, merkt davon nichts.
+   */
+  labelEn?: string;
   typ: FeldTyp;
   pflicht?: boolean;
   /** Nur für typ 'auswahl'. */

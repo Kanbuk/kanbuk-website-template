@@ -60,12 +60,18 @@ const duzen = site.ansprache === 'du';
           : 'Ihre Nachricht konnte gerade nicht entgegengenommen werden. Das kann mehrere Gründe haben: eine fehlende Angabe, eine sehr lange Nachricht, mehrere Versuche kurz hintereinander – oder ein Fehler bei uns. Am schnellsten erreichen Sie uns direkt:'}
       </p>
       <p class="danke__text">
-        {site.mode === 'live' ? (
-          <a href={`tel:${site.betrieb.telefon.replace(/[^+0-9]/g, '')}`}>{site.betrieb.telefon}</a>
-        ) : (
-          <span>{site.betrieb.telefon}</span>
+        {/* Telefon nur, wenn es eine Nummer gibt – sonst stünde hier ein
+            einsamer Trennpunkt vor der E-Mail-Adresse. */}
+        {site.betrieb.telefon && (
+          <>
+            {site.mode === 'live' ? (
+              <a href={`tel:${site.betrieb.telefon.replace(/[^+0-9]/g, '')}`}>{site.betrieb.telefon}</a>
+            ) : (
+              <span>{site.betrieb.telefon}</span>
+            )}
+            {' · '}
+          </>
         )}
-        {' · '}
         <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
       </p>
       <p><a class="danke__zurueck" href="/">← Zurück zur Startseite</a></p>

@@ -83,7 +83,16 @@ export function pruefeConfigText(configText, { inPublic, inFotos }) {
       fehler.push('content.config.ts: Pflichtfeld "name" (Betriebsname) ist leer oder fehlt. Lösung: im betrieb-Block eintragen; ist der Wert noch unbekannt, einen PLATZHALTER-Marker setzen.');
     }
   }
-  for (const feld of ['claim', 'kurzbeschreibung', 'telefon', 'email', 'domain']) {
+  /* `telefon` steht bewusst NICHT in dieser Liste.
+     Nicht jeder Betrieb veröffentlicht eine Telefonnummer – ein Nagelstudio,
+     das Termine ausschließlich über Instagram vergibt, hat schlicht keine.
+     § 5 ECG verlangt auch keine: gefordert sind „Angaben, die eine schnelle
+     elektronische Kontaktaufnahme ermöglichen", und die E-Mail-Adresse erfüllt
+     das. Als Pflichtfeld zwang die Regel dazu, entweder eine Nummer zu erfinden
+     oder dauerhaft einen PLATZHALTER stehen zu lassen – der dann den Live-Gang
+     blockiert. Beides falsch. `email` bleibt Pflicht.
+     Dieselbe Änderung steht in scripts/check.mjs. */
+  for (const feld of ['claim', 'kurzbeschreibung', 'email', 'domain']) {
     const wert = feldWert(text, feld);
     if (wert === null || wert.trim() === '') {
       fehler.push(`content.config.ts: Pflichtfeld "${feld}" ist leer oder fehlt. Lösung: in content.config.ts eintragen; ist der Wert noch unbekannt, einen PLATZHALTER-Marker setzen.`);

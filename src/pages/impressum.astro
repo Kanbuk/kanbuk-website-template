@@ -3,8 +3,13 @@ import RechtsLayout from '../layouts/RechtsLayout.astro';
 import { site } from '../../content.config';
 
 const r = site.rechtstexte;
+/* Ohne Telefonnummer entfällt die Zeile ganz – nicht jeder Betrieb hat eine
+   (ein Studio, das Termine nur über Instagram vergibt, etwa). § 5 ECG verlangt
+   „Angaben, die eine schnelle elektronische Kontaktaufnahme ermöglichen";
+   die E-Mail-Adresse erfüllt das, eine leere Telefonzeile erfüllt gar nichts. */
+const hatTelefon = Boolean(site.betrieb.telefon);
 const telVerlinkt = site.mode === 'live';
-const telHref = 'tel:' + site.betrieb.telefon.replace(/[^+0-9]/g, '');
+const telHref = 'tel:' + (site.betrieb.telefon ?? '').replace(/[^+0-9]/g, '');
 ---
 
 <RechtsLayout
@@ -27,7 +32,11 @@ const telHref = 'tel:' + site.betrieb.telefon.replace(/[^+0-9]/g, '');
 
   <h2>Kontakt</h2>
   <p>
-    Telefon: {telVerlinkt ? <a href={telHref}>{site.betrieb.telefon}</a> : <span>{site.betrieb.telefon}</span>}<br />
+    {hatTelefon && (
+      <>
+        Telefon: {telVerlinkt ? <a href={telHref}>{site.betrieb.telefon}</a> : <span>{site.betrieb.telefon}</span>}<br />
+      </>
+    )}
     E-Mail: <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
   </p>
 
@@ -47,6 +56,24 @@ const telHref = 'tel:' + site.betrieb.telefon.replace(/[^+0-9]/g, '');
     {r.gewerbe && <li>Gewerbe: {r.gewerbe}</li>}
     {r.aufsichtsbehoerde && <li>Aufsichtsbehörde: {r.aufsichtsbehoerde}</li>}
   </ul>
+
+  {/* § 5 Abs. 1 Z 6 ECG verlangt neben der Kammer AUSDRÜCKLICH die anwendbaren
+      berufsrechtlichen Vorschriften UND einen Zugang dazu. Von den acht Punkten
+      des § 5 Abs. 1 war das lange der einzige, der fehlte – auffällig gerade
+      deshalb, weil die Seite oben die Norm selbst zitiert.
+
+      Der RIS-Link ist die amtliche Fundstelle und für jedes Gewerbe derselbe;
+      die konkrete Gewerbeordnung steht schon in `gewerbe`. Freie Berufe
+      (Ärzte, Anwälte, Ziviltechniker) brauchen hier stattdessen ihre eigene
+      Kammer-Fundstelle – siehe den Vermerk „Gesundheitsberufe" in STAND.md. */}
+  <h2>Berufsrechtliche Vorschriften</h2>
+  <p>
+    Es gelten die Gewerbeordnung 1994 (GewO) sowie die für das ausgeübte Gewerbe
+    einschlägigen Verordnungen. Abrufbar im Rechtsinformationssystem des Bundes:{' '}
+    <a href="https://www.ris.bka.gv.at/" target="_blank" rel="noopener noreferrer">
+      www.ris.bka.gv.at
+    </a>
+  </p>
 
   {/* OFFENLEGUNG NACH § 25 MEDIENGESETZ.
       Der Unternehmensgegenstand ist auch in der abgespeckten Fassung für kleine
