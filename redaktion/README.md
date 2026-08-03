@@ -93,18 +93,51 @@ zwei Funktionen in `scripts/lib/redaktion.mjs` neu.
 - `privat: true` – nur, wenn der Datensatz nicht öffentlich lesbar ist. Dann
   muss `REDAKTION_TOKEN` in der Umgebung stehen (lokal) und als
   Repository-Geheimnis (für die Sicherung).
-- `studioOrdner` – wo das laufende Eingabe-Studio liegt. Steht er hier, legt
-  `npm run maske` die Maske gleich dorthin. **Ohne ihn bleibt ein
-  Kopierschritt von Hand – und genau der läuft irgendwann auseinander.**
+- `studioOrdner` – wo das laufende Eingabe-Studio liegt. Trägt `npm run studio`
+  von selbst ein. Steht er hier, legt `npm run maske` die Maske gleich dorthin.
+  **Ohne ihn bleibt ein Kopierschritt von Hand – und genau der läuft irgendwann
+  auseinander.**
 
-**3. `npm run maske`** und die Maske im Studio veröffentlichen.
+**3. `npm run studio`** – legt das Eingabe-Studio als Nachbarordner an
+(`../<kunde>-studio`), holt seine Abhängigkeiten und trägt den Pfad in
+`dienst.json` ein.
 
-**4. `npm run inhalte`** – der erste Lauf holt alles.
+> **Warum nebenan und nicht im Projekt:** Das Studio ist ein eigenes Programm
+> mit eigenen Abhängigkeiten. Lägen die in der `package.json` der Website,
+> wären sie in jedem Build, jeder Prüfung und jeder Sicherheitsmeldung dabei.
+> Die Website ist rein statisch und soll es bleiben.
+>
+> Bis 03.08.2026 stand hier ein Verweis auf einen Ordner, **den niemand
+> anlegt** – `npm run maske` brach dann mit „Studio-Ordner stimmt nicht?" ab,
+> und was dazwischen fehlte, hätte der Auftraggeber selbst tippen müssen.
 
-**5. Die nächtliche Sicherung scharfstellen** (siehe unten). Ohne sie stimmt
+**4. `npm run maske`** und die Maske im Studio veröffentlichen
+(`npm run deploy` im Studio-Ordner).
+
+**5. `npm run erstbefuellung`** – bringt den **vorhandenen** Bestand aus
+`content.config.ts` in den Dienst, samt Fotos.
+
+> **Diesen Schritt gab es bis 03.08.2026 nicht, und sein Fehlen war die
+> gefährlichere der beiden Lücken.** Ein frisch angelegtes Projekt ist leer;
+> `npm run inhalte` liest nur. Es lief dann durch, meldete „0 Einträge" und sah
+> nach Erfolg aus – die Sicherung „eine leere Antwort überschreibt nie" greift
+> genau wie vorgesehen, verdeckt hier aber, dass nie jemand die Inhalte
+> hineingegeben hat. Wer nicht misstrauisch wird, übergibt dem Betrieb ein
+> leeres Studio mit den Worten „ab jetzt können Sie selbst pflegen".
+>
+> Vorher ansehen, ohne etwas zu tun: `npm run erstbefuellung -- --probe`.
+> Sie schreibt **nie** über bestehende Einträge – liegt schon etwas im Dienst,
+> bricht sie ab. Sie ist die *Erst*befüllung, kein Abgleich.
+>
+> **Ab da ist der Dienst die Quelle.** Was in `content.config.ts` unter
+> `katalog` steht, wird davon überlagert; Änderungen dort wirken nicht mehr.
+
+**6. `npm run inhalte`** – holt alles zurück ins Projekt.
+
+**7. Die nächtliche Sicherung scharfstellen** (siehe unten). Ohne sie stimmt
 die Zusage nicht.
 
-**6. Im Dienst einen Webhook auf GitHub legen**, damit „Veröffentlichen" sofort
+**8. Im Dienst einen Webhook auf GitHub legen**, damit „Veröffentlichen" sofort
 wirkt statt erst in der Nacht:
 
 ```

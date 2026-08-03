@@ -17,7 +17,13 @@
  *  Preisänderung eine Ein-Datei-Änderung bleibt.
  * =============================================================================
  */
-import { mitGepflegtenInhalten } from './src/lib/inhalte';
+/* MIT `.js`-ENDUNG – wie jeder andere Import im Motor. Ohne sie kann NODE
+   diese Datei nicht laden (nur der Bündler kommt ohne aus), und damit auch
+   kein Werkzeug unter scripts/. Genau das brauchte die Erstbefüllung des
+   Redaktionsdienstes: Sie liest den vorhandenen Bestand aus dieser Datei.
+   Die Zeile darunter machte es seit jeher richtig. Dieselbe Falle steht in
+   CLAUDE.md 6c für erzeugten Code beschrieben. */
+import { mitGepflegtenInhalten } from './src/lib/inhalte.js';
 
 import { BRANCHE_JSONLD_TYP } from './src/lib/branchen.js';
 

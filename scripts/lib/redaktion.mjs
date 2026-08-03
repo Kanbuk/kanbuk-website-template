@@ -158,6 +158,56 @@ export function abfrage() {
   );
 }
 
+/**
+ * SCHREIBEN. Dieselbe Sorgfalt wie beim Lesen: Zeitlimit, zweiter Versuch,
+ * Statuscheck. Ein halb durchgelaufener Schreibvorgang ist schlimmer als ein
+ * fehlgeschlagener – deshalb wird jede Antwort geprüft, nicht nur die
+ * Verbindung.
+ *
+ * Benutzt wird das ausschliesslich von der ERSTBEFUELLUNG. Der laufende
+ * Betrieb liest nur; der Motor schreibt nie in den Dienst zurück, sonst gäbe
+ * es zwei Wahrheiten.
+ */
+export async function sende(adresse, { token, koerper, typ = 'application/json' } = {}) {
+  let letzterFehler;
+  for (let versuch = 1; versuch <= VERSUCHE; versuch++) {
+    const abbruch = new AbortController();
+    const uhr = setTimeout(() => abbruch.abort(), ZEITLIMIT_MS);
+    try {
+      const antwort = await fetch(adresse, {
+        method: 'POST',
+        signal: abbruch.signal,
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': typ },
+        body: koerper,
+      });
+      const text = await antwort.text();
+      if (!antwort.ok) {
+        const endgueltig = antwort.status >= 400 && antwort.status < 500 && antwort.status !== 429;
+        letzterFehler = new Error(`HTTP ${antwort.status} ${antwort.statusText} – ${text.slice(0, 300)}`);
+        if (endgueltig) break;
+      } else {
+        return JSON.parse(text);
+      }
+    } catch (e) {
+      letzterFehler = e.name === 'AbortError' ? new Error(`keine Antwort binnen ${ZEITLIMIT_MS / 1000} s`) : e;
+    } finally {
+      clearTimeout(uhr);
+    }
+    if (versuch < VERSUCHE) await new Promise((r) => setTimeout(r, 1500 * versuch));
+  }
+  throw new Error(`${adresse.split('?')[0]}: ${letzterFehler?.message ?? 'unbekannter Fehler'}`);
+}
+
+/** Die Schreib-Adresse. NICHT über apicdn – der liefert nur Zwischengespeichertes. */
+export function schreibAdresse(dienst, was) {
+  const version = dienst.apiVersion ?? '2024-01-01';
+  const datensatz = dienst.datensatz ?? 'production';
+  const basis = dienst.schreibBasis ?? `https://${dienst.projekt}.api.sanity.io`;
+  return was === 'bild'
+    ? `${basis}/v${version}/assets/images/${datensatz}`
+    : `${basis}/v${version}/data/mutate/${datensatz}`;
+}
+
 export function abfrageAdresse(dienst, groq) {
   const version = dienst.apiVersion ?? '2024-01-01';
   const datensatz = dienst.datensatz ?? 'production';

@@ -829,6 +829,36 @@ es ist der schlimmste Fehlertyp überhaupt, weil alles grün aussieht.
 **Nie ein Feld einzeln verdrahten.** Kommt eines dazu: in `felder.mjs`
 eintragen, `npm run maske`, im Studio veröffentlichen. Sonst nichts.
 
+### Der Weg hinein – zwei Schritte, die lange fehlten
+
+Der Baustein war bis 03.08.2026 eine **Einbahnstraße**: Er las aus dem Dienst,
+aber nichts brachte etwas hinein. Beides ist jetzt Motor-Arbeit, keine
+Handarbeit des Auftraggebers:
+
+- **`npm run studio`** legt das Eingabe-Studio als **Nachbarordner** an
+  (`../<kunde>-studio`), holt seine Abhängigkeiten und trägt den Pfad in
+  `dienst.json` ein. Nebenan und nicht im Projekt, weil das Studio ein eigenes
+  Programm mit eigenen Abhängigkeiten ist – im Website-Ordner wären die in
+  jedem Build und jeder Sicherheitsmeldung dabei. Vorher verwies die Anleitung
+  auf einen Ordner, den niemand anlegt.
+
+- **`npm run erstbefuellung`** bringt den vorhandenen Bestand aus
+  `content.config.ts` **einmalig** in den Dienst, samt Fotos. Ohne diesen
+  Schritt startet das Studio leer, `npm run inhalte` holt nichts – und das
+  sieht nach Erfolg aus, weil die Sicherung „eine leere Antwort überschreibt
+  nie" genau wie vorgesehen greift. **Sie verdeckt hier aber, dass nie jemand
+  die Inhalte hineingegeben hat.** Die Alternative wäre Abtippen; bei einem
+  Händler mit zweihundert Einträgen heißt das: Der Baustein bleibt ungenutzt.
+
+  Drei Sicherungen, dieselbe Handschrift wie beim Holen: Sie schreibt **nie**
+  über bestehende Einträge (liegt schon etwas im Dienst, bricht sie ab – es ist
+  die *Erst*befüllung, kein Abgleich). Ohne Schreib-Zugang passiert nichts.
+  Und `-- --probe` zeigt vollständig, was hineinkäme, ohne etwas zu tun.
+
+  **Ab da ist der Dienst die Quelle.** `katalog` in `content.config.ts` wird
+  überlagert; Änderungen dort wirken nicht mehr. Das ist gewollt und überrascht
+  beim ersten Mal trotzdem jeden.
+
 ### Bilder: der Name kommt aus dem Inhalt
 
 Ein Foto heißt nach seiner Prüfsumme, nie nach seiner Position. Heißt es
@@ -1197,8 +1227,10 @@ nichts über Design-Treue.
 | `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
 | `npm run bogen -- --fotos` | Kontaktbögen aller Fotos (Sichtpflicht mit 1–2 Reads statt 20) |
 | `npm run holen -- --url <…> --ziel <pfad>` | Download + Integritätsprüfung (nie Base64 durch den Chat!) |
-| `npm run inhalte` | Gepflegte Inhalte und Bilder vom Redaktionsdienst holen (Abschnitt 6c) |
+| `npm run studio` | Eingabe-Studio als Nachbarordner anlegen (`../<kunde>-studio`) – Abschnitt 6c |
 | `npm run maske` | Eingabemaske für den Betrieb aus der Feldliste erzeugen |
+| `npm run erstbefuellung` | Vorhandenen Bestand samt Fotos **einmalig** in den Dienst bringen (`-- --probe` zeigt es vorher) |
+| `npm run inhalte` | Gepflegte Inhalte und Bilder vom Redaktionsdienst holen (Abschnitt 6c) |
 | `npm run maillogo` | Logo der Bestätigungsmail als PNG (SVG zeigen Mailprogramme nicht) – Abschnitt 7 |
 | `npm run preisliste` | Preislisten-JSON aus dem Design validieren → `daten/preisliste.ts` |
 | `npm run demo -- --datei <archiv.zip> --kunde "…"` | Design-Projekt-Archiv (oder Standalone) als schickbare Verkaufs-Demo hosten (noindex, Kanbuk-Leiste, Handy-Hinweis, Sicht-Check) |

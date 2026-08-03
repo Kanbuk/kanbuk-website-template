@@ -170,6 +170,27 @@ async function haupt() {
     return Object.keys(raus).length ? raus : undefined;
   }
 
+  /* DER LEERE DIENST MUSS LAUT SEIN.
+     Ein frisch angelegtes Projekt hat keine Einträge, und die Sicherung „eine
+     leere Antwort überschreibt nie" greift dann genau wie vorgesehen: Es
+     passiert nichts. Nur schützt sie hier nicht vor einem Ausfall, sondern
+     verdeckt, dass nie jemand die Inhalte HINEINgegeben hat.
+
+     Ohne diesen Hinweis lief das Werkzeug durch, meldete „0 Einträge" und sah
+     nach Erfolg aus. Wer nicht misstrauisch wird, übergibt dem Betrieb ein
+     leeres Studio mit den Worten „ab jetzt können Sie selbst pflegen". */
+  if ((antwort.eintraege ?? []).length === 0 && !existsSync(ZIEL_DATEI)) {
+    console.log(
+      '\n  ! Der Dienst liefert KEINEN einzigen Eintrag, und im Projekt liegt auch keiner.\n' +
+        '    Das ist fast immer der Zustand direkt nach dem Anlegen: Das Studio steht,\n' +
+        '    aber der vorhandene Bestand wurde noch nie hineingegeben.\n\n' +
+        '    Ansehen, was hineinkäme:  npm run erstbefuellung -- --probe\n' +
+        '    Danach wirklich füllen:   npm run erstbefuellung\n\n' +
+        '    Legt der Betrieb seine Einträge selbst im Studio an, ist das hier in\n' +
+        '    Ordnung – dann fehlt nur noch, dass er anfängt.\n',
+    );
+  }
+
   const bilderZuHolen = new Map(); // Dateiname -> Verweis
   const eintraege = [];
   const kennungen = new Set();
