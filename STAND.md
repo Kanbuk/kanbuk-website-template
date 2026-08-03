@@ -263,6 +263,45 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-03 (Nacht, später)** – **Der Redaktions-Baustein hat einen Weg
+  HINEIN** (Block 11 der Gesamtprüfung, `5f60c89`).
+
+  Anlass: Der nächste Relaunch bekommt Redaktionszugang. Damit waren die zwei
+  Block-11-Punkte keine Werkstatt mehr, sondern Blocker.
+
+  Der Baustein war eine **Einbahnstraße**: Er las aus dem Dienst, aber nichts
+  brachte etwas hinein. Zwei Lücken, die zweite ist die gefährlichere:
+
+  - **`npm run studio`** legt das Eingabe-Studio als Nachbarordner an. Vorher
+    verwies die Anleitung auf einen Ordner, den niemand anlegt – `npm run
+    maske` brach mit „Studio-Ordner stimmt nicht?" ab, und was dazwischen
+    fehlte, hätte der Auftraggeber selbst tippen müssen. Nebenan und nicht im
+    Projekt, weil die Abhängigkeiten des Studios sonst in jedem Build und
+    jeder Sicherheitsmeldung der Website steckten.
+
+  - **`npm run erstbefuellung`** bringt den vorhandenen Bestand samt Fotos
+    einmalig hinein. Ohne ihn startet das Studio leer, `npm run inhalte` holt
+    nichts – **und das sieht nach Erfolg aus**, weil die Sicherung „eine leere
+    Antwort überschreibt nie" genau wie vorgesehen greift. Sie verdeckt hier
+    aber, dass nie jemand die Inhalte hineingegeben hat. Wer nicht misstrauisch
+    wird, übergibt ein leeres Studio mit „ab jetzt können Sie selbst pflegen".
+    Die Alternative wäre Abtippen – bei zweihundert Einträgen heißt das: Der
+    Baustein bleibt ungenutzt.
+
+  Drei Sicherungen wie beim Holen: schreibt nie über Bestehendes (es ist die
+  *Erst*befüllung, kein Abgleich), ohne Schreib-Zugang passiert nichts,
+  `-- --probe` zeigt alles ohne Token und ohne Netz. Gegengeprüft an einem
+  nachgestellten Dienst: leer → 4 Bilder und 3 Dokumente geschrieben; fünf
+  vorhandene Einträge → Abbruch **vor** jedem Schreibzugriff.
+
+  **Neu und über den Baustein hinaus nützlich:** `scripts/lib/ts-aufloeser.mjs`.
+  Werkzeuge unter `scripts/` liefen bisher nur auf TEXT – für eine Prüfung
+  reicht das, für die Erstbefüllung nicht. Node 24 kann TypeScript von sich
+  aus; es fehlten die `.js`-Schreibweise des Motors und `import.meta.glob`.
+  Beides in einer Datei nachgereicht, **ohne neues npm-Paket**. Damit liest
+  jedes künftige Werkzeug die ECHTE Config statt einer zweiten, still
+  abweichenden Fassung.
+
 - **2026-08-03 (Nacht)** – **Die Gegenprüfung der Reparatur-Sitzung ist
   vollständig abgearbeitet: 40 Befunde behoben, 26 widerlegt.**
 

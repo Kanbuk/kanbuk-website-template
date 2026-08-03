@@ -177,15 +177,24 @@ drei Ursachen, Server-Meldungen ohne Du-Form, `preisHinweis` als Freitextfeld,
 Etliche sind durch die zehn erledigten Blöcke miterledigt — bei 1, 6 und 8
 wurden die schweren Punkte bereits behoben. Realistisch bleiben **25 bis 30**.
 
-**Die zwei wertvollsten stehen in Block 11** — sie sind die Antwort auf
-*„was musste der einzige echte Port selbst bauen?"*:
+**Die zwei wertvollsten standen in Block 11** — die Antwort auf *„was musste
+der einzige echte Port selbst bauen?"*. **Beide erledigt am 03.08.2026
+(`5f60c89`).**
 
-- Der Motor liefert die Eingabemaske, **aber nicht das Studio**, in dem der
-  Betrieb sie sieht. Er zeigt auf einen Nachbarordner, den er nie anlegt.
-- **Es gibt keinen Weg, den vorhandenen Bestand einmalig in den Dienst zu
-  bekommen.** Der Dienst startet leer, `npm run inhalte` liest nur — und die
-  Sicherung „eine leere Antwort überschreibt nie" lässt das **lautlos**
-  passieren.
+- ~~Der Motor liefert die Eingabemaske, aber nicht das Studio.~~
+  → **`npm run studio`** legt es als Nachbarordner an, holt die
+  Abhängigkeiten und trägt den Pfad in `dienst.json` ein.
+- ~~Kein Weg, den vorhandenen Bestand einmalig in den Dienst zu bekommen.~~
+  → **`npm run erstbefuellung`**, samt Fotos. Schreibt nie über Bestehendes,
+  `-- --probe` zeigt es vorher ohne Token und ohne Netz. Und `npm run inhalte`
+  sagt jetzt laut, wenn Dienst und Projekt beide leer sind.
+
+  Gegengeprüft an einem nachgestellten Dienst: leer → 4 Bilder und 3 Dokumente
+  geschrieben; 5 vorhandene Einträge → Abbruch **vor** jedem Schreibzugriff.
+
+Damit ist Block 11 bis auf Kleinteiliges durch. **Für einen Kunden mit
+Redaktionszugang ist der Weg jetzt vollständig** — anlegen, Maske, befüllen,
+holen, bauen.
 
 ---
 
