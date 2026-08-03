@@ -56,6 +56,20 @@ function alsMaskenFeld(feld) {
   switch (feld.typ) {
     case 'textblock':
       return { ...gemeinsam, type: 'text', rows: 5, ...pflicht };
+    /* AUSWAHL statt Freitext – der Betrieb kann nur die vorgesehenen Werte
+       wählen. `options.list` macht daraus im Studio eine Klappliste; ohne
+       `werte` bliebe ein Freitextfeld übrig, deshalb hält das Erzeugen hier
+       an, statt still die Regel zu unterlaufen. */
+    case 'auswahl': {
+      if (!Array.isArray(feld.werte) || feld.werte.length === 0) {
+        throw new Error(
+          `redaktion/felder.mjs: Feld „${feld.pfad}" hat typ 'auswahl', aber keine \`werte\`. ` +
+            `Eine Auswahl ohne Werte ist ein Freitextfeld mit Extraschritten – und genau das ` +
+            `soll die Feldart verhindern (CLAUDE.md, „Ein Beispiel im Hilfetext wird zur Wahrheit").`,
+        );
+      }
+      return { ...gemeinsam, type: 'string', options: { list: feld.werte }, ...pflicht };
+    }
     case 'zahl':
       return { ...gemeinsam, type: 'number', ...pflicht };
     case 'ja-nein':

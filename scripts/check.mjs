@@ -1722,7 +1722,12 @@ if (istLive || nurLive) {
       return undefined;
     };
 
-    const pfade = [...felderText.matchAll(/pfad:\s*'([^']+)'/g)].map((m) => m[1]);
+    /* OHNE KOMMENTARE LESEN – dieselbe Lehre wie bei der Marker-Suche.
+       Ein Erklärtext, der die Benutzung zeigt („{ pfad: '…', typ: 'auswahl' }"),
+       sah für diese Regel aus wie ein echtes Feld, und das Tor meldete
+       prompt: „bietet „…" an, aber „…" fehlt in „KatalogEintrag"". Passiert
+       beim ersten Beispiel, das jemand schreibt – hier am 03.08.2026 sofort. */
+    const pfade = [...ohneKommentare(felderText).matchAll(/pfad:\s*'([^']+)'/g)].map((m) => m[1]);
     // Die Katalogfelder stehen ohne Vorsatz in der Liste (id, titel, …), die
     // übrigen mit ihrem vollen Weg durch die Config.
     for (const pfad of pfade) {

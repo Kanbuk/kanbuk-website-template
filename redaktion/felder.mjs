@@ -39,6 +39,22 @@ export const TYPEN = {
   textblock: { sanity: 'text' },
   zahl: { sanity: 'number' },
   'ja-nein': { sanity: 'boolean' },
+  /**
+   * AUSWAHL – eine Liste fertiger Werte, kein Freitext.
+   *
+   * CLAUDE.md schreibt das vor („Wo es genau zwei oder drei richtige
+   * Formulierungen gibt, nimm eine AUSWAHL mit fertigen Werten, kein
+   * Freitextfeld mit Beispiel"), und **das Mittel dazu fehlte schlicht**.
+   * Wer die Regel befolgen wollte, musste erst den Motor erweitern.
+   *
+   * Der Anlass war teuer: Ein Freitextfeld für den Preiszusatz hatte ein
+   * Beispiel im Hilfetext – und genau dieser Wert stand danach bei ALLEN
+   * Einträgen, bei mehreren sachlich falsch.
+   *
+   * Benutzung: `{ pfad: '…', titel: '…', typ: 'auswahl', werte: ['A', 'B'] }`
+   * Für rechtlich relevante Angaben zusätzlich `pflicht: true`.
+   */
+  auswahl: { sanity: 'string-liste' },
   'liste-text': { sanity: 'array-string' },
   bilder: { sanity: 'array-image' },
   zeiten: { sanity: 'array-oeffnungszeit' },
@@ -133,7 +149,25 @@ export const KATALOG = [
   { pfad: 'kurz', titel: 'Ein Satz für die Übersicht', typ: 'text' },
   { pfad: 'beschreibung', titel: 'Beschreibung', typ: 'textblock', hinweis: 'Absätze mit einer Leerzeile trennen.' },
   { pfad: 'preis', titel: 'Preis', typ: 'zahl', hinweis: 'Nur die Zahl, ohne €. Leer lassen = „auf Anfrage".' },
-  { pfad: 'preisHinweis', titel: 'Zusatz beim Preis', typ: 'text', hinweis: 'z. B. inkl. USt.' },
+  /* DER FALL, AUS DEM DIE REGEL ENTSTAND. Hier stand ein Freitextfeld mit
+     „z. B. inkl. USt." im Hilfetext – und genau dieser Wert stand danach bei
+     ALLEN Einträgen, bei mehreren sachlich falsch. Wer gebraucht einkauft,
+     verkauft teils differenzbesteuert; dort darf die Umsatzsteuer nicht
+     ausgewiesen werden.
+
+     DIE WERTE SIND EIN VORSCHLAG, KEIN GESETZ: Beim Einrichten mit dem
+     Steuerberater des Betriebs abgleichen und hier eintragen. Was NICHT
+     zurückkommen darf, ist ein Freitextfeld – die Angabe hängt am EINZELNEN
+     Eintrag, und ein Beispiel im Hilfetext wird zur Wahrheit in jedem
+     Datensatz. Pflichtfeld, weil die Angabe rechtlich relevant ist. */
+  {
+    pfad: 'preisHinweis',
+    titel: 'Zusatz beim Preis',
+    typ: 'auswahl',
+    pflicht: true,
+    werte: ['inkl. USt.', 'zzgl. USt.', 'differenzbesteuert gem. § 24 UStG', 'Preis auf Anfrage'],
+    hinweis: 'Steht direkt hinter dem Preis dieses Eintrags.',
+  },
   { pfad: 'bilder', titel: 'Fotos', typ: 'bilder', hinweis: 'Das erste Foto ist das Hauptbild.' },
   { pfad: 'bildAlt', titel: 'Bildbeschreibungen', typ: 'liste-text', hinweis: 'Für Blinde und für Google. Gleiche Reihenfolge wie die Fotos.' },
   { pfad: 'merkmale', titel: 'Merkmalstabelle', typ: 'merkmale' },

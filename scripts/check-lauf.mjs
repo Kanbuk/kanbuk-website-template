@@ -54,7 +54,23 @@ if (existsSync(join(WURZEL, 'scripts', 'vorcheck.mjs'))) {
 
 // --- 2. Bauen – nur wenn nötig ------------------------------------------------
 const marke = quellMarke(WURZEL);
-const alteMarke = existsSync(MARKE) ? JSON.parse(readFileSync(MARKE, 'utf-8')).marke : null;
+/* EINE KAPUTTE MARKE IST KEIN ABBRUCHGRUND, SONDERN EIN GRUND ZU BAUEN.
+   Hier stand ein nacktes `JSON.parse(...)`. Am 03.08.2026 stürzte der Rechner
+   während eines Laufs ab; die Datei blieb halb geschrieben (voller Nullbytes)
+   zurück, und `npm run check` starb danach bei JEDEM Aufruf mit einem rohen
+   Stapelabzug – für jemanden, der nicht programmiert, unlesbar, und ohne
+   jeden Hinweis, dass ein `rm dist/.kanbuk-marke.json` genügt hätte.
+
+   Die Marke ist eine ERSPARNIS, keine Wahrheit. Ist sie unlesbar, gilt der
+   Grundsatz aus dem Kopf dieser Datei: im Zweifel bauen. */
+let alteMarke = null;
+if (existsSync(MARKE)) {
+  try {
+    alteMarke = JSON.parse(readFileSync(MARKE, 'utf-8')).marke ?? null;
+  } catch {
+    console.log('↷ Die Bau-Marke ist unlesbar (abgebrochener Lauf?) – es wird neu gebaut.');
+  }
+}
 
 /* ---------------------------------------------------------------------------
  *  TYPPRÜFUNG – IMMER, NICHT NUR WENN GEBAUT WIRD

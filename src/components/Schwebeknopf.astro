@@ -1,0 +1,131 @@
+---
+/**
+ * SCHWEBEKNOPF – der mitschwimmende Kontaktknopf unten rechts.
+ *
+ * =============================================================================
+ *  WARUM ES IHN GIBT
+ * =============================================================================
+ *  Bei Wiener Kleinbetrieben ist er ein Standardelement: WhatsApp oder Anruf,
+ *  immer erreichbar, ohne Scrollen. Der Motor kannte WhatsApp bisher nur als
+ *  Symbol in einer Linkliste in der Fußzeile – den Knopf musste jeder Port neu
+ *  bauen, samt Positionierung, Tippfläche, Vorschautext und der Frage, was in
+ *  der Vorschau passieren soll.
+ *
+ *  Genau die Sorte Arbeit, die einmal in den Motor gehört: Es ist Mechanik,
+ *  kein Design. Farbe, Form und Symbol kommen wie überall aus dem Design –
+ *  über `.schwebeknopf` bzw. `[data-schwebeknopf]`.
+ *
+ * =============================================================================
+ *  VERWENDUNG
+ * =============================================================================
+ *      <Schwebeknopf />                     – nimmt WhatsApp aus socialLinks
+ *      <Schwebeknopf art="telefon" />       – ruft an statt zu schreiben
+ *      <Schwebeknopf text="Ich interessiere mich für …" />
+ *
+ *  Ohne passenden Eintrag in `betrieb.socialLinks` (bzw. ohne Telefonnummer)
+ *  rendert er NICHTS – kein toter Knopf, keine leere Fläche.
+ *
+ * =============================================================================
+ *  DREI DINGE, DIE HIER SCHON ENTSCHIEDEN SIND
+ * =============================================================================
+ *  1. IN DER VORSCHAU WIRD NICHT VERLINKT. Wie die Telefonnummer im
+ *     Demo-Modus (CLAUDE.md Abschnitt 7): Ein Lead, dem die Vorschau gezeigt
+ *     wird, soll dem Betrieb nicht versehentlich schreiben. Der Knopf ist
+ *     sichtbar und sagt es – so sieht der Kunde bei der Abnahme, was er
+ *     bekommt, und die Bedien-Prüfung fährt ihn an.
+ *  2. ER LIEGT ÜBER DEM INHALT, ABER NICHT AUF DER FUSSZEILE. `bottom` rechnet
+ *     mit `env(safe-area-inset-bottom)` – auf iPhones mit Hausbalken säße er
+ *     sonst darunter.
+ *  3. TIPPFLÄCHE 56 px, nicht 44. Er ist das Bedienelement, das man im Gehen
+ *     mit dem Daumen trifft; die 44er-Untergrenze ist hier zu knapp.
+ */
+import { site } from '../../content.config';
+
+interface Props {
+  /** 'whatsapp' (Standard) oder 'telefon'. */
+  art?: 'whatsapp' | 'telefon';
+  /** Vorformulierte Nachricht – nur bei WhatsApp. */
+  text?: string;
+  /** Beschriftung für Screenreader; sonst je nach Art gesetzt. */
+  label?: string;
+  class?: string;
+}
+
+const { art = 'whatsapp', text, label, class: klasse } = Astro.props;
+const istDemo = site.mode === 'demo';
+
+const whatsapp = site.betrieb.socialLinks?.find((l) => l.plattform === 'whatsapp')?.url;
+
+/* Die Nummer für `tel:` wird auf Ziffern und ein führendes Plus eingedampft –
+   genau wie überall sonst im Motor. Ohne das bricht ein Leerzeichen den Link. */
+const telefon = site.betrieb.telefon?.replace(/[^+0-9]/g, '');
+
+const ziel =
+  art === 'telefon'
+    ? telefon && `tel:${telefon}`
+    : whatsapp && (text ? `${whatsapp}${whatsapp.includes('?') ? '&' : '?'}text=${encodeURIComponent(text)}` : whatsapp);
+
+const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp schreiben');
+---
+
+{ziel && (
+  <a
+    class:list={['schwebeknopf', klasse]}
+    href={istDemo ? undefined : ziel}
+    role={istDemo ? 'note' : undefined}
+    aria-label={istDemo ? `${beschriftung} – in der Vorschau nicht aktiv` : beschriftung}
+    target={art === 'whatsapp' && !istDemo ? '_blank' : undefined}
+    rel={art === 'whatsapp' && !istDemo ? 'noopener noreferrer' : undefined}
+    data-schwebeknopf={art}
+    data-schwebeknopf-vorschau={istDemo ? '' : undefined}
+  >
+    <slot>
+      {/* Ohne eigenen Inhalt: das Symbol aus der Bibliothek. Das Design
+          ersetzt es, indem es dem Knopf eigene Kinder mitgibt. */}
+      {art === 'telefon' ? '☎' : '✆'}
+    </slot>
+    <span class="sr-only">{beschriftung}</span>
+  </a>
+)}
+
+<style>
+  .schwebeknopf {
+    position: fixed;
+    right: var(--raum-s);
+    /* `env()` kennt jeder Browser ab Safari 11.1 – unterhalb unserer Grenze.
+       Der Ersatzwert davor enthält KEIN var() und wird deshalb wirklich
+       behalten, wenn `env()` fehlt (CLAUDE.md Abschnitt 4a, Weg 2). */
+    bottom: 1rem;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    z-index: 90;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* 56 statt 44: Daumenziel im Gehen, siehe Kopf dieser Datei. */
+    min-width: 56px;
+    min-height: 56px;
+    padding: var(--raum-2xs);
+
+    /* Nur so viel Aussehen, dass er ohne Design sichtbar und bedienbar ist. */
+    border-radius: 999px;
+    background: var(--farbe-primaer, #000);
+    color: var(--farbe-auf-primaer, #fff);
+    text-decoration: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+  }
+
+  /* In der Vorschau ist es kein Link – das soll man auch sehen. */
+  .schwebeknopf[data-schwebeknopf-vorschau] {
+    cursor: default;
+    opacity: 0.75;
+  }
+
+  @media print {
+    .schwebeknopf {
+      display: none;
+    }
+  }
+</style>

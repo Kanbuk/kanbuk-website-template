@@ -19,6 +19,7 @@ import { Picture } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Kopf from '../components/Kopf.astro';
 import Fuss from '../components/Fuss.astro';
+import Schwebeknopf from '../components/Schwebeknopf.astro';
 import Formular from '../components/Formular.astro';
 import Symbol from '../components/Symbol.astro';
 import { site } from '../../content.config';
@@ -110,6 +111,9 @@ const heroBild = bild('hero.jpg');
   </main>
 
   <Fuss />
+  {/* Der Motor zeigt ihn auf der Referenzseite, damit die Tore ihn wirklich
+      anfahren – im Klon entscheidet das Design, ob und wo er steht. */}
+  <Schwebeknopf />
 </BaseLayout>
 
 <style>
