@@ -261,7 +261,7 @@ const CSS_MERKMALE = [
  * behält die erste. Ohne diese Erkennung würde die Prüfung jeden korrekt
  * abgesicherten Einsatz als Verstoß melden – und wäre damit wertlos.
  */
-function istAbgesichert(code, treffer) {
+function istAbgesichert(code, treffer, merkmal) {
   // Die Deklaration, in der der Treffer steckt.
   let start = treffer;
   while (start > 0 && !';{}'.includes(code[start - 1])) start--;
@@ -269,6 +269,20 @@ function istAbgesichert(code, treffer) {
   if (doppelpunkt === -1) return false; // kein Eigenschafts-Wert-Paar (z. B. @media)
   const eigenschaft = code.slice(start, start + doppelpunkt).trim();
   if (!eigenschaft) return false;
+
+  /* DER TREFFER STECKT IN DER BEDINGUNG EINES `@supports` – dort ist er die
+     Absicherung selbst, keine Verwendung.
+
+     Wer Weg 3 aus CLAUDE.md 4a wörtlich befolgt, schreibt das Merkmal
+     zwangsläufig zweimal hin: einmal in die Bedingung, einmal in die
+     Deklaration. Die Prüfung verlangt aber, dass ALLE Fundstellen abgesichert
+     sind – und die Bedingung ist keine. Damit war der vorgeschriebene Weg
+     nicht sauber begehbar, egal wie richtig man ihn ging.
+
+     `@media` ist davon nicht betroffen: Dort steht vor dem Treffer kein
+     Doppelpunkt, die Funktion kehrt schon oben zurück. Die Regel
+     „Kurzform in @media" bleibt also scharf. */
+  if (/^@supports\b/.test(eigenschaft)) return true;
 
   /*
    * DEN GANZEN BLOCK ABSUCHEN, nicht nur die Zeile davor.
@@ -284,6 +298,38 @@ function istAbgesichert(code, treffer) {
    */
   let blockStart = start;
   while (blockStart > 0 && code[blockStart - 1] !== '{' && code[blockStart - 1] !== '}') blockStart--;
+
+  /* WEG 3 ZUERST: STEHT DAS GANZE IN EINEM PASSENDEN `@supports`?
+     Dann ist es abgesichert, OHNE dass ein Ersatzwert nötig wäre – ein alter
+     Browser überspringt den Block vollständig. Genau das ist der Ausweg, den
+     CLAUDE.md Abschnitt 4a als Weg 3 vorschreibt, wenn die moderne Zeile ein
+     `var()` enthält und ein Ersatzwert deshalb nicht wirkt.
+
+     Hier wurde `@supports` erst NACH `if (!hatErsatzwert) return false` geprüft.
+     Damit zählte es nur, wenn zusätzlich ein Ersatzwert danebenstand – also
+     genau dann nicht, wenn man es braucht. Am 03.08.2026 nachgemessen: der
+     wörtlich aus CLAUDE.md übernommene Weg 3 wurde als Verstoß gemeldet.
+
+     Geprüft wird die BEDINGUNG des `@supports` gegen dasselbe Muster, nach dem
+     gesucht wurde. Ein `@supports (display: grid)` deckt kein `color-mix()` –
+     sonst könnte jeder beliebige Block alles decken. Die Klammertiefe sagt, ob
+     der Treffer wirklich noch darin liegt. */
+  const davor = code.slice(0, blockStart);
+  const letztesSupports = davor.lastIndexOf('@supports');
+  if (letztesSupports !== -1) {
+    const rest = davor.slice(letztesSupports);
+    let tiefe = 0;
+    for (const z of rest) {
+      if (z === '{') tiefe++;
+      else if (z === '}') tiefe--;
+    }
+    const bedingung = rest.slice(0, rest.indexOf('{'));
+    /* ZWEI OFFENE KLAMMERN, NICHT EINE: die des `@supports` und die der Regel
+       darin. `blockStart` steht bereits INNERHALB der Regel, deren `{` also
+       mitgezählt wird. Mit `> 0` hätte auch ein längst geschlossenes
+       `@supports` weiter oben in der Datei alles Folgende gedeckt. */
+    if (tiefe >= 2 && new RegExp(merkmal.suche.source).test(bedingung)) return true;
+  }
 
   const hatErsatzwert = code
     .slice(blockStart, start)
@@ -302,13 +348,27 @@ function istAbgesichert(code, treffer) {
      durchgewinkt – sie verglich nur Eigenschaftsnamen. Damit bestätigte das
      fünfte Tor eine Absicherung, von der die eigene Regel im selben Repo
      festhält, dass sie nicht wirkt. Für solche Fälle ist `@supports` der
-     einzige tragfähige Weg (CLAUDE.md 4a, Weg 3); ein `@supports` darüber
-     erkennt die Prüfung am umgebenden Block. */
-  const deklaration = code.slice(start, code.indexOf(';', treffer) === -1 ? undefined : code.indexOf(';', treffer));
-  if (/var\(/.test(deklaration)) {
-    const davor = code.slice(Math.max(0, blockStart - 400), blockStart);
-    if (!/@supports[^{]*\{[^{}]*$/.test(davor)) return false;
-  }
+     einzige tragfähige Weg (CLAUDE.md 4a, Weg 3) – und der ist oben schon
+     geprüft, bevor überhaupt ein Ersatzwert verlangt wird. */
+  /* DIE DEKLARATION ENDET AM ERSTEN `;` ODER `}` – nicht nur am `;`.
+     Hier stand nur `indexOf(';', treffer)`. Der Verdichter lässt das letzte
+     Semikolon eines Blocks weg; steckt der Treffer in der LETZTEN Deklaration,
+     zeigte die Suche deshalb ins nächste Regelwerk, und alles dazwischen galt
+     als Teil dieser Zeile. Ein `var()` aus einer fremden Regel machte damit
+     korrekt abgesicherten Code zum Verstoß.
+
+     Am 03.08.2026 nachgemessen, an genau diesem Muster:
+       .karte{background:#eee;background:color-mix(in srgb,#000 12%,transparent)}
+       .andere{color:var(--farbe-text);border:0}
+     Der Ersatzwert steht da, die moderne Zeile enthält kein `var()` – das Tor
+     meldete trotzdem einen Verstoß.
+
+     Warum das schlimmer ist als eine übersehene Stelle: Ein grundlos rotes Tor
+     wird weggeräumt. Der nächste Chat baut die funktionierende Absicherung aus,
+     um es grün zu bekommen – und danach ist der Fehler wirklich da. */
+  const enden = [code.indexOf(';', treffer), code.indexOf('}', treffer)].filter((i) => i !== -1);
+  const deklaration = code.slice(start, enden.length ? Math.min(...enden) : undefined);
+  if (/var\(/.test(deklaration)) return false;
   return true;
 }
 
@@ -330,7 +390,7 @@ for (const stueck of cssStuecke) {
     const treffer = [...stueck.code.matchAll(new RegExp(merkmal.suche.source, 'g'))];
     if (treffer.length === 0) continue;
     // Alle Vorkommen mit Ersatzwert abgesichert? Dann ist nichts zu melden.
-    if (treffer.every((t) => istAbgesichert(stueck.code, t.index))) continue;
+    if (treffer.every((t) => istAbgesichert(stueck.code, t.index, merkmal))) continue;
 
     if (merkmal.abSafari <= grenze.vollstaendig_ab_safari) {
       einschraenkungen.add(`${merkmal.name} (ab Safari ${merkmal.abSafari}) – ${merkmal.folge}`);
