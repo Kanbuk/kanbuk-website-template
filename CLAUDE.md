@@ -867,11 +867,25 @@ nie die endgültige Adresse.
 
 **`live` (die Seite soll öffentlich sein – im Standardablauf: der Kunde hat gebucht):**
 kein Balken, Formular scharf (Resend), `tel:` klickbar,
-Indexierung an, Sitemap. Zusätzlich nötig – und das sind **die einzigen drei Dinge**:
+Indexierung an, Sitemap.
+
+**Der vollständige Live-Ablauf steht im `/deploy`-Skill, Weg B.** Hier stand
+„und das sind **die einzigen drei Dinge**" mit einer Dreierliste – und das war
+schlicht falsch: Der Skill kennt Versand-Unterdomain samt drei DNS-Einträgen,
+die Region des Versanddienstes (an der ein Rechtstext hängt),
+Search-Console-Export, DNS-Export und die Weiterleitungen. Ein Chat, der dieser
+Datei folgt statt dem Skill, lässt die Hälfte weg. **Diese Datei sagt, WIE
+gebaut wird – der Skill sagt, wie live gegangen wird.**
+
+Die drei, die man sich merken kann, weil ohne sie gar nichts geht:
 
 1. **Echte Rechtstexte** (UID, Firmenbuch – Impressumspflicht in Österreich)
 2. `RESEND_API_KEY` + `CONTACT_FROM` (damit das Formular sendet)
 3. Domain verbinden
+
+Und der Beweis, dass es gereicht hat: `npm run check -- --live`. Der Schalter
+schaltet die Live-Pflichten scharf (Platzhalter, offene STAND.md-Punkte,
+Sitemap, echte Domain) – ohne ihn prüft das Tor nur den Vorschau-Standard.
 
 `vercel.json` erzeugt der Build **automatisch** aus dem
 `mode` (siehe `astro.config.ts`) – da ist nichts von Hand zu ändern. Früher musste man
@@ -1094,10 +1108,13 @@ technische Pfade kennen zu müssen.
 - **Vor dem Port immer `ls fotos/`** – der Nutzer legt seine Fotos oft schon vorher
   ab. Die haben Vorrang vor allem anderen.
 - Zuordnung selbst treffen (Dateiname + Bildinhalt), im Bericht nennen. Nicht fragen.
-- Einbinden über `bild('name.jpg')` (`src/lib/bilder.ts`) + `<Image>` aus
-  `astro:assets`. Nie ein rohes `<img src>` – dann fehlt die Optimierung.
-- **Inhaltsbilder als `<Picture formats={['webp']} fallbackFormat="jpeg">`**,
-  nicht als `<Image>`. Ohne Ersatzfassung zeigen Rechner mit älterem
+- Einbinden über `bild('name.jpg')` (`src/lib/bilder.ts`). **Nie ein rohes
+  `<img src>`** – dann fehlt die Optimierung.
+- **Der Normalfall ist `<Picture formats={['webp']} fallbackFormat="jpeg">`**,
+  nicht `<Image>`. Hier stand `<Image>` als Standard und drei Zeilen später
+  `<Picture>` als Pflicht – wer den ersten Punkt beim Überfliegen mitnimmt,
+  baut die Seite falsch, und der Fehler ist unsichtbar: Auf dem Büro-Mac des
+  Betriebs fehlt dann JEDES Foto. Ohne Ersatzfassung zeigen Rechner mit älterem
   Betriebssystem **kein einziges Foto** – dort hängt WebP am System, nicht an
   der Browser-Version. Logos bleiben `<Image>` (klein, oft mit Transparenz;
   eine JPEG-Ersatzfassung füllt den freigestellten Hintergrund aus). Siehe
@@ -1121,6 +1138,27 @@ keines optimiert wurde.
 
 ## 10. Werkzeuge
 
+### Die sechs Tore, durchnummeriert
+
+Der Text nennt an mehreren Stellen „das fünfte Tor" und „das sechste Tor" –
+**eins bis vier standen nirgends.** Wer die Nummer las, musste die Liste raten.
+Hier ist sie:
+
+| Tor | Befehl | prüft |
+| --- | --- | --- |
+| 1 | `npm run check` | baut, Typen, Standard der fertigen Seite (der Vorcheck läuft darin mit) |
+| 2 | `npm run sicht` | echter Browser bei 350/430/768/1440 px – Überlauf, abgeschnittener Text, Tippflächen, Kontrast |
+| 3 | `npm run interaktion` | jedes Bedienelement wird wirklich geklickt |
+| 4 | `npm run altgeraet` | zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** – ansehen ist Pflicht |
+| 5 | `npm run browser` | hält den Build gegen die Browser-Untergrenze (Abschnitt 4a) |
+| 6 | `npm run abgleich` | hält die gebaute Seite gegen die Design-Datei (Abschnitt 9, Punkt 3c) |
+
+**Und danach das eigene Auge** – Definition of Done, Punkt 3d. Das ist kein
+Tor, weil es kein Befehl ist, aber es ist Pflicht: Grüne Technikprüfungen sagen
+nichts über Design-Treue.
+
+### Alle Befehle
+
 | Befehl | Zweck |
 | --- | --- |
 | `npm run dev` | Vorschau lokal |
@@ -1138,9 +1176,9 @@ keines optimiert wurde.
 | `npm run holen -- --url <…> --ziel <pfad>` | Download + Integritätsprüfung (nie Base64 durch den Chat!) |
 | `npm run inhalte` | Gepflegte Inhalte und Bilder vom Redaktionsdienst holen (Abschnitt 6c) |
 | `npm run maske` | Eingabemaske für den Betrieb aus der Feldliste erzeugen |
+| `npm run maillogo` | Logo der Bestätigungsmail als PNG (SVG zeigen Mailprogramme nicht) – Abschnitt 7 |
 | `npm run preisliste` | Preislisten-JSON aus dem Design validieren → `daten/preisliste.ts` |
 | `npm run demo -- --datei <archiv.zip> --kunde "…"` | Design-Projekt-Archiv (oder Standalone) als schickbare Verkaufs-Demo hosten (noindex, Kanbuk-Leiste, Handy-Hinweis, Sicht-Check) |
-| `npm run sicht` | **Sichtprüfung im echten Browser** – Screenshots + Überlauf-/Fehler-Messung |
 | `npm run platzhalter -- …` | Textlose Platzhalterbilder + OG + Favicon |
 | `npm run stock -- --thema "…"` | Stock-Platzhalter (braucht `PEXELS_API_KEY`) |
 

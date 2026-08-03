@@ -69,13 +69,19 @@ sicher, cookiefrei. Nur ohne Zugänge. Dann `/deploy` für die Vorschau-Domain.
 > Direktkauf ist sie die **Abnahme-Vorschau** vor der Freigabe. Und weil jedes
 > Kundenprojekt ein eigenständiges Repo ist, lässt es sich bei einem Vollkauf
 > komplett übertragen (Repo, Hosting, Domain auf Konten des Kunden).
-> Grenzen des Motors: kein CMS/Selbst-Bearbeiten, Shop/Buchung/Blog baut der
-> jeweilige Projekt-Chat bei Bedarf auf dem Motor auf (CLAUDE.md 7a).
+> Grenzen des Motors: Shop, Buchungssystem und Blog baut der jeweilige
+> Projekt-Chat bei Bedarf auf dem Motor auf (CLAUDE.md 7a).
+>
+> **Selbst pflegen geht** – das stand hier lange als Grenze und stimmt nicht
+> mehr: Für Betriebe, deren Bestand sich wöchentlich ändert (Fahrzeuge,
+> Immobilien, Kurse, Zimmer), liegt ein Redaktions-Baustein bei
+> (`redaktion/`, CLAUDE.md 6c). Er ist standardmäßig AUS und soll es bleiben:
+> Bei einer Seite, die sich zweimal im Jahr ändert, sind zwei Anrufe billiger
+> als ein System, das gewartet werden will.
 
 ### 3 · Kunde bucht (bzw. gibt frei) — *~15 min*
 
-`STAND.md` im Kundenordner öffnen – dort steht, was noch offen ist. Dann nur noch
-drei Dinge, kein Basteln an Technik:
+`STAND.md` im Kundenordner öffnen – dort steht, was noch offen ist. Der Kern:
 
 1. `mode: 'live'` in `content.config.ts` (Header/Sitemap stellt der Build automatisch um)
 2. Echte **Rechtstexte** (UID, Firmenbuch – Impressumspflicht) + offene Punkte aus `STAND.md`
@@ -86,6 +92,13 @@ npm run check -- --live   # muss grün sein
 npx vercel --prod
 ```
 
+> **Das ist die Kurzfassung, nicht die Liste.** Hier stand „nur noch drei Dinge" –
+> hatte der Betrieb schon eine Website oder soll das Formular von einer eigenen
+> Versand-Unterdomain senden, kommen Weiterleitungen, DNS-Einträge und die
+> Region des Versanddienstes dazu. **Den vollständigen Ablauf hat der
+> `/deploy`-Skill** (Weg B); der Projekt-Chat arbeitet ihn ab. Die 15 Minuten
+> oben gelten für den einfachen Fall ohne Vorgänger-Website.
+
 ---
 
 ## Was der Motor mitbringt
@@ -93,14 +106,17 @@ npx vercel --prod
 | Bereich | Inhalt |
 | --- | --- |
 | **SEO** | Meta je Seite (Titel, Description, Canonical, OG), JSON-LD `LocalBusiness` mit maschinenlesbaren Öffnungszeiten, Sitemap, `hreflang` |
-| **Responsiveness** | Fluide Token-Skala (350–1440 px) – jeder Pixelwert aus dem Design wird zum Token |
-| **Verhalten** | Tabs, Filter, Slider, Akkordeon, Lightbox, Mobilmenü, Vorher/Nachher – branchenneutral, unstyled |
-| **Formulare** | Beliebig viele (Kontakt, Reservierung, Termin, Angebot) aus der Config, Honeypot, Resend |
+| **Responsiveness** | Fluide Token-Skala (350–1440 px). **Wo das Design einen Wert nennt, gewinnt der Wert** – die Skala greift, wo es schweigt (CLAUDE.md Abschnitt 4) |
+| **Verhalten** | Tabs, Filter, Slider, Akkordeon, Lightbox, Mobilmenü, Vorher/Nachher, Dialog, Assistent – branchenneutral, unstyled |
+| **Katalog** | Viele gleichartige Einträge (Fahrzeuge, Immobilien, Kurse, Zimmer) mit **eigener Adresse je Eintrag** samt Produkt-Schema, dazu Filter, Preisregler und Merkliste. Der größte SEO-Hebel bei einem Händler |
+| **Bildzeichen** | Die vollständige Lucide-Bibliothek liegt im Repo – Symbole werden nie selbst gezeichnet |
+| **Formulare** | Beliebig viele (Kontakt, Reservierung, Termin, Angebot) aus der Config, Honeypot, Resend, gestaltete Bestätigungsmail |
+| **Selbst pflegen** | Optionaler Redaktions-Baustein für Betriebe mit wöchentlich wechselndem Bestand – standardmäßig aus |
 | **Recht** | Impressum + Datenschutz (passen sich automatisch an), cookiefrei ab Werk |
 | **Ausbau** | Pixel/Tracking und Maps/YouTube sind **vorbereitet** – siehe unten |
 | **Weiterleitungen** | Alte Adressen → neue, rettet das Google-Ranking bei Vorgänger-Websites |
-| **demo/live** | Ein Wort schaltet Balken, Formular, `tel:`, Indexierung, Sitemap, Header |
-| **Prüf-Tor** | `npm run check` lässt nichts durch, was den Standard unterschreitet |
+| **demo/live** | Ein Wort schaltet Balken, `tel:`, Indexierung, Sitemap, Header (das Formular bleibt in der Vorschau sichtbar, verschickt aber nichts) |
+| **Sechs Tore** | `check`, `sicht`, `interaktion`, `browser`, `abgleich` – dazu `altgeraet` zum Ansehen. Keines darf übersprungen werden |
 
 Verbindliche Regeln: **[CLAUDE.md](CLAUDE.md)** – inklusive Umrechnungstabelle
 (Design-Pixel → Token) und Portier-Rezept.
@@ -146,13 +162,19 @@ Details: [CLAUDE.md, Abschnitt 7a](CLAUDE.md).
 | `npm run schrift -- --familie "<Name>"` | Google-Schrift lokal einbetten |
 | `npm run karte -- --adresse "…"` | Statisches Kartenbild statt Maps-Rahmen |
 | `npm run og -- --bild fotos/hero.jpg` | WhatsApp-/Social-Vorschaubild aus einem echten Foto |
-| `npm run sicht` | **Sichtprüfung im echten Browser**: Screenshots 350/768/1440, Überlauf-/Fehler-Messung, Text-Dump + Bögen |
-| `npm run interaktion` | Fährt jeden Bedien-Baustein real (Tabs, Menü, Akkordeon …) – was klickbar ist, muss klicken |
+| `npm run sicht` | **Sichtprüfung im echten Browser**: Screenshots 350/430/768/1440, Überlauf-/Abschneide-/Tippflächen-Messung, Text-Dump + Bögen |
+| `npm run interaktion` | **Bedien-Prüfung** – fährt jeden Baustein real (Tabs, Menü, Akkordeon …); sagt am Ende, was auf dieser Seite NICHT vorkam |
+| `npm run browser` | **Browser-Prüfung** – hält den Build gegen `browser-untergrenze.json` |
+| `npm run abgleich` | **Design-Prüfung** – hält die gebaute Seite gegen die `.dc.html` |
+| `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
+| `npm run icons` | Symbol-Bibliothek neu holen (liegt schon im Repo – nur bei Versionswechsel) |
+| `npm run maillogo` | Logo der Bestätigungsmail als PNG (SVG zeigen Mailprogramme nicht) |
+| `npm run inhalte` | Gepflegte Inhalte und Bilder vom Redaktionsdienst holen (optional) |
+| `npm run maske` | Eingabemaske für den Betrieb aus der Feldliste erzeugen (optional) |
 | `npm run bogen -- --fotos` | Kontaktbögen: alle Fotos/Screenshots auf wenigen Übersichtsbildern |
 | `npm run holen -- --url <…> --ziel fotos/x.jpg` | Datei herunterladen UND auf Unversehrtheit prüfen |
 | `npm run preisliste` | `daten/preisliste.json` (aus Claude Design) validieren → typsichere `daten/preisliste.ts` |
-| `npm run demo -- --datei <archiv.zip> --kunde "…"` | Design-Projekt-Archiv als schickbare Mehrseiten-Demo hosten (ohne Port) |
-| `npm run sicht` | Sichtprüfung im echten Browser: Screenshots aller Seiten bei 350/768/1440 px + Überlauf-/Fehler-Messung |
+| `npm run demo -- --datei <archiv.zip> --kunde "…"` | Design-Projekt-Archiv als schickbare Verkaufs-Demo hosten (ohne Port) |
 | `npm run platzhalter -- --name "…"` | Textlose Platzhalter + OG-Bild + Favicon (nach `fotos/`) |
 | `npm run stock -- --thema "…"` | Stock-Platzhalter (braucht `PEXELS_API_KEY` in `.env`) |
 
@@ -204,17 +226,27 @@ zurück in Kundenprojekte – das Template ist nur der Startpunkt.
 
 ---
 
-## Besucherzahlen – ohne Cookies, ohne Banner
+## Besucherzahlen
 
-Die Frage kommt von jedem Kunden. Die Antwort des Motors: **Vercel Web Analytics** –
-cookielos, läuft über die eigene Domain, kein Banner nötig. Einrichten in 2 Minuten:
+Die Frage kommt von jedem Kunden. **Der Motor bringt dafür heute nichts mit.**
 
-1. Im Vercel-Dashboard des Projekts: **Analytics → Enable**
-2. In `content.config.ts`: `besucherzaehlung: 'vercel'` setzen (ergänzt automatisch
-   den passenden Absatz in der Datenschutzerklärung), neu bauen und deployen
+> Hier stand eine Anleitung mit dem Config-Feld `besucherzaehlung: 'vercel'`,
+> das „automatisch den passenden Absatz in der Datenschutzerklärung ergänzt".
+> **Dieses Feld gibt es nicht mehr** – es wurde entfernt, weil es einen Absatz
+> über eine Reichweitenmessung schrieb, die gar nicht stattfand. Die Anleitung
+> blieb stehen. Wer ihr folgte, schaltete beim Hoster die Messung scharf, trug
+> ein Feld ein, das die Typprüfung ablehnt – und hatte am Ende eine
+> Datenschutzerklärung, die von der Messung nichts weiß.
 
-Die Zahlen sieht der Betreiber im Vercel-Dashboard. Für mehr (Kampagnen, Pixel)
-gibt es die Ausbau-Anschlüsse mit Einwilligung – siehe oben.
+Soll ein Kunde Zahlen sehen, ist das ein **Ausbau** und läuft über die
+Anschlüsse aus CLAUDE.md Abschnitt 7a: Dienst in `content.config.ts → dienste`
+eintragen, dann erscheint er von selbst in der Datenschutzerklärung, und der
+Einwilligungs-Banner kommt dazu.
+
+**Vorher mit dem Kunden klären, was er wirklich will:** Ein Banner kostet
+Bedienbarkeit und Anfragen, und die meisten Kleinbetriebe brauchen keine
+Kampagnen-Auswertung. Die Zahl der Anfragen im Postfach ist oft die Kennzahl,
+um die es wirklich geht.
 
 ---
 
