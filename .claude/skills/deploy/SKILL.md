@@ -279,6 +279,17 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    `vercel env add`): `RESEND_API_KEY` und `CONTACT_FROM` (Absender auf der
    Unterdomain, z. B. `anfrage@formular.<kundendomain>`).
 
+   **Wo der Schlüssel hin darf – und wo nicht.** Es gibt genau zwei richtige
+   Orte: Vercel (`npx vercel env add RESEND_API_KEY production`) und lokal
+   `.env.local`. **Nicht** in `.env.example` – die Datei heißt fast gleich, ist
+   aber die VERSIONIERTE Vorlage und steht schon mit einer `RESEND_API_KEY=`-Zeile
+   da; genau dort landete bei einem Piloten der echte Schlüssel und ging mit
+   `git push` zu GitHub. Der Vorcheck schlägt seitdem an. Wer den Nutzer bittet,
+   den Schlüssel „ins env zu legen", sagt deshalb **die Datei dazu**.
+
+   Ist ein Schlüssel einmal committet, hilft Löschen nicht – er steht im
+   Verlauf. Er muss beim Anbieter **zurückgezogen und neu ausgestellt** werden.
+
    **Und die Bestätigung an den Absender einrichten – sie geht sonst nackt raus.**
    Jeder, der das Formular ausfüllt, bekommt eine Mail zurück; das ist die
    einzige Nachricht vom Betrieb, bevor jemand persönlich antwortet.

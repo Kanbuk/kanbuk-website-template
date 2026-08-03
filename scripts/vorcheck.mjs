@@ -31,6 +31,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { pruefeDatei } from './lib/integritaet.mjs';
+import { pruefeGeheimnisse } from './lib/geheimnisse.mjs';
 import { ohneKommentare, markerGlobal } from './lib/quelltext.mjs';
 
 const WURZEL = process.cwd();
@@ -211,7 +212,9 @@ async function haupt() {
   const fotosDateien = alleDateien(FOTOS);
   const publicDateien = alleDateien(PUBLIC);
 
-  console.log('Vorcheck (vor dem Build): Config-Pflichtfelder, Bild-Verweise, Datei-Integrität\n');
+  console.log(
+    'Vorcheck (vor dem Build): Config-Pflichtfelder, Bild-Verweise, Datei-Integrität, Zugangsschlüssel\n',
+  );
 
   // --- Config ---------------------------------------------------------------
   const { fehler, infos } = pruefeConfigText(configText, {
@@ -245,6 +248,17 @@ async function haupt() {
     kaputte
       ? `  ✗ Datei-Integrität: ${kaputte} von ${alle.length} Datei(en) beschädigt`
       : `  ✓ ${alle.length} Datei(en) in fotos/ und public/ vollständig und dekodierbar`,
+  );
+
+  // --- Zugangsschlüssel in versionierten Dateien ----------------------------
+  // Muss VOR dem Build laufen: Ein Schlüssel, der einmal committet ist, lässt
+  // sich nicht mehr zurückholen – er muss beim Anbieter neu ausgestellt werden.
+  const geheim = pruefeGeheimnisse(WURZEL);
+  fehler.push(...geheim.fehler);
+  console.log(
+    geheim.fehler.length
+      ? `  ✗ Zugangsschlüssel: ${geheim.fehler.length} echter Schlüssel in versionierten Dateien`
+      : `  ✓ Keine echten Zugangsschlüssel in den ${geheim.geprueft} versionierten Textdateien`,
   );
 
   // --- PLATZHALTER auch im Quelltext zählen (Info fürs Lücken-Inventar) -----
