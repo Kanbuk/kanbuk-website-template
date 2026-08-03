@@ -110,20 +110,36 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       gemacht und das Ergebnis dann als Erfahrungswert hierher. Nicht sehen
       kann die Prüfung ohnehin: Laufzeit-Funktionen (`dialog.showModal`,
       `replaceChildren`), Bild- und Schriftformate, Netzwerk.
-- [ ] **33 Punkte der Rückfluss-Liste sind halb oder offen.** *(kein Blocker
-      für den Demo-Weg)* Am 31.07.2026 gegen den echten Stand gemessen, jeder
-      Fund gegengeprüft. Aufteilung: **13 Live-Gang** (Weiterleitungs-Rezept,
-      DNS-Export, Bestätigungsmail-Feinheiten, Pflichtfeld-Kennzeichnung,
-      Gewährleistung/Garantie, die vier Abweisungen in `api/contact.ts`, die
-      ohne JavaScript rohe Datenzeilen liefern), **10 Redaktions-Baustein**
-      (standardmäßig aus – Auswahlfelder statt Freitext, Hilfetexte,
-      Attrappen-Prüfung für Katalogfelder, Veröffentlichen-Schritt), **7 Doku**
-      und **3 Abgleich** (border-color als Wert, Statuszeile kennt
-      abgeschnittenen Text nicht).
-      **Reihenfolge mit Absicht:** Diese Punkte werden NICHT in einer weiteren
-      Template-Runde abgearbeitet, sondern dann, wenn ein echtes Projekt über
-      sie stolpert – über eine Motor-Meldung. Begründung im Verlauf zum
-      31.07.2026.
+- [ ] **48 Befunde der Gesamtprüfung sind noch offen.** *(kein Blocker für den
+      Demo-Weg)* Die Gesamtprüfung vom 02.08.2026 (144 Agenten, 13 Blöcke, jeder
+      Fund gegengeprüft) fand 154 Befunde. **106 davon sind am 03.08.2026
+      behoben** – zehn Blöcke, jeder einzeln mit allen sechs Toren abgeschlossen.
+      Was bleibt, steht vollständig in `pruefung/BEFUNDE.md`:
+
+      | Block | offen | davon schwer |
+      | --- | --- | --- |
+      | 10 Zugesagt, nie gemessen | 8 | 3 |
+      | 1 Neutralität (Rest) | 7 | 2 |
+      | 6 Live-Weg | 8 | 3 |
+      | 8 Frischer Klon | 8 | 1 |
+      | 9 Alte Reste / Over-Engineering | 7 | 1 |
+      | 11 Abgleich gegen den echten Port | 10 | 2 |
+      | Vollständigkeits-Kritiker | 9 | – |
+
+      Etliche sind durch die zehn erledigten Blöcke schon miterledigt (bei 1, 6
+      und 8 die schweren Punkte). Realistisch bleiben 25 bis 30.
+      **Reihenfolge:** 11 → 6 → 10 → 9 → 1 → 8. Block 11 zuerst, weil er als
+      einziger NEUE Erkenntnis bringt – was musste der echte Port selbst bauen?
+      Alles andere ist Aufräumen.
+
+- [ ] **Die Belegbasis des Motors ist EIN Port.** *(kein Blocker)* Alle Sätze
+      der Form „in einem Kundenprojekt", „im Piloten", „an einer echten
+      Kundenseite belegt" – 28 Stellen allein in CLAUDE.md – meinen denselben
+      Klon: ein Autohaus mit Katalog. Dazu ein paar Verkaufs-Demos, die nie live
+      gingen. Steht seit 03.08.2026 im Kopf von CLAUDE.md. Ob eine Regel beim
+      Wirt oder in einer Praxis genauso greift, ist damit **nicht erwiesen** –
+      was bei diesem Port schiefgegangen ist, aber sehr wohl eine bewiesene
+      Falle. Der nächste echte Relaunch ist der Test.
 - [ ] **Vier Bausteine vergrößern Tippziele auch am Zeigegerät.** *(kein
       Blocker)* Navigation, Kopf, Fuß und Einbettung setzen `min-height: 44px`
       ohne Handy-Medienabfrage. Nach der eigenen Regel („NUR am Handy") eine
@@ -241,6 +257,94 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-08-03** – **Die Gesamtprüfung, und zehn von sechzehn Blöcken behoben.**
+  Vorlauf war die Prüfung selbst (02.08., 144 Agenten über 13 Blöcke, jeder
+  schwere und mittlere Fund von einem zweiten Durchgang angegriffen): **154
+  Befunde, 28 schwer.** Die vollständige Liste liegt in `pruefung/BEFUNDE.md`.
+  Heute abgearbeitet: **106 Befunde in zehn Blöcken**, jeder Block einzeln mit
+  allen sechs Toren abgeschlossen und committet.
+
+  **Die Reihenfolge war eine Entscheidung, keine Bequemlichkeit:** zuerst die
+  TORE. Über hundert Änderungen zu machen und dabei einem Messgerät zu trauen,
+  von dem 22 Befunde sagen, dass es lügt, wäre dieselbe Falle wie beim
+  Sprung-Link am 31.07. Erst danach Doku, dann Code.
+
+  **Was die Tore verschwiegen (Block 0a/0b/2b):**
+  - Die Blocker-Erkennung in STAND.md las nur die ERSTE ZEILE eines Punktes.
+    Einträge sind mehrzeilig, also rutschte „(kein Blocker)" auf die Folgezeile
+    und wurde nie gesehen: `check --live` meldete vier Probleme, DREI davon
+    Punkte des Motors, zwei mit der Markierung. Jeder Klon startete mit rotem
+    Live-Tor. (Beim ersten Reparaturversuch prompt in dieselbe Falle getreten:
+    `$` ist unter /m das Ende einer ZEILE, nicht des Textes.)
+  - **Fünf der sechs Tore massen `dist/` blind** – nur `check` kannte die
+    Bau-Marke. Wer eine Seite ändert und danach `sicht` startet, mass den ALTEN
+    Build und bekam grün. Die Marke liegt jetzt in `scripts/lib/bau-marke.mjs`
+    und wird von allen benutzt; nachgestellt und bestätigt.
+  - Das sechste Tor meldete OHNE Design-Datei Erfolg – Punkt 3c der Definition
+    of Done war erfüllt, solange niemand die `.dc.html` ablegt.
+  - Die Abschneide-Messung übersah ihre eigene Zielgruppe gleich zweifach: Sie
+    warf jeden Knopf mit Symbol raus, und ihr Mehrzeilig-Filter rechnete mit der
+    AUSSENhöhe – ein einzeiliger Knopf mit Innenabstand galt als mehrzeilig.
+    Der Anlass der ganzen Messung war ein Knopf.
+  - Die Bedien-Prüfung sagt jetzt, was sie NICHT geprüft hat: **zehn von
+    siebzehn** Prüfungen sind auf der Referenzseite nie gelaufen.
+  - Die Kartenlizenz-Regel schlug bei `speisekarte.jpg`, `weinkarte.png` und
+    `visitenkarte.jpg` an – beim Wirt ein harter Fehler wegen einer
+    Kartenlizenz. Der Dienste-Block fiel bei anderer Einrückung still auf „null
+    Dienste" zurück und nahm die halbe DSGVO-Prüfung mit.
+
+  **Was die Doku verschwieg (Block 7/12a/12b):**
+  - Das Port-Rezept nannte das sechste Tor „vorgemerkt" – es existiert seit dem
+    29.07. Etappe 5 hiess „sechs Stufen, alle Pflicht" und zählte vier auf.
+  - Der Deploy-Skill behauptete ZWEIMAL, im Demo-Modus sei das Formular aus.
+    Wer das beim Wort nimmt, baut es aus dem Design gar nicht erst nach.
+  - Er vergab ausserdem `demo-<betrieb>.kanbuk.com` für die Abnahme-Vorschau –
+    dieselbe Adresse, die `npm run demo` für die Verkaufs-Demo belegt.
+  - Die README empfahl ein Config-Feld, das es nicht mehr gibt
+    (`besucherzaehlung`), samt der Zusage, es ergänze „automatisch den passenden
+    Absatz in der Datenschutzerklärung" – und nannte „kein Selbst-Bearbeiten"
+    als Grenze, während der Redaktions-Baustein im Repo liegt.
+  - „Die einzigen drei Dinge" beim Live-Gang standen wortgleich in beiden
+    Pflichtdateien; der Skill kennt deutlich mehr.
+  - **Der Port räumte STAND.md nie auf.** Ein Klon trug 834 Zeilen
+    Template-Geschichte mit sich, gelesen als „Gedächtnis dieses Kunden".
+    Etappe 0 räumt jetzt auf – mit der Einschränkung, dass ein Motor-Punkt, der
+    JEDE Kundenseite betrifft, als eigener Punkt übernommen wird.
+
+  **Was den Besucher wirklich getroffen hätte (Block 2a/3/4/5):**
+  - Das Mobilmenü rief `matchMedia.addEventListener` (ab Safari 14), zugesagt
+    ist Safari 12. Es fällt nicht nur das Menü aus: Der Aufruf wirft, und ALLE
+    danach eingehängten Bausteine starten nicht mehr. Drei weitere Fälle
+    derselben Art gefunden – genau die, die CLAUDE.md 4a als blinde Flecken
+    benennt. Alle hängen jetzt an `src/lib/verhalten/browserluecke.ts`.
+  - Der Öffnungs-Status meldete „Geschlossen", solange ein Lokal über
+    Mitternacht offen hat – für die Leitbranche des Motors, zur
+    Hauptgeschäftszeit, im Kopf jeder Seite.
+  - **Bei einer Katalog-Anfrage stand in der Mail an den Betrieb nicht, worum
+    es ging.** Das Feld `bezug` hatte kein Ziel im Markup UND wurde in der Mail
+    nicht ausgegeben – zwei Fehler in einer Kette, die die Detailseite
+    ausdrücklich verspricht.
+  - Das Gehalt einer Stellenanzeige diente nur als Schalter; `baseSalary`
+    entstand ohne Wert, Google verwirft das Feld.
+  - Vier Abweisungen im Türsteher lieferten ohne JavaScript eine rohe
+    Datenzeile. Die Grössengrenze zählte Zeichen statt Bytes (Faktor bis 4).
+  - Die Datenschutzerklärung behauptete unbedingt, die Bestätigungsmail
+    enthalte keine Angaben – ein Schalter kehrt das um. Der Karten-Absatz
+    erschien auch ohne Karte, der Merklisten-Absatz hing am Katalog statt am
+    Markup. Die AGB-Seite schrieb selbst zwei Vertragsklauseln, obwohl ihr
+    eigener Kopf zusagt, keine zu erfinden. Und „Ihre IP wird nach wenigen
+    Minuten verworfen" stimmte nicht – hier war der Text richtig und der Code
+    falsch, also wurde der Code angepasst.
+
+  **Und ein Fund, der mich selbst betrifft:** In `PRUEFPLAN.md` stand der Name
+  eines echten Auftraggebers – von mir am 31.07. eingecheckt, also im
+  öffentlichen Repo und ab dem nächsten `degit` in jedem Kundenordner. Die
+  Ursache wiegt schwerer als der Fehler: Die Kundenfrei-Prüfung las eine
+  HANDGEPFLEGTE Dateiliste, dreimal nachgetragen, beim vierten Mal ging es
+  schief. Sie fragt jetzt `git ls-files` – also genau die Menge, die `degit`
+  kopiert. Beim allerersten Lauf über die neu erreichten Dateien fand sie
+  sofort ein zweites Leck.
 
 - **2026-07-31 (zweiter Teil)** – **Die Punkteliste des Auftrags gegen den echten
   Stand gehalten.** Nicht der Bericht, sondern die *Arbeitsanweisung* selbst:
