@@ -75,7 +75,17 @@ export function filterStarten(): void {
       const d = (e as CustomEvent).detail;
       gemerkt = d.liste ?? [];
       nurGemerkte = !!d.nurGemerkte;
-      anwenden();
+      /* NUR DIE KOMBINIERTE STUFE HAT EIN `anwenden()`.
+         Die Anmeldung stand hier oben, `anwenden()` wird aber erst in der
+         kombinierten Stufe weiter unten definiert – die einfache Stufe steigt
+         vorher mit `return` aus. Bei einer Galerie mit einfachem Filter warf
+         deshalb JEDES Merken einen Fehler in die Konsole, und die
+         Merklisten-Anzeige blieb stehen.
+
+         Das ist kein Randfall: Der Motor empfiehlt selbst das Herz mit Zähler
+         in der Kopfleiste – also auf JEDER Seite, auch auf einer Galerie.
+         Die Kombination ist damit der Normalfall, nicht die Ausnahme. */
+      if (kombi) anwenden();
     });
 
     // ---- Einfache Stufe: eine Knopfreihe ---------------------------------

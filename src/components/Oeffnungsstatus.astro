@@ -57,10 +57,25 @@ const tagHeute = WOCHE[hol('weekday')] ?? 0;
 const minutenJetzt = Number(hol('hour')) * 60 + Number(hol('minute'));
 const min = (s: string) => Number(s.split(':')[0]) * 60 + Number(s.split(':')[1] ?? 0);
 
+/* ÜBER MITTERNACHT – dieselbe Rechnung wie im Baustein
+   (src/lib/verhalten/oeffnungsstatus.ts). Ein Fenster mit `bis <= von` läuft
+   in den Folgetag: 18:00–02:00 galt hier zu keiner Minute, und das Lokal stand
+   den ganzen Abend auf „Geschlossen". Diese Stelle schreibt den Stand OHNE
+   JavaScript – wer den Baustein repariert und sie vergisst, hat den Fehler
+   weiterhin bei jedem Besucher mit abgeschaltetem Skript und im ersten
+   Bildaufbau. */
+const ueberNacht = (f: { von: string; bis: string }) => min(f.bis) <= min(f.von);
+const gesternTag = (tagHeute + 6) % 7;
 const sonderHeute = sonder.find((s) => datumHeute >= s.von && datumHeute <= s.bis);
 const offenJetzt = sonderHeute
   ? !!(sonderHeute.vonISO && sonderHeute.bisISO && minutenJetzt >= min(sonderHeute.vonISO) && minutenJetzt < min(sonderHeute.bisISO))
-  : fenster.some((f) => f.tag === tagHeute && minutenJetzt >= min(f.von) && minutenJetzt < min(f.bis));
+  : fenster.some((f) =>
+      f.tag === tagHeute
+        ? ueberNacht(f)
+          ? minutenJetzt >= min(f.von)
+          : minutenJetzt >= min(f.von) && minutenJetzt < min(f.bis)
+        : f.tag === gesternTag && ueberNacht(f) && minutenJetzt < min(f.bis),
+    );
 const startText = offenJetzt ? texte.offen : texte.geschlossen;
 ---
 

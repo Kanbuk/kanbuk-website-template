@@ -100,10 +100,33 @@ export function oeffnungsstatusStarten(): void {
         return;
       }
 
-      // 2) Normaler Wochenrhythmus.
-      const heuteOffen = plan.fenster.find(
-        (f) => f.tag === tag && minuten >= zuMinuten(f.von) && minuten < zuMinuten(f.bis),
-      );
+      /* 2) Normaler Wochenrhythmus – EINSCHLIESSLICH DER FENSTER ÜBER
+            MITTERNACHT.
+
+         Hier stand nur `minuten >= von && minuten < bis`. Bei einem Fenster
+         von 18:00 bis 02:00 ist das zu KEINER Minute wahr: 1080 <= m < 120
+         gibt es nicht. Ergebnis: „Geschlossen" den ganzen Abend – bei einem
+         Wiener Lokal mit Sperrstunde nach Mitternacht also zur
+         Hauptgeschäftszeit, im Kopf jeder Seite.
+
+         Das ist keine Randlage: Gastronomie ist die Leitbranche des Motors,
+         und der Kopfkommentar dieser Datei begründet den Baustein
+         ausgerechnet damit, dass ein fester Text „falsch ist, sobald jemand
+         um 3 Uhr früh auf die Seite kommt".
+
+         Ein Fenster mit `bis <= von` läuft über Mitternacht. Es gilt dann
+         zweimal: heute ab `von`, und am FOLGETAG bis `bis`. */
+      const laeuftUeberNacht = (f: { von: string; bis: string }) => zuMinuten(f.bis) <= zuMinuten(f.von);
+      const gestern = (tag + 6) % 7;
+      const heuteOffen =
+        plan.fenster.find((f) => {
+          if (f.tag !== tag) return false;
+          const von = zuMinuten(f.von);
+          const bis = zuMinuten(f.bis);
+          return laeuftUeberNacht(f) ? minuten >= von : minuten >= von && minuten < bis;
+        }) ??
+        // Der Ausläufer von gestern: Es ist 01:30 und gestern galt 18:00–02:00.
+        plan.fenster.find((f) => f.tag === gestern && laeuftUeberNacht(f) && minuten < zuMinuten(f.bis));
       if (heuteOffen) {
         el.textContent = `${plan.texte.offen} · ${plan.texte.heute} ${heuteOffen.bis}`;
         el.classList.add('ist-offen');

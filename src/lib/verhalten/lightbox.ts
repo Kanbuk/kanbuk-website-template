@@ -19,6 +19,7 @@
  * Ohne data-gross wird die Bildquelle selbst verwendet. Ohne JS bleibt die
  * Galerie eine normale Bildergalerie – nichts geht verloren.
  */
+import { dialogOeffnen, dialogSchliessen } from './browserluecke.js';
 export function lightboxStarten(): void {
   const boxen = document.querySelectorAll<HTMLElement>('[data-lightbox]');
   if (boxen.length === 0) return;
@@ -46,7 +47,7 @@ export function lightboxStarten(): void {
     d.addEventListener('click', (e) => {
       // Klick auf den Hintergrund (nicht aufs Bild) schließt
       if (e.target === d || (e.target as HTMLElement).classList.contains('lightbox__schliessen')) {
-        d.close();
+        dialogSchliessen(d);
       }
     });
     document.body.appendChild(d);
@@ -107,7 +108,7 @@ export function lightboxStarten(): void {
         aktuelleBilder = bilder;
         index = nr;
         zeige();
-        dialog.showModal();
+        dialogOeffnen(dialog);
       }
 
       knopf.addEventListener('click', oeffne);

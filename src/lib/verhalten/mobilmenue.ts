@@ -54,7 +54,30 @@ export function mobilmenueStarten(): void {
    * es 900 px wie bisher.
    */
   const abBreite = schalter.getAttribute('data-menue-ab') || '900px';
-  window.matchMedia(`(min-width: ${abBreite})`).addEventListener('change', (e) => {
+  const abfrage = window.matchMedia(`(min-width: ${abBreite})`);
+  const beiWechsel = (e: MediaQueryListEvent | MediaQueryList) => {
     if (e.matches) setze(false);
-  });
+  };
+  /* ZWEI WEGE, UND DAS IST HIER KEINE VORSICHT, SONDERN PFLICHT.
+     `MediaQueryList.addEventListener` gibt es erst ab Safari 14. Die Zusage in
+     `browser-untergrenze.json` lautet aber „bedienbar ab Safari 12", und
+     bedienbar heißt dort wörtlich: Navigation, Filter, Merkliste, Formular und
+     Bilder funktionieren.
+
+     Was ohne diese Weiche passiert, ist nicht „das Menü schließt nicht beim
+     Drehen": Der Aufruf wirft, die Ausnahme fliegt aus `verhaltenStarten()`
+     heraus, und ALLE danach eingehängten Bausteine starten nicht mehr – ohne
+     eine Meldung für den Besucher. Ein Baustein reisst die halbe Seite mit.
+
+     Kein Tor sieht das: `npm run browser` prüft Syntax und eine CSS-Liste,
+     und CLAUDE.md Abschnitt 4a nennt `matchMedia.addEventListener` selbst als
+     blinden Fleck – der Motor ist genau da hineingetreten.
+
+     `addListener` ist veraltet, aber in Safari 12/13 der einzige Weg und in
+     neuen Browsern weiterhin vorhanden. */
+  if (typeof abfrage.addEventListener === 'function') {
+    abfrage.addEventListener('change', beiWechsel);
+  } else if (typeof abfrage.addListener === 'function') {
+    abfrage.addListener(beiWechsel);
+  }
 }

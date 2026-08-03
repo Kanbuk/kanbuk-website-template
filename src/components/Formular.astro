@@ -111,7 +111,22 @@ if (leer) {
     data-text-vorschau={t.formularDemo}
   >
     <input type="hidden" name="formular" value={formular.id} />
-    {bezug && <input type="hidden" name="bezug" value={bezug} />}
+    {/* DAS ZIEL FÜR `data-dialog-bezug` – IMMER GERENDERT, nicht nur wenn
+        beim Bauen schon ein Bezug feststeht.
+
+        Der Dialog-Baustein füllt zur Laufzeit `[data-dialog-bezug-ziel]`, damit
+        EIN Anfrage-Fenster für viele Katalog-Einträge reicht („Anfrage zu
+        <Eintrag>"). CLAUDE.md Abschnitt 5 führt genau das als Zweck des
+        Bausteins. Es gab dieses Ziel aber nie: Das Feld entstand nur, wenn die
+        Komponente schon beim Bauen einen `bezug` bekam – bei einem Dialog steht
+        der aber erst beim Klick fest. Die Anfrage ging dann ohne jeden Hinweis
+        raus, um welchen Eintrag es geht, und der Betrieb musste zurückfragen. */}
+    <input type="hidden" name="bezug" value={bezug ?? ''} data-dialog-bezug-ziel />
+    {bezug && (
+      /* Sichtbar für den Absender, wenn der Bezug schon feststeht – sonst
+         bestätigt er eine Anfrage, deren Gegenstand er nicht sieht. */
+      <p class="formular__bezug" data-formular-bezug>{bezug}</p>
+    )}
 
     {istAssistent && (
       <div class="formular__fortschritt">

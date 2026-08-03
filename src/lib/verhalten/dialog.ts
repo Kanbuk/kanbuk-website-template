@@ -19,6 +19,7 @@
  * Lebenswichtiges nur im Dialog anbieten.** Eine Telefonnummer oder ein
  * Kontaktweg muss auch ohne ihn erreichbar sein.
  */
+import { dialogOeffnen, dialogSchliessen } from './browserluecke.js';
 export function dialogStarten(): void {
   const dialoge = document.querySelectorAll<HTMLDialogElement>('[data-dialog]');
   if (dialoge.length === 0) return;
@@ -28,11 +29,11 @@ export function dialogStarten(): void {
     // dem Dialog selbst ist der zuverlässige Weg – ein Klick auf ein Kindelement
     // hat immer dieses als Ziel.
     d.addEventListener('click', (e) => {
-      if (e.target === d) d.close();
+      if (e.target === d) dialogSchliessen(d);
     });
     d.querySelectorAll<HTMLElement>('[data-dialog-schliessen]').forEach((k) => {
       k.setAttribute('type', 'button');
-      k.addEventListener('click', () => d.close());
+      k.addEventListener('click', () => dialogSchliessen(d));
     });
   });
 
@@ -54,7 +55,7 @@ export function dialogStarten(): void {
           else el.textContent = bezug;
         });
       }
-      ziel.showModal();
+      dialogOeffnen(ziel);
     });
   });
 }

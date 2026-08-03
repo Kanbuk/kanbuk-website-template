@@ -10,8 +10,20 @@
  * genau an der Stelle, die am Handy alles entscheidet. Ein Aufklapp-Menü, das
  * nicht aufklappt, ist keine Geschmacksfrage, sondern kaputte Mechanik.
  *
+ * DER UMSCHALTPUNKT STEHT AN ZWEI STELLEN, UND BEIDE MÜSSEN MIT:
+ *   1. die Medienabfrage unten (`@media (max-width: 899.98px)`)
+ *   2. `data-menue-ab` am Schalter – daran erkennt mobilmenue.ts, wann es das
+ *      Panel beim Drehen des Geräts schliessen darf
+ * Verschiebt ein Design den Punkt (bei fünf langen Menüpunkten liegt er
+ * schnell bei 1120 px), müssen BEIDE nachziehen. Sonst schliesst sich das Menü
+ * beim Drehen, obwohl der Hamburger noch da ist – und die Scroll-Sperre bleibt.
+ *
+ * (Hier stand `--navi-umbruch` als angebliche CSS-Variable. Die gibt es
+ * nirgends – eine Repo-Suche findet genau diese eine Erwähnung. Wer sie im
+ * Design gesetzt hätte, hätte gar nichts bewirkt.)
+ *
  * Deshalb: Der Baustein bringt das MINIMUM mit, das funktioniert – Umschalten
- * bei `--navi-umbruch` (Standard 900px), Panel mit Höhenbegrenzung und eigenem
+ * bei 900px, Panel mit Höhenbegrenzung und eigenem
  * Scrollen (sonst sind Punkte im Querformat unerreichbar), Hamburger, der zum
  * X wird. Farben, Schriften und Abstände kommen weiterhin aus den Tokens; das
  * Design überschreibt jede Klasse per `:global(.navi…)`.
@@ -30,7 +42,7 @@ const { aktuell = '/' } = Astro.props;
 const eintraege = site.seiten.filter((s) => s.inNavigation !== false);
 ---
 
-<button class="navi-schalter" data-menue-schalter aria-label="Menü öffnen">
+<button class="navi-schalter" data-menue-schalter data-menue-ab="900px" aria-label="Menü öffnen">
   <span class="navi-schalter__strich" aria-hidden="true"></span>
 </button>
 

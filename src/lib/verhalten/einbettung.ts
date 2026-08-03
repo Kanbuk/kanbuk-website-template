@@ -20,6 +20,7 @@
  *  Das AUSSEHEN kommt aus dem Design. Hier steht nur die Mechanik.
  * =============================================================================
  */
+import { inhaltErsetzen } from './browserluecke.js';
 import { erlaubt, type Kategorie } from './einwilligung';
 
 export function einbettungStarten(): void {
@@ -40,7 +41,7 @@ export function einbettungStarten(): void {
       rahmen.referrerPolicy = 'no-referrer';
       rahmen.setAttribute('allow', 'fullscreen');
       rahmen.style.cssText = `width:100%; aspect-ratio:${seitenverhaeltnis}; border:0; display:block;`;
-      box.replaceChildren(rahmen);
+      inhaltErsetzen(box, rahmen);
       box.classList.add('ist-geladen');
 
       /* Alles, was nur zum PLATZHALTER gehört, verschwindet mit ihm.
@@ -60,6 +61,21 @@ export function einbettungStarten(): void {
     if (erlaubt(kategorie) && box.hasAttribute('data-einbettung-auto')) {
       laden();
       return;
+    }
+
+    /* NACHTRÄGLICHE ZUSTIMMUNG MUSS AUCH WIRKEN.
+       Bisher wurde nur beim Seitenaufbau geprüft. Der übliche Ablauf ist aber:
+       Besucher sieht die Seite, klickt im Banner auf „Alle akzeptieren" – und
+       die Karte bleibt ein Platzhalter, bis er neu lädt. Er hat gerade
+       zugestimmt und glaubt, es sei kaputt.
+       Der Einwilligungs-Baustein sendet das Ereignis bereits; es hat nur
+       niemand zugehört. Nur bei `data-einbettung-auto`: Ohne das Attribut ist
+       der Klick auf den Platzhalter die bewusste Einzelfreigabe und soll es
+       auch bleiben. */
+    if (box.hasAttribute('data-einbettung-auto')) {
+      document.addEventListener('einwilligung:geaendert', () => {
+        if (!box.classList.contains('ist-geladen') && erlaubt(kategorie)) laden();
+      });
     }
 
     const knopf = box.querySelector<HTMLElement>('[data-einbettung-laden]') ?? box;

@@ -449,8 +449,12 @@ im März 2022. Voraussetzung ist also nur, dass das Gerät innerhalb von iOS 15
 aktuell gehalten wurde; ein 6s, das auf iOS 15.0 stehen geblieben ist, fällt in
 die karge Stufe.
 Darunter bleibt sie **lesbar und bedienbar, sieht aber karg aus** – vier
-CSS-Merkmale (`clamp`, `aspect-ratio`, `dvh`, `padding-block`) lassen sich nicht
-übersetzen. **Das ist eine Entscheidung, kein offener Punkt.** Auch das Aussehen
+CSS-Merkmale lassen sich nicht übersetzen – **welche, sagt `npm run browser` bei
+jedem Lauf**, und die Liste ändert sich mit dem Bau. Gemessen am 03.08.2026:
+`@layer`, `aspect-ratio`, `clamp()` und die logischen Kurzformen
+(`padding-block` …). `dvh` stand hier ebenfalls und ist inzwischen abgesichert
+(Ersatzwert davor, CLAUDE.md 4a Weg 2) – dafür kam `@layer` dazu. Eine Liste,
+die man abschreibt statt abzulesen, geht auseinander. **Das ist eine Entscheidung, kein offener Punkt.** Auch das Aussehen
 bis Safari 12 zu retten hieße Ersatzwerte durch das ganze Token-System zu
 ziehen – geprüft und bewusst verworfen, es wäre Aufwand für weit unter ein
 Prozent der Besucher. Zum Vergleich in die andere Richtung: Vite hätte von sich
