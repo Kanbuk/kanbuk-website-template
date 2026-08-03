@@ -132,12 +132,10 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       einziger NEUE Erkenntnis bringt – was musste der echte Port selbst bauen?
       Alles andere ist Aufräumen.
 
-      **Dazu kommt die Gegenprüfung der Reparatur-Sitzung selbst** (03.08.):
-      91 bestätigte Befunde, davon **40 neu eingebaut**, zusammengefasst zu 33
-      eigenständigen Ursachen. Die **sieben schweren davon sind erledigt**
-      (03.08. abends, jeder mit eigener Gegenprobe und eigenem Commit – Tabelle
-      in `OFFEN.md`). Offen bleiben dort die 12 mittleren und 14 leichten.
-      Gesamtstand also **~83 Ursachen, 12 schwer**.
+      **Die Gegenprüfung der Reparatur-Sitzung selbst ist abgeschlossen**
+      (03.08., Nacht): 40 Befunde behoben, 26 in zwei Angriffs-Durchgängen
+      widerlegt. Aus diesem Block ist nichts mehr offen; Einzelheiten mit
+      Commits in `OFFEN.md`. **Offen bleibt allein der Restbestand oben.**
 
 - [ ] **Die Belegbasis des Motors ist EIN Port.** *(kein Blocker)* Alle Sätze
       der Form „in einem Kundenprojekt", „im Piloten", „an einer echten
@@ -264,6 +262,54 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-08-03 (Nacht)** – **Die Gegenprüfung der Reparatur-Sitzung ist
+  vollständig abgearbeitet: 40 Befunde behoben, 26 widerlegt.**
+
+  Die Rohliste (51 mittlere Befunde) wurde aus den Prüf-Journalen
+  rekonstruiert, zu 16 Bündeln gefasst und **gegen den heutigen Code**
+  gehalten; jeder Treffer danach von einem Skeptiker angegriffen. Die dabei neu
+  gefundenen 41 Punkte gingen durch denselben Angriff plus die Frage *„richtet
+  die Reparatur woanders Schaden an?"*. Zusammen 79 Agenten.
+
+  **Das Ergebnis, das den Ausschlag gibt: Jeder dritte Befund hielt nicht.**
+  26 Stellen, an denen sonst gesunder Code angefasst worden wäre – und genau
+  daraus entstanden die 40 neuen Fehler des Vormittags. Der Angriff auf die
+  eigenen Befunde ist damit nicht Gründlichkeit, sondern die billigste Maßnahme
+  gegen die Fehlerquelle Nummer eins.
+
+  **Der lehrreichste Fund war ein Fix von derselben Sitzung** (`b8b39c8`, drei
+  Stunden alt): `right: var(--raum-s, 1rem)` sollte den Kontaktknopf auf altem
+  Gerät an seinem Platz halten. Der Ersatzwert in der Klammer greift aber nur
+  bei einer Variablen, die GAR NICHT gesetzt ist – und eine Custom Property
+  überlebt jeden Zeichenstrom. Grün ausgesehen hat es, weil `npm run altgeraet`
+  Token-Zeilen mit unbekannten Merkmalen LÖSCHTE: In der Nachbildung war die
+  Variable ungesetzt, und nur dort wirkte der Ersatzwert. **Das Werkzeug hat die
+  Absicherung bestätigt, die in Wirklichkeit nicht wirkt.** Behoben in beide
+  Richtungen (`66a5de7`): `@supports` im Bauteil, und das Werkzeug macht
+  Token-Zeilen jetzt unauflösbar statt sie zu entfernen. Gemessen, Browser ohne
+  `clamp()`: vorher 1224 px vom rechten Rand, jetzt 16.
+
+  **Was ein Kunde von den Reparaturen merkt:** Ein Lokal mit Silvester-Zeit
+  18:00–02:00 zeigt nicht mehr den ganzen Abend „Geschlossen". Auf älterem
+  Safari lässt sich das Anfrage-Fenster wieder schließen (und steht nicht mehr
+  dauerhaft mitten auf der Seite). „Alle akzeptieren" lädt die Karte wirklich.
+  Der Anfrage-Dialog nennt nicht mehr den Eintrag des vorigen Klicks. Am Abend
+  vor dem Betriebsurlaub steht nicht mehr „öffnet Mo 08:00". Fällt ein Foto
+  beim Abholen aus, verrutschen nicht mehr alle Bildbeschreibungen dahinter.
+
+  **Und was an den Toren selbst falsch war** – die Klasse, die am längsten
+  unsichtbar bleibt: Das dritte Tor schloss den Dialog per Browser-Aufruf statt
+  mit dem Knopf des Bausteins (`data-dialog-schliessen` kam in keiner einzigen
+  Prüfung vor). Die `@media`-Kurzform-Regel – der Fall, für den das fünfte Tor
+  gebaut wurde – erkannte zwei von fünf Schreibweisen. Die Bau-Marke kannte
+  weder den Symbol-Ordner noch `package-lock.json`. Der Vorcheck grenzte einen
+  Block über die EINRÜCKUNG ab. Die Hineingeh-Schleife des Design-Tores lief
+  nur einen Durchlauf, obwohl der Kommentar drei Ebenen zusagt.
+
+  Neun Commits, jeder mit einer Messung, die **ohne** den Fix fehlschlägt.
+  Vollständige Liste in `OFFEN.md`. Offen bleibt nur noch Block B der
+  Gesamtprüfung (11 → 6 → 10 → 9 → 1 → 8).
 
 - **2026-08-03 (abends)** – **Die sieben schweren Rückschläge der Tagesarbeit
   behoben, einzeln und je mit eigener Gegenprobe.** Die Gegenprüfung derselben

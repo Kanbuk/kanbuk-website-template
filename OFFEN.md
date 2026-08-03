@@ -1,4 +1,23 @@
-# Was noch offen ist — Stand 03.08.2026
+# Was noch offen ist — Stand 03.08.2026 (abends)
+
+> ## Zusammenfassung obenauf
+>
+> **Aus der Gegenprüfung der Reparatur-Sitzung ist nichts mehr offen.**
+> Zwei adversariale Durchgänge (79 Agenten), Ergebnis:
+>
+> | | |
+> | --- | --- |
+> | Befunde geprüft | 25 + 41 |
+> | **widerlegt** | 8 + 18 = **26** |
+> | schon erledigt / von Anfang an falsch | 2 |
+> | **behoben** | **40**, in 9 Commits, jeder mit eigener Gegenprobe |
+>
+> **Jeder dritte Befund hat nicht gehalten.** Das ist das eigentliche Ergebnis:
+> 26 Stellen, an denen sonst gesunder Code „repariert" worden wäre. Genau daraus
+> entstanden die 40 neuen Fehler des Vormittags.
+>
+> Offen bleibt nur noch **Block B** (Restbestand der Gesamtprüfung vom 02.08.),
+> Reihenfolge 11 → 6 → 10 → 9 → 1 → 8.
 
 > Diese Datei ersetzt `PRUEFPLAN.md` (Auftrag erledigt) und die nie dauerhaft
 > vorhandene `pruefung/BEFUNDE.md` — dieser Ordner wird von `npm run sicht` bei
@@ -63,20 +82,76 @@ damit die Zahlen oben nicht falsch gelesen werden:
   des Motors repariert (neu: `src/lib/motorfehler.ts`).
 
 **Dazu gefunden, von keinem Tor:** Auf altem Gerät sprang der Schwebeknopf an
-den linken Rand und lag auf den Formularfeldern — `right: var(--raum-s)` ohne
-Ersatzwert in der Klammer. Aufgefallen beim Ansehen der Bilder aus
-`npm run altgeraet` (`b8b39c8`).
+den linken Rand. Aufgefallen beim Ansehen der Bilder aus `npm run altgeraet`
+(`b8b39c8`).
 
-### Mittel (12) · Leicht (14) — **als Nächstes dran**
+> **Und dieser Fix war falsch — die zweite Gegenprüfung hat ihn gekippt
+> (`66a5de7`).** `right: var(--raum-s, 1rem)` ist ein Placebo: Der Ersatzwert
+> in der Klammer greift nur bei einer Variablen, die GAR NICHT gesetzt ist.
+> Eine Custom Property nimmt jeden Zeichenstrom an; `--raum-s: clamp(…)`
+> überlebt auch in einem Browser ohne `clamp()`, und die Eigenschaft fällt
+> erst beim Einsetzen auf `auto`.
+>
+> **Warum es trotzdem grün aussah, ist der wertvollere Teil:**
+> `npm run altgeraet` LÖSCHTE Token-Zeilen mit unbekannten Merkmalen — damit
+> war die Variable in der Nachbildung ungesetzt, und genau dann wirkt der
+> Ersatzwert. Das Werkzeug hat die Absicherung bestätigt, die in Wirklichkeit
+> nicht wirkt.
+>
+> Behoben in beide Richtungen: `@supports` (Weg 3) im Bauteil, und das
+> Werkzeug macht Token-Zeilen jetzt unauflösbar statt sie zu entfernen.
+> Gemessen, Browser ohne `clamp()`: vorher 1224 px vom rechten Rand, jetzt 16.
 
-Unter anderem: Die Bedien-Prüfung meldet Formular-Prüfungen als „nicht
-geprüft", die gerade durchgelaufen sind. Das Formular blendet auf jeder
-Katalog-Detailseite eine ungestaltete Textzeile ein. CLAUDE.md und der
-`/port`-Skill nummerieren die Tore **unterschiedlich**. Block 3 schreibt
-„`karteBild` wird nirgends gelesen", Block 4 macht es zum Schalter.
+### Mittel und Leicht — **erledigt am 03.08.2026 abends**
 
-*Miterledigt:* Das Zeichen des Schwebeknopfs, das wie ein Verbotsschild aussah
-(Unicode statt Lucide) — mit `c9c4bfc`, weil die Datei ohnehin offen war.
+Die Rohliste (51 Befunde) wurde aus den Prüf-Journalen rekonstruiert, zu 16
+Bündeln gefasst und **gegen den heutigen Code** gehalten. Danach griff ein
+Skeptiker jeden Treffer an, und die dabei neu gefundenen 41 Punkte gingen durch
+denselben Angriff plus die Frage *„richtet die Reparatur woanders Schaden an?"*
+
+**Was dabei WIDERLEGT wurde** — die 26 Stellen, an denen sonst gesunder Code
+angefasst worden wäre. Vier Beispiele, weil das Muster wiederkehrt:
+
+- *„Der Schwebeknopf ist in der Vorschau nicht mit der Tastatur erreichbar."*
+  → Richtig so. In der Vorschau ist er kein Link, sondern ein Hinweis.
+- *„`karteBild` wird nirgends gelesen."* → Falsch, es steuert seit heute den
+  Karten-Absatz der Datenschutzerklärung.
+- *„CLAUDE.md und der `/port`-Skill nummerieren die Tore unterschiedlich."*
+  → Kein Widerspruch; beide sagen dasselbe mit anderen Worten. (Der Skill
+  widersprach dagegen SICH SELBST — das hielt und ist behoben.)
+- *„Das Formular blendet auf jeder Katalog-Detailseite eine ungestaltete
+  Textzeile ein."* → Zitat richtig, Bewertung falsch.
+
+**Behoben, nach Wirkung sortiert.** Kundenwirksam:
+
+| | Commit |
+| --- | --- |
+| Silvester 18:00–02:00 zeigte den ganzen Abend „Geschlossen" (8 falsche Stunden → 0) | `7407737` |
+| Auf älterem Safari ließ sich das Anfrage-Fenster nicht schließen — und stand dauerhaft mitten auf der Seite | `70af1fb` |
+| „Alle akzeptieren" lud die Karte nie; der Code dafür war an zwei Stellen tot | `f16b898` |
+| Der Anfrage-Dialog nannte den Eintrag des vorigen Klicks | `6d062a5` |
+| Ausläufer über Mitternacht ignorierte die Sonderzeiten des Vortags | `6d062a5` |
+| „öffnet Mo 08:00" am Abend vor zwei Wochen Betriebsurlaub | `6d062a5` |
+| Unter Safari 15 verschwand eine Einbettung samt Lade-Knopf | `5d3dc6a` |
+| Zwei Einbettungen: die eine löschte die Pflicht-Lizenzzeile der anderen | `5d3dc6a` |
+| Fiel ein Foto beim Holen aus, verrutschten alle Bildbeschreibungen dahinter | `99a28cd` |
+
+An den Toren selbst — die Klasse, die am längsten unsichtbar bleibt:
+
+| | Commit |
+| --- | --- |
+| Das dritte Tor schloss den Dialog per Browser-Aufruf statt mit dem Knopf des Bausteins | `5d3dc6a` |
+| Die `@media`-Kurzform-Regel erkannte 2 von 5 Schreibweisen | `5d3dc6a` |
+| Die Bau-Marke kannte weder `icons/` noch `package-lock.json` | `7407737`, `5d3dc6a` |
+| Der Vorcheck grenzte einen Block über die EINRÜCKUNG ab | `66a5de7` |
+| Die Bedien-Prüfung meldete 3 von 10 „nicht geprüft"-Punkten dauerhaft falsch | `66a5de7` |
+| `npm run altgeraet` deckte den Fehler, statt ihn zu zeigen | `66a5de7` |
+| Die Hineingeh-Schleife des Design-Tores lief nur einen Durchlauf | `99a28cd` |
+
+Dazu Doku und Kleinteile: Schwebeknopf in CLAUDE.md/README, `/deploy` ohne
+`altgeraet`, doppelte Nummerierung im `/port`-Skill, Fehlerseite mit zwei von
+drei Ursachen, Server-Meldungen ohne Du-Form, `preisHinweis` als Freitextfeld,
+`data-katalog-eintrag` ohne Wert im Beispiel, tote Marker-Konstante.
 
 ### Bereits behoben
 
@@ -116,10 +191,10 @@ wurden die schweren Punkte bereits behoben. Realistisch bleiben **25 bis 30**.
 
 ## Reihenfolge
 
-1. ~~**Die 7 schweren aus A**~~ — erledigt am 03.08.2026, jeder mit eigener
-   Gegenprobe und eigenem Commit.
-2. **Die 12 mittleren aus A** — überwiegend Doku-Widersprüche. ← *hier weiter*
-3. **Block 11**, dann 6 → 10 → 9 → 1 → 8.
+1. ~~**Die 7 schweren aus A**~~ — erledigt am 03.08.2026.
+2. ~~**Die mittleren und leichten aus A**~~ — erledigt am 03.08.2026 abends,
+   nach zwei Angriffs-Durchgängen. 26 von 66 Befunden hielten nicht.
+3. **Block 11**, dann 6 → 10 → 9 → 1 → 8. ← *hier weiter*
 4. **Ein Durchgang, ein Fix, eine Gegenprobe.** Keine Sammelcommits mehr — das
    war die Ursache dieser ganzen Liste.
 
