@@ -62,14 +62,25 @@ const b = site.betrieb;
 const einstellung = site.bestaetigung ?? {};
 
 /** Die ausgefüllten Felder in der Reihenfolge der Config, Leeres fällt weg. */
+/* ZEILENUMBRÜCHE RAUS – AUCH HIER.
+   Die HTML-Fassung ist über `sicher()` geschützt, die TEXTfassung war es
+   nicht: Hier stand nur `.slice()`. Ein Wert mit Zeilenumbruch zerreisst dort
+   die Aufzählung („Name: Max\nBetreff: gehackt") – und weil beide Fassungen
+   aus derselben Liste entstehen, betrifft es genau den Fall, den
+   `bestaetigung.angabenWiederholen` einschaltet. Dieselbe Säuberung wie in
+   kontakt.ts, aus demselben Grund. */
+function einzeilig(wert: string): string {
+  return wert.replace(/[\r\n]+/g, ' ').trim().slice(0, MAX_WERT);
+}
+
 function ausgefuellt(formular: Formular, daten: Record<string, string>) {
   const zeilen: { label: string; wert: string }[] = [];
   for (const feld of formular.felder) {
     const wert = (daten[feld.name] ?? '').trim();
-    if (wert) zeilen.push({ label: feld.label, wert: wert.slice(0, MAX_WERT) });
+    if (wert) zeilen.push({ label: feld.label, wert: einzeilig(wert) });
   }
   const bezug = (daten.bezug ?? '').trim();
-  if (bezug) zeilen.push({ label: 'Ihre Auswahl', wert: bezug.slice(0, MAX_WERT) });
+  if (bezug) zeilen.push({ label: 'Ihre Auswahl', wert: einzeilig(bezug) });
   return zeilen;
 }
 

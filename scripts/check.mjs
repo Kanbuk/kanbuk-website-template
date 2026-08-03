@@ -974,20 +974,37 @@ if (istTemplate) {
 // ---------------------------------------------------------------------------
 //  8a. FORMULAR-ENDPUNKT – die Türsteher-Schicht muss dranbleiben
 //
-//  api/contact.ts weist fremde Ursprünge ab, erzwingt JSON, begrenzt die Größe
-//  und bremst Fluten. Wird eine dieser Schranken beim Umbauen entfernt, kann
-//  jede fremde Website das Postfach des Betriebs fluten und das Mail-Kontingent
-//  leerlaufen lassen – ohne dass es jemandem auffällt. Deshalb hier verankert.
+//  api/contact.ts weist fremde Ursprünge ab, prüft das Format, begrenzt die
+//  Größe und bremst Fluten. Wird eine dieser Schranken beim Umbauen entfernt,
+//  kann jede fremde Website das Postfach des Betriebs fluten und das
+//  Mail-Kontingent leerlaufen lassen.
+//
+//  WAS DAS HIER IST UND WAS NICHT – ehrlich benannt, weil das Etikett vorher
+//  mehr versprach: Es sind VIER STICHWORT-SUCHEN über den Dateitext, keine
+//  Prüfung des Verhaltens. Sie treffen auch dann, wenn nur noch der
+//  erklärende Kommentar dasteht und die Funktion darunter entfernt wurde.
+//  Sie sind eine ERINNERUNG beim Umbauen („diese vier Schranken gab es mal"),
+//  kein Beweis, dass sie wirken.
+//
+//  api/contact.ts ist der einzige Server-Code im ganzen Motor. Ihn wirklich zu
+//  prüfen hiesse, ihn zu starten und Anfragen dagegen zu fahren – dafür fehlt
+//  dem Motor eine Test-Einrichtung, und die wäre eine eigene Entscheidung.
+//  Bis dahin gilt: Diese vier Zeilen ersetzen kein Lesen der Datei.
 // ---------------------------------------------------------------------------
 {
   const endpunkt = join(WURZEL, 'api', 'contact.ts');
   if (existsSync(endpunkt)) {
     const quelle = readFileSync(endpunkt, 'utf-8');
     const schranken = [
-      [/content-type/i, 'Format-Prüfung (nur application/json)'],
+      // Der Endpunkt nimmt ZWEI Formate: JSON (mit Skript) und
+      // x-www-form-urlencoded (ohne Skript). Das Etikett sagte „nur JSON" –
+      // wer das glaubte und aufräumte, hätte den Weg ohne Skript gekappt.
+      [/content-type/i, 'Format-Prüfung (JSON und Formular-Sendung, sonst nichts)'],
       [/origin/i, 'Ursprungs-Prüfung (keine fremden Websites)'],
       [/413|zu lang/i, 'Größenbegrenzung'],
       [/429|zuVieleAnfragen/i, 'Bremse gegen Anfrage-Fluten'],
+      // Ohne Skript muss eine Abweisung eine SEITE liefern, keine Datenzeile.
+      [/abweisung\s*\(/, 'Abweisung als Seite für den Weg ohne JavaScript'],
     ];
     for (const [muster, was] of schranken) {
       if (!muster.test(quelle)) {

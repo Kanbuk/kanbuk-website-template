@@ -92,6 +92,32 @@ function antwort(status: number, json: Record<string, unknown>): Response {
   });
 }
 
+/**
+ * Abweisung – für den Weg OHNE JavaScript eine SEITE, sonst eine Datenzeile.
+ *
+ * WARUM ES DAS BRAUCHT: Der Motor hat am 27.07.2026 genau diesen Fehler für
+ * den Erfolgs- und den Pflichtfeldfall behoben („der Browser hat gerade die
+ * Seite verlassen – er erwartet eine SEITE zurück"). Die vier Abweisungen
+ * DAVOR blieben stehen: Wer ohne Skript sendet und in eine davon läuft,
+ * bekommt `{"fehler":"Zu viele Anfragen…"}` auf weissem Grund, ohne Kopf,
+ * ohne Fuss, ohne Weg zurück – und seine Eingaben sind weg.
+ *
+ * Praktisch erreichbar sind drei der vier: 403 (Ursprung passt nicht, etwa
+ * weil die Vorschau-Domain nicht in der Config steht), 413 (zu lange
+ * Nachricht) und 429 – der wahrscheinlichste Fall überhaupt, weil ein
+ * Besucher ohne Skript nach einem Fehlschlag genau das tut: noch einmal
+ * senden.
+ *
+ * 303, damit ein Neuladen die Sendung nicht wiederholt.
+ */
+function abweisung(request: Request, status: number, text: string): Response {
+  const typ = (request.headers.get('content-type') ?? '').toLowerCase();
+  if (typ.includes('application/x-www-form-urlencoded')) {
+    return new Response(null, { status: 303, headers: { Location: '/anfrage-fehler' } });
+  }
+  return antwort(status, { fehler: text });
+}
+
 export async function POST(request: Request): Promise<Response> {
   /* 1) Zwei erlaubte Formate – und nur diese zwei:
        - application/json          … der normale Weg (JavaScript im Browser)
@@ -112,17 +138,28 @@ export async function POST(request: Request): Promise<Response> {
 
   // 2) Fremder Ursprung -> abweisen.
   if (!ursprungPasst(request)) {
-    return antwort(403, { fehler: 'Anfrage von einer fremden Adresse.' });
+    return abweisung(request, 403, 'Anfrage von einer fremden Adresse.');
   }
 
-  // 3) Größe begrenzen (auch ohne content-length, deshalb doppelt geprüft).
+  /* 3) Größe begrenzen – und zwar in BYTES, nicht in Zeichen.
+        `roh.length` zählt UTF-16-Einheiten. Ein Text aus Umlauten und
+        Emoji braucht pro Zeichen zwei bis vier Bytes; die Grenze lag damit
+        in Wahrheit bei bis zu 80 KB statt 20. Umgekehrt gibt es keinen Fall,
+        in dem sie zu früh greift – deshalb war der Fehler unsichtbar.
+
+        EHRLICH DAZU: Die zweite Prüfung verhindert nicht das EINLESEN. Ohne
+        `content-length` (chunked) puffert `request.text()` den Körper
+        vollständig, bevor hier gemessen wird. Sie verhindert die
+        Weiterverarbeitung, nicht den Speicherverbrauch. Wer das auch
+        abfangen will, braucht eine Schranke vor der Funktion (Firewall des
+        Hosters) – im Code geht es an dieser Stelle nicht. */
   const laenge = Number(request.headers.get('content-length') ?? '0');
   if (laenge > MAX_BYTES) {
-    return antwort(413, { fehler: 'Die Nachricht ist zu lang.' });
+    return abweisung(request, 413, 'Die Nachricht ist zu lang.');
   }
   const roh = await request.text();
-  if (roh.length > MAX_BYTES) {
-    return antwort(413, { fehler: 'Die Nachricht ist zu lang.' });
+  if (new TextEncoder().encode(roh).length > MAX_BYTES) {
+    return abweisung(request, 413, 'Die Nachricht ist zu lang.');
   }
 
   // 4) Zu viele Anfragen aus derselben Quelle.
@@ -131,7 +168,7 @@ export async function POST(request: Request): Promise<Response> {
     request.headers.get('x-real-ip') ||
     'unbekannt';
   if (zuVieleAnfragen(ip)) {
-    return antwort(429, { fehler: 'Zu viele Anfragen. Bitte in ein paar Minuten erneut versuchen.' });
+    return abweisung(request, 429, 'Zu viele Anfragen. Bitte in ein paar Minuten erneut versuchen.');
   }
 
   let daten: Eingabe = {};

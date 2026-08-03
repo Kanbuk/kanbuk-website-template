@@ -106,13 +106,35 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     return {
       status: 500,
       json: {
-        fehler: `Der E-Mail-Versand ist nicht konfiguriert – es fehlt ${fehlendeZugaenge.join(' und ')}.`,
+        /* DEM BESUCHER SAGT MAN NICHT, WELCHE INTERNE ANGABE FEHLT.
+           Hier standen `RESEND_API_KEY` und `CONTACT_FROM` in der Antwort, die
+           im Browser landet. Das nützt ihm nichts, verrät die eingesetzten
+           Werkzeuge und wirkt wie eine kaputte Seite. Der Betreuer braucht die
+           Namen – der bekommt sie im Server-Protokoll oben, und zwar
+           ausführlicher als vorher.
+           Für den Besucher zählt nur: Es liegt nicht an ihm, und wie er den
+           Betrieb sonst erreicht. */
+        fehler:
+          'Das Formular ist gerade nicht erreichbar. Bitte melden Sie sich direkt – ' +
+          `Telefon ${site.betrieb.telefon}, E-Mail ${site.betrieb.email}.`,
       },
     };
   }
 
   // 6) Nachricht aus den konfigurierten Feldern bauen – in der Reihenfolge der Config.
   const zeilen = [`${formular.betreff} – ${site.betrieb.name}`, ''];
+
+  /* WORAUF SICH DIE ANFRAGE BEZIEHT – GANZ OBEN, VOR ALLEM ANDEREN.
+     Das verdeckte Feld `bezug` wurde übertragen und landete NIRGENDS: Diese
+     Schleife läuft über `formular.felder`, und dort steht `bezug` nicht drin.
+     Der Händler bekam also „Anfrage über die Website" mit Name und Telefon –
+     aber ohne das Fahrzeug, auf dessen Detailseite der Interessent stand.
+     Genau das verspricht die Katalog-Detailseite ausdrücklich („In der E-Mail
+     steht sofort, um welchen es ging"), und genau das kam nie an. Bei einem
+     Bestand von zweihundert Einträgen muss der Betrieb dann zurückfragen. */
+  const bezug = (daten.bezug ?? '').trim();
+  if (bezug) zeilen.push(`Bezieht sich auf: ${saeubern(bezug)}`, '');
+
   for (const f of formular.felder) {
     const wert = (daten[f.name] ?? '').trim();
     zeilen.push(`${f.label}: ${wert ? saeubern(wert) : '–'}`);
@@ -174,7 +196,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
        eine Empfangsbestätigung statt einer Kopie. */
     if (antwortAdresse) {
       try {
-        await fetch('https://api.resend.com/emails', {
+        const bestaetigung = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${env.RESEND_API_KEY}`,
@@ -195,6 +217,22 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
             html: bestaetigungHtml(formular, daten),
           }),
         });
+        /* AUCH HIER MUSS DER GRUND INS PROTOKOLL.
+           Das `catch` unten fängt nur NETZfehler. Lehnt der Dienst ab –
+           abgelaufener Schlüssel, gesperrte Absenderdomain, Kontingent
+           erschöpft –, kommt eine ordentliche Antwort mit Fehlercode zurück,
+           und die wurde hier stillschweigend weggeworfen. Der Betrieb bekommt
+           seine Benachrichtigung, der Absender nie eine Bestätigung, und
+           niemand erfährt davon. Zwanzig Zeilen weiter oben macht es die
+           Hauptmeldung längst richtig – genau deshalb steht es jetzt auch
+           hier. */
+        if (!bestaetigung.ok) {
+          console.error(
+            '[kontakt] Resend hat die Bestätigung an den Absender abgelehnt:',
+            bestaetigung.status,
+            await bestaetigung.text().catch(() => ''),
+          );
+        }
       } catch (e) {
         console.error('[kontakt] Bestätigung an den Absender fehlgeschlagen:', e);
       }
