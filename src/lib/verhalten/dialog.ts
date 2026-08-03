@@ -39,7 +39,21 @@ export function dialogStarten(): void {
 
   document.querySelectorAll<HTMLElement>('[data-dialog-oeffnen]').forEach((ausloeser) => {
     const ziel = document.getElementById(ausloeser.dataset.dialogOeffnen ?? '');
-    if (!(ziel instanceof HTMLDialogElement)) return;
+    /* KEIN `instanceof HTMLDialogElement` – DIESE KLASSE GIBT ES ERST AB
+       SAFARI 15.4, und ein `instanceof` auf einen Namen, den der Browser nicht
+       kennt, wirft einen ReferenceError. Im Browser nachgemessen: Ist die
+       Klasse weg, wirft die alte Zeile; die Prüfung über `tagName` läuft durch.
+
+       Das ist keine Randlage, sondern der teuerste Fall: Diese Zeile läuft
+       beim START, nicht beim Klick. Die Ausnahme fliegt aus `dialogStarten()`
+       heraus, und ALLE danach eingehängten Bausteine starten nicht mehr –
+       Merkliste, Öffnungsstatus, Formular. Der Besucher tippt auf „Merken",
+       nichts passiert, keine Meldung.
+
+       Bitter daran: Genau dagegen wurde `browserluecke.ts` gebaut. Deren
+       Helfer werden nur INNERHALB der Klick-Behandlung aufgerufen – der
+       Absturz passiert zwei Zeilen vorher, und sie kamen nie zum Zug. */
+    if (!ziel || ziel.tagName !== 'DIALOG') return;
     ausloeser.setAttribute('aria-haspopup', 'dialog');
     if (ausloeser.tagName === 'BUTTON') ausloeser.setAttribute('type', 'button');
     ausloeser.addEventListener('click', (e) => {

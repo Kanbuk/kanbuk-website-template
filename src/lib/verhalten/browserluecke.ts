@@ -33,10 +33,19 @@
  * ärmer (kein Abdunkeln, kein Fokus-Fang) – aber der Besucher kommt an den
  * Inhalt, und alle folgenden Bausteine laufen weiter.
  */
-export function dialogOeffnen(dialog: HTMLDialogElement): void {
-  if (typeof dialog.showModal === 'function') {
+/* DER PARAMETER IST `HTMLElement`, NICHT `HTMLDialogElement` – MIT ABSICHT.
+   Wer hier `HTMLDialogElement` verlangt, zwingt jeden Aufrufer zu einer
+   Typprüfung, und die naheliegende ist `instanceof HTMLDialogElement`. Genau
+   die wirft unterhalb von Safari 15.4 einen ReferenceError, weil es die Klasse
+   dort nicht gibt – und zwar beim START, wodurch alle folgenden Bausteine
+   ausfallen. Am 03.08.2026 im Browser nachgemessen und genau so passiert.
+   Die Funktion prüft ohnehin selbst, was der Browser kann; ein strengerer Typ
+   am Rand hätte nur die Falle davor erzeugt. */
+export function dialogOeffnen(dialog: HTMLElement): void {
+  const d = dialog as HTMLDialogElement;
+  if (typeof d.showModal === 'function') {
     try {
-      dialog.showModal();
+      d.showModal();
       return;
     } catch {
       /* `showModal()` wirft auch, wenn der Dialog schon offen ist. Kein Grund,
@@ -47,10 +56,11 @@ export function dialogOeffnen(dialog: HTMLDialogElement): void {
 }
 
 /** Gegenstück – schliesst auch den Rückfall-Zustand. */
-export function dialogSchliessen(dialog: HTMLDialogElement): void {
-  if (typeof dialog.close === 'function') {
+export function dialogSchliessen(dialog: HTMLElement): void {
+  const d = dialog as HTMLDialogElement;
+  if (typeof d.close === 'function') {
     try {
-      dialog.close();
+      d.close();
       return;
     } catch {
       /* nichts – gleich unten von Hand */
