@@ -147,7 +147,15 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
 
   .schwebeknopf {
     position: fixed;
-    right: var(--raum-s);
+    /* ERSATZWERT IN DER KLAMMER, nicht in einer Zeile davor. Ein alter Browser
+       kennt `clamp()` nicht und wirft damit die ganze Token-Zeile
+       `--raum-s: clamp(…)` weg. Stünde hier nur `var(--raum-s)`, wäre die
+       Angabe ungültig und `right` fiele auf `auto` zurück – der Knopf springt
+       dann an den LINKEN Rand und liegt auf dem Formular. Am 03.08.2026 in den
+       Bildern von `npm run altgeraet` genau so gesehen; kein Tor meldet das,
+       weil syntaktisch nichts falsch ist. Ein zweites `right:` davor hülfe
+       nicht – die Zeile mit `var()` löscht es mit (CLAUDE.md 4a). */
+    right: var(--raum-s, 1rem);
     /* `env()` kennt jeder Browser ab Safari 11.1 – unterhalb unserer Grenze.
        Der Ersatzwert davor enthält KEIN var() und wird deshalb wirklich
        behalten, wenn `env()` fehlt (CLAUDE.md Abschnitt 4a, Weg 2). */
