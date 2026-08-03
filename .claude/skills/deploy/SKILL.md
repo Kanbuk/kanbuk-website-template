@@ -348,8 +348,12 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    selbst pflegt, und die Zusage „die Website läuft auch ohne den Dienst
    weiter" stimmt nicht mehr. `npm run check -- --live` blockt deshalb, wenn
    die Ablaufdatei fehlt.
-   - Im Repo unter *Settings → Actions → General* das Schreibrecht für Abläufe
-     einschalten (die Option mit Lese- **und** Schreibrecht).
+   - In den Einstellungen des Repos beim Hoster die Berechtigung für
+     automatische Abläufe auf **Lesen UND Schreiben** stellen. (Kein Klickpfad
+     – der Menüaufbau ändert sich, und eine falsche Klickanleitung ist teurer
+     als gar keine, siehe Regel oben. In der Suche der Repo-Einstellungen nach
+     „workflow" suchen.) Ohne Schreibrecht kann die Sicherung Inhalte holen,
+     aber nicht einchecken – und genau das ist ihr Zweck.
    - Nur bei privatem Datensatz: Geheimnis `REDAKTION_TOKEN` hinterlegen.
    - Einen Lauf von Hand auslösen und nachsehen, dass er grün ist. **Erst dann
      ist die Zusage belegt** – ein Ablauf, den nie jemand hat laufen sehen, ist

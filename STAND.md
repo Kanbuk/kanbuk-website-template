@@ -731,7 +731,8 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   Messung findet: „Telefon(optional)" ohne Leerzeichen und einen Hinweis, der
   weiter „deaktiviert" behauptete, obwohl das Formular jetzt da ist.
 
-  **Nächster Schritt: der Zeittest an einem Nagelstudio (Relaunch).**
+  **Nächster Schritt war ein Relaunch-Zeittest** – nie durchgeführt; der einzige
+  echte Port blieb der Katalog-Pilot. Damit ist die Zeitangabe oben ungeprüft.
 
 - **2026-07-27** – **Der Motor kann jetzt Kataloge.** Bisher konnte er Seiten mit
   Inhalt, aber keine Betriebe abbilden, die *viele gleichartige Dinge* zeigen –
@@ -818,8 +819,12 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   plus Prüf-Tor-Regel dagegen. **Wichtigster Fund: Der Ein-Rutsch-Grundsatz war
   seit dem Piloten nie eingelöst** – eine Erlaubnis-LISTE wird nie vollständig,
   jede neue Befehlsform fragte nach und unterbrach den Nutzer. Behoben mit
-  permissions.defaultMode = 'auto' (Version 2026.7.21). Läuft: Komplett-Audit
-  einer Gastro-Referenz (41 Befunde, Gegenprüfung offen).
+  permissions.defaultMode = 'auto' (Version 2026.7.21).
+  (Das damals laufende Komplett-Audit einer Gastro-Referenz – 41 Befunde,
+  Gegenprüfung offen – wurde nie abgeschlossen. Der Verlauf hatte es als
+  „läuft" stehen lassen, und ein frischer Chat konnte nicht erkennen, ob die
+  Befunde noch offen sind. Sie sind es nicht: Die Gesamtprüfung vom 02.08.2026
+  hat den Motor vollständig neu vermessen.)
 - **2026-07-17** – Großer Ausbau-Tag: (1) Rückfluss aus dem Gastro-Piloten eingearbeitet
   (10 Motor-Fixes, 9 Beschleuniger, Version 2026.7.17). (2) Demo-Bote v2:
   Projekt-Archiv (Zip) als Standardweg, echte Mehrseiten-Demos, Bildfelder des

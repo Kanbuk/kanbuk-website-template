@@ -95,3 +95,19 @@ dann richten wir eine Weiterleitung ein.
 Jede Nacht werden Ihre Texte **und Ihre Fotos** automatisch ins Projekt
 gesichert. Auch wenn das Eingabe-Studio eines Tages nicht mehr da ist, bleibt
 Ihre Website vollständig bestehen.
+
+<!-- FÜR DEN BETREUER, NICHT FÜR DEN BETRIEB – diese Zeilen vor dem Übergeben
+     entfernen:
+
+     Dieser Absatz stimmt NUR, wenn die nächtliche Sicherung wirklich
+     eingerichtet ist UND einmal grün gelaufen ist (siehe redaktion/README.md
+     und /deploy-Skill). Ist sie es nicht, ist der Satz eine Zusage, die
+     niemand einlöst – dann diesen Abschnitt ersatzlos streichen, statt ihn
+     abzuschwächen. Ein Betrieb, der glaubt, seine Fotos seien gesichert,
+     macht keine eigene Kopie.
+
+     Der Grund für die Schärfe: Fällt der Dienst ein halbes Jahr später aus,
+     baut die Seite mit uraltem Bestand weiter. Verkauftes stünde wieder als
+     verfügbar da, alte Preise wären wieder gültig – und es sieht aus wie
+     Absicht. -->
+

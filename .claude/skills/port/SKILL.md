@@ -68,6 +68,31 @@ Improvisier-Beispiele – so wird entschieden, nicht gefragt:
 
 1. `npm install`, falls `node_modules` fehlt.
 
+2. **Das Gedächtnis des MOTORS aus dem Klon räumen.** Ein frischer Klon trägt
+   die komplette Entwicklungsgeschichte des Templates mit sich – und die wird
+   ab jetzt als *Gedächtnis dieses Kunden* gelesen. Wochen später öffnet ein
+   fremder Chat bei der Buchung `STAND.md` und findet dort zu neunzig Prozent
+   Sitzungsberichte über das Template statt über den Betrieb.
+
+   - **`PRUEFPLAN.md` löschen**, falls vorhanden. Das ist die
+     Sitzungsplanung der Template-Selbstprüfung – samt Kandidatenliste fürs
+     Aufräumen und Entscheidungen, „die nur der Inhaber treffen kann". Im
+     Ordner eines Kunden hat sie nichts verloren.
+   - **`STAND.md` auf den Kunden zurücksetzen:** Der ganze Abschnitt
+     `## Verlauf` kommt weg (das ist die Motorgeschichte, nicht die des
+     Betriebs), ebenso alle Punkte im Lücken-Inventar unter der Überschrift
+     „Am Motor selbst offen". Die Struktur bleibt: Projekt-Tabelle,
+     Lücken-Inventar, Getroffene Entscheidungen, Motor-Meldungen, Verlauf –
+     alle leer, und du füllst sie in Etappe 6 mit DIESEM Projekt.
+   - **Was NICHT weggeräumt wird:** `CLAUDE.md` (das ist die Arbeitsanweisung,
+     kein Gedächtnis) und die Überschrift
+     `## Motor-Meldungen (fürs Master-Template)` – die brauchst du gleich.
+
+   > Steht in der Motorgeschichte etwas, das für DIESEN Kunden wirklich gilt
+   > (ein offener Punkt, der jede Kundenseite betrifft – etwa der
+   > Auftragsverarbeitungsvertrag), dann übernimm ihn als eigenen Punkt ins
+   > Lücken-Inventar. Wegräumen heißt nicht vergessen.
+
 (Die Umbenennung von `package.json → name` passiert bewusst erst am ENDE von
 Etappe 3 – sie schaltet das Prüf-Tor scharf, und das ist erst sinnvoll, wenn
 die Referenzdaten aus der Config raus sind. Vorher wäre Rot kein Signal.)

@@ -12,6 +12,24 @@ Phase, Lücken-Inventar und bisherige Entscheidungen. Nach jeder Arbeitssitzung
 **aktualisierst du sie** (Pflicht): Verlaufszeile ergänzen, erledigte Punkte abhaken,
 neue Lücken eintragen. Ein Chat-Bericht ist nach dem Chat weg – diese Datei nicht.
 
+> ### Woher die Belege in dieser Datei stammen – einmal ehrlich
+>
+> Dieser Text sagt oft „in einem Kundenprojekt", „im Piloten", „an einer echten
+> Kundenseite belegt". **Das ist bis heute (Stand 03.08.2026) durchgehend
+> DERSELBE eine Port** – ein Autohaus mit Katalog. Dazu kommen ein paar
+> Verkaufs-Demos, die nie live gegangen sind.
+>
+> Warum das hier steht: Die Formulierungen lesen sich wie Erfahrung aus vielen
+> Projekten. Sie sind Erfahrung aus einem. Jede Lehre darin ist echt und teuer
+> bezahlt – aber ob sie beim Wirt, beim Tischler oder in einer Praxis genauso
+> greift, ist **nicht** erwiesen. Wo eine Regel offensichtlich nur zu einem
+> Händler mit Katalog passt, ist sie im Zweifel zu eng formuliert; sag das
+> im Bericht, statt sie stillschweigend zu dehnen.
+>
+> Umgekehrt gilt: Was bei diesem einen Port SCHIEFGEGANGEN ist, ist kein
+> Einzelfall-Risiko, sondern eine bewiesene Falle des Motors. Diese Sätze
+> gehören nicht abgeschwächt.
+
 Mit dem Template arbeiten wechselnde Personen (Inhaber, Partner, Mitarbeiter).
 **Gehe standardmäßig davon aus, dass die Person nicht programmiert** und die Website
 ausschließlich über Claude Code verwaltet. Zeigt sich im Gespräch technisches
