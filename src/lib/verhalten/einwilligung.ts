@@ -171,13 +171,31 @@ export function einwilligungStarten(): void {
 
   banner.hidden = false;
 
-  /** Welche Kategorien nutzt diese Seite überhaupt? */
+  /* WELCHE KATEGORIEN NUTZT DIESE SEITE ÜBERHAUPT?
+     Hier standen nur die geparkten Skripte (`[data-einwilligung]`). Eine
+     2-Klick-Einbettung trägt ihre Kategorie aber in
+     `data-einbettung-kategorie` – die kam in dieser Liste nicht vor.
+
+     Folge: „Alle akzeptieren" gab die Kategorie einer Einbettung NIE frei.
+     Ein Wirt mit Google-Karte auf der Kontaktseite und einem eingetragenen
+     Dienst hatte damit einen Baustein, der auf eine Freigabe wartet, die
+     dieser Banner nie erteilen kann. Der Besucher klickt „Alle akzeptieren"
+     und die Karte bleibt ein Platzhalter – er hat gerade zugestimmt und
+     glaubt, es sei kaputt.
+
+     Praktisch wirksam wird das erst zusammen mit `<Einbettung auto>`; ohne
+     `auto` bleibt der Klick auf den Platzhalter die Einwilligung für den
+     Einzelfall, wie CLAUDE.md 7a es vorsieht. Beide Hälften mussten repariert
+     werden – jede allein wäre wirkungslos geblieben. */
   const vorhanden = [
-    ...new Set(
-      Array.from(document.querySelectorAll<HTMLElement>('[data-einwilligung]')).map(
+    ...new Set([
+      ...Array.from(document.querySelectorAll<HTMLElement>('[data-einwilligung]')).map(
         (el) => el.dataset.einwilligung as Kategorie,
       ),
-    ),
+      ...Array.from(document.querySelectorAll<HTMLElement>('[data-einbettung-kategorie]')).map(
+        (el) => el.dataset.einbettungKategorie as Kategorie,
+      ),
+    ]),
   ];
 
   banner.querySelector('[data-einwilligung-alle]')?.addEventListener('click', () => {

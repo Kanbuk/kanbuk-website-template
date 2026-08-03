@@ -45,10 +45,30 @@ interface Props {
   format?: string;
   /** Einwilligungs-Kategorie. Standard: funktional. */
   kategorie?: 'funktional' | 'statistik' | 'marketing';
+  /**
+   * Lädt von selbst, sobald die Kategorie freigegeben ist – auch nachträglich,
+   * wenn der Besucher im Banner auf „Alle akzeptieren" klickt.
+   *
+   * STANDARD AUS, und das ist Absicht: Der Klick auf den Platzhalter IST die
+   * Einwilligung für diesen einen Fall (CLAUDE.md 7a). Wer `auto` setzt,
+   * entscheidet bewusst, dass die allgemeine Zustimmung genügt.
+   *
+   * Ohne diese Eigenschaft gab es das Attribut `data-einbettung-auto`
+   * nirgends – der Baustein hat zwei Zweige dafür, und beide waren toter Code.
+   */
+  auto?: boolean;
   class?: string;
 }
 
-const { url, titel, anbieter, format = '16 / 9', kategorie = 'funktional', class: klasse } = Astro.props;
+const {
+  url,
+  titel,
+  anbieter,
+  format = '16 / 9',
+  kategorie = 'funktional',
+  auto = false,
+  class: klasse,
+} = Astro.props;
 
 const t =
   site.ansprache === 'du'
@@ -71,6 +91,7 @@ const t =
   data-einbettung-anbieter={anbieter}
   data-einbettung-kategorie={kategorie}
   data-einbettung-format={format}
+  data-einbettung-auto={auto ? '' : undefined}
   style={`aspect-ratio: ${format};`}
 >
   <div class="einbettung__platzhalter">
