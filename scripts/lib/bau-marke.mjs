@@ -85,13 +85,41 @@ export function verlangeAktuellesDist(wurzel, werkzeug) {
     return;
   }
 
+  /* EINE UNLESBARE MARKE IST DER SCHLIMMSTE DER DREI FÄLLE, NICHT DER
+     HARMLOSESTE.
+
+     Hier stand `catch { alt = null }`, und die Bedingung darunter beginnt mit
+     `if (alt && …)`. Ein Lesefehler führte damit dazu, dass die Funktion
+     WORTLOS zurückkehrt – und alle fünf abhängigen Tore messen weiter, was
+     gerade in dist/ liegt, und melden grün. Dasselbe Schlucken, das am
+     03.08.2026 in check-lauf.mjs behoben wurde; im gemeinsamen Leser blieb es
+     stehen. Der Fix war halb.
+
+     Warum Abbruch und nicht nur ein Hinweis: Eine kaputte Marke entsteht, wenn
+     ein Lauf MITTENDRIN abgebrochen ist – Absturz, Strg+C, leerer Akku. Dann
+     ist nicht nur die Marke halb geschrieben, sondern womöglich auch dist/
+     selbst. Genau so ist es am 03.08. passiert: Die Datei war voller Nullbytes.
+     Was dann in dist/ liegt, ist kein Messgegenstand. */
   let alt;
   try {
     alt = JSON.parse(readFileSync(pfad, 'utf-8')).marke;
   } catch {
-    alt = null;
+    console.error(
+      `\n✗ Die Bau-Marke ist unlesbar – ein Lauf wurde offenbar abgebrochen.\n` +
+        `  Dann ist womöglich auch dist/ nur halb geschrieben, und ${werkzeug}\n` +
+        `  würde etwas messen, das es so nie gab.\n\n` +
+        `  Zuerst: npm run check   (baut neu und setzt die Marke)\n`,
+    );
+    process.exit(1);
   }
-  if (alt && alt !== quellMarke(wurzel)) {
+  if (typeof alt !== 'string' || !alt) {
+    console.error(
+      `\n✗ Die Bau-Marke enthält keinen Stand – ein Lauf wurde offenbar abgebrochen.\n` +
+        `  Zuerst: npm run check\n`,
+    );
+    process.exit(1);
+  }
+  if (alt !== quellMarke(wurzel)) {
     console.error(
       `\n✗ dist/ ist VERALTET – seit dem letzten Bauen wurde am Quelltext geändert.\n` +
         `  ${werkzeug} würde den alten Build messen und grün melden, obwohl die\n` +
