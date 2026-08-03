@@ -74,10 +74,10 @@ Improvisier-Beispiele – so wird entschieden, nicht gefragt:
    fremder Chat bei der Buchung `STAND.md` und findet dort zu neunzig Prozent
    Sitzungsberichte über das Template statt über den Betrieb.
 
-   - **`PRUEFPLAN.md` löschen**, falls vorhanden. Das ist die
-     Sitzungsplanung der Template-Selbstprüfung – samt Kandidatenliste fürs
-     Aufräumen und Entscheidungen, „die nur der Inhaber treffen kann". Im
-     Ordner eines Kunden hat sie nichts verloren.
+   - **`OFFEN.md` löschen** (früher `PRUEFPLAN.md`), falls vorhanden. Das ist
+     die Werkstattliste des MOTORS – offene Befunde, Kandidaten fürs Aufräumen,
+     Entscheidungen, „die nur der Inhaber treffen kann". Im Ordner eines Kunden
+     hat sie nichts verloren und wird dort als sein Rückstand gelesen.
    - **`STAND.md` auf den Kunden zurücksetzen:** Der ganze Abschnitt
      `## Verlauf` kommt weg (das ist die Motorgeschichte, nicht die des
      Betriebs), ebenso alle Punkte im Lücken-Inventar unter der Überschrift

@@ -114,7 +114,7 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       Demo-Weg)* Die Gesamtprüfung vom 02.08.2026 (144 Agenten, 13 Blöcke, jeder
       Fund gegengeprüft) fand 154 Befunde. **106 davon sind am 03.08.2026
       behoben** – zehn Blöcke, jeder einzeln mit allen sechs Toren abgeschlossen.
-      Was bleibt, steht vollständig in `pruefung/BEFUNDE.md`:
+      Was bleibt, steht vollständig in `OFFEN.md`:
 
       | Block | offen | davon schwer |
       | --- | --- | --- |
@@ -261,7 +261,7 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 - **2026-08-03** – **Die Gesamtprüfung, und zehn von sechzehn Blöcken behoben.**
   Vorlauf war die Prüfung selbst (02.08., 144 Agenten über 13 Blöcke, jeder
   schwere und mittlere Fund von einem zweiten Durchgang angegriffen): **154
-  Befunde, 28 schwer.** Die vollständige Liste liegt in `pruefung/BEFUNDE.md`.
+  Befunde, 28 schwer.** Die vollständige Liste liegt in `OFFEN.md`.
   Heute abgearbeitet: **106 Befunde in zehn Blöcken**, jeder Block einzeln mit
   allen sechs Toren abgeschlossen und committet.
 
