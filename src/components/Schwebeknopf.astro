@@ -32,7 +32,18 @@
  *     Demo-Modus (CLAUDE.md Abschnitt 7): Ein Lead, dem die Vorschau gezeigt
  *     wird, soll dem Betrieb nicht versehentlich schreiben. Der Knopf ist
  *     sichtbar und sagt es – so sieht der Kunde bei der Abnahme, was er
- *     bekommt, und die Bedien-Prüfung fährt ihn an.
+ *     bekommt.
+ *
+ *     KEINE EIGENE BEDIEN-PRÜFUNG. Hier stand „und die Bedien-Prüfung fährt
+ *     ihn an" – das war aus dem Satz zum Formular abgeschrieben, wo es
+ *     stimmt. `scripts/interaktion.mjs` kennt den Knopf nicht; er hat kein
+ *     JavaScript und keine Datei unter `src/lib/verhalten/`, also gibt es dort
+ *     nichts anzufahren. Was ihn tatsächlich zu Gesicht bekommt: die
+ *     Sichtprüfung (Screenshots, Tippflächen), die Altgerät-Ansicht und die
+ *     Browser-Prüfung (sein CSS). Genau dort sind am 03.08.2026 auch zwei
+ *     echte Fehler aufgefallen – die 44 % Überdeckung und der Sprung an den
+ *     linken Rand. Ein zugesagtes Sicherheitsnetz, das es nicht gibt, ist
+ *     schlimmer als keines.
  *  2. ER LIEGT ÜBER DEM INHALT, ABER NICHT AUF DER FUSSZEILE. `bottom` rechnet
  *     mit `env(safe-area-inset-bottom)` – auf iPhones mit Hausbalken säße er
  *     sonst darunter.
@@ -135,8 +146,21 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
      Grenze; die einfache Zeile davor enthält kein `var()` und wird deshalb
      wirklich behalten (CLAUDE.md Abschnitt 4a, Weg 2). */
   .schwebeknopf-platz {
-    height: 88px;
-    height: calc(56px + 1rem + 1rem + env(safe-area-inset-bottom, 0px));
+    /* HIER STANDEN DIE ZAHLEN NOCH EINMAL AUSGESCHRIEBEN – während der
+       Kommentar darüber zusagte, sie stünden an einer Stelle. Setzt ein Design
+       `--schwebeknopf-groesse: 72px` (oder gibt dem Knopf per <slot> eine
+       Beschriftung, sodass er wächst), blieb der Streifen bei 88px, und die
+       44 % Überdeckung des Kanbuk-Backlinks wären still zurück gewesen. Kein
+       Tor hätte das gemeldet – genau der Fall, den der Kommentar beschreibt.
+
+       Kein Ersatzwert davor: `env()` kennt jeder Browser ab Safari 11.1 und
+       liegt damit unter unserer Untergrenze, `var()` erst recht. Eine
+       einfachere Zeile davor würde hier sogar SCHADEN – sie enthielte
+       zwangsläufig die Zahlen wieder doppelt (CLAUDE.md 4a, Weg 1). */
+    height: calc(
+      var(--schwebeknopf-groesse) + var(--schwebeknopf-abstand) * 2 +
+        env(safe-area-inset-bottom, 0px)
+    );
   }
 
   @media print {

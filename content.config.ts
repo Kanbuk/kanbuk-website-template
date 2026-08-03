@@ -215,11 +215,20 @@ export interface Adresse {
   /** Statisches Kartenbild in fotos/ – erzeugt via `npm run karte`.
       NIEMALS ein Live-Embed: das setzt Cookies.
 
-      NUR DATEN: Der Motor gibt das Bild nirgends aus – das tut die
+      DAS BILD SELBST gibt der Motor nirgends aus – das tut die
       Anfahrts-Komponente aus dem Design (`bild(site.betrieb.adresse.karteBild)`
       plus die Pflicht-Lizenzzeile „Kartendaten © OpenStreetMap-Mitwirkende",
       die das Prüf-Tor einfordert). Der Vorcheck stellt nur sicher, dass die
-      Datei wirklich in fotos/ liegt. */
+      Datei wirklich in fotos/ liegt.
+
+      ABER DAS FELD IST NICHT FOLGENLOS: Es schaltet den Karten-Absatz der
+      Datenschutzerklärung („Für die Anfahrt zeigen wir ein statisches Bild …").
+      Hier stand „NUR DATEN", und genau diesen Satz liest jemand, der beim
+      Portieren entscheidet, ob er das Feld füllt. Wer es setzt, ohne dass eine
+      Karte auf einer Seite steht, lässt seine Rechtsseite etwas über die
+      eigene Website behaupten, das nicht stimmt – dieselbe Klasse Fehler, die
+      dort schon zweimal aufgelaufen ist. Also: nur setzen, wenn die Karte
+      wirklich irgendwo erscheint. */
   karteBild?: string;
   /**
    * Geokoordinaten – für die lokale Suche eines der wichtigsten Signale
@@ -432,8 +441,20 @@ export interface KatalogEintrag {
   beschreibung?: string;
   /** Zahl ohne Währung, z. B. 18900. Weglassen = „auf Anfrage". */
   preis?: number;
-  /** Zusatz beim Preis, z. B. 'inkl. USt.' oder 'zzgl. Überstellung'. */
-  preisHinweis?: string;
+  /**
+   * Zusatz beim Preis.
+   *
+   * DIE DREI ÜBLICHEN WERTE STEHEN IM TYP, nicht als Beispiel im Hilfetext.
+   * CLAUDE.md, Regel 3 („Ein Beispiel im Hilfetext wird zur Wahrheit in jedem
+   * Datensatz"): In einem Kundenprojekt war das ein freies Textfeld mit einem
+   * Beispiel – und danach stand genau dieser Wert bei ALLEN Einträgen, bei
+   * mehreren sachlich falsch. Die Vorschläge erscheinen jetzt beim Tippen.
+   *
+   * Freier Text bleibt erlaubt (`'zzgl. Überstellung'`, `'pro Einheit'`) –
+   * dafür steht `(string & {})` dahinter. Was der Betrieb wirklich abrechnet,
+   * weiß nur er; der Motor gibt nur die häufigen Fälle vor.
+   */
+  preisHinweis?: 'inkl. USt.' | 'zzgl. USt.' | 'differenzbesteuert' | (string & {});
   /** Dateinamen aus `fotos/`. Das erste Bild ist das Hauptbild. */
   bilder?: string[];
   /** Alt-Texte zu `bilder`, gleiche Reihenfolge. Fehlt einer, nimmt der Motor

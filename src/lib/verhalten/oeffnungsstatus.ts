@@ -86,14 +86,42 @@ export function oeffnungsstatusStarten(): void {
       const tag = jetzt.tag;
       const minuten = jetzt.minuten;
 
+      /* Ein Fenster mit `bis <= von` läuft über Mitternacht. Die Rechnung steht
+         hier oben, weil sie an ZWEI Stellen gebraucht wird – bei den
+         Sonderzeiten und beim Wochenrhythmus. Genau daran ist sie beim ersten
+         Mal gescheitert: Sie stand nur beim Wochenrhythmus, und die
+         Sonderzeiten behielten den Fehler. */
+      const laeuftUeberNacht = (von: string, bis: string) => zuMinuten(bis) <= zuMinuten(von);
+
       // 1) Feiertag / Betriebsurlaub schlägt den Wochenrhythmus.
       const sonder = plan.sonder.find((s) => datum >= s.von && datum <= s.bis);
       if (sonder) {
-        const offen =
-          sonder.vonISO && sonder.bisISO &&
-          minuten >= zuMinuten(sonder.vonISO) && minuten < zuMinuten(sonder.bisISO);
+        /* AUCH EINE SONDERZEIT LÄUFT ÜBER MITTERNACHT – und ausgerechnet die
+           wichtigste tut es immer: Silvester 18:00–02:00. Hier stand
+           `minuten >= von && minuten < bis`; das ist bei 1080 <= m < 120 zu
+           keiner Minute wahr. Ein Wiener Lokal zeigte damit den ganzen
+           Silvesterabend „Geschlossen · Silvester" im Kopf jeder Seite – zur
+           besten Geschäftszeit des Jahres, und durch den Anlass-Zusatz sah es
+           auch noch nach Absicht aus.
+
+           Der Fehler ist derselbe, der beim Wochenrhythmus zwei Absätze weiter
+           unten ausführlich beschrieben und behoben wurde. Er blieb hier
+           stehen, weil die Reparatur nur die Stelle angefasst hat, an der er
+           aufgefallen war. */
+        let offen = false;
+        if (sonder.vonISO && sonder.bisISO) {
+          const von = zuMinuten(sonder.vonISO);
+          const bis = zuMinuten(sonder.bisISO);
+          offen = laeuftUeberNacht(sonder.vonISO, sonder.bisISO)
+            ? minuten >= von || minuten < bis
+            : minuten >= von && minuten < bis;
+        }
+        /* SCHLUSSZEIT, NICHT DIE GANZE SPANNE. Hier stand `sonder.zeit` – das
+           ist der Anzeigetext des Betriebs, also „09:00–15:00". Zusammen mit
+           `texte.heute` („bis") entstand daraus „Jetzt geöffnet · bis
+           09:00–15:00". Der Wochenrhythmus unten nimmt richtig `.bis`. */
         el.textContent = offen
-          ? `${plan.texte.offen} · ${plan.texte.heute} ${sonder.zeit}`
+          ? `${plan.texte.offen} · ${plan.texte.heute} ${sonder.bisISO}`
           : `${plan.texte.geschlossen}${sonder.anlass ? ` · ${sonder.anlass}` : ''}`;
         el.classList.toggle('ist-offen', !!offen);
         el.classList.toggle('ist-geschlossen', !offen);
@@ -115,18 +143,21 @@ export function oeffnungsstatusStarten(): void {
          um 3 Uhr früh auf die Seite kommt".
 
          Ein Fenster mit `bis <= von` läuft über Mitternacht. Es gilt dann
-         zweimal: heute ab `von`, und am FOLGETAG bis `bis`. */
-      const laeuftUeberNacht = (f: { von: string; bis: string }) => zuMinuten(f.bis) <= zuMinuten(f.von);
+         zweimal: heute ab `von`, und am FOLGETAG bis `bis`.
+         (`laeuftUeberNacht` steht weiter oben – die Sonderzeiten brauchen
+         dieselbe Rechnung.) */
       const gestern = (tag + 6) % 7;
       const heuteOffen =
         plan.fenster.find((f) => {
           if (f.tag !== tag) return false;
           const von = zuMinuten(f.von);
           const bis = zuMinuten(f.bis);
-          return laeuftUeberNacht(f) ? minuten >= von : minuten >= von && minuten < bis;
+          return laeuftUeberNacht(f.von, f.bis) ? minuten >= von : minuten >= von && minuten < bis;
         }) ??
         // Der Ausläufer von gestern: Es ist 01:30 und gestern galt 18:00–02:00.
-        plan.fenster.find((f) => f.tag === gestern && laeuftUeberNacht(f) && minuten < zuMinuten(f.bis));
+        plan.fenster.find(
+          (f) => f.tag === gestern && laeuftUeberNacht(f.von, f.bis) && minuten < zuMinuten(f.bis),
+        );
       if (heuteOffen) {
         el.textContent = `${plan.texte.offen} · ${plan.texte.heute} ${heuteOffen.bis}`;
         el.classList.add('ist-offen');

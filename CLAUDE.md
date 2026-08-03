@@ -552,6 +552,7 @@ bauen – anschließen und im Design anmalen.
 | **Merkliste** | `data-merken="id"` | Vormerken/Favoriten – bleibt auf dem Gerät (Abschnitt 6a) |
 | **Katalog** | `katalog` in der Config | Fahrzeuge, Objekte, Maschinen, Kurse – Übersicht **und je Eintrag eine eigene Seite** (Abschnitt 6a) |
 | **Bildzeichen** | `<Symbol name="car-front" />` | Alle Icons des Designs – Lucide liegt vollständig im Motor (Abschnitt 5a) |
+| **Schwebeknopf** | `<Schwebeknopf />` bzw. `<Schwebeknopf art="telefon" />` | Mitschwimmender Kontaktknopf unten rechts (WhatsApp/Anruf). **Ans Seitenende setzen**, nach der Fußzeile – er reserviert seinen Platz selbst |
 | **Social-Icons** | `<SocialLinks />` (liest `betrieb.socialLinks`) | Fußzeile, Kontaktseite |
 | **Signatur** | `<Signatur />` | Fußzeile – Kanbuk-Backlink (**Live-Pflicht**, Prüf-Tor erzwingt sie) |
 | **Kopf / Fuß** | `<Kopf aktuell={pfad} />`, `<Fuss />` | Kopfleiste mit Handy-Navigation, Fußzeile mit Rechtslinks |

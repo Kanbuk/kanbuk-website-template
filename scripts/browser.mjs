@@ -435,7 +435,11 @@ for (const b of befunde) {
 console.error(
   '  Das ist fast immer eine fehlende Einstellung, kein Fehler im Quelltext:\n' +
     '  In astro.config.ts muss der vite-Abschnitt die Untergrenze weitergeben\n' +
-    '  (build.target und css.lightningcss.targets). Danach neu bauen.\n' +
+    /* `css.lightningcss.targets` gibt es in astro.config.ts nicht mehr - die
+       Einstellung wurde entfernt, weil sie wirkungslos war. Die Meldung
+       erscheint genau dann, wenn dieses Tor rot ist, und schickte den Leser
+       damit auf die Suche nach einer Zeile, die es nicht gibt. */
+    '  (build.target und build.cssTarget). Danach neu bauen.\n' +
     '  Bei JavaScript-Befunden: siehe CLAUDE.md, „Schreibweisen im Browser-Code".\n',
 );
 process.exit(1);

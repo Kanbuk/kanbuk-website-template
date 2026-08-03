@@ -107,7 +107,7 @@ npx vercel --prod
 | --- | --- |
 | **SEO** | Meta je Seite (Titel, Description, Canonical, OG), JSON-LD `LocalBusiness` mit maschinenlesbaren Öffnungszeiten, Sitemap, `hreflang` |
 | **Responsiveness** | Fluide Token-Skala (350–1440 px). **Wo das Design einen Wert nennt, gewinnt der Wert** – die Skala greift, wo es schweigt (CLAUDE.md Abschnitt 4) |
-| **Verhalten** | Tabs, Filter, Slider, Akkordeon, Lightbox, Mobilmenü, Vorher/Nachher, Dialog, Assistent – branchenneutral, unstyled |
+| **Verhalten** | Tabs, Filter, Slider, Akkordeon, Lightbox, Mobilmenü, Vorher/Nachher, Dialog, Assistent, Schwebeknopf – branchenneutral, unstyled |
 | **Katalog** | Viele gleichartige Einträge (Fahrzeuge, Immobilien, Kurse, Zimmer) mit **eigener Adresse je Eintrag** samt Produkt-Schema, dazu Filter, Preisregler und Merkliste. Der größte SEO-Hebel bei einem Händler |
 | **Bildzeichen** | Die vollständige Lucide-Bibliothek liegt im Repo – Symbole werden nie selbst gezeichnet |
 | **Formulare** | Beliebig viele (Kontakt, Reservierung, Termin, Angebot) aus der Config, Honeypot, Resend, gestaltete Bestätigungsmail |

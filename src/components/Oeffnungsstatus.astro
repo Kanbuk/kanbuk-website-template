@@ -64,17 +64,28 @@ const min = (s: string) => Number(s.split(':')[0]) * 60 + Number(s.split(':')[1]
    JavaScript – wer den Baustein repariert und sie vergisst, hat den Fehler
    weiterhin bei jedem Besucher mit abgeschaltetem Skript und im ersten
    Bildaufbau. */
-const ueberNacht = (f: { von: string; bis: string }) => min(f.bis) <= min(f.von);
+const ueberNacht = (von: string, bis: string) => min(bis) <= min(von);
 const gesternTag = (tagHeute + 6) % 7;
 const sonderHeute = sonder.find((s) => datumHeute >= s.von && datumHeute <= s.bis);
+/* Auch eine SONDERZEIT läuft über Mitternacht – Silvester 18:00–02:00 ist der
+   Regelfall, nicht die Ausnahme. Hier stand die einfache Rechnung, und damit
+   stand im ersten Bildaufbau jeder Seite den ganzen Silvesterabend
+   „Geschlossen". Genau die Doppelung, vor der der Kommentar oben warnt: Wer
+   eine Stelle repariert und die andere vergisst, hat den Fehler weiter. */
 const offenJetzt = sonderHeute
-  ? !!(sonderHeute.vonISO && sonderHeute.bisISO && minutenJetzt >= min(sonderHeute.vonISO) && minutenJetzt < min(sonderHeute.bisISO))
+  ? !!(
+      sonderHeute.vonISO &&
+      sonderHeute.bisISO &&
+      (ueberNacht(sonderHeute.vonISO, sonderHeute.bisISO)
+        ? minutenJetzt >= min(sonderHeute.vonISO) || minutenJetzt < min(sonderHeute.bisISO)
+        : minutenJetzt >= min(sonderHeute.vonISO) && minutenJetzt < min(sonderHeute.bisISO))
+    )
   : fenster.some((f) =>
       f.tag === tagHeute
-        ? ueberNacht(f)
+        ? ueberNacht(f.von, f.bis)
           ? minutenJetzt >= min(f.von)
           : minutenJetzt >= min(f.von) && minutenJetzt < min(f.bis)
-        : f.tag === gesternTag && ueberNacht(f) && minutenJetzt < min(f.bis),
+        : f.tag === gesternTag && ueberNacht(f.von, f.bis) && minutenJetzt < min(f.bis),
     );
 const startText = offenJetzt ? texte.offen : texte.geschlossen;
 ---

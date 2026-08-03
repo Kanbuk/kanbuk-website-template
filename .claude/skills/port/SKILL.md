@@ -78,12 +78,26 @@ Improvisier-Beispiele – so wird entschieden, nicht gefragt:
      die Werkstattliste des MOTORS – offene Befunde, Kandidaten fürs Aufräumen,
      Entscheidungen, „die nur der Inhaber treffen kann". Im Ordner eines Kunden
      hat sie nichts verloren und wird dort als sein Rückstand gelesen.
-   - **`STAND.md` auf den Kunden zurücksetzen:** Der ganze Abschnitt
-     `## Verlauf` kommt weg (das ist die Motorgeschichte, nicht die des
-     Betriebs), ebenso alle Punkte im Lücken-Inventar unter der Überschrift
-     „Am Motor selbst offen". Die Struktur bleibt: Projekt-Tabelle,
-     Lücken-Inventar, Getroffene Entscheidungen, Motor-Meldungen, Verlauf –
-     alle leer, und du füllst sie in Etappe 6 mit DIESEM Projekt.
+   - **`STAND.md` auf den Kunden zurücksetzen.** Die Regel lautet **nicht**
+     „diese Abschnitte löschen", sondern umgekehrt:
+
+     > **Es bleiben genau diese fünf Überschriften stehen – alles andere kommt
+     > weg, ohne Ausnahme:**
+     > `## Projekt` · `## Lücken-Inventar` · `## Getroffene Entscheidungen` ·
+     > `## Motor-Meldungen (fürs Master-Template)` · `## Verlauf`
+     >
+     > Alle fünf **leer**; du füllst sie in Etappe 6 mit DIESEM Projekt.
+
+     Hier stand eine Aufzählung dessen, was zu löschen ist – und die war
+     unvollständig. Der Motor hat mehr Abschnitte, als die Liste kannte
+     (Vorgemerktes zu einer Branche, die Baugeschichte eines Bausteins), und
+     die wanderten unbemerkt in jeden Klon. Eine Physiotherapie fand dann in
+     ihrem Projektgedächtnis Notizen über Gesundheitsberufe, die nie jemand
+     für sie geschrieben hat. Eine Positivliste kann nicht veralten, eine
+     Streichliste schon – deshalb steht sie jetzt so herum.
+
+     Im Lücken-Inventar zusätzlich: alle Punkte unter „Am Motor selbst offen"
+     entfernen.
    - **Was NICHT weggeräumt wird:** `CLAUDE.md` (das ist die Arbeitsanweisung,
      kein Gedächtnis) und die Überschrift
      `## Motor-Meldungen (fürs Master-Template)` – die brauchst du gleich.

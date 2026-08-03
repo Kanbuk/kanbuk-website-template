@@ -28,6 +28,13 @@ export const QUELLEN = [
   'fotos',
   'public',
   'daten',
+  /* DIE SYMBOL-BIBLIOTHEK GEHOERT DAZU. Der Build liest sie ein (Symbol.astro
+     importiert icons/lucide.json), also ist sie Teil des Bau-Ergebnisses. Ohne
+     diesen Eintrag aendert `npm run icons` die Zeichen der Seite, ohne dass eines
+     der fuenf abhaengigen Tore einen Neubau verlangt - sie melden gruen auf einem
+     dist/, das die alten Symbole enthaelt. Genau das, was diese Datei laut ihrem
+     eigenen Kopf verhindern soll. */
+  'icons',
 ];
 
 function sammle(pfad, wurzel, zeilen) {
