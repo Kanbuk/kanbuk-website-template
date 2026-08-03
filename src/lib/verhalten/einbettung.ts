@@ -51,10 +51,26 @@ export function einbettungStarten(): void {
          blieb aber stehen und behauptete etwas Falsches über den nun
          sichtbaren Inhalt. Elemente dafür mit
          data-einbettung-nur-platzhalter auszeichnen. */
-      const umfeld = box.closest('section') ?? box.parentElement ?? document.body;
-      umfeld.querySelectorAll<HTMLElement>('[data-einbettung-nur-platzhalter]').forEach((el) => {
+      /* NUR DIE EIGENE LIZENZZEILE – nicht die der Nachbarin.
+         Hier wurde der ganze umgebende Abschnitt durchsucht. Stehen dort zwei
+         Einbettungen (Karte und Video auf einer Kontaktseite ist der
+         Normalfall), löschte das Laden der einen die Pflicht-Lizenzzeile der
+         anderen – und die andere zeigt weiterhin ihr statisches Kartenbild.
+         Die Zeile „Kartendaten © OpenStreetMap-Mitwirkende" ist keine
+         Höflichkeit, sondern Bedingung der Lizenz.
+
+         Innerhalb der Box wird immer aufgeräumt. Darüber hinaus nur, wenn der
+         Abschnitt genau EINE Einbettung enthält – dann ist die Zuordnung
+         eindeutig. */
+      box.querySelectorAll<HTMLElement>('[data-einbettung-nur-platzhalter]').forEach((el) => {
         el.hidden = true;
       });
+      const umfeld = box.closest('section') ?? box.parentElement ?? document.body;
+      if (umfeld.querySelectorAll('[data-einbettung]').length === 1) {
+        umfeld.querySelectorAll<HTMLElement>('[data-einbettung-nur-platzhalter]').forEach((el) => {
+          el.hidden = true;
+        });
+      }
     }
 
     // Wurde die Kategorie schon freigegeben, darf direkt geladen werden.

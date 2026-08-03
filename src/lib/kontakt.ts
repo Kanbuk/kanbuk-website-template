@@ -32,6 +32,11 @@ function saeubern(wert: string, maxLaenge = 5000): string {
 }
 
 export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Promise<KontaktErgebnis> {
+  /* Die Ansprache des Betriebs gilt auch für die Meldungen des Servers – sonst
+     siezt genau die eine Stelle, an der etwas schiefgeht (CLAUDE.md
+     Abschnitt 3). Rechtstexte bleiben davon unberührt, die sind formal. */
+  const duzt = site.ansprache === 'du';
+
   // 0) Eingaben normalisieren: Der Body kommt vom Client und kann ALLES enthalten
   //    (Zahlen, Objekte, Arrays). Alles Nicht-String wird verworfen – sonst
   //    crasht .trim() mit einem 500 statt einer sauberen Fehlermeldung.
@@ -75,7 +80,18 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
   const emailFeld = formular.felder.find((f) => f.typ === 'email');
   const antwortAdresse = emailFeld ? (daten[emailFeld.name] ?? '').trim() : '';
   if (emailFeld && antwortAdresse && !emailRegex.test(antwortAdresse)) {
-    return { status: 400, json: { fehler: 'Bitte geben Sie eine gültige E-Mail-Adresse an.' } };
+    /* DUZT MIT, WENN DER BETRIEB DUZT. Hier stand die Sie-Form fest verdrahtet –
+       auf einer Seite, die durchgehend duzt, fällt genau diese eine Meldung aus
+       dem Ton. Im JS-Weg überschreibt sie zusätzlich den Text, den das Formular
+       schon richtig gesetzt hat. */
+    return {
+      status: 400,
+      json: {
+        fehler: duzt
+          ? 'Bitte gib eine gültige E-Mail-Adresse an.'
+          : 'Bitte geben Sie eine gültige E-Mail-Adresse an.',
+      },
+    };
   }
 
   /* 5) Serverkonfiguration prüfen.
@@ -115,7 +131,9 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
            Für den Besucher zählt nur: Es liegt nicht an ihm, und wie er den
            Betrieb sonst erreicht. */
         fehler:
-          'Das Formular ist gerade nicht erreichbar. Bitte melden Sie sich direkt – ' +
+          (duzt
+            ? 'Das Formular ist gerade nicht erreichbar. Bitte melde dich direkt – '
+            : 'Das Formular ist gerade nicht erreichbar. Bitte melden Sie sich direkt – ') +
           `Telefon ${site.betrieb.telefon}, E-Mail ${site.betrieb.email}.`,
       },
     };

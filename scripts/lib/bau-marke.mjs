@@ -35,6 +35,12 @@ export const QUELLEN = [
      dist/, das die alten Symbole enthaelt. Genau das, was diese Datei laut ihrem
      eigenen Kopf verhindern soll. */
   'icons',
+  /* UND DIE ABHAENGIGKEITEN. Ein `npm install`, das Astro oder sharp hebt,
+     aendert das Bau-Ergebnis - die Marke sah es nicht, und die fuenf
+     abhaengigen Tore massen weiter den Build von davor. Die Sperrdatei ist der
+     genaue Stand; package.json allein reicht nicht, weil dort Bereiche stehen
+     ("^7.1.3") und ein Update sie unveraendert laesst. */
+  'package-lock.json',
 ];
 
 function sammle(pfad, wurzel, zeilen) {

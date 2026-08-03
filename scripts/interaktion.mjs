@@ -433,7 +433,25 @@ for (const seite of seiten) {
           );
           if (!ok) fehler.push('Der Bezug des Ausloesers kommt im Dialog nicht an');
         }
-        ziel.close();
+        /* MIT DEM SCHLIESSEN-KNOPF DES BAUSTEINS, NICHT MIT `ziel.close()`.
+           Hier stand der Browser-Aufruf – der schliesst natuerlich immer. Die
+           Pruefung sagte damit „Dialog laesst sich schliessen" aus, ohne je
+           angefasst zu haben, was der Besucher anfasst. `data-dialog-schliessen`
+           kam in keiner einzigen Pruefung des Motors vor: Ein Klon, der den
+           Knopf falsch auszeichnet, haette ein Fenster ohne Ausgang, und alle
+           sechs Tore waeren gruen. */
+        const schliesser = ziel.querySelector('[data-dialog-schliessen]');
+        if (!schliesser) {
+          fehler.push('Kein Schliessen-Knopf im Dialog ([data-dialog-schliessen]) – das Fenster hat keinen Ausgang');
+          ziel.close();
+        } else {
+          schliesser.click();
+          await new Promise((r) => setTimeout(r, 120));
+          if (ziel.open) {
+            fehler.push('Der Schliessen-Knopf des Dialogs schliesst ihn nicht');
+            ziel.close();
+          }
+        }
         await new Promise((r) => setTimeout(r, 80));
         if (ziel.open) fehler.push('Dialog laesst sich nicht schliessen');
       }

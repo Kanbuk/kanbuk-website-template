@@ -426,7 +426,7 @@ wird dabei ersetzt.
 | 3 | `npm run interaktion` | jedes Bedienelement wird wirklich geklickt |
 | 4 | `npm run browser` | Browser-Untergrenze + `npm run altgeraet` ansehen |
 | 5 | **`npm run abgleich`** | gebaute Seite gegen die Design-Datei |
-| 6 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Etappe 5c) |
+| 6 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Stufe 6 unten) |
 
 > Stufe 5 und 6 sind BEIDE Pflicht und ersetzen einander nicht: Das Werkzeug
 > findet „Block fehlt / Block erfunden", das Auge alles darin.
@@ -502,7 +502,16 @@ Seite real im Browser (Tabs umschalten, Filter klicken, Mobilmenü öffnen/Escap
 Akkordeon, Lightbox, Slider, Vergleich, Formular-Hinweis im demo-Modus) – bei
 350 px und 1440 px. Was klickbar ist, muss klicken.
 
-**4. Mit eigenen Augen und Verstand prüfen – Arbeitsteilung:**
+**4. `npm run browser` muss grün sein, und `npm run altgeraet` wird ANGESEHEN.**
+Beides ist oben ausführlich beschrieben. Die Ziffer gehört hierher, damit diese
+Aufzählung dieselben Nummern trägt wie die Tabelle – sie hatte bisher eine
+eigene, und die Ziffer 4 bezeichnete in derselben Etappe zwei verschiedene
+Dinge.
+
+**5. `npm run abgleich` muss grün sein** (bei portierten Kundenseiten). Braucht
+`design/<Projekt>.dc.html` und die Zuordnung in `design/abgleich.json`.
+
+**6. Mit eigenen Augen und Verstand prüfen – Arbeitsteilung:**
 - **Text** (Rechtschreibung, ß, österreichisches Deutsch, Ansprache konsistent,
   Tippfehler): über `pruefung/texte.md` lesen – Text statt Pixel, das prüft auch
   Inhalte, die Screenshots nie zeigen (zugeklappte Panels).
@@ -526,7 +535,7 @@ jede Ausbau-Entscheidung am Motor ist geraten. Deshalb bei JEDEM Port:
 | | |
 | --- | --- |
 | **Start** | Sekunde, in der der Port-Prompt abgeschickt wurde |
-| **Ende** | `npm run check`, `npm run sicht` und `npm run interaktion` sind grün **und** STAND.md ist gefüllt |
+| **Ende** | **Alle sechs Stufen der Etappe 5** sind durch – einschließlich `npm run browser`, der angesehenen Altgerät-Bilder und des Augen-Abgleichs gegen die Design-Datei – **und** STAND.md ist gefüllt. *(Hier standen nur drei der sechs. Wer den Schlussstrich nach dem dritten zieht, misst eine andere Arbeit als die, die Etappe 5 verlangt – und meldet „fertig", bevor die Browser-Untergrenze und die Design-Treue geprüft sind.)* |
 | **Nachbesserungsrunden** | Wie oft musste der Nutzer nachbessern lassen, nachdem du „fertig" gemeldet hattest? |
 | **Wo die Zeit hinging** | Grobe Aufteilung: Inventar / Assets / Config / Seiten bauen / Prüfen |
 

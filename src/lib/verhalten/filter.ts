@@ -38,10 +38,18 @@
  *     <div data-filter-leer hidden>Keine Treffer – Filter zurücksetzen.</div>
  *
  *     <div data-filter-ziel>
- *       <article data-katalog-eintrag
- *                data-marke="bmw" data-kraftstoff="diesel"
+ *       <article data-katalog-eintrag="modell-320-touring-2019"
+ *                data-marke="muster" data-kraftstoff="diesel"
  *                data-preis="18900" data-km="84000"> … </article>
  *     </div>
+ *
+ *   `data-katalog-eintrag` BRAUCHT DEN WERT – die Kennung des Eintrags. Hier
+ *   stand das Attribut ohne Wert. Wer das abschreibt, bekommt Filter und
+ *   Sortierung, die tadellos laufen – und eine Merkliste, die nach dem
+ *   Vormerken NULL Treffer zeigt: „Nur Vorgemerkte" vergleicht die Kennung mit
+ *   dem gespeicherten Wert, und ein leerer Wert steht in keiner Merkliste.
+ *   `katalogAttribute(e)` aus `src/lib/katalog.ts` setzt ihn richtig; wer
+ *   eigenes Markup schreibt, muss ihn selbst mitgeben.
  *   </div>
  *
  * WARUM DAS IN DEN MOTOR GEHÖRT: Ein Katalog mit einem einzigen Merkmal ist

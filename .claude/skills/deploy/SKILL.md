@@ -61,6 +61,13 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
    (CLAUDE.md Abschnitt 4a). Läuft seit 2026-07-28 in `npm run check` mit;
    der eigene Aufruf schadet nicht. **Ohne diese Stufe ging schon einmal eine
    abgenommene Seite live, die auf älteren Geräten keine Navigation hatte.**
+3b. **`npm run altgeraet` und die Bilder ANSEHEN.** Diese Stufe fehlte hier
+   ganz – der Skill führte vor jedem Live-Gang durch fünf Tore und ließ das
+   vierte aus. Das ist die einzige Stelle, die zeigt, WIE die Seite auf einem
+   alten Gerät aussieht; `npm run browser` sagt nur, WAS fehlt. Erwartet wird
+   „ärmer, aber lesbar und bedienbar" – alles andere ist ein Befund. Am
+   03.08.2026 hat genau dieses Ansehen zwei Fehler gefunden, die kein Tor
+   gemeldet hat (Kontaktknopf am falschen Rand, halb verdeckter Backlink).
 4. **Mit eigenen Augen:** `pruefung/texte.md` lesen (Rechtschreibung, Ansprache),
    Bögen ansehen (Layout über alle Breiten), Verdachtsfälle im Einzel-Screenshot
 4a. **`npm run abgleich` grün** (nur bei portierten Kundenseiten) – das SECHSTE

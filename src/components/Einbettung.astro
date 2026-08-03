@@ -111,9 +111,24 @@ const t =
     position: relative;
     overflow: hidden;
     border-radius: var(--radius);
+    /* MINDESTHÖHE, WEIL `aspect-ratio` ERST AB SAFARI 15 GILT.
+       Die Höhe dieser Box kommt allein aus dem `aspect-ratio` im style-Attribut
+       darüber. Darunter ist sie 0 px hoch – und weil der Platzhalter absolut
+       darin liegt, verschwindet mit ihr ALLES: das Kartenbild, der Hinweis und
+       der Knopf zum Laden. Ein Besucher sieht dann eine leere Stelle und hat
+       keinen Weg zur Karte. Das ist Bedienbarkeit, nicht Aussehen – und damit
+       auch unterhalb der Zusage abzusichern (CLAUDE.md 4a).
+       Kein var() in dieser Zeile, sonst greift der Ersatzwert nicht. */
+    min-height: 10rem;
   }
   .einbettung__platzhalter {
     position: absolute;
+    /* `inset` gibt es erst ab Safari 14.1 – die vier Einzelangaben kennt jeder
+       Browser. Sie enthalten kein var(), werden also wirklich behalten. */
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     inset: 0;
   }
   .einbettung__platzhalter :global(img) {

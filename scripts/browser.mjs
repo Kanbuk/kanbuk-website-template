@@ -213,7 +213,17 @@ for (const stueck of jsStuecke) {
 const CSS_MERKMALE = [
   {
     name: 'Kurzform in @media, z. B. (width>=900px)',
-    suche: /@media[^{]*\(\s*width\s*[<>]=/,
+    /* VIER SCHREIBWEISEN, NICHT ZWEI. Hier stand `\(\s*width\s*[<>]=` – das
+       erkennt die Vergleiche nur, wenn `width` LINKS steht und der Operator ein
+       Gleichheitszeichen trägt. Nicht erkannt wurden:
+         @media (900px <= width)          – Wert links
+         @media (400px <= width <= 900px) – der Bereich, der Hauptgrund für die
+                                            ganze Schreibweise
+         @media (width < 900px)           – ohne Gleichheitszeichen
+       Das ist ausgerechnet die Regel, für die dieses Tor gebaut wurde: Ein
+       Browser unter Safari 16.4 verwirft den GANZEN Regelblock, im Zweifel also
+       die halbe Seitenaufteilung samt Navigation. */
+    suche: /@media[^{]*\(\s*(?:width\s*[<>]=?|[\d.]+[a-z%]*\s*[<>]=?\s*width)/,
     abSafari: 16.4,
     folge: 'Der GANZE Regelblock wird verworfen – im Zweifel verschwindet die halbe Seitenaufteilung samt Navigation.',
   },
