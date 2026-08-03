@@ -39,8 +39,33 @@ interface Props {
   bezug?: string;
   /** Sprache DIESER Seite – steuert die Motor-Beschriftungen. Standard 'de'. */
   sprache?: 'de' | 'en';
+  /**
+   * Welche Felder werden gekennzeichnet – die freiwilligen oder die Pflicht?
+   *
+   * `'optional'` (Standard) hängt „(optional)" an die freiwilligen Felder.
+   * `'pflicht'` setzt stattdessen ein Sternchen an die Pflichtfelder.
+   *
+   * WARUM ES DIESEN SCHALTER GIBT: Beides ist üblich, und Designs verlangen
+   * regelmäßig das Sternchen. Wer es von Hand nachrüstete, baute zwangsläufig
+   * ZWEI Konventionen in ein Formular – neben dem eigenen Sternchen stand
+   * weiter das „(optional)" des Motors. Der Schalter schließt das aus: Es
+   * gilt immer genau eine Kennzeichnung.
+   *
+   * Das Sternchen trägt `aria-hidden` (das `required` am Feld sagt es
+   * ohnehin an, sonst hört man es doppelt) und lässt das Ankreuzfeld aus –
+   * ein Stern hinter einem ganzen Zustimmungssatz liest sich als Fußnote.
+   * Die FARBE gehört in die Design-Datei des Klons (`.formular__pflicht`),
+   * nicht hierher.
+   */
+  pflichtMarkierung?: 'optional' | 'pflicht';
 }
-const { id, class: klasse, bezug, sprache = 'de' } = Astro.props;
+const {
+  id,
+  class: klasse,
+  bezug,
+  sprache = 'de',
+  pflichtMarkierung = 'optional',
+} = Astro.props;
 
 const formular = site.formulare.find((f) => f.id === id);
 if (!formular) {
@@ -156,29 +181,28 @@ if (leer) {
           <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
             <span class="formular__label">
               {sprache === 'en' ? (f.labelEn ?? f.label) : f.label}
-              {/* DER MOTOR KENNZEICHNET DIE FREIWILLIGEN FELDER, NICHT DIE
-                  PFLICHTFELDER. Das ist eine UMKEHR-Konvention, und wer sie
-                  nicht kennt, baut zwei Konventionen in ein Formular:
+              {/* STANDARD: Der Motor kennzeichnet die FREIWILLIGEN Felder,
+                  nicht die Pflichtfelder. Das ist eine Umkehr-Konvention –
+                  sobald alle Felder Pflicht sind, steht hier gar nichts mehr.
 
-                  Sobald ALLE Felder Pflicht sind, steht hier gar nichts mehr –
-                  und ein Sternchen, das jemand „zur Sicherheit" ergänzt, sagt
-                  dann dasselbe wie das Fehlen von „(optional)". Der Besucher
-                  sieht zwei Systeme nebeneinander.
-
-                  Wer trotzdem Sternchen will (das Design verlangt es
-                  gelegentlich), beachtet drei Dinge:
-                  1. Sternchen mit `aria-hidden` – Screenreader sagen das
-                     `required` am Feld ohnehin an, sonst hört man es doppelt.
-                  2. Die Farbe gehört in die Design-Datei des Klons, nicht in
-                     diese Motor-Komponente.
-                  3. Beim Umstellen freiwillig -> Pflicht den PLATZHALTERTEXT
-                     mitprüfen: In einem Klon stand dort noch „optional",
-                     während das Feld längst Pflicht war.
+                  Verlangt das Design Sternchen, wird NICHT von Hand eines
+                  ergänzt (dann stünden zwei Konventionen nebeneinander),
+                  sondern `pflichtMarkierung="pflicht"` gesetzt. Beim
+                  Umstellen den PLATZHALTERTEXT mitprüfen: In einem Klon stand
+                  dort noch „optional", während das Feld längst Pflicht war.
 
                   Das Leerzeichen ausdrücklich setzen: Zwischen zwei Ausdrücken
                   fällt der Zeilenumbruch weg, und auf der Seite stand
                   „Telefon(optional)". */}
-              {!f.pflicht && <> <em class="formular__optional">{b.optional}</em></>}
+              {pflichtMarkierung === 'optional' && !f.pflicht && (
+                <> <em class="formular__optional">{b.optional}</em></>
+              )}
+              {/* Kein Stern am Ankreuzfeld: Dort ist die Beschriftung ein
+                  ganzer Satz („Ich habe die Datenschutzerklärung gelesen …"),
+                  und ein Stern dahinter liest sich als Fußnote. */}
+              {pflichtMarkierung === 'pflicht' && f.pflicht && f.typ !== 'haekchen' && (
+                <span class="formular__pflicht" aria-hidden="true">*</span>
+              )}
             </span>
 
             {f.typ === 'textarea' ? (

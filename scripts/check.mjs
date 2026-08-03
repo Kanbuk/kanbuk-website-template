@@ -330,7 +330,13 @@ for (const f of htmlDateien) {
     const name = kurz(f);
     const html = readFileSync(f, 'utf-8');
     for (const pflicht of ['impressum', 'datenschutz']) {
-      if (!new RegExp(`href=["']/${pflicht}/?["']`).test(html)) {
+      /* Der Sprachpräfix zählt mit. Auf einer englischen Seite gehört sich
+         `/en/datenschutz` – die alte Regel kannte nur den deutschen Pfad und
+         zwang damit jede englische Fußzeile zurück auf den deutschen Link.
+         Sie erzwang also den SCHLECHTEREN Zustand. Zweck der Regel ist, dass
+         die Rechtsseite von jeder Seite ERREICHBAR ist; in welcher Sprache,
+         ist eine Frage der Verständlichkeit, nicht der Erreichbarkeit. */
+      if (!new RegExp(`href=["'](?:/[a-z]{2})?/${pflicht}/?["']`).test(html)) {
         fehler(
           `${name}: kein Link auf /${pflicht} – die Rechtsseiten müssen von JEDER Seite erreichbar sein.\n` +
             `    Gehört in die Fußzeile des Kunden-Designs.`,

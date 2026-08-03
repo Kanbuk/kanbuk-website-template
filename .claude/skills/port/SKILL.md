@@ -47,6 +47,19 @@ Danach steht die Entscheidung im Abschlussbericht – falsch entschieden ist bes
 nicht entschieden, weil eine Änderung zwei Minuten dauert und eine Rückfrage den
 ganzen Ablauf blockiert.
 
+**Improvisiert wird nur, wo das Design SCHWEIGT.** Wo es etwas vorgibt, wird es
+gebaut – auch wenn ein Motor-Baustein etwas Ähnliches schon mitbringt. Zeigt das
+Design eine eigene Fußzeile mit anderen Spalten, wird sie gebaut, nicht `<Fuss>`
+angemalt. Zeigt es ein zweispaltiges Formular mit gerahmten Feldern und Sternchen,
+wird genau das gebaut, nicht die Standard-Optik des Motors geliefert.
+
+**Und: Dokumentierte Abweichung ist keine Erlaubnis.** „Steht ja im Bericht" macht
+aus einem Fehler keine Entscheidung. Der Kunde hat sein Design abgenommen und
+erwartet es wieder – eine Abweichungsliste liest er als Mängelliste. Deshalb in
+Etappe 5 die Bögen gegen die Design-Screens legen und je Abschnitt eine der zwei
+Antworten geben können: „gebaut wie im Design" oder „das Design schweigt hier,
+deshalb entschieden: …". Eine dritte Antwort gibt es nicht.
+
 **Fragen darfst du nur**, wenn du es selbst unmöglich entscheiden kannst und die
 Entscheidung nicht nachträglich änderbar ist. Typisch: eine Rechtsangabe fehlt (die
 darfst du **nie** erfinden) oder der Kunde muss zwischen zwei echten Optionen wählen.
@@ -380,6 +393,15 @@ wird dabei ersetzt.
   gebaut; dann aber Rechtslinks und Signatur NICHT vergessen (das Prüf-Tor blockt).
   Eigene Inhalte in der Fußzeile (Adresse, Öffnungszeiten, Spalten) kommen als
   Kindelemente in `<Fuss>…</Fuss>`.
+- **Abschnitt „genau eine Bildschirmhöhe"?** Die Vorschau-Leiste (demo-Modus, rund
+  39 px) steht darüber und verschiebt alles. Deshalb `var(--vorschau-h)` mit
+  abziehen: `min-height: calc(100svh - var(--kopf-h) - var(--vorschau-h))` – live
+  ist der Wert 0. Noch sicherer ist, die eigene Position einmal zu MESSEN
+  (`el.offsetTop`) statt sie zu rechnen. Ohne das schneidet der Hero ausgerechnet
+  in der Vorschau ab, also dort, wo der Kunde das Design abnimmt.
+- **Verlangt das Design Sternchen an den Pflichtfeldern?** `<Formular
+  pflichtMarkierung="pflicht" />` – nicht von Hand eines danebenschreiben, sonst
+  stehen „(optional)" und Stern gleichzeitig im selben Formular.
 - **`zeigtPreisliste: true`** bei der Seite setzen, auf der die Karte steht – sonst
   landen die strukturierten Speisekarten-Daten auf der Startseite statt dort.
 - **Einbettungen brauchen keinen Schalter mehr.** Setzt du `<Einbettung`

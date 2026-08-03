@@ -72,6 +72,13 @@
   --container-schmal: 900px; /* für Textblöcke */
   --gutter: clamp(1.25rem, 0.7rem + 2.5vw, 2.5rem); /* ~20 → 40px Seitenrand */
 
+  /* Höhe der Kanbuk-Vorschau-Leiste. Live ist sie 0 – im demo-Modus trägt
+     DemoBar.astro den gemessenen Wert ein. Ein Abschnitt, der genau eine
+     Bildschirmhöhe füllen soll, MUSS sie abziehen, sonst schneidet er in der
+     Vorschau unten ab – also genau dort, wo der Kunde das Design abnimmt:
+       min-height: calc(100svh - var(--kopf-h) - var(--vorschau-h)); */
+  --vorschau-h: 0px;
+
   /* --- SONSTIGES --------------------------------------------------------- */
   --radius: 0px; /* wird aus dem Design überschrieben */
   --uebergang: 0.2s ease;

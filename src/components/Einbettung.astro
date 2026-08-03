@@ -41,7 +41,18 @@ interface Props {
   titel: string;
   /** Anbietername, erscheint im Hinweis („… lädt Inhalte von Google Maps"). */
   anbieter: string;
-  /** Seitenverhältnis, z. B. "16 / 9" (Video) oder "4 / 3" (Karte). */
+  /**
+   * Seitenverhältnis, z. B. "16 / 9" (Video) oder "4 / 3" (Karte).
+   *
+   * `'auto'` gibt die Größe ganz ab: Dann setzt der Baustein KEIN
+   * `aspect-ratio` – Höhe und Breite bestimmt der Aufrufer im Design.
+   *
+   * WARUM ES DAS BRAUCHT: Das Verhältnis stand als INLINE-Style am Element und
+   * schlug damit jede Klasse. Wer im Design eine feste Bandhöhe vorgibt (etwa
+   * „Karte: clamp(300px, 34vw, 460px) hoch"), bekam trotzdem Breite = Höhe ×
+   * Verhältnis – bei 3:1 also 900 px auf einem 350-px-Handy. Die Seite lief
+   * seitlich über, und das Kartenbild wurde auf die dreifache Breite gezogen.
+   */
   format?: string;
   /** Einwilligungs-Kategorie. Standard: funktional. */
   kategorie?: 'funktional' | 'statistik' | 'marketing';
@@ -92,7 +103,7 @@ const t =
   data-einbettung-kategorie={kategorie}
   data-einbettung-format={format}
   data-einbettung-auto={auto ? '' : undefined}
-  style={`aspect-ratio: ${format};`}
+  style={format === 'auto' ? undefined : `aspect-ratio: ${format};`}
 >
   <div class="einbettung__platzhalter">
     {/* Optionaler Platzhalter (z. B. das statische Kartenbild) */}

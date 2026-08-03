@@ -6,6 +6,23 @@
  * Bewusst UNABHÄNGIG von den Kundenfarben – der Balken gehört zu Kanbuk,
  * nicht zum Kunden. (Weiß funktioniert auf hellen wie dunklen Kundendesigns,
  * weil die Leiste eine eigene, geschlossene Fläche ist.)
+ *
+ * ── DIE LEISTE VERSCHIEBT ALLES DARUNTER ────────────────────────────────────
+ * Sie steht im normalen Fluss und ist rund 39 px hoch. Jeder Abschnitt, der
+ * „genau eine Bildschirmhöhe" sein soll und dafür rechnet
+ * `min-height: calc(100svh - var(--kopf-h))`, ist in der VORSCHAU um genau
+ * diese 39 px zu hoch – der Hero schneidet unten ab, und zwar nur dort, wo
+ * der Kunde ihn abnimmt. Live stimmt es wieder, weil die Leiste fehlt.
+ *
+ * Deshalb meldet die Leiste ihre Höhe als `--vorschau-h` an das Wurzelelement
+ * (live: 0px, siehe `src/styles/global.css`). Vollbild-Abschnitte rechnen:
+ *
+ *     min-height: calc(100svh - var(--kopf-h) - var(--vorschau-h));
+ *
+ * Noch robuster – und die Empfehlung, sobald über dem Abschnitt mehr als die
+ * Kopfleiste stehen kann: die eigene Position EINMAL messen statt sie zu
+ * rechnen (`el.offsetTop`), dann stimmt sie unabhängig davon, was der Motor
+ * darüber noch einfügt.
  */
 import { Image } from 'astro:assets';
 import { site } from '../../content.config';
@@ -23,6 +40,23 @@ import logo from '../assets/kanbuk-logo.png';
   <span class="demobar__puls" aria-hidden="true"></span>
   <span class="demobar__text">Vorschau für {site.betrieb.name}</span>
 </div>
+
+<script>
+  /* Höhe der Leiste an das Design weitergeben (siehe Kopf dieser Datei).
+     Gemessen statt fest eingetragen: Die Leiste wird bei schmalen Geräten
+     kleiner, und ein langer Betriebsname kann sie umbrechen lassen. */
+  const leiste = document.querySelector('.demobar');
+  if (leiste) {
+    const melden = () =>
+      document.documentElement.style.setProperty(
+        '--vorschau-h',
+        Math.round(leiste.getBoundingClientRect().height) + 'px',
+      );
+    melden();
+    if ('ResizeObserver' in window) new ResizeObserver(melden).observe(leiste);
+    else addEventListener('resize', melden);
+  }
+</script>
 
 <style>
   .demobar {
