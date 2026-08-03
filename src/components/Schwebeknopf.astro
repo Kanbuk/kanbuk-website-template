@@ -36,10 +36,27 @@
  *  2. ER LIEGT ÜBER DEM INHALT, ABER NICHT AUF DER FUSSZEILE. `bottom` rechnet
  *     mit `env(safe-area-inset-bottom)` – auf iPhones mit Hausbalken säße er
  *     sonst darunter.
+ *
+ *     Das allein reichte NICHT, und der Satz stand hier, bevor es stimmte. Am
+ *     03.08.2026 nachgemessen: Am Seitenende lag der Knopf auf dem
+ *     Kanbuk-Backlink – 44 % der Tippfläche bei 350 px, 42 % bei 430 px, 36 %
+ *     bei 768 px. Der Link blieb in der Mitte noch treffbar, aber der Backlink
+ *     ist Live-Pflicht und wird vom Prüf-Tor erzwungen; ihn zur Hälfte
+ *     zuzudecken ist kein Zustand, den der Motor ausliefern darf.
+ *
+ *     Ein schwebendes Element verdrängt nichts – deshalb reserviert der
+ *     Baustein den Platz selbst: Er rendert vor dem Knopf einen leeren Streifen
+ *     in der normalen Anordnung, genau so hoch wie der Knopf samt Abstand. Der
+ *     Streifen entsteht NUR, wenn auch der Knopf entsteht.
+ *
+ *     DESHALB GEHÖRT `<Schwebeknopf />` ANS SEITENENDE, nach der Fußzeile –
+ *     dort, wo der Motor ihn auf seiner Referenzseite auch hat. Mitten in einer
+ *     Sektion platziert, entstünde die Lücke mitten auf der Seite.
  *  3. TIPPFLÄCHE 56 px, nicht 44. Er ist das Bedienelement, das man im Gehen
  *     mit dem Daumen trifft; die 44er-Untergrenze ist hier zu knapp.
  */
 import { site } from '../../content.config';
+import Symbol from './Symbol.astro';
 
 interface Props {
   /** 'whatsapp' (Standard) oder 'telefon'. */
@@ -69,6 +86,9 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
 ---
 
 {ziel && (
+  <div class="schwebeknopf-platz" aria-hidden="true"></div>
+)}
+{ziel && (
   <a
     class:list={['schwebeknopf', klasse]}
     href={istDemo ? undefined : ziel}
@@ -80,15 +100,51 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
     data-schwebeknopf-vorschau={istDemo ? '' : undefined}
   >
     <slot>
-      {/* Ohne eigenen Inhalt: das Symbol aus der Bibliothek. Das Design
-          ersetzt es, indem es dem Knopf eigene Kinder mitgibt. */}
-      {art === 'telefon' ? '☎' : '✆'}
+      {/* Ohne eigenen Inhalt: das Zeichen aus der Bibliothek. Das Design
+          ersetzt es, indem es dem Knopf eigene Kinder mitgibt.
+
+          HIER STANDEN DIE UNICODE-ZEICHEN ☎ und ✆. Das war derselbe Fehler,
+          den CLAUDE.md Abschnitt 5a verbietet – nur ohne Stift: Wie ein
+          Unicode-Zeichen aussieht, entscheidet die Schrift des GERÄTS, nicht
+          das Design. ✆ (U+2706) wird auf mehreren Systemen mit Querbalken
+          gezeichnet und liest sich dann als Verbotsschild – ausgerechnet auf
+          dem Knopf, der zum Schreiben auffordert. Lucide liegt vollständig im
+          Motor; es gibt keinen Grund, das dem Zufall zu überlassen. */}
+      <Symbol name={art === 'telefon' ? 'phone' : 'message-circle'} />
     </slot>
     <span class="sr-only">{beschriftung}</span>
   </a>
 )}
 
 <style>
+  /* Die Höhe des Knopfs steht an EINER Stelle – der reservierte Streifen und
+     der Knopf selbst lesen dieselbe Zahl. Stünde sie zweimal da, wäre die
+     Überdeckung beim nächsten Feinschliff wieder da, ohne dass es auffällt. */
+  .schwebeknopf,
+  .schwebeknopf-platz {
+    --schwebeknopf-groesse: 56px;
+    --schwebeknopf-abstand: 1rem;
+  }
+
+  /* DER RESERVIERTE PLATZ. Ein schwebendes Element verdrängt nichts – ohne
+     diesen Streifen liegt der Knopf am Seitenende auf der Fußzeile (gemessen:
+     44 % des Kanbuk-Backlinks bei 350 px). Er ist leer und für Screenreader
+     unsichtbar; er hält nur die Fläche frei.
+
+     `env()` kennt jeder Browser ab Safari 11.1 und liegt damit unter unserer
+     Grenze; die einfache Zeile davor enthält kein `var()` und wird deshalb
+     wirklich behalten (CLAUDE.md Abschnitt 4a, Weg 2). */
+  .schwebeknopf-platz {
+    height: 88px;
+    height: calc(56px + 1rem + 1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  @media print {
+    .schwebeknopf-platz {
+      display: none;
+    }
+  }
+
   .schwebeknopf {
     position: fixed;
     right: var(--raum-s);
@@ -103,8 +159,8 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
     align-items: center;
     justify-content: center;
     /* 56 statt 44: Daumenziel im Gehen, siehe Kopf dieser Datei. */
-    min-width: 56px;
-    min-height: 56px;
+    min-width: var(--schwebeknopf-groesse);
+    min-height: var(--schwebeknopf-groesse);
     padding: var(--raum-2xs);
 
     /* Nur so viel Aussehen, dass er ohne Design sichtbar und bedienbar ist. */
