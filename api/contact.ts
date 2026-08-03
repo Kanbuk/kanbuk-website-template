@@ -39,9 +39,21 @@ const zaehler = new Map<string, { anzahl: number; bis: number }>();
 function zuVieleAnfragen(ip: string): boolean {
   const jetzt = Date.now();
   const eintrag = zaehler.get(ip);
+  /* ABGELAUFENE EINTRÄGE WERDEN BEI JEDER ANFRAGE WEGGERÄUMT, NICHT ERST BEI
+     5000. Die Datenschutzerklärung sagt zu: „wird nicht gespeichert, nicht
+     protokolliert und nach wenigen Minuten verworfen". Vorher lief ein Eintrag
+     zwar nach zehn Minuten AB, gelöscht wurde er aber erst, wenn dieselbe IP
+     erneut anfragte oder die Karte 5000 Einträge überschritt. Bei einem
+     Kleinbetrieb mit ein paar Anfragen am Tag heisst das: Die IP lag Wochen im
+     Arbeitsspeicher, und die Zusage stimmte nicht.
+
+     Der Durchlauf ist billig – die Karte hat bei einer Kleinbetriebs-Seite
+     zweistellig viele Einträge. Die 5000er-Grenze bleibt als Notbremse gegen
+     einen Ansturm, bei dem auch dieser Durchlauf nicht mehr mithält. */
+  for (const [k, v] of zaehler) if (jetzt > v.bis) zaehler.delete(k);
+
   if (!eintrag || jetzt > eintrag.bis) {
     zaehler.set(ip, { anzahl: 1, bis: jetzt + FENSTER_MS });
-    // Aufräumen, damit die Karte nicht unbegrenzt wächst.
     if (zaehler.size > 5000) {
       for (const [k, v] of zaehler) if (jetzt > v.bis) zaehler.delete(k);
     }

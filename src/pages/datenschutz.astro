@@ -59,6 +59,29 @@ const einbettungsAnbieter = [
    Angabe fehlt, meldet das Prüf-Tor (scripts/check.mjs) – dort gehört sie hin,
    nicht in eine Rechtsseite, die sie dann irgendwie formulieren müsste. */
 const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !== 'keines');
+
+/* GIBT ES ÜBERHAUPT EINE KARTE?
+   Der Karten-Absatz stand ohne jede Bedingung da – jeder Klon ohne Anfahrt
+   behauptete „Für die Anfahrt zeigen wir ein statisches Bild" und verwies auf
+   einen Link, den es auf der Seite nicht gibt. Bei einer Praxis oder einer
+   Kanzlei ohne Karte ist das schlicht eine falsche Aussage über die eigene
+   Seite – dieselbe Klasse Fehler wie der Karten-Absatz, der einmal behauptete,
+   es gebe KEINE Karte, während eine online war. */
+const hatKarte = !!site.betrieb.adresse.karteBild;
+
+/* DIE MERKLISTE HAENGT AM ATTRIBUT, NICHT AM KATALOG.
+   Der Absatz stand unter `site.katalog` – ausgeloest wird der Baustein aber
+   durch `data-merken="id"` im Markup. Ein Wirt kann Gerichte vormerken lassen,
+   ein Studio Kurse, eine Galerie Bilder: alles ohne Katalog in der Config.
+   Dann speichert die Seite etwas auf dem Geraet des Besuchers, und die
+   Erklaerung schwieg dazu – waehrend sie zwei Absaetze weiter oben „keine
+   Cookies" sagt. Gelesen wird deshalb wie beim Karten-Absatz aus dem MARKUP,
+   nicht aus einem Schalter. Das Pruef-Tor haelt beides gegeneinander. */
+const hatMerkliste =
+  !!site.katalog ||
+  Object.entries(seitenQuellen)
+    .filter(([pfad]) => !/datenschutz\.astro$/.test(pfad))
+    .some(([, quelle]) => /data-merken[=\s>]/.test(String(quelle)));
 ---
 
 <RechtsLayout
@@ -175,24 +198,26 @@ const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !
           </li>
         ))}
       </ul>
-      <p>
-        Für die Anfahrt zeigen wir zusätzlich ein <strong>statisches Kartenbild</strong>
-        (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden) – dabei
-        wird nichts übertragen.
-      </p>
+      {hatKarte && (
+        <p>
+          Für die Anfahrt zeigen wir zusätzlich ein <strong>statisches Kartenbild</strong>
+          (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden) – dabei
+          wird nichts übertragen.
+        </p>
+      )}
     </>
-  ) : (
+  ) : hatKarte ? (
     <>
       <h2>Karte / Anfahrt</h2>
       <p>
         Für die Anfahrt zeigen wir ein <strong>statisches Bild</strong> (Kartendaten von
         OpenStreetMap, beim Erstellen der Seite eingebunden). Es wird keine Karte
         eingebettet, es werden also keine Daten übertragen, solange Sie nicht selbst auf
-        den Link „In Google Maps öffnen" klicken. Erst dann gelangen Sie zu Google Maps,
-        wo die Datenschutzbestimmungen von Google gelten.
+        einen Link zu einem Kartendienst klicken. Erst dann gelten dessen
+        Datenschutzbestimmungen.
       </p>
     </>
-  )}
+  ) : null}
 
   <h2>Server-Logfiles (Hosting)</h2>
   <p>
@@ -241,6 +266,15 @@ const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !
         mitgeschickt: welches Formular es war und wann die Seite geladen wurde. Beides
         dient ausschließlich der Abwehr automatisierter Massenzusendungen und wird nicht
         ausgewertet.
+        {/* Das verdeckte Feld `bezug` fehlte in dieser Aufzählung. Es wird
+            wirklich übertragen (Formular.astro) und landet in der Mail an den
+            Betrieb – bei einem Katalog steht darin, welchen Eintrag jemand
+            angesehen hat. Die Liste oben kommt aus der Feldliste der Config
+            und kennt es nicht; damit zählte die Erklärung weniger auf, als
+            tatsächlich übertragen wird. */}
+        {' '}Haben Sie das Formular von einem bestimmten Eintrag aus geöffnet, wird
+        außerdem <strong>die Bezeichnung dieses Eintrags</strong> mitgeschickt –
+        damit wir wissen, worauf sich Ihre Anfrage bezieht.
       </p>
       <p>
         Ihre <strong>IP-Adresse</strong> wird beim Absenden für kurze Zeit im
@@ -249,12 +283,28 @@ const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !
         und nach wenigen Minuten verworfen (Art. 6 Abs. 1 lit. f DSGVO – Schutz vor
         Missbrauch).
       </p>
-      <p>
-        Haben Sie eine E-Mail-Adresse angegeben, senden wir Ihnen eine automatische
-        <strong> Empfangsbestätigung</strong>. Sie enthält <strong>keine</strong> Ihrer
-        Angaben, sondern nur den Hinweis, dass die Anfrage angekommen ist, und unsere
-        Kontaktdaten.
-      </p>
+      {/* DER ABSATZ MUSS DEM SCHALTER FOLGEN.
+          Hier stand fest verdrahtet „Sie enthält KEINE Ihrer Angaben" – während
+          `bestaetigung.angabenWiederholen: true` genau das Gegenteil einschaltet
+          und die Config das für Handwerk und Handel ausdrücklich empfiehlt.
+          Eine Erklärung, die das Gegenteil dessen behauptet, was die Seite tut,
+          ist der teuerste Fehler dieser Datei – und er entsteht lautlos, weil
+          niemand den Rechtstext liest, wenn er einen Schalter umlegt. */}
+      {site.bestaetigung?.angabenWiederholen ? (
+        <p>
+          Haben Sie eine E-Mail-Adresse angegeben, senden wir Ihnen eine automatische
+          <strong> Empfangsbestätigung</strong>. Darin wiederholen wir die Angaben, die
+          Sie im Formular gemacht haben, damit Sie sie prüfen können. Die Bestätigung
+          geht ausschließlich an die von Ihnen angegebene Adresse.
+        </p>
+      ) : (
+        <p>
+          Haben Sie eine E-Mail-Adresse angegeben, senden wir Ihnen eine automatische
+          <strong> Empfangsbestätigung</strong>. Sie enthält <strong>keine</strong> Ihrer
+          Angaben, sondern nur den Hinweis, dass die Anfrage angekommen ist, und unsere
+          Kontaktdaten.
+        </p>
+      )}
     </>
   )}
 
@@ -265,7 +315,7 @@ const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !
       und die Aussage „keine Cookies" oben darf nicht so stehen bleiben, als
       würde gar nichts gespeichert. Der Absatz erscheint nur, wenn es einen
       Katalog gibt – nur dort gibt es überhaupt etwas zum Vormerken. */}
-  {site.katalog && (
+  {hatMerkliste && (
     <>
       <h2>Merkliste</h2>
       <p>
@@ -290,10 +340,26 @@ const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !
     CA 91789, USA) gehostet. Beim Aufruf der Seite verarbeitet Vercel technisch
     notwendige Verbindungsdaten (u. a. IP-Adresse, Zeitpunkt, aufgerufene Adresse,
     Browsertyp) in Server-Protokollen. Rechtsgrundlage ist unser berechtigtes Interesse
-    an einem sicheren und zuverlässigen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Mit Vercel
-    besteht ein Auftragsverarbeitungsvertrag; die Übermittlung in die USA ist über die
-    EU-Standardvertragsklauseln und den EU-US Data Privacy Framework abgesichert.
+    an einem sicheren und zuverlässigen Betrieb (Art. 6 Abs. 1 lit. f DSGVO).
+    Die Verarbeitung erfolgt auf Grundlage eines Auftragsverarbeitungsvertrags
+    mit dem Anbieter; für die Übermittlung in die USA stützen wir uns auf die
+    Standardvertragsklauseln der Europäischen Kommission.
   </p>
+
+  {/* HIER STAND ZUSÄTZLICH „und den EU-US Data Privacy Framework".
+      Das ist eine Zusage über eine FREMDE Firma und einen Zertifizierungsstand,
+      den niemand hier prüft und der sich jederzeit ändern kann – für JEDEN
+      Klon, ungefragt. Der Motor darf über Dritte nichts behaupten, was er nicht
+      belegt; das ist dieselbe Regel wie bei Paragraphenangaben und
+      Menüpunkten fremder Oberflächen (CLAUDE.md Abschnitt 0 und 6b).
+
+      Die Standardvertragsklauseln bleiben stehen: Sie sind die Grundlage, auf
+      die sich der Betrieb selbst stützt, keine Aussage über den Anbieter.
+
+      DER AUFTRAGSVERARBEITUNGSVERTRAG IST ABER EINE ECHTE PFLICHT und steht
+      als offener Punkt in STAND.md – er muss wirklich abgeschlossen sein,
+      sonst behauptet dieser Absatz etwas, das es nicht gibt. Bei einem anderen
+      Hoster gehört der ganze Abschnitt neu geschrieben. */}
 
   <h2>Ihre Rechte</h2>
   <p>Ihnen stehen nach der DSGVO folgende Rechte zu:</p>

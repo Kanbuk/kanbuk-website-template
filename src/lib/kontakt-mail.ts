@@ -93,7 +93,18 @@ function ausgefuellt(formular: Formular, daten: Record<string, string>) {
 function pflichtangaben(): string {
   const r = site.rechtstexte;
   return [
+    /* FIRMENWORTLAUT UND SITZ GEHÖREN DAZU – sie fehlten.
+       Die Datei beruft sich im Kopf ausdrücklich auf § 14 UGB und gab dann
+       Rechtsform, Firmenbuch, Gericht und UID aus. Der Firmenwortlaut stand
+       zwar weiter unten in der Mail, aber als `betrieb.name` – das ist der
+       Anzeigename („Muster Betrieb"), nicht der eingetragene Wortlaut
+       („Muster Betrieb GmbH"). Und der Sitz fehlte ganz; die Anschrift ist
+       nicht dasselbe (siehe `rechtstexte.sitz`).
+       Doppelt erscheint dabei nichts: Sind Anzeigename und Firmenwortlaut
+       gleich, fällt der Wortlaut hier weg. */
+    r.firmenwortlaut !== site.betrieb.name ? r.firmenwortlaut : '',
     r.rechtsform,
+    r.sitz && `Sitz: ${r.sitz}`,
     r.firmenbuchnummer && `Firmenbuch ${r.firmenbuchnummer}`,
     r.firmenbuchgericht,
     r.uid && `UID ${r.uid}`,

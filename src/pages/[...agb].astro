@@ -11,6 +11,18 @@
  * überall). Den TEXT liefert der Betrieb: AGB sind Vertragsrecht, keine
  * Textbausteine – wir erfinden hier keine Klausel. Steht im Text noch
  * `PLATZHALTER: …`, hält das Prüf-Tor den Live-Gang an.
+ *
+ * UND DIE SEITE HIELT SICH SELBST NICHT DARAN. Sie rahmte die Abschnitte des
+ * Betriebs mit zwei EIGENEN Klauseln ein: einem Geltungsbereich („Diese
+ * Bedingungen gelten für alle Verträge …") und einer Rechtswahl samt
+ * Verbraucher-Vorbehalt. Beides sind materielle Vertragsklauseln, keine
+ * Seitenmechanik – und sie standen ausserhalb dessen, was der Anwalt oder die
+ * WKO geliefert hat. Bringt der gelieferte Text seinen eigenen
+ * Geltungsbereich mit (das ist der Normalfall), standen dort zwei, die sich
+ * widersprechen können. Beide sind seit 03.08.2026 raus.
+ *
+ * Gehören sie in die AGB? Fast sicher ja – aber dann als Abschnitt in
+ * `rechtstexte.agb`, geliefert vom Betrieb. Nicht als Zutat des Motors.
  */
 import RechtsLayout from '../layouts/RechtsLayout.astro';
 import { site, type AgbAbschnitt } from '../../content.config';
@@ -30,25 +42,12 @@ const abschnitte: AgbAbschnitt[] = site.rechtstexte.agb ?? [];
   pfad="/agb"
   beschreibung={`Allgemeine Geschäftsbedingungen von ${site.betrieb.name}: Vertragsabschluss, Leistungen, Preise, Zahlung, Storno und Gewährleistung – vollständig zum Nachlesen.`}
 >
-  <p>
-    Diese Bedingungen gelten für alle Verträge, die über diese Website oder in
-    deren Zusammenhang mit {site.rechtstexte.firmenwortlaut} geschlossen werden.
-  </p>
-
   {abschnitte.map((a, i) => (
     <>
       <h2>{i + 1}. {a.titel}</h2>
       {a.absaetze.map((p) => <p>{p}</p>)}
     </>
   ))}
-
-  <h2>Anwendbares Recht</h2>
-  <p>
-    Es gilt österreichisches Recht unter Ausschluss der Verweisungsnormen des
-    internationalen Privatrechts. Zwingende Verbraucherschutzbestimmungen des
-    Staates, in dem eine Verbraucherin oder ein Verbraucher den gewöhnlichen
-    Aufenthalt hat, bleiben davon unberührt.
-  </p>
 
   <p>
     Fragen zu diesen Bedingungen:{' '}
