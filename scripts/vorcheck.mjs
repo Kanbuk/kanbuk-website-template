@@ -105,7 +105,36 @@ export function pruefeConfigText(configText, { inPublic, inFotos }) {
       fehler.push(`content.config.ts: karteBild "${m[2]}" nicht in fotos/ gefunden. Lösung: mit "npm run karte -- --adresse „…“" erzeugen – das legt das statische Kartenbild dort ab.`);
     }
   }
+  /* ZWEI VERSCHIEDENE `logo`-FELDER, ZWEI VERSCHIEDENE ORTE.
+     `betrieb.logo` liegt in fotos/ und wird beim Bauen optimiert.
+     `bestaetigung.logo` liegt in public/ – es ist das PNG aus
+     `npm run maillogo`, das ein Mailprogramm ueber eine absolute Adresse holt;
+     dort gibt es keine Bild-Optimierung.
+
+     Diese Regel sah nur das Wort `logo` und verlangte beides in fotos/. Wer
+     also der EIGENEN Anleitung des Motors folgte (`npm run maillogo`, dann
+     `bestaetigung: { logo: 'logo-mail.png' }` eintragen), bekam einen harten
+     Fehler mit einer FALSCHEN Loesung: „Logo-Datei nach fotos/ legen". Wer das
+     befolgt, verschiebt das Erzeugnis aus public/ heraus – und dann holt das
+     Mailprogramm ins Leere. Nachgestellt und reproduziert am 02.08.2026. */
+  const imBestaetigungsblock = (index) => {
+    const davor = text.slice(0, index);
+    const start = davor.lastIndexOf('bestaetigung:');
+    if (start < 0) return false;
+    // Nur, wenn dazwischen kein anderer Block auf gleicher Ebene begonnen hat.
+    return !/\n {2}[a-zA-Z]+:/.test(davor.slice(start));
+  };
   for (const m of text.matchAll(/\blogo\s*:\s*(['"`])([^'"`]+)\1/g)) {
+    if (imBestaetigungsblock(m.index)) {
+      if (!inPublic(m[2])) {
+        fehler.push(
+          `content.config.ts: bestaetigung.logo "${m[2]}" liegt nicht in public/. ` +
+            `Lösung: "npm run maillogo" erzeugt es dort aus demselben Logo, das die Fußzeile zeigt. ` +
+            `NICHT nach fotos/ verschieben – das Mailprogramm holt die Datei über eine absolute Adresse.`,
+        );
+      }
+      continue;
+    }
     if (!inFotos(m[2])) {
       fehler.push(`content.config.ts: logo "${m[2]}" nicht in fotos/ gefunden. Lösung: Logo-Datei nach fotos/ legen (aus dem Netz mit "npm run holen", nie per Chat kopieren).`);
     }

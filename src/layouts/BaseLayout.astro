@@ -266,7 +266,22 @@ const menuLd = (() => {
 const faqLd = (() => {
   const eintraege = site.faq ?? [];
   if (eintraege.length === 0) return null;
-  const faqSeite = site.seiten.find((s) => s.zeigtFaq)?.pfad ?? '/faq';
+  /* KEIN STILLER RUECKFALL AUF EINE ADRESSE, DIE ES NICHT GIBT.
+     Hier stand `?? '/faq'` - eine Seite, die der Motor nirgends anlegt. Wer
+     also `faq` fuellt und `zeigtFaq` vergisst, bekommt GAR KEIN FAQ-Schema:
+     keine Fehlermeldung, keine Warnung, und die Antworten erscheinen nie im
+     Google-Treffer. Das Design bestimmt den Pfad - eine FAQ steht typisch auf
+     /leistungen oder /kontakt, selten auf /faq.
+     Ohne Zuordnung faellt das Schema jetzt auf die ERSTE Seite, die es zeigen
+     koennte; steht keine fest, sagt der Build es beim Bauen. */
+  const faqSeite = site.seiten.find((s) => s.zeigtFaq)?.pfad;
+  if (!faqSeite) {
+    throw new Error(
+      'content.config.ts: Es gibt `faq`-Eintraege, aber keine Seite mit `zeigtFaq: true`. ' +
+        'Ohne diese Angabe weiss der Motor nicht, auf welcher Seite das FAQ-Schema stehen soll - ' +
+        'und Google bekommt die Antworten nie zu sehen. Bei der Seite, die die Fragen zeigt, `zeigtFaq: true` setzen.',
+    );
+  }
   if (pfad !== faqSeite) return null;
   return {
     '@context': 'https://schema.org',
@@ -283,7 +298,17 @@ const faqLd = (() => {
 const stellenLd = (() => {
   const stellen = site.stellen ?? [];
   if (stellen.length === 0) return [];
-  const jobSeite = site.seiten.find((s) => s.zeigtStellen)?.pfad ?? '/jobs';
+  /* Gleicher Fall wie beim FAQ oben: `?? '/jobs'` war ein Rueckfall auf eine
+     Adresse, die der Motor nie anlegt - die Stellenanzeigen waeren still nie
+     bei Google gelandet. */
+  const jobSeite = site.seiten.find((s) => s.zeigtStellen)?.pfad;
+  if (!jobSeite) {
+    throw new Error(
+      'content.config.ts: Es gibt `stellen`-Eintraege, aber keine Seite mit `zeigtStellen: true`. ' +
+        'Ohne diese Angabe erscheint keine einzige Stellenanzeige bei Google Jobs. ' +
+        'Bei der Seite, die die Stellen zeigt, `zeigtStellen: true` setzen.',
+    );
+  }
   if (pfad !== jobSeite) return [];
   return stellen.map((s) => ({
     '@context': 'https://schema.org',
@@ -307,10 +332,36 @@ const stellenLd = (() => {
         addressCountry: site.betrieb.adresse.land ?? 'AT',
       },
     },
-    /* Das Gehalt ist in Österreich Pflichtangabe (§ 9 GlBG) und wird hier als
-       Text übernommen – eine Zahl daraus zu erraten wäre eine erfundene
-       Angabe, und die verbietet das Regelwerk. */
-    ...(s.gehalt && { baseSalary: { '@type': 'MonetaryAmount', currency: 'EUR', value: { '@type': 'QuantitativeValue', unitText: 'MONTH' } } }),
+    /* DAS GEHALT MUSS AUCH IM SCHEMA STEHEN, NICHT NUR IM TEXT.
+       Hier wurde `s.gehalt` nur als Schalter benutzt: Steht irgendein Text
+       drin, entstand ein `baseSalary` OHNE Wert – weder `value` noch
+       `minValue`. Google verwirft ein solches Feld, und die Anzeige erscheint
+       ohne Gehaltsangabe. In Österreich ist sie Pflicht (§ 9 GlBG), und
+       genau danach filtern Bewerber.
+
+       Eine Zahl aus dem Text zu ERRATEN bleibt verboten – das wäre eine
+       erfundene Angabe. Deshalb: Steht eine Zahl erkennbar drin, wird sie
+       übernommen; steht keine drin, geht der Text als `description` mit,
+       statt ein leeres Feld zu erzeugen. */
+    ...(s.gehalt
+      ? (() => {
+          const zahl = String(s.gehalt).replace(/\./g, '').match(/(\d+(?:,\d+)?)/);
+          const betrag = zahl ? Number(zahl[1].replace(',', '.')) : undefined;
+          const proJahr = /jahr|jährlich|p\.\s*a\./i.test(s.gehalt);
+          return {
+            baseSalary: {
+              '@type': 'MonetaryAmount',
+              currency: 'EUR',
+              value: {
+                '@type': 'QuantitativeValue',
+                unitText: proJahr ? 'YEAR' : 'MONTH',
+                ...(betrag !== undefined ? { value: betrag } : {}),
+                description: s.gehalt,
+              },
+            },
+          };
+        })()
+      : {}),
   }));
 })();
 

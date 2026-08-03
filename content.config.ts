@@ -213,7 +213,13 @@ export interface Adresse {
   /** Link, der beim Klick auf das Kartenbild geöffnet wird. */
   googleMapsUrl: string;
   /** Statisches Kartenbild in fotos/ – erzeugt via `npm run karte`.
-      NIEMALS ein Live-Embed: das setzt Cookies. */
+      NIEMALS ein Live-Embed: das setzt Cookies.
+
+      NUR DATEN: Der Motor gibt das Bild nirgends aus – das tut die
+      Anfahrts-Komponente aus dem Design (`bild(site.betrieb.adresse.karteBild)`
+      plus die Pflicht-Lizenzzeile „Kartendaten © OpenStreetMap-Mitwirkende",
+      die das Prüf-Tor einfordert). Der Vorcheck stellt nur sicher, dass die
+      Datei wirklich in fotos/ liegt. */
   karteBild?: string;
   /**
    * Geokoordinaten – für die lokale Suche eines der wichtigsten Signale
@@ -884,13 +890,37 @@ export interface SiteConfig {
    * Weglassen = kein Katalog, es entstehen keine zusätzlichen Adressen.
    */
   katalog?: Katalog;
-  /** Mitarbeiter – siehe TeamMitglied. */
+  /* ==========================================================================
+   *  INHALTSFELDER – WER SIE AUSGIBT, IST NICHT BEI ALLEN GLEICH
+   * ==========================================================================
+   *  Ein Feld, das man ausfüllt und das nirgends erscheint, ist laut CLAUDE.md
+   *  „der schlimmste Fehlertyp überhaupt". Bei den vier Feldern hier ist die
+   *  Antwort unterschiedlich – und das stand bisher nirgends:
+   *
+   *    `team`, `referenzen`   → NUR DATEN. Der Motor gibt sie NIRGENDS aus.
+   *                             Sichtbar werden sie erst, wenn der Port eine
+   *                             Komponente dafür baut (`site.team.map(...)`).
+   *                             Das ist die Arbeitsteilung aus Abschnitt 1:
+   *                             Der Motor liefert die Mechanik, das Design den
+   *                             Lack. **Wer sie füllt und keine Komponente
+   *                             baut, sieht nichts.**
+   *
+   *    `faq`, `stellen`       → DATEN **UND** SCHEMA. Der Motor schreibt daraus
+   *                             FAQPage bzw. JobPosting ins JSON-LD – aber nur
+   *                             auf der Seite, die `zeigtFaq` bzw.
+   *                             `zeigtStellen` trägt. Fehlt die Angabe, hält
+   *                             der Build an (BaseLayout.astro) statt still
+   *                             nichts zu erzeugen.
+   *                             Die SICHTBARE Darstellung baut auch hier das
+   *                             Design.
+   * ========================================================================== */
+  /** Mitarbeiter – siehe TeamMitglied. NUR DATEN, das Design gibt sie aus. */
   team?: TeamMitglied[];
-  /** Häufige Fragen – erscheinen zusätzlich als FAQ-Schema bei Google. */
+  /** Häufige Fragen. Daten + FAQ-Schema (braucht `zeigtFaq` an einer Seite). */
   faq?: FaqEintrag[];
-  /** Referenzen / abgeschlossene Projekte. */
+  /** Referenzen / Projekte. NUR DATEN, das Design gibt sie aus. */
   referenzen?: Referenz[];
-  /** Offene Stellen – erscheinen zusätzlich als JobPosting-Schema. */
+  /** Offene Stellen. Daten + JobPosting-Schema (braucht `zeigtStellen`). */
   stellen?: Stelle[];
   rechtstexte: Rechtstexte;
 
