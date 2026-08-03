@@ -77,10 +77,29 @@ const hatKarte = !!site.betrieb.adresse.karteBild;
    Erklaerung schwieg dazu – waehrend sie zwei Absaetze weiter oben „keine
    Cookies" sagt. Gelesen wird deshalb wie beim Karten-Absatz aus dem MARKUP,
    nicht aus einem Schalter. Das Pruef-Tor haelt beides gegeneinander. */
+/* WARUM DIE BEIDEN KATALOG-DATEIEN AUSGENOMMEN SIND – das ist kein Schönheits-
+   fehler, sondern derselbe Fehler wie oben, nur andersherum. Der Quelltext-Scan
+   findet `data-merken` in `KatalogListe.astro` und in der Katalog-Detailseite.
+   Diese Dateien liegen in JEDEM Klon auf der Platte, auch bei einem Tischler,
+   einer Praxis oder einem Wirt ohne Katalog – gebaut werden sie dort nie
+   (`getStaticPaths` gibt ohne `katalog` eine leere Liste zurück, und die Liste
+   wird nur von dieser einen Route eingebunden).
+
+   Gemessen am 03.08.2026: Klon ohne Katalog gebaut → null Seiten mit
+   `data-merken`, und die Datenschutzerklärung trug trotzdem den Absatz
+   „Merkliste" mit dem Satz, der Browser speichere etwas auf dem Gerät. Das ist
+   eine falsche Aussage über die eigene Seite in einer Rechtsseite – und sie
+   stand so in jedem Klon.
+
+   Ihre Bedingung ist `site.katalog`, und die steht bereits in der Zeile
+   darunter. Der Scan bleibt für den Fall, für den er gebaut wurde: eigenes
+   Markup im Klon (Gerichte vormerken, Kurse merken, Bilder sammeln). Dass
+   beides zusammenpasst, hält das Prüf-Tor gegen den fertigen Build – seit
+   heute in BEIDE Richtungen. */
 const hatMerkliste =
   !!site.katalog ||
   Object.entries(seitenQuellen)
-    .filter(([pfad]) => !/datenschutz\.astro$/.test(pfad))
+    .filter(([pfad]) => !/datenschutz\.astro$|KatalogListe\.astro$|katalogEintrag\]\.astro$/.test(pfad))
     .some(([, quelle]) => /data-merken[=\s>]/.test(String(quelle)));
 ---
 

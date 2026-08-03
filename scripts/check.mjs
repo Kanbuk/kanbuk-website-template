@@ -750,10 +750,25 @@ if (istLive && /Disallow:\s*\/\s*$/m.test(robots)) {
 {
   const nutztMerkliste = htmlDateien.some((f) => /data-merken=/.test(readFileSync(f, 'utf-8')));
   const datenschutz = htmlDateien.find((f) => /datenschutz/.test(kurz(f)));
-  if (nutztMerkliste && datenschutz && !/Merkliste/i.test(readFileSync(datenschutz, 'utf-8'))) {
+  const erwaehnt = datenschutz && /<h2[^>]*>\s*Merkliste\s*<\/h2>/i.test(readFileSync(datenschutz, 'utf-8'));
+  if (nutztMerkliste && datenschutz && !erwaehnt) {
     fehler(
       'Die Seite hat eine Merkliste, die Datenschutzerklärung erwähnt sie aber nicht.\n' +
         '    Sie speichert auf dem Gerät des Besuchers – das gehört dort hinein (CLAUDE.md Abschnitt 6a).',
+    );
+  }
+  /* DIE GEGENRICHTUNG – sie fehlte, und deshalb war der Fehler unsichtbar.
+     Bei den Einbettungen prüft dieses Tor längst beides (weiter unten); hier
+     stand nur „Merkliste da, Absatz fehlt". Der umgekehrte Fall – Absatz da,
+     Merkliste nicht – ist derselbe Mangel: eine Rechtsseite, die etwas über
+     die eigene Seite behauptet, das nicht stimmt. Er traf am 03.08.2026 JEDEN
+     Klon ohne Katalog, weil die Seite ihren eigenen Quelltext durchsucht und
+     dort die Katalog-Dateien des Motors fand, die nie gebaut werden. */
+  if (!nutztMerkliste && erwaehnt) {
+    fehler(
+      'Die Datenschutzerklärung beschreibt eine Merkliste, auf der Seite gibt es keine.\n' +
+        '    Eine Rechtsseite darf nichts über die eigene Seite behaupten, was nicht stimmt.\n' +
+        '    Prüfen: Trägt irgendein Element `data-merken="…"`? Wenn nein, gehört der Absatz weg.',
     );
   }
 }
