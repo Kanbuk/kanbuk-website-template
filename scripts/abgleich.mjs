@@ -227,16 +227,29 @@ const designSeiten = await (async () => {
          echten Block ausmacht. Also so lange hineingehen, bis das nicht mehr
          zutrifft. Die Grundfarbe des Rahmens zählt dabei NICHT als Merkmal:
          Sie ist die Seitenfarbe, nicht die eines Blocks. */
+      /* DREI EBENEN, WIE DER KOMMENTAR ES ZUSAGT.
+         Hier stand `return kinder` mitten in der Schleife – damit endete sie
+         IMMER im ersten Durchlauf, und `tiefe < 3` war eine Zusage ohne
+         Wirkung. Ein Design, das seine Blöcke in zwei Hüllen legt (ein
+         Wrapper fürs Raster, einer für die Breite – gängig), wurde nur eine
+         Ebene weit aufgelöst; darunter zählte das Tor einen einzigen großen
+         Block statt der fünf darin. „Block fehlt" ist genau die Klasse, die
+         dieses Tor zuverlässig finden soll.
+
+         Jetzt geht es Ebene für Ebene weiter, solange die Bedingungen halten,
+         und liefert am Ende die tiefste Menge. */
       const hineingehen = (el) => {
-        let e = el;
+        let ebene = [el];
         for (let tiefe = 0; tiefe < 3; tiefe++) {
+          if (ebene.length !== 1) break;
+          const e = ebene[0];
           const kinder = [...e.children];
           if (kinder.length < 2) break;
           if (stilWert(e, 'padding') || stilWert(e, 'padding-block')) break;
           if (!kinder.every((k) => /^(SECTION|DIV|HEADER|FOOTER|ARTICLE|ASIDE|NAV|SC-IF)$/.test(k.tagName))) break;
-          return kinder;
+          ebene = kinder;
         }
-        return [e];
+        return ebene;
       };
 
       const bloecke = [];

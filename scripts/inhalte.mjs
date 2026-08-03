@@ -253,6 +253,27 @@ async function haupt() {
       eintrag[name] = wert;
     }
     eintrag.id = kennungSauber;
+
+    /* PFLICHTFELDER HIER NACHMESSEN, NICHT NUR IM STUDIO.
+       `pflicht: true` in redaktion/felder.mjs erzeugt im Redaktionsdienst eine
+       Pflichtangabe – und das war bisher die EINZIGE Durchsetzung. Sie liegt
+       damit in einer fremden Oberfläche, deren Verhalten der Motor nicht
+       nachprüft: Einträge, die vor dem Setzen der Regel angelegt wurden,
+       bleiben unberührt, und wer den Datensatz umstellt oder Inhalte
+       einspielt, umgeht sie ganz. Genau die Sorte Zusage, die CLAUDE.md für
+       fremde Oberflächen verbietet: entweder belegt oder gar nicht.
+
+       Kein Abbruch – ein fehlerhafter Eintrag fällt raus, nicht die ganze
+       Liste (CLAUDE.md 6c, dritte Sicherung). Hier reicht der Hinweis: Der
+       Betrieb sieht ihn beim Abruf und weiss, welcher Eintrag welche Angabe
+       braucht. */
+    for (const feld of KATALOG.filter((f) => f.pflicht)) {
+      const wert = eintrag[feldName(feld)];
+      if (wert === undefined || wert === null || wert === '') {
+        warne(`Eintrag „${kennung}": Pflichtangabe „${feld.titel}" fehlt.`);
+      }
+    }
+
     eintraege.push(eintrag);
   }
 
@@ -383,7 +404,23 @@ async function haupt() {
       warne(`Bild ${datei} nicht geholt (${e.message}) – der Eintrag erscheint ohne dieses Foto.`);
       for (const e2 of eintraege) {
         if (!e2.bilder) continue;
+        /* DIE BILDBESCHREIBUNG MUSS MITWANDERN.
+           `bildAlt` ist eine PARALLELE Liste – der dritte Alt-Text gehört zum
+           dritten Bild. Hier wurde nur aus `bilder` entfernt; ab dem
+           ausgefallenen Foto verschob sich alles um eins. Danach stand unter
+           jedem folgenden Bild die Beschreibung des vorigen. Für einen
+           Screenreader-Nutzer ist die Seite damit falsch beschriftet, und
+           niemandem fällt es auf – sichtbar ist der Alt-Text nicht.
+
+           Passiert genau dann, wenn ohnehin etwas schiefläuft: ein 403 des
+           Bildservers, ein halb hochgeladenes Foto. */
+        const weg = e2.bilder.indexOf(datei);
+        if (weg === -1) continue;
         e2.bilder = e2.bilder.filter((b) => b !== datei);
+        if (Array.isArray(e2.bildAlt) && e2.bildAlt.length > weg) {
+          e2.bildAlt = e2.bildAlt.filter((_, i) => i !== weg);
+          if (!e2.bildAlt.length) delete e2.bildAlt;
+        }
         // Eine leere Liste ist kein „keine Fotos", sondern Datenmüll: Sie
         // täuscht in der Datei einen gepflegten Wert vor, den es nicht gibt.
         if (!e2.bilder.length) delete e2.bilder;

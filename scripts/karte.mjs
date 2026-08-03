@@ -228,6 +228,15 @@ try {
       </Einbettung>
 
   PFLICHT: „${lizenz}" sichtbar neben die Karte setzen (ODbL-Lizenz).
+  Das Element damit auszeichnen: <p data-einbettung-nur-platzhalter>…</p> –
+  dann verschwindet die Zeile mit dem Bild, sobald jemand die echte Karte lädt.
+
+  UND IN DIE CONFIG EINTRAGEN:
+      betrieb.adresse.karteBild: '${datei}'
+  Dieses Feld schaltet den Karten-Absatz der Datenschutzerklärung. Ohne den
+  Eintrag steht dort kein Wort über die Karte, obwohl eine auf der Seite ist –
+  und das ist eine falsche Aussage in einer Rechtsseite. (Hier stand das Feld
+  bis 03.08.2026 mit keinem Wort; wer der Anleitung folgte, ließ es leer.)
 
   FÜR DIE LOKALE SUCHE – diese zwei Zeilen in content.config.ts ->
   betrieb.adresse eintragen (Google gewichtet Koordinaten bei „in meiner Nähe"):
