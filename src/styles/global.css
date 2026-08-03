@@ -183,6 +183,30 @@ picture {
   display: none !important;
 }
 
+/*
+ * EIN GESCHLOSSENER `<dialog>` MUSS AUCH DORT VERSCHWINDEN, WO ES IHN NICHT GIBT.
+ *
+ * Auf einem modernen Browser ist diese Zeile überflüssig – seine Vorlage
+ * enthält sie bereits. Unterhalb von Safari 15.4 kennt der Browser das Element
+ * `<dialog>` überhaupt nicht. Ein unbekanntes Element bekommt keine
+ * Vorlage-Regel, also auch kein `display: none`: Der komplette Inhalt des
+ * Anfrage-Fensters steht dann DAUERHAFT mitten auf der Seite, zwischen den
+ * Abschnitten, mit Formularfeldern und Schließen-Knopf.
+ *
+ * Das ist genau die Browserklasse, für die `browserluecke.ts` den Rückfall
+ * baut – älteres iPhone, Büro-Mac. Der Rückfall setzte bisher `[open]` auf ein
+ * Element, das ohnehin schon sichtbar war; er konnte nichts bewirken, weil das
+ * Fenster nie zu war.
+ *
+ * KEIN `!important` wie bei `[hidden]`: `dialog:not([open])` schlägt eine
+ * Klasse aus dem Design bereits von selbst (0-1-1 gegen 0-1-0). Ein Design,
+ * das den Dialog bewusst als eingebauten Bereich zeigen will, kann das dann
+ * noch – bei `[hidden]` wäre das falsch, hier nicht.
+ */
+dialog:not([open]) {
+  display: none;
+}
+
 /* Formularelemente erben die Schrift (sonst System-Default). */
 input,
 textarea,

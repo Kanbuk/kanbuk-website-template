@@ -52,7 +52,55 @@ export function dialogOeffnen(dialog: HTMLElement): void {
          die Seite mitzureissen. */
     }
   }
+
+  /* ------------------------------------------------------------------------
+     DER RÜCKFALL – und hier stand vorher NUR die eine Zeile `setAttribute`.
+     Die reicht nicht, und zwar aus zwei Gründen, die beide erst im echten
+     alten Browser sichtbar werden:
+
+     1. Ein Browser, der `<dialog>` nicht kennt, hat auch keine Vorlage-Regel
+        dafür. Das Element ist ein unbekanntes Kästchen ohne jede Gestaltung:
+        keine Position, kein Hintergrund, kein Rand. Es hängt einfach da, wo
+        es im Quelltext steht – am Seitenende, mitten in einem Abschnitt.
+        `[open]` zu setzen ändert daran nichts. (Dass es überhaupt zu ist,
+        besorgt jetzt `dialog:not([open])` in global.css.)
+     2. Ohne `showModal()` gibt es auch die eingebaute Escape-Taste nicht.
+        Ein Fenster, das man nicht schliessen kann, ist schlimmer als keines.
+
+     Die Gestaltung wird hier von Hand gesetzt statt in global.css, damit
+     moderne Browser NICHTS davon abbekommen: Dieser Zweig läuft nur, wenn
+     `showModal` fehlt. Eine CSS-Regel für `dialog[open]` träfe dagegen auch
+     die nativen Fenster und würde deren Zentrierung überschreiben.
+
+     `--farbe-hintergrund` mit Ersatzwert IN der Klammer – ohne einen
+     Hintergrund stünde der Text des Fensters über dem Text der Seite.
+     ------------------------------------------------------------------------ */
   dialog.setAttribute('open', '');
+  const s = dialog.style;
+  s.position = 'fixed';
+  s.top = '5%';
+  s.left = '50%';
+  s.marginLeft = '0';
+  s.transform = 'translateX(-50%)';
+  s.width = 'min(92%, 40rem)';
+  s.maxHeight = '90%';
+  s.overflowY = 'auto';
+  s.zIndex = '1000';
+  s.background = 'var(--farbe-hintergrund, #fff)';
+  s.color = 'var(--farbe-text, #1a1a1a)';
+  s.padding = 'var(--raum-m, 1.5rem)';
+  s.border = '1px solid var(--farbe-linie, rgba(0,0,0,0.15))';
+
+  /* Escape muss schliessen. Der Zuhörer hängt am Dokument, weil das Fenster im
+     Rückfall keinen Fokus fängt – ein Tastendruck landet sonst irgendwo. */
+  if (!dialog.dataset.escapeGesetzt) {
+    dialog.dataset.escapeGesetzt = 'ja';
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' && e.key !== 'Esc') return;
+      if (!dialog.hasAttribute('open')) return;
+      dialogSchliessen(dialog);
+    });
+  }
 }
 
 /** Gegenstück – schliesst auch den Rückfall-Zustand. */
