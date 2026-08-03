@@ -64,6 +64,29 @@ function jetztIn(zeitzone: string): { datum: string; tag: number; minuten: numbe
  * nicht in eine aeltere umwandeln, und sie allein macht das GESAMTE
  * Skriptbuendel fuer aeltere Browser unlesbar.
  */
+/**
+ * Der Vortag als ISO-Datum („2026-01-01" → „2025-12-31").
+ *
+ * Wird für den Ausläufer über Mitternacht gebraucht: Um 01:00 am Neujahrstag
+ * entscheidet die Sonderzeit von SILVESTER, nicht die von heute. Ohne diese
+ * Rechnung schlug der Wochenrhythmus einen Feiertag – genau das, was
+ * Abschnitt 1 verhindern soll.
+ *
+ * Kein Zerlegen in Klammern (CLAUDE.md 4a, Punkt 1).
+ */
+const tagVorher = (iso: string) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+};
+
+/** Gegenstück – für die Vorausschau auf die nächste Öffnung. */
+const tagDanach = (iso: string) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+};
+
 const zuMinuten = (hhmm: string) => {
   const teile = hhmm.split(':');
   const stunde = Number(teile[0]);
@@ -154,10 +177,34 @@ export function oeffnungsstatusStarten(): void {
           const bis = zuMinuten(f.bis);
           return laeuftUeberNacht(f.von, f.bis) ? minuten >= von : minuten >= von && minuten < bis;
         }) ??
-        // Der Ausläufer von gestern: Es ist 01:30 und gestern galt 18:00–02:00.
-        plan.fenster.find(
-          (f) => f.tag === gestern && laeuftUeberNacht(f.von, f.bis) && minuten < zuMinuten(f.bis),
-        );
+        /* DER AUSLÄUFER VON GESTERN: Es ist 01:30 und gestern galt 18:00–02:00.
+           Er darf NUR gelten, wenn gestern auch wirklich offen war. Hier stand
+           die Bedingung ohne Blick auf die Sonderzeiten – und lief damit in
+           beide Richtungen falsch:
+
+           - War gestern Feiertag und geschlossen, meldete die Seite um 01:00
+             trotzdem „Jetzt geöffnet". Der Wochenrhythmus schlug den Feiertag,
+             obwohl Abschnitt 1 oben das Gegenteil festlegt.
+           - Hatte gestern eine Sonderzeit über Mitternacht (Silvester
+             18:00–02:00), fand der Wochenrhythmus nichts, und die Sonderzeit
+             galt nur für den Vortag – um 01:00 am Neujahrstag stand
+             „Geschlossen", obwohl das Lokal noch offen hat.
+
+           Deshalb: Gab es gestern eine Sonderzeit, entscheidet SIE über den
+           Ausläufer – sonst der Wochenrhythmus. */
+        (() => {
+          const gesternDatum = tagVorher(datum);
+          const gesternSonder = plan.sonder.find((s) => gesternDatum >= s.von && gesternDatum <= s.bis);
+          if (gesternSonder) {
+            if (!gesternSonder.vonISO || !gesternSonder.bisISO) return undefined;
+            if (!laeuftUeberNacht(gesternSonder.vonISO, gesternSonder.bisISO)) return undefined;
+            if (minuten >= zuMinuten(gesternSonder.bisISO)) return undefined;
+            return { tag: gestern, von: gesternSonder.vonISO, bis: gesternSonder.bisISO };
+          }
+          return plan.fenster.find(
+            (f) => f.tag === gestern && laeuftUeberNacht(f.von, f.bis) && minuten < zuMinuten(f.bis),
+          );
+        })();
       if (heuteOffen) {
         el.textContent = `${plan.texte.offen} · ${plan.texte.heute} ${heuteOffen.bis}`;
         el.classList.add('ist-offen');
@@ -165,19 +212,41 @@ export function oeffnungsstatusStarten(): void {
         return;
       }
 
-      // 3) Geschlossen – wann geht es weiter? (bis zu 7 Tage vorausschauen)
-      let naechstes: { tag: number; von: string } | null = null;
+      /* 3) Geschlossen – wann geht es weiter? (bis zu 7 Tage vorausschauen)
+
+         MIT DEN SONDERZEITEN. Hier lief nur der Wochenrhythmus, und die
+         Vorschau log damit an genau den Tagen, an denen sie gebraucht wird:
+         Am Abend vor dem Betriebsurlaub stand „öffnet Mo 08:00", obwohl das
+         Geschäft ab Montag zwei Wochen zu ist. Wer das liest, steht vor der
+         Tür. Ein geschlossener Tag wird jetzt übersprungen, eine Sonderzeit
+         MIT Öffnung gewinnt gegen den Wochenrhythmus dieses Tages. */
+      let naechstes: { tag: number; von: string; tageWeg: number } | null = null;
+      let pruefDatum = datum;
       for (let i = 0; i < 8 && !naechstes; i++) {
         const pruefTag = (tag + i) % 7;
+        if (i > 0) pruefDatum = tagDanach(pruefDatum);
+        const sonder = plan.sonder.find((s) => pruefDatum >= s.von && pruefDatum <= s.bis);
+        if (sonder) {
+          // Geschlossener Sondertag: kein Kandidat. Geöffneter: er gilt.
+          if (!sonder.vonISO) continue;
+          if (i === 0 && zuMinuten(sonder.vonISO) <= minuten) continue;
+          naechstes = { tag: pruefTag, von: sonder.vonISO, tageWeg: i };
+          break;
+        }
         const kandidaten = plan.fenster
           .filter((f) => f.tag === pruefTag && (i > 0 || zuMinuten(f.von) > minuten))
           .sort((a, b) => zuMinuten(a.von) - zuMinuten(b.von));
-        if (kandidaten[0]) naechstes = { tag: pruefTag, von: kandidaten[0].von };
+        if (kandidaten[0]) naechstes = { tag: pruefTag, von: kandidaten[0].von, tageWeg: i };
       }
+      /* „öffnet Mo 08:00" ist irreführend, wenn bis dahin eine ganze Woche
+         liegt – bei einem Betrieb mit genau einem Öffnungstag ist das der
+         Normalfall. Ab einer Woche steht deshalb dabei, dass es so lange
+         dauert. */
+      const wochenZusatz = naechstes && naechstes.tageWeg >= 7 ? ' (nächste Woche)' : '';
       el.textContent = naechstes
         ? `${plan.texte.geschlossen} · ${plan.texte.oeffnet} ${
-            naechstes.tag === tag ? '' : `${TAGE[naechstes.tag]} `
-          }${naechstes.von}`
+            naechstes.tageWeg === 0 ? '' : `${TAGE[naechstes.tag]} `
+          }${naechstes.von}${wochenZusatz}`
         : plan.texte.geschlossen;
       el.classList.add('ist-geschlossen');
       el.classList.remove('ist-offen');

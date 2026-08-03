@@ -62,13 +62,20 @@ export function dialogStarten(): void {
          Dialog für viele Einträge – der Auslöser gibt seinen Titel mit, damit
          die Anfrage weiß, worum es geht (und das versteckte Formularfeld
          `betreff` gefüllt werden kann). */
-      const bezug = ausloeser.dataset.dialogBezug;
-      if (bezug) {
-        ziel.querySelectorAll<HTMLElement>('[data-dialog-bezug-ziel]').forEach((el) => {
-          if (el instanceof HTMLInputElement) el.value = bezug;
-          else el.textContent = bezug;
-        });
-      }
+      /* IMMER SETZEN, AUCH AUF LEER. Hier stand `if (bezug) { … }` – ein
+         Auslöser ohne eigenen Bezug liess damit stehen, was der vorige
+         hineingeschrieben hatte. Auf einer Katalogseite öffnet derselbe Dialog
+         für alle Einträge: Wer erst „Eintrag A" anfragt, den Dialog schliesst
+         und dann einen allgemeinen Anfrage-Knopf ohne Bezug drückt, verschickt
+         eine Anfrage, die weiterhin „Eintrag A" nennt. Der Betrieb antwortet
+         dann zum falschen Stück – und niemand kann sich erklären, warum.
+
+         Ein leerer Wert ist die richtige Aussage: „kein bestimmter Eintrag". */
+      const bezug = ausloeser.dataset.dialogBezug ?? '';
+      ziel.querySelectorAll<HTMLElement>('[data-dialog-bezug-ziel]').forEach((el) => {
+        if (el instanceof HTMLInputElement) el.value = bezug;
+        else el.textContent = bezug;
+      });
       dialogOeffnen(ziel);
     });
   });
