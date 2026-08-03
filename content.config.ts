@@ -669,8 +669,37 @@ export interface Stelle {
   umfang: string;
   text: string;
   /** Kollektivvertrags-Mindestgehalt – in Österreich PFLICHTANGABE
-      (§ 9 Gleichbehandlungsgesetz), z. B. 'ab 2.100 € brutto/Monat'. */
+      (§ 9 Gleichbehandlungsgesetz), z. B. 'ab 2.100 € brutto/Monat'.
+
+      DAS IST DER TEXT FÜR MENSCHEN. Er steht so auf der Seite, wie er hier
+      eingetragen ist – die Pflichtangabe verlangt eine lesbare Aussage, keine
+      Zahl. Schreib ihn so, wie der Betrieb ihn formuliert. */
   gehalt: string;
+  /**
+   * Dieselbe Zahl noch einmal – für Google, und AUSDRÜCKLICH VON HAND.
+   *
+   * WARUM ZWEI FELDER FÜR EINE SACHE: Google Jobs braucht einen echten Zahlwert,
+   * sonst verwirft es die Gehaltsangabe und die Stelle verschwindet aus jedem
+   * Gehaltsfilter. Aus `gehalt` eine Zahl HERAUSZULESEN ist verlockend und
+   * falsch – am 03.08.2026 genau so gebaut und gemessen:
+   *
+   *     'ab 2.400 € brutto/Monat, 14x jährlich'  ->  2400 pro JAHR
+   *     '38,5 Std./Woche, ab 2.400 €'            ->  38,50 € pro Monat
+   *
+   * Drei von sieben üblichen österreichischen Formulierungen kamen falsch
+   * heraus – und das Ergebnis steht öffentlich bei Google als Zusage des
+   * Betriebs. Eine falsche Gehaltsangabe ist schlimmer als keine.
+   *
+   * Deshalb: Wer die Zahl im Suchergebnis will, trägt sie hier ein. Bleibt das
+   * Feld leer, entsteht KEIN Gehalts-Schema – die Anzeige ist dann für Google
+   * ohne Gehalt, aber nichts daran ist erfunden.
+   *
+   * Nur der Bruttobetrag, ohne Währungszeichen und ohne Punkt: `2400`.
+   */
+  gehaltBetrag?: number;
+  /** Wozu der Betrag gehört. Standard `'MONTH'`. Bei einem Jahresgehalt
+      (auch bei '14 Gehältern') ausdrücklich `'YEAR'` setzen. */
+  gehaltZeitraum?: 'MONTH' | 'YEAR';
   /** Frühestes Eintrittsdatum, JJJJ-MM-TT – nur für das Google-Schema. */
   ab?: string;
 }

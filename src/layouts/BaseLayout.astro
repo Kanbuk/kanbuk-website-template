@@ -332,35 +332,33 @@ const stellenLd = (() => {
         addressCountry: site.betrieb.adresse.land ?? 'AT',
       },
     },
-    /* DAS GEHALT MUSS AUCH IM SCHEMA STEHEN, NICHT NUR IM TEXT.
-       Hier wurde `s.gehalt` nur als Schalter benutzt: Steht irgendein Text
-       drin, entstand ein `baseSalary` OHNE Wert – weder `value` noch
-       `minValue`. Google verwirft ein solches Feld, und die Anzeige erscheint
-       ohne Gehaltsangabe. In Österreich ist sie Pflicht (§ 9 GlBG), und
-       genau danach filtern Bewerber.
+    /* DAS GEHALT KOMMT AUS EINEM ZAHLENFELD – ODER GAR NICHT.
+       Vorgeschichte, weil sie die Regel trägt: Ursprünglich war `s.gehalt` nur
+       ein Schalter, das erzeugte `baseSalary` hatte keinen Wert, und Google
+       verwarf es. Der Befund war richtig. Die Reparatur am 03.08.2026 war es
+       nicht: Sie las eine Zahl AUS DEM FREITEXT – genau das, was der Kommentar
+       an dieser Stelle seit jeher verbietet („eine Zahl daraus zu erraten wäre
+       eine erfundene Angabe"). Nachgemessen kam bei drei von sieben üblichen
+       Formulierungen etwas Falsches heraus, darunter „2.400 €/Monat, 14x
+       jährlich" als 2.400 € im JAHR.
 
-       Eine Zahl aus dem Text zu ERRATEN bleibt verboten – das wäre eine
-       erfundene Angabe. Deshalb: Steht eine Zahl erkennbar drin, wird sie
-       übernommen; steht keine drin, geht der Text als `description` mit,
-       statt ein leeres Feld zu erzeugen. */
-    ...(s.gehalt
-      ? (() => {
-          const zahl = String(s.gehalt).replace(/\./g, '').match(/(\d+(?:,\d+)?)/);
-          const betrag = zahl ? Number(zahl[1].replace(',', '.')) : undefined;
-          const proJahr = /jahr|jährlich|p\.\s*a\./i.test(s.gehalt);
-          return {
-            baseSalary: {
-              '@type': 'MonetaryAmount',
-              currency: 'EUR',
-              value: {
-                '@type': 'QuantitativeValue',
-                unitText: proJahr ? 'YEAR' : 'MONTH',
-                ...(betrag !== undefined ? { value: betrag } : {}),
-                description: s.gehalt,
-              },
+       Jetzt gilt: `gehaltBetrag` ist eine ZAHL, die der Betrieb einträgt.
+       Fehlt sie, entsteht kein Gehalts-Schema. Die Anzeige ist dann für Google
+       ohne Gehalt – aber nichts daran ist erfunden. Der Fließtext `gehalt`
+       steht unverändert für Menschen auf der Seite; das ist die Pflichtangabe
+       nach § 9 GlBG, und die verlangt einen lesbaren Satz, keine Zahl. */
+    ...(typeof s.gehaltBetrag === 'number'
+      ? {
+          baseSalary: {
+            '@type': 'MonetaryAmount',
+            currency: 'EUR',
+            value: {
+              '@type': 'QuantitativeValue',
+              value: s.gehaltBetrag,
+              unitText: s.gehaltZeitraum ?? 'MONTH',
             },
-          };
-        })()
+          },
+        }
       : {}),
   }));
 })();
