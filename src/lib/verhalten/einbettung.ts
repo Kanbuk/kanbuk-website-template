@@ -40,7 +40,18 @@ export function einbettungStarten(): void {
       // Rechte so eng wie möglich halten.
       rahmen.referrerPolicy = 'no-referrer';
       rahmen.setAttribute('allow', 'fullscreen');
-      rahmen.style.cssText = `width:100%; aspect-ratio:${seitenverhaeltnis}; border:0; display:block;`;
+      /* „auto" heißt: Die Größe bestimmt das Design am Rahmen-Element, nicht
+         der Baustein. Dann darf hier KEIN Seitenverhältnis gesetzt werden –
+         `aspect-ratio: auto` bedeutet für ein <iframe> nämlich „keine Höhe",
+         und dann greift die uralte HTML-Vorgabe von 150 px. Genau so sah die
+         geladene Karte in einem Klon aus: ein 150-px-Streifen oben in einem
+         435 px hohen Kasten, der Rest schwarz. Der Platzhalter davor saß
+         richtig – der Fehler zeigte sich erst NACH dem Klick, also hinter
+         einer Einwilligung, die von selbst keine Prüfung erteilt. */
+      rahmen.style.cssText =
+        seitenverhaeltnis === 'auto'
+          ? 'position:absolute; inset:0; width:100%; height:100%; border:0; display:block;'
+          : `width:100%; aspect-ratio:${seitenverhaeltnis}; border:0; display:block;`;
       inhaltErsetzen(box, rahmen);
       box.classList.add('ist-geladen');
 

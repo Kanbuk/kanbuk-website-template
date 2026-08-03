@@ -35,19 +35,27 @@
  *    ließe sich nicht in einem Bild ausgleichen, und der Ausgleich selbst
  *    würde zur sichtbaren Wanderung.
  *
- * 3. ES KLAPPT NUR AUF SANFT ZU, NICHT ZU. Das Zuklappen sprang hart – die
- *    Hälfte der Bedienung. Der frühere Versuch, dafür die INHALTS-Box von
- *    ihrer Höhe auf 0 zu fahren, scheiterte an einer Eigenheit des
- *    Box-Modells: Eine Box kann nicht unter ihr eigenes Polster schrumpfen.
- *    Steht am Antworttext ein `padding-bottom` von 24 px, bleibt sie bei
- *    `height: 0` trotzdem 24 px hoch. Gemessen ergab das beim Öffnen
- *    „73 → Sprung auf 96 → sanft auf 149" und beim Schließen ein
- *    Hängenbleiben bei 96 mit hartem Fall auf 73 ganz am Ende.
+ * 3. ES KLAPPTE NUR AUF SANFT AUF, NICHT ZU. Das Zuklappen sprang hart – die
+ *    Hälfte der Bedienung. Zwei Sackgassen auf dem Weg zur Lösung, beide
+ *    gemessen, damit sie niemand noch einmal geht:
  *
- *    Deshalb wird das <details> SELBST animiert, von seiner echten
- *    zugeklappten zu seiner echten aufgeklappten Höhe. Beide Werte werden
- *    GEMESSEN, nicht gerechnet – dann sind Polster, Rahmen und Abstände
- *    automatisch enthalten, egal wie ein Design die Antwort gestaltet.
+ *    a) NUR `height` auf 0 fahren reicht nicht. Eine Box kann nicht unter ihr
+ *       eigenes Polster schrumpfen: Steht am Antworttext ein `padding-bottom`
+ *       von 24 px, bleibt sie bei `height: 0` trotzdem 24 px hoch. Der
+ *       Höhenverlauf war „73 → Sprung auf 96 → sanft auf 149" beim Öffnen und
+ *       beim Schließen ein Hängenbleiben bei 96 mit hartem Fall auf 73 ganz am
+ *       Ende. Die Polster MÜSSEN mitlaufen.
+ *
+ *    b) Das <details> selbst zu animieren scheitert daran, dass
+ *       `overflow: hidden` auf <details> NICHT KLEMMT. Gegenprobe: Höhe fest
+ *       auf 40 px, `overflow: hidden` gesetzt – der Antworttext ragte trotzdem
+ *       97 px hinaus. Er schwebte sichtbar in die nächste Frage hinein.
+ *       Geklemmt wird deshalb am Inhalt, nicht am Klappelement.
+ *
+ *    Bewegt wird also ALLES, was nach dem <summary> steht: Höhe und beide
+ *    senkrechten Polster gemeinsam, geklemmt am Element selbst. Die Zielwerte
+ *    werden GEMESSEN, nicht gerechnet – dann stimmen sie, egal wie ein Design
+ *    die Antwort gestaltet.
  */
 import { bewegungReduziert } from './hilfen';
 
@@ -67,38 +75,79 @@ export function akkordeonStarten(): void {
 
     const zustandMelden = (d: HTMLDetailsElement) => d.classList.toggle('ist-offen', d.open);
 
-    /** Zugeklappte und aufgeklappte Höhe exakt messen.
-     *  Das kurze Umschalten von `open` sieht niemand: Es passiert innerhalb
-     *  eines Frames, der Browser zeichnet dazwischen nicht. */
-    function hoehen(d: HTMLDetailsElement): { zu: number; auf: number } {
-      const war = d.open;
-      d.open = false;
-      const zu = d.getBoundingClientRect().height;
-      d.open = true;
-      const auf = d.getBoundingClientRect().height;
-      d.open = war;
-      return { zu, auf };
+    /** Alles, was nach dem <summary> steht. Meist ein einzelner Block – es
+     *  dürfen aber mehrere sein, und dann muss jeder mitlaufen, sonst springt
+     *  der Rest. */
+    function inhalte(d: HTMLDetailsElement): HTMLElement[] {
+      return Array.from(d.children).filter((k) => k.tagName !== 'SUMMARY') as HTMLElement[];
     }
 
     /** `overflow` gehört ans Element, NICHT in die Keyframes: Es ist keine
      *  animierbare Eigenschaft – die Web-Animation ignoriert es dort
      *  stillschweigend, und dann steht der Inhalt außerhalb seiner
      *  schrumpfenden Box. Danach wieder wegnehmen, sonst schneidet die Box
-     *  dauerhaft ab (etwa den Fokusrahmen eines Links in der Antwort). */
-    function fahren(d: HTMLDetailsElement, von: number, nach: number): Animation {
-      const vorher = d.style.overflow;
-      d.style.overflow = 'hidden';
-      const a = d.animate([{ height: `${von}px` }, { height: `${nach}px` }], {
-        duration: DAUER,
-        easing: KURVE,
+     *  dauerhaft ab (etwa den Fokusrahmen eines Links in der Antwort).
+     *
+     *  DER WACHPOSTEN (`laufend.get(d) !== a`) IST KEIN SCHMUCK. Ereignisse
+     *  der Web-Animation werden VERZÖGERT zugestellt, nicht sofort. Wer eine
+     *  alte Bewegung abbricht und im selben Atemzug eine neue startet, bekommt
+     *  das `cancel` der alten ERST DANACH – ihr Aufräumen löscht dann die
+     *  Klemmung, die die neue Bewegung gerade gesetzt hat. Gemessen: 110 ms
+     *  nach dem Klick lief die Bewegung, aber `overflow` stand wieder auf
+     *  `visible`, und der Antworttext ragte 91 px über seinen Eintrag hinaus –
+     *  er schwebte sichtbar in die nächste Frage hinein. Aufräumen darf
+     *  deshalb nur, wer noch der aktuelle Lauf ist. */
+    function fahren(d: HTMLDetailsElement, oeffnen: boolean): Animation | null {
+      const teile = inhalte(d);
+      if (teile.length === 0) return null;
+
+      /* Die natürlichen Maße messen, solange `open` steht. Zwischen Messen und
+         Setzen wird kein Bild gemalt – der Browser rechnet innerhalb dieses
+         Blocks, es flackert also nichts. */
+      const ziele = teile.map((el) => {
+        el.style.removeProperty('height');
+        el.style.removeProperty('padding-top');
+        el.style.removeProperty('padding-bottom');
+        const stil = getComputedStyle(el);
+        return {
+          el,
+          hoehe: el.getBoundingClientRect().height,
+          padOben: stil.paddingTop,
+          padUnten: stil.paddingBottom,
+        };
       });
+
+      let leit: Animation | null = null;
+      for (const z of ziele) {
+        z.el.style.overflow = 'hidden';
+        const offen = { height: `${z.hoehe}px`, paddingTop: z.padOben, paddingBottom: z.padUnten, opacity: 1 };
+        const zu = { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 };
+        const a = z.el.animate(oeffnen ? [zu, offen] : [offen, zu], { duration: DAUER, easing: KURVE });
+        if (!leit) leit = a;
+      }
+      if (!leit) return null;
+
+      const chef = leit;
+      laufend.set(d, chef);
+      /* DER WACHPOSTEN (`laufend.get(d) !== chef`) IST KEIN SCHMUCK.
+         Ereignisse der Web-Animation werden VERZÖGERT zugestellt, nicht
+         sofort. Wer eine alte Bewegung abbricht und im selben Atemzug eine
+         neue startet, bekommt das `cancel` der alten ERST DANACH – ihr
+         Aufräumen löscht dann die Klemmung, die die neue gerade gesetzt hat.
+         Gemessen: 110 ms nach dem Klick lief die Bewegung, aber `overflow`
+         stand wieder auf `visible`. Aufräumen darf nur der aktuelle Lauf. */
       const zurueck = () => {
-        d.style.overflow = vorher;
-        d.style.removeProperty('height');
+        if (laufend.get(d) !== chef) return;
+        for (const z of ziele) {
+          z.el.style.removeProperty('overflow');
+          z.el.style.removeProperty('height');
+          z.el.style.removeProperty('padding-top');
+          z.el.style.removeProperty('padding-bottom');
+        }
       };
-      a.addEventListener('finish', zurueck);
-      a.addEventListener('cancel', zurueck);
-      return a;
+      chef.addEventListener('finish', zurueck);
+      chef.addEventListener('cancel', zurueck);
+      return chef;
     }
 
     /** Geschwister schließen und den Versatz ausgleichen – Bewegungsfehler 2. */
@@ -128,10 +177,9 @@ export function akkordeonStarten(): void {
         zustandMelden(d);
         return;
       }
-      const masse = hoehen(d);
       d.open = true;
       zustandMelden(d);
-      if (masse.auf > masse.zu) laufend.set(d, fahren(d, masse.zu, masse.auf));
+      fahren(d, true);
     }
 
     function zuklappen(d: HTMLDetailsElement, sanft: boolean): void {
@@ -141,15 +189,22 @@ export function akkordeonStarten(): void {
         zustandMelden(d);
         return;
       }
-      const masse = hoehen(d);
       // Die Klasse sofort wegnehmen, damit das Plus-/Minus-Zeichen mit dem
       // Klick umschlägt und nicht erst eine Viertelsekunde später.
       d.classList.remove('ist-offen');
-      const a = fahren(d, masse.auf, masse.zu);
-      laufend.set(d, a);
+      const a = fahren(d, false);
+      if (!a) {
+        d.open = false;
+        zustandMelden(d);
+        return;
+      }
       // `open` bleibt stehen, bis die Bewegung durch ist – sonst wäre der
       // Inhalt sofort weg und es gäbe nichts mehr zuzuklappen.
+      // Auch hier der Wachposten: Ein verspätet zugestelltes `finish` eines
+      // überholten Laufs dürfte sonst einen gerade wieder geöffneten Eintrag
+      // zuschlagen.
       a.addEventListener('finish', () => {
+        if (laufend.get(d) !== a) return;
         d.open = false;
         zustandMelden(d);
       });
