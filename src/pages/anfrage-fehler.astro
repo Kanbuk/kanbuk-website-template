@@ -41,10 +41,23 @@ const duzen = site.ansprache === 'du';
   <main id="inhalt" class="danke">
     <div class="container container--schmal">
       <h1 class="danke__titel">Das hat leider nicht geklappt</h1>
+      {/* DER TEXT MUSS ALLE WEGE ABDECKEN, DIE HIERHER FÜHREN.
+          Hier standen zwei Ursachen („eine Angabe gefehlt" oder „bei uns ist
+          etwas schiefgegangen"), angesteuert wird die Seite aber von dreien:
+          403 (Ursprung passt nicht), 413 (Nachricht zu lang) und 429 (zu viele
+          Versuche). Ein Besucher ohne laufendes JavaScript – Skript lädt
+          nicht, altes Gerät, Firmen-Proxy – las also eine Ursache, die auf
+          seinen Fall nicht zutrifft.
+
+          Und der Rat „bitte noch einmal versuchen" war ausgerechnet im
+          häufigsten Fall falsch: Nach dem 429 hält die Sperre zehn Minuten
+          (FENSTER_MS in api/contact.ts). Ohne Skript entstand daraus eine
+          Schleife – senden, gesperrt, „noch einmal versuchen", senden,
+          wieder gesperrt. Deshalb steht der direkte Kontaktweg jetzt vorn. */}
       <p class="danke__text">
         {duzen
-          ? 'Deine Nachricht konnte gerade nicht entgegengenommen werden. Entweder hat eine Angabe gefehlt, oder bei uns ist etwas schiefgegangen. Bitte versuche es noch einmal – oder melde dich direkt:'
-          : 'Ihre Nachricht konnte gerade nicht entgegengenommen werden. Entweder hat eine Angabe gefehlt, oder bei uns ist etwas schiefgegangen. Bitte versuchen Sie es noch einmal – oder melden Sie sich direkt:'}
+          ? 'Deine Nachricht konnte gerade nicht entgegengenommen werden. Das kann mehrere Gründe haben: eine fehlende Angabe, eine sehr lange Nachricht, mehrere Versuche kurz hintereinander – oder ein Fehler bei uns. Am schnellsten erreichst du uns direkt:'
+          : 'Ihre Nachricht konnte gerade nicht entgegengenommen werden. Das kann mehrere Gründe haben: eine fehlende Angabe, eine sehr lange Nachricht, mehrere Versuche kurz hintereinander – oder ein Fehler bei uns. Am schnellsten erreichen Sie uns direkt:'}
       </p>
       <p class="danke__text">
         {site.mode === 'live' ? (

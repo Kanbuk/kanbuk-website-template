@@ -31,7 +31,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { pruefeDatei } from './lib/integritaet.mjs';
-import { ohneKommentare } from './lib/quelltext.mjs';
+import { ohneKommentare, markerGlobal } from './lib/quelltext.mjs';
 
 const WURZEL = process.cwd();
 const CONFIG = join(WURZEL, 'content.config.ts');
@@ -117,12 +117,36 @@ export function pruefeConfigText(configText, { inPublic, inFotos }) {
      Fehler mit einer FALSCHEN Loesung: „Logo-Datei nach fotos/ legen". Wer das
      befolgt, verschiebt das Erzeugnis aus public/ heraus – und dann holt das
      Mailprogramm ins Leere. Nachgestellt und reproduziert am 02.08.2026. */
+  /* ABGEGRENZT ÜBER DIE KLAMMERN, NICHT ÜBER DIE EINRÜCKUNG.
+     Hier stand `!/\n {2}[a-zA-Z]+:/` – also „solange keine Zeile mit GENAU zwei
+     Leerzeichen Einrückung folgt". Das ist dieselbe Falle, die in check.mjs für
+     den `dienste`-Block schon beseitigt wurde: Es ist eine Annahme über die
+     FORMATIERUNG, nicht über die Struktur.
+
+     Solange ein Klon die Formatierung des Templates behält, merkt niemand
+     etwas – deshalb ist es so unauffällig. Rückt jemand seine
+     content.config.ts anders ein (vier Leerzeichen, oder ein Editor formatiert
+     beim Speichern um), verschiebt sich die Blockgrenze still. Dann verlangt
+     die Regel das Mail-Logo wieder in fotos/ und nennt eine Lösung, die das
+     Erzeugnis aus public/ heraustrüge – genau der Fehler, den der Absatz
+     darüber beschreibt.
+
+     Gezählt wird jetzt, wie tief wir in geschweiften Klammern stehen: Der
+     Treffer gehört zum Block, solange die Klammer von `bestaetigung: {` noch
+     offen ist. Das gilt unabhängig von jeder Formatierung. */
   const imBestaetigungsblock = (index) => {
-    const davor = text.slice(0, index);
-    const start = davor.lastIndexOf('bestaetigung:');
+    const start = text.lastIndexOf('bestaetigung:', index);
     if (start < 0) return false;
-    // Nur, wenn dazwischen kein anderer Block auf gleicher Ebene begonnen hat.
-    return !/\n {2}[a-zA-Z]+:/.test(davor.slice(start));
+    const auf = text.indexOf('{', start);
+    if (auf < 0 || auf > index) return false;
+    let tiefe = 0;
+    for (let i = auf; i < index; i++) {
+      const z = text[i];
+      if (z === '{') tiefe++;
+      else if (z === '}') tiefe--;
+      if (tiefe === 0 && i > auf) return false; // Block war schon zu
+    }
+    return tiefe > 0;
   };
   for (const m of text.matchAll(/\blogo\s*:\s*(['"`])([^'"`]+)\1/g)) {
     if (imBestaetigungsblock(m.index)) {
@@ -145,7 +169,7 @@ export function pruefeConfigText(configText, { inPublic, inFotos }) {
   //        OHNE KOMMENTARE, wie im Prüf-Tor: Sonst zählt der Vorcheck die
   //        Erklärungen mit, die einem Klon gerade erst beibringen, wie man
   //        einen Platzhalter setzt – und meldet eine andere Zahl als `check`.
-  const marker = (ohneKommentare(configText).match(/PLATZHALTER/g) ?? []).length;
+  const marker = (ohneKommentare(configText).match(markerGlobal()) ?? []).length;
   if (marker > 0) {
     infos.push(`${marker} PLATZHALTER-Marker in content.config.ts – gehören ins Lücken-Inventar (STAND.md); erst der Live-Gang verlangt echte Werte.`);
   }

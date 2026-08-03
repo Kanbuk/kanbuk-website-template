@@ -39,7 +39,7 @@
  *  Rot (Exit 1) = ein Bedien-Element ist kaputt. Die Seite darf so nicht raus.
  * =============================================================================
  */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { starteDistServer } from './lib/dist-server.mjs';
@@ -78,6 +78,21 @@ let geprueft = 0;
    BEIM KUNDEN auf. Beim Wirt ist die Speisekarte ein Tab-Baustein, beim Händler
    der Vergleich – also genau dort.
    Deshalb nennt der Schlussbericht jetzt, was NICHT vorkam. */
+/* NUR WAS IN DIESEM MODUS ÜBERHAUPT LAUFEN KANN.
+   Hier stand eine feste Liste mit allen vier Formular-Prüfungen. Die können
+   aber nie gleichzeitig vorkommen: Eine Vorschau prüft „Formular (Vorschau)"
+   und „(Demo-Hinweis)", eine Live-Seite „Formular (Struktur)". Egal wie die
+   Seite gebaut ist, mindestens zwei standen deshalb in JEDEM grünen Lauf unter
+   „NICHT GEPRÜFT" – und zwar dauerhaft, ohne dass irgendetwas daran zu machen
+   wäre.
+
+   Eine Warnliste, in der drei von zehn Punkten immer falsch sind, gewöhnt
+   einem das Hinsehen ab. Genau dann übersieht man den vierten, der stimmt.
+
+   Der Modus steht in der gebauten Seite: die Vorschau trägt `noindex`. */
+const startSeite = readFileSync(join(DIST, 'index.html'), 'utf-8');
+const IST_VORSCHAU = /<meta[^>]+name=["']robots["'][^>]+noindex/i.test(startSeite);
+
 const ALLE_PRUEFUNGEN = [
   'Tabs',
   'Filter',
@@ -92,11 +107,21 @@ const ALLE_PRUEFUNGEN = [
   'Slider',
   'Lightbox',
   'Mobilmenü',
-  'Formular',
-  'Formular (Vorschau)',
-  'Formular (Demo-Hinweis)',
-  'Formular (Struktur)',
+  /* „Formular" ohne Zusatz ist KEIN Prüfschritt, sondern die Beschriftung der
+     Fehlermeldungen weiter unten (scharfes Formular in der Vorschau, Vorschau
+     ohne Hinweis). Auf einem grünen Lauf entsteht sie nie – sie hier zu
+     erwarten hiess, sie in jedem grünen Lauf zu vermissen. */
+  ...(IST_VORSCHAU ? ['Formular (Vorschau)'] : ['Formular (Struktur)']),
 ];
+
+/* ZWEI BESCHRIFTUNGEN, EIN PRÜFSCHRITT.
+   „Formular (Demo-Hinweis)" läuft ausschliesslich dann, wenn es einen Hinweis,
+   aber KEIN Vorschau-Formular gibt (siehe den Zweig `if (vorschauen.length ===
+   0)` weiter unten). Beide zu erwarten hiess, in jedem Lauf genau einen von
+   beiden zu vermissen – je nachdem, wie die Seite gebaut ist. Erwartet wird
+   deshalb der Regelfall; die Alternative zählt als erfüllt, wenn sie statt
+   seiner gelaufen ist. */
+const ALTERNATIVEN = { 'Formular (Vorschau)': ['Formular (Demo-Hinweis)'] };
 const gesehen = new Set();
 
 const browser = await chromium.launch();
@@ -873,10 +898,16 @@ Zuordnung (Tab ohne Panel, Filterwert ohne Kategorie).`);
 }
 console.log(`✓ Alle Bedien-Elemente funktionieren (${geprueft} Prüfung(en), ${seiten.length} Seite(n) × ${BREITEN.join('/')} px).`);
 
-const nieGefahren = ALLE_PRUEFUNGEN.filter((p) => !gesehen.has(p));
+const nieGefahren = ALLE_PRUEFUNGEN.filter(
+  (p) => !gesehen.has(p) && !(ALTERNATIVEN[p] ?? []).some((a) => gesehen.has(a)),
+);
 if (nieGefahren.length) {
   console.log('');
-  console.log(`  NICHT GEPRÜFT – auf dieser Seite kam ${nieGefahren.length} Baustein-Art nicht vor:`);
+  /* „auf dieser Seite" stand hier, während zehn Seiten gefahren wurden – der
+     Leser sucht dann auf der falschen. */
+  console.log(
+    `  NICHT GEPRÜFT – auf keiner der ${seiten.length} Seiten kam ${nieGefahren.length} Baustein-Art vor:`,
+  );
   console.log(`  ${nieGefahren.join(' · ')}`);
   console.log('');
   console.log('  Das ist kein Fehler: Was die Seite nicht hat, kann nicht geprüft werden.');

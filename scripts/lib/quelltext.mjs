@@ -52,5 +52,22 @@ export function ohneKommentare(quelle) {
   return raus;
 }
 
-/** Die Marker, die vor dem Live-Gang ersetzt sein müssen. */
-export const MARKER = /\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/g;
+/**
+ * Die Marker, die vor dem Live-Gang ersetzt sein müssen.
+ *
+ * OHNE `/g` – MIT ABSICHT. Ein Ausdruck mit `g` merkt sich zwischen zwei
+ * Aufrufen, wie weit er gekommen ist (`lastIndex`). Wird derselbe Ausdruck an
+ * mehreren Stellen benutzt, findet der zweite Aufruf ab einer beliebigen Stelle
+ * mitten im Text – und meldet mal etwas, mal nichts. Genau deshalb stand diese
+ * Konstante hier ungenutzt herum, während dasselbe Muster an drei Stellen von
+ * Hand ausgeschrieben war.
+ *
+ * Wer alle Treffer braucht, nimmt `markerGlobal()` – das ist jedes Mal ein
+ * frischer Ausdruck ohne Gedächtnis.
+ */
+export const MARKER = /\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/;
+
+/** Frische Fassung mit `g` – für `.match()` über alle Treffer. */
+export function markerGlobal() {
+  return new RegExp(MARKER.source, 'g');
+}

@@ -75,9 +75,30 @@ function wieAlterBrowser(css) {
     }
 
     const kopf = css.slice(i, auf);
-    /* Verschachtelte Blöcke (@media, @supports) unverändert durchreichen –
-       ihr Inhalt wird beim nächsten Durchlauf selbst behandelt. */
-    if (/@(media|supports|layer|font-face|keyframes)/.test(kopf.trim().split(/[;}]/).pop() ?? '')) {
+    const atRegel = kopf.trim().split(/[;}]/).pop() ?? '';
+
+    /* EIN `@supports` MIT UNBEKANNTER BEDINGUNG FÄLLT GANZ WEG – samt Inhalt.
+       Genau dafür gibt es die Regel: Der alte Browser versteht die Bedingung
+       nicht, also überspringt er den Block und behält, was davor stand
+       (CLAUDE.md 4a, Weg 3). Hier wurde er unverändert durchgereicht – die
+       Nachbildung zeigte damit den modernen Zustand und hätte einen korrekt
+       abgesicherten Wert als kaputt dargestellt. */
+    if (/@supports/.test(atRegel) && ZEILE_UNBEKANNT.some((r) => r.test(kopf))) {
+      let tiefe = 1;
+      let j = auf + 1;
+      while (j < css.length && tiefe > 0) {
+        if (css[j] === '{') tiefe++;
+        else if (css[j] === '}') tiefe--;
+        j++;
+      }
+      i = j;
+      continue;
+    }
+
+    /* Alle anderen verschachtelten Blöcke (@media, @supports mit bekannter
+       Bedingung) unverändert durchreichen – ihr Inhalt wird beim nächsten
+       Durchlauf selbst behandelt. */
+    if (/@(media|supports|layer|font-face|keyframes)/.test(atRegel)) {
       raus += kopf + '{';
       i = auf + 1;
       continue;
@@ -100,7 +121,30 @@ function wieAlterBrowser(css) {
       .split(';')
       .map((d) => d.trim())
       .filter(Boolean)
-      .filter((d) => !ZEILE_UNBEKANNT.some((r) => r.test(d)))
+      /* EINE TOKEN-ZEILE WIRD UNAUFLÖSBAR GEMACHT, NICHT GELÖSCHT.
+         Das ist der Unterschied zwischen Nachbildung und Wirklichkeit, und er
+         hat am 03.08.2026 einen Fehler als behoben durchgehen lassen.
+
+         Ein echter alter Browser wirft `--raum-s: clamp(…)` NICHT weg. Eine
+         Custom Property nimmt jeden Zeichenstrom an; die Zeile überlebt. Erst
+         beim Einsetzen fällt auf, dass `clamp(…)` dort nichts zu suchen hat –
+         und dann ist die EIGENSCHAFT ungültig und fällt auf ihren Anfangswert.
+         Ein `var(--raum-s, 1rem)` hilft dabei nicht: Der Ersatzwert greift nur
+         bei einer Variablen, die gar nicht gesetzt ist.
+
+         Dieses Werkzeug löschte die Zeile – damit war die Variable ungesetzt,
+         der Ersatzwert griff, und das Bild sah richtig aus. Genau die
+         Absicherung, die in Wirklichkeit nicht wirkt, wurde hier bestätigt.
+
+         Jetzt bleibt die Deklaration stehen und bekommt einen Wert, den kein
+         Browser auflösen kann. Damit verhält sich die Nachbildung wie das
+         Gerät: Wer die Variable benutzt, verliert die Eigenschaft. */
+      .map((d) => {
+        if (!ZEILE_UNBEKANNT.some((r) => r.test(d))) return d;
+        const name = d.match(/^(--[\w-]+)\s*:/);
+        return name ? `${name[1]}:kanbuk-nicht-aufloesbar` : '';
+      })
+      .filter(Boolean)
       .filter((d) => !(istFlex && FLEX_LUECKE.test(d)));
 
     raus += kopf + '{' + behalten.join(';') + '}';

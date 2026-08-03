@@ -171,15 +171,27 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
 
   .schwebeknopf {
     position: fixed;
-    /* ERSATZWERT IN DER KLAMMER, nicht in einer Zeile davor. Ein alter Browser
-       kennt `clamp()` nicht und wirft damit die ganze Token-Zeile
-       `--raum-s: clamp(…)` weg. Stünde hier nur `var(--raum-s)`, wäre die
-       Angabe ungültig und `right` fiele auf `auto` zurück – der Knopf springt
-       dann an den LINKEN Rand und liegt auf dem Formular. Am 03.08.2026 in den
-       Bildern von `npm run altgeraet` genau so gesehen; kein Tor meldet das,
-       weil syntaktisch nichts falsch ist. Ein zweites `right:` davor hülfe
-       nicht – die Zeile mit `var()` löscht es mit (CLAUDE.md 4a). */
-    right: var(--raum-s, 1rem);
+    /* WEG 3 AUS CLAUDE.md 4a – einfacher Wert hier, moderner im `@supports`
+       darunter. Alle anderen Wege scheitern an dieser Stelle, und zwar
+       nachgemessen:
+
+       `right: var(--raum-s, 1rem)`  – ein PLACEBO. Der Ersatzwert in der
+       Klammer greift nur, wenn die Variable GAR NICHT gesetzt ist. Eine
+       Custom Property nimmt aber jeden Zeichenstrom an: `--raum-s: clamp(…)`
+       überlebt auch in einem Browser, der `clamp()` nicht kennt. Erst beim
+       Einsetzen fällt es auf – und dann ist die Eigenschaft ungültig und
+       fällt auf `auto`, ohne dass der Ersatzwert je gefragt wird.
+
+       `right: 1rem;` davor – hilft ebenfalls nicht: Die Zeile mit `var()`
+       löscht ihn mit (CLAUDE.md 4a, gemessen).
+
+       WARUM DAS HIER STAND UND ALS BEHOBEN GALT: `npm run altgeraet` löscht
+       Deklarationen mit unbekannten Merkmalen ZEILENWEISE – also auch
+       `--raum-s: clamp(…)` selbst. In der Nachbildung war die Variable damit
+       ungesetzt, und genau dann wirkt der Ersatzwert in der Klammer. Das
+       Werkzeug hat den Fehler gedeckt, statt ihn zu zeigen. Seit heute
+       ersetzt es den Wert, statt die Zeile zu entfernen (scripts/altgeraet.mjs). */
+    right: 1rem;
     /* `env()` kennt jeder Browser ab Safari 11.1 – unterhalb unserer Grenze.
        Der Ersatzwert davor enthält KEIN var() und wird deshalb wirklich
        behalten, wenn `env()` fehlt (CLAUDE.md Abschnitt 4a, Weg 2). */
@@ -203,6 +215,15 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
     font-size: 1.5rem;
     line-height: 1;
     box-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+  }
+
+  /* Der moderne Wert. Ein Browser ohne `clamp()` überspringt diesen Block
+     vollständig und behält die `1rem` von oben – das ist der Unterschied zu
+     einem Ersatzwert, den die var()-Zeile mitlöschen würde. */
+  @supports (right: clamp(1rem, 1vw, 2rem)) {
+    .schwebeknopf {
+      right: var(--raum-s);
+    }
   }
 
   /* In der Vorschau ist es kein Link – das soll man auch sehen. */

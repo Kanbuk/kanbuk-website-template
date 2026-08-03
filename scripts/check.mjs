@@ -16,7 +16,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, extname, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { ohneKommentare } from './lib/quelltext.mjs';
+import { ohneKommentare, MARKER, markerGlobal } from './lib/quelltext.mjs';
 
 const WURZEL = process.cwd();
 const DIST = join(WURZEL, 'dist');
@@ -1508,7 +1508,7 @@ if (istLive || nurLive) {
      sich auch der Vorcheck bedient. Zwei eigene Zähler meldeten vorher zwei
      verschiedene Zahlen für dieselbe Datei. */
   const configOhneKommentare = ohneKommentare(configText);
-  const markerTreffer = configOhneKommentare.match(/\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/);
+  const markerTreffer = configOhneKommentare.match(MARKER);
   if (markerTreffer) {
     const zeile = configOhneKommentare.slice(0, markerTreffer.index).split('\n').length;
     fehler(
@@ -1529,7 +1529,7 @@ if (istLive || nurLive) {
       .replace(/<style[\s\S]*?<\/style>/gi, ' ')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&[a-z]+;/gi, ' ');
-    const marker = (sichtbar.match(/\b(PLATZHALTER|TODO|XXX+|LOREM IPSUM)\b/g) ?? [])[0];
+    const marker = (sichtbar.match(markerGlobal()) ?? [])[0];
     if (marker) {
       fehler(`${kurz(f)}: Der Marker „${marker}" steht im fertigen Text – vor dem Live-Gang ersetzen.`);
     }
