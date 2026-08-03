@@ -773,6 +773,27 @@ if (istLive && /Disallow:\s*\/\s*$/m.test(robots)) {
   }
 }
 
+/* FAQ-SCHEMA: gepflegte Fragen, die Google nie zu sehen bekommt.
+   Wer `faq` füllt und `zeigtFaq` nicht kennt, bekommt kein FAQPage-Schema –
+   die Antworten erscheinen dann nicht aufklappbar im Suchergebnis, und das ist
+   für einen Kleinbetrieb der billigste Platzgewinn in der Trefferliste, den es
+   gibt. Bis zum 03.08.2026 brach der Build deswegen ab, mitten im Rendern und
+   mit Stapelabzug; das kostete im Zweifel die ganze Veröffentlichung wegen
+   eines Zusatzes. Der Abbruch ist jetzt ein Hinweis beim Bauen – und hier die
+   harte Kante, an der entschieden wird, ob eine Seite raus darf. */
+{
+  const hatFaqDaten = /\bfaq:\s*\[\s*\{/.test(configWerte);
+  const hatFaqSchema = htmlDateien.some((f) => /"@type"\s*:\s*"FAQPage"/.test(readFileSync(f, 'utf-8')));
+  if (hatFaqDaten && !hatFaqSchema) {
+    fehler(
+      'Es gibt FAQ-Einträge, aber auf keiner Seite steht das FAQ-Schema.\n' +
+        '    Die Antworten erscheinen damit nicht im Google-Treffer – der billigste Platzgewinn,\n' +
+        '    den ein Kleinbetrieb in der Trefferliste hat, bleibt ungenutzt.\n' +
+        '    In content.config.ts bei der Seite, welche die Fragen zeigt, `zeigtFaq: true` setzen.',
+    );
+  }
+}
+
 /* VORSCHAU: Das Formular ist sichtbar, darf aber kein Versandziel haben.
    Seit 2026-07-27 rendert die Vorschau ein echtes, bedienbares Formular –
    sonst schreibt der Port sein Aussehen blind und der Kunde sieht bei der

@@ -26,6 +26,7 @@
  * weiteres Zutun – genau diese Verdrahtung geht sonst jedes Mal schief.
  */
 import { site, type KatalogEintrag } from '../../content.config';
+import { motorFehler } from './motorfehler';
 
 /** Der konfigurierte Katalog – oder undefined, wenn keiner gepflegt ist. */
 export function katalog() {
@@ -55,32 +56,36 @@ export function katalogPruefen(): void {
   const gesehen = new Map<string, number>();
   k.eintraege.forEach((e, i) => {
     if (gesehen.has(e.id)) {
-      throw new Error(
+      motorFehler(
         `Katalog: Die Kennung "${e.id}" gibt es zweimal (Eintrag ${gesehen.get(e.id)! + 1} und ${i + 1}). ` +
-          `Beide bekämen dieselbe Adresse – einer der beiden verschwindet. Bitte in content.config.ts eine eindeutige "id" vergeben.`,
+          `Beide bekämen dieselbe Adresse – einer der beiden verschwindet spurlos.`,
+        `In content.config.ts unter "katalog" bei einem der beiden Einträge eine andere "id" eintragen.`,
       );
     }
     gesehen.set(e.id, i);
 
     if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(e.id)) {
-      throw new Error(
-        `Katalog: Die Kennung "${e.id}" taugt nicht als Adresse. Erlaubt sind Kleinbuchstaben, Ziffern und Bindestriche – ` +
-          `zum Beispiel "bmw-320d-touring-2019". Umlaute ausschreiben (ä = ae).`,
+      motorFehler(
+        `Katalog: Die Kennung "${e.id}" taugt nicht als Adresse.`,
+        `Erlaubt sind Kleinbuchstaben, Ziffern und Bindestriche – zum Beispiel "modell-320-touring-2019". ` +
+          `Umlaute ausschreiben (ä = ae), keine Leerzeichen. Zu ändern in content.config.ts unter "katalog".`,
       );
     }
   });
 
   if (k.anfrageFormular && !site.formulare.some((f) => f.id === k.anfrageFormular)) {
-    throw new Error(
+    motorFehler(
       `Katalog: anfrageFormular verweist auf "${k.anfrageFormular}", dieses Formular gibt es aber nicht. ` +
-        `Bekannt: ${site.formulare.map((f) => f.id).join(', ') || '(keines)'}. ` +
-        `Ohne Formular hätte jede Detailseite keinen Anfrageweg.`,
+        `Ohne Formular hätte jede Detailseite keinen Anfrageweg – genau dort wird verkauft.`,
+      `In content.config.ts unter "katalog" -> anfrageFormular einen dieser Namen eintragen: ` +
+        `${site.formulare.map((f) => f.id).join(', ') || '(es ist noch kein Formular angelegt)'}.`,
     );
   }
 
   if (!/^\/[a-z0-9-]+$/.test(k.pfad.replace(/\/$/, ''))) {
-    throw new Error(
-      `Katalog: pfad ist "${k.pfad}". Erwartet wird ein einfacher Pfad wie "/fahrzeuge" – ` +
+    motorFehler(
+      `Katalog: pfad ist "${k.pfad}" – daraus lässt sich keine Adresse bauen.`,
+      `In content.config.ts unter "katalog" -> pfad etwas wie "/leistungen" eintragen: ` +
         `mit führendem Schrägstrich, ohne abschließenden, in Kleinbuchstaben.`,
     );
   }

@@ -18,6 +18,7 @@ import '../styles/global.css';
 import fontsCssRoh from '../styles/fonts.css?raw';
 import { site, jsonLdTyp } from '../../content.config';
 import { cssVariablen } from '../lib/theme';
+import { motorHinweis } from '../lib/motorfehler';
 import DemoBar from '../components/DemoBar.astro';
 import Einwilligung from '../components/Einwilligung.astro';
 
@@ -276,11 +277,29 @@ const faqLd = (() => {
      koennte; steht keine fest, sagt der Build es beim Bauen. */
   const faqSeite = site.seiten.find((s) => s.zeigtFaq)?.pfad;
   if (!faqSeite) {
-    throw new Error(
-      'content.config.ts: Es gibt `faq`-Eintraege, aber keine Seite mit `zeigtFaq: true`. ' +
-        'Ohne diese Angabe weiss der Motor nicht, auf welcher Seite das FAQ-Schema stehen soll - ' +
-        'und Google bekommt die Antworten nie zu sehen. Bei der Seite, die die Fragen zeigt, `zeigtFaq: true` setzen.',
+    /* KEIN ABBRUCH – hier stand einer, und er war zu scharf.
+       Der Gedanke war richtig: still kein Schema auszugeben, ist der stille
+       Fehler, gegen den der Motor sonst überall argumentiert. Nur ist der
+       Abbruch die falsche Antwort darauf. Gemessen am 03.08.2026: Der Build
+       stirbt auf der ERSTEN Seite (404.html), mit zehn Zeilen Stapelabzug in
+       Dateien, die es gar nicht wirklich gibt. Wer eine Frage ergänzt und
+       `zeigtFaq` nicht kennt, kann ab da nichts mehr veröffentlichen – wegen
+       eines Zusatzes im Google-Treffer, während die Seite selbst vollständig
+       ist. Ein Abbruch gehört dorthin, wo sonst etwas SPURLOS verschwindet
+       (doppelte Katalog-Kennung), nicht hierher.
+
+       Stattdessen die zwei Ebenen aus motorfehler.ts: sichtbarer Hinweis beim
+       Bauen, harter Fehler im Prüf-Tor. Das Tor entscheidet, ob eine Seite
+       raus darf – dort kostet es niemanden die Veröffentlichung. */
+    motorHinweis(
+      'faq-ohne-zeigtfaq',
+      'Es gibt `faq`-Einträge, aber keine Seite mit `zeigtFaq: true` – deshalb erscheinen ' +
+        'die Antworten nicht im Google-Treffer.',
+      'In content.config.ts bei der Seite, welche die Fragen zeigt, `zeigtFaq: true` setzen.\n' +
+        'Google verlangt, dass die Fragen auf derselben Seite sichtbar stehen – ' +
+        'deshalb rät der Motor die Seite nicht.',
     );
+    return null;
   }
   if (pfad !== faqSeite) return null;
   return {
