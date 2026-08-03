@@ -132,6 +132,13 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       einziger NEUE Erkenntnis bringt – was musste der echte Port selbst bauen?
       Alles andere ist Aufräumen.
 
+      **Dazu kommt die Gegenprüfung der Reparatur-Sitzung selbst** (03.08.):
+      91 bestätigte Befunde, davon **40 neu eingebaut**, zusammengefasst zu 33
+      eigenständigen Ursachen. Die **sieben schweren davon sind erledigt**
+      (03.08. abends, jeder mit eigener Gegenprobe und eigenem Commit – Tabelle
+      in `OFFEN.md`). Offen bleiben dort die 12 mittleren und 14 leichten.
+      Gesamtstand also **~83 Ursachen, 12 schwer**.
+
 - [ ] **Die Belegbasis des Motors ist EIN Port.** *(kein Blocker)* Alle Sätze
       der Form „in einem Kundenprojekt", „im Piloten", „an einer echten
       Kundenseite belegt" – 28 Stellen allein in CLAUDE.md – meinen denselben
@@ -257,6 +264,41 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-08-03 (abends)** – **Die sieben schweren Rückschläge der Tagesarbeit
+  behoben, einzeln und je mit eigener Gegenprobe.** Die Gegenprüfung derselben
+  Sitzung hatte 40 von 91 Befunden als *neu eingebaut* eingestuft – fast die
+  Hälfte dessen, was am Vormittag repariert wurde, hatte etwas beschädigt.
+  Sieben davon waren schwer; alle sieben sind erledigt (Liste mit Commits in
+  `OFFEN.md`).
+
+  **Die Regel dieser Runde, und sie hat sich bezahlt gemacht:** Keine Änderung
+  ohne eine Messung, die **ohne** den Fix fehlschlägt. Bei sieben Befunden hat
+  das dreimal die Diagnose korrigiert, bevor Code entstand:
+  - Die erste Gegenprobe zu `dialog.ts` war **ungültig** – die Referenzseite hat
+    keinen einzigen `data-dialog`, also lief die Absturzzeile nie. Genau deshalb
+    hatte auch nie ein Tor etwas gemerkt. Erst eine Probeseite mit Dialog *und*
+    Merken-Knopf zeigte es: alt → Merkliste tot, neu → sie reagiert.
+  - `browser.mjs` hatte **drei** Ursachen statt einer. Die schwerste: Der von
+    CLAUDE.md 4a vorgeschriebene Weg 3 (`@supports`) wurde selbst als Verstoß
+    gemeldet – er war überhaupt nicht sauber begehbar.
+  - Beim `faq`-Abbruch war nicht die Darstellung das Problem, sondern der
+    **Abbruch selbst**: Ein fehlendes Google-Schema darf keine Veröffentlichung
+    verhindern. Jetzt Hinweis beim Bauen + harter Fehler im Prüf-Tor.
+
+  **Was kein Tor gefunden hat:** Auf altem Gerät sprang der Schwebeknopf an den
+  linken Rand und lag auf den Formularfeldern (`right: var(--raum-s)` ohne
+  Ersatzwert *in* der Klammer). Aufgefallen allein beim Ansehen der Bilder aus
+  `npm run altgeraet` – die Pflicht aus Punkt 3b der Definition of Done hat sich
+  hier zum ersten Mal wirklich ausgezahlt.
+
+  **Neu im Motor:** `src/lib/motorfehler.ts`. Jeder absichtliche Build-Abbruch
+  zeigt jetzt einen roten Satz und einen gelben Handlungshinweis statt zehn
+  Zeilen Stapelabzug in Dateien, die es gar nicht wirklich gibt. Umgestellt sind
+  alle sechs Abbruchstellen (Katalog, Symbole).
+
+  **Offen bleiben ~83 Ursachen, davon 12 schwer** – als Nächstes die zwölf
+  mittleren aus der Gegenprüfung, dann Block 11.
 
 - **2026-08-03** – **Die Gesamtprüfung, und zehn von sechzehn Blöcken behoben.**
   Vorlauf war die Prüfung selbst (02.08., 144 Agenten über 13 Blöcke, jeder
