@@ -35,6 +35,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   DOKUMENTE,
   abfrage,
@@ -47,6 +48,41 @@ import {
   pruefeNamen,
 } from './lib/redaktion.mjs';
 import { KATALOG, setze } from '../redaktion/felder.mjs';
+
+/**
+ * WIE VIELE EINTRÄGE KAMEN BEIM LETZTEN MAL WIRKLICH AUS DEM DIENST?
+ *
+ * =============================================================================
+ *  Der Vergleichswert der Schwelle darf NICHT die Länge der Datei sein. Die
+ *  Datei wächst nämlich mit jedem Abgang: Schritt 5b hebt einen Eintrag, den
+ *  der Dienst nicht mehr kennt, als „nicht verfügbar" auf, damit seine Seite
+ *  und der Google-Treffer erhalten bleiben (CLAUDE.md 6a: verkauft ≠ gelöscht).
+ *
+ *  Die Schwelle verglich diese wachsende Zahl gegen das, was der Dienst liefert
+ *  – und der liefert nur den aktuellen Bestand. Nachgerechnet:
+ *
+ *      Bestand im Dienst          10
+ *      im Lauf eines Jahres verkauft und archiviert   12
+ *      in der Datei               22
+ *      Schwelle: 10 < 22/2 = 11   ->  ABBRUCH, jedes Mal
+ *
+ *  Ab da geht keine Pflege des Betriebs mehr durch. Die Sicherung gegen einen
+ *  Ausfall des Dienstes sperrt den Betrieb aus seiner eigenen Website aus –
+ *  und die Fehlermeldung nennt vier Ursachen, von denen keine zutrifft. Das
+ *  trifft jeden Betrieb mit Wechselbestand, sicher: bei doppelt so vielen
+ *  Abgängen wie laufendem Bestand, also nach ein bis zwei Jahren.
+ *
+ *  Gezählt wird deshalb, was beim letzten Mal aus dem Dienst kam:
+ *    - Einträge, die der Dienst JETZT noch kennt  (er kannte sie also auch)
+ *    - Einträge, die zuletzt verfügbar waren      (deren Wegfall wäre echt)
+ *  Nicht gezählt wird das Archiv – Einträge, die schon „nicht verfügbar" waren
+ *  UND im Dienst nicht mehr vorkommen. Die kommen nie wieder und dürfen die
+ *  Messlatte nicht heben.
+ * =============================================================================
+ */
+export function bestandVorher(vorherKatalog, jetztIds) {
+  return (vorherKatalog ?? []).filter((e) => e && (jetztIds.has(e.id) || e.verfuegbar !== false)).length;
+}
 
 /**
  * WARUM ALLES IN EINER FUNKTION STECKT: `process.exit()` bei einer noch
@@ -238,10 +274,16 @@ async function haupt() {
   // ---------------------------------------------------------------------------
   //  5. Eine leere Antwort überschreibt nie
   // ---------------------------------------------------------------------------
+  /* Zur Erinnerung, weil es gleich darauf ankommt: Die Datei enthält MEHR als
+     das, was der Dienst kennt – Schritt 5b darunter hebt verschwundene
+     Einträge als „nicht verfügbar" auf, damit ihre Seite erreichbar bleibt. */
   const vorhanden = existsSync(ZIEL_DATEI) ? JSON.parse(readFileSync(ZIEL_DATEI, 'utf-8')) : undefined;
-  const vorherAnzahl = vorhanden?.katalog?.length ?? 0;
+  const jetzt = new Set(eintraege.map((e) => e.id));
+  const vorherAnzahl = bestandVorher(vorhanden?.katalog, jetzt);
 
   /* PLAUSIBILITÄTSSCHWELLE BEI DER HÄLFTE – gegen den TECHNISCHEN Ausfall.
+     Verglichen wird gegen `bestandVorher()`, NICHT gegen die Länge der Datei –
+     warum, steht dort.
      Verschwindet auf einen Schlag mehr als die Hälfte des Bestands, ist das
      kein Verkauf, sondern eine umgestellte Abfrage, ein anderer Datensatz oder
      ein halb durchgelaufener Abruf. Dann wird gar nichts geschrieben.
@@ -295,7 +337,6 @@ async function haupt() {
 
      Mit `--erzwingen` wird wirklich gelöscht – für den Fall, dass ein Eintrag
      versehentlich angelegt wurde und auch nicht als Archiv bleiben soll. */
-  const jetzt = new Set(eintraege.map((e) => e.id));
   const uebertragen = [];
   for (const alt of vorhanden?.katalog ?? []) {
     if (!alt?.id || jetzt.has(alt.id)) continue;
@@ -394,4 +435,10 @@ async function haupt() {
   return 0;
 }
 
-process.exitCode = await haupt();
+/* NUR LOSLAUFEN, WENN DIE DATEI WIRKLICH AUFGERUFEN WURDE.
+   Seit `bestandVorher()` von aussen prüfbar ist, kann diese Datei auch
+   importiert werden. Ohne diese Abfrage würde ein Import den ganzen Abruf
+   starten – inklusive Netzverbindung und Schreiben in daten/inhalte.json. */
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = await haupt();
+}
