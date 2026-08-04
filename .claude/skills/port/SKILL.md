@@ -393,6 +393,14 @@ wird dabei ersetzt.
   gebaut; dann aber Rechtslinks und Signatur NICHT vergessen (das Prüf-Tor blockt).
   Eigene Inhalte in der Fußzeile (Adresse, Öffnungszeiten, Spalten) kommen als
   Kindelemente in `<Fuss>…</Fuss>`.
+- **Kommentare gehören ÜBER das Element, nie hinein.** Ein `{/* … */}` zwischen
+  den Attributen eines Elements ist ein Syntaxfehler – und ebenso als erstes
+  Kind von `{bedingung && (…)}` oder `return (…)`, denn dort darf genau EIN
+  Element stehen. **Der Build schluckt alle drei Fassungen klaglos**, die Seite
+  sieht richtig aus, und der Fehler zeigt sich erst als Folgemeldung an ganz
+  anderer Stelle („X.astro hat keinen Standard-Export"). Gefunden hat es nur
+  `npx astro check`. Im JavaScript-Teil (vor dem `return`, in der Frontmatter)
+  ist ein gewöhnliches `/* … */` immer richtig.
 - **Abschnitt „genau eine Bildschirmhöhe"?** Die Vorschau-Leiste (demo-Modus, rund
   39 px) steht darüber und verschiebt alles. Deshalb `var(--vorschau-h)` mit
   abziehen: `min-height: calc(100svh - var(--kopf-h) - var(--vorschau-h))` – live
