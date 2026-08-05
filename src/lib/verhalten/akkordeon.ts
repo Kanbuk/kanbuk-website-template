@@ -59,11 +59,69 @@
  */
 import { bewegungReduziert } from './hilfen';
 
-const DAUER = 240;
+/* ===========================================================================
+   DIE BEWEGUNG GEHÖRT DEM DESIGN, NICHT DEM MOTOR.
+   ===========================================================================
+   Hier standen 240 ms und eine Kurve fest im Code. Das ist Lack, kein
+   Getriebe: WIE schnell und mit welchem Schwung etwas aufklappt, entscheidet
+   das Design – der Motor entscheidet nur, WAS aufklappt und was die Tastatur
+   dabei tut (CLAUDE.md 4aa).
+
+   Warum das im Motor besonders hart zuschlug: `Element.animate()` steht in
+   der Kaskade ÜBER normalem Autoren-CSS. Ein Design konnte seine eigene
+   Aufklapp-Bewegung also nicht einmal mit einer CSS-Regel zurückholen – sie
+   lief bestenfalls PARALLEL zur Motor-Bewegung, mit zwei verschiedenen
+   Dauern. Genau das Bild von „im Design sah es super aus, im Bau ruckelt es".
+
+   Jetzt gilt:
+
+   1. Die Werte kommen aus dem CSS, nicht aus dem Code:
+        [data-akkordeon] { --akkordeon-dauer: 320ms; --akkordeon-kurve: ease; }
+      Steht dort nichts, bleiben die Motor-Werte als Rückfall.
+
+   2. Bringt das Design eine EIGENE Bewegung mit, hält sich der Motor ganz
+      heraus – siehe `designBewegtSelbst()`. Dann klappt `<details>` nativ um,
+      das Design animiert, und der Motor macht nur noch Mechanik.
+   =========================================================================== */
+const DAUER_RUECKFALL = 240;
 /* Schneller Start, weiches Auslaufen. Wichtiger als der genaue Wert ist, DASS
    es weich ausläuft: Daran erkennt man beim Nachmessen eine echte Bewegung –
    ein hartes Umschalten endet mit einem Sprung über die ganze Strecke. */
-const KURVE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+const KURVE_RUECKFALL = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+/** Millisekunden aus einer CSS-Angabe („320ms", „0.4s"). */
+function alsMillisekunden(wert: string): number | null {
+  const t = wert.trim();
+  if (!t) return null;
+  const zahl = Number.parseFloat(t);
+  if (!Number.isFinite(zahl)) return null;
+  return t.endsWith('ms') ? zahl : t.endsWith('s') ? zahl * 1000 : null;
+}
+
+/**
+ * BRINGT DAS DESIGN SEINE EIGENE AUFKLAPP-BEWEGUNG MIT?
+ *
+ * Erkannt an einer laufenden `transition` oder `animation` auf dem Inhalt.
+ * Ein Design, das `details[open] .antwort { transition: … }` schreibt, meint
+ * genau das – dann darf der Motor nicht mitanimieren, sonst laufen zwei
+ * Bewegungen gegeneinander.
+ *
+ * Ausdrücklich abschaltbar über `data-akkordeon-bewegung="motor"`, falls ein
+ * Design zwar Übergänge auf dem Inhalt hat, das Aufklappen aber dem Motor
+ * überlassen will.
+ */
+function designBewegtSelbst(inhalt: HTMLElement, box: HTMLElement): boolean {
+  if (box.dataset.akkordeonBewegung === 'motor') return false;
+  if (box.dataset.akkordeonBewegung === 'design') return true;
+  const stil = getComputedStyle(inhalt);
+  const hatUebergang = stil.transitionDuration
+    .split(',')
+    .some((d) => (alsMillisekunden(d) ?? 0) > 0);
+  const hatAnimation =
+    stil.animationName !== 'none' &&
+    stil.animationDuration.split(',').some((d) => (alsMillisekunden(d) ?? 0) > 0);
+  return hatUebergang || hatAnimation;
+}
 
 export function akkordeonStarten(): void {
   document.querySelectorAll<HTMLElement>('[data-akkordeon]').forEach((box) => {
@@ -117,12 +175,18 @@ export function akkordeonStarten(): void {
         };
       });
 
+      /* Dauer und Kurve aus dem CSS – das Design schreibt sie an den Kasten
+         oder an den einzelnen Eintrag. Ohne Angabe der Motor-Rückfall. */
+      const eigen = getComputedStyle(teile[0]);
+      const dauer = alsMillisekunden(eigen.getPropertyValue('--akkordeon-dauer')) ?? DAUER_RUECKFALL;
+      const kurve = eigen.getPropertyValue('--akkordeon-kurve').trim() || KURVE_RUECKFALL;
+
       let leit: Animation | null = null;
       for (const z of ziele) {
         z.el.style.overflow = 'hidden';
         const offen = { height: `${z.hoehe}px`, paddingTop: z.padOben, paddingBottom: z.padUnten, opacity: 1 };
         const zu = { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 };
-        const a = z.el.animate(oeffnen ? [zu, offen] : [offen, zu], { duration: DAUER, easing: KURVE });
+        const a = z.el.animate(oeffnen ? [zu, offen] : [offen, zu], { duration: dauer, easing: kurve });
         if (!leit) leit = a;
       }
       if (!leit) return null;
@@ -221,17 +285,39 @@ export function akkordeonStarten(): void {
          Sonst bliebe nach `preventDefault` ein totes Akkordeon zurück –
          schlimmer als ein hart schaltendes. Die Untergrenze des Motors
          reicht unter `Element.animate` (Safari 13.1) hinunter. */
-      if (typeof d.animate !== 'function') {
-        if (exklusiv) {
-          d.addEventListener('toggle', () => {
-            zustandMelden(d);
-            if (d.open) andereSchliessen(d);
-          });
-        }
-        return;
-      }
+      /* DIE MECHANIK HÄNGT AM `toggle`, NICHT AM KLICK – und zwar IMMER.
+         -----------------------------------------------------------------
+         Hier stand dieser Zweig nur für Browser ohne `Element.animate`.
+         Seit der Motor auch dann die Finger stillhält, wenn das DESIGN die
+         Bewegung mitbringt, gibt es einen dritten Weg, auf dem `<details>`
+         nativ umschaltet – und auf dem wäre die Zustandsklasse `.ist-offen`
+         nie gesetzt worden und die Exklusiv-Logik nie gelaufen. Also
+         genau der Fehlertyp, gegen den dieser Kommentar warnt: eine Zusage
+         im Text, die der Code auf einem von drei Wegen nicht hält.
+
+         `toggle` feuert bei JEDER Änderung von `open` – ob nativ oder vom
+         Motor gesetzt. Doppelt schadet es nicht: `classList.toggle` mit
+         zweitem Argument ist wertgleich, und `andereSchliessen` überspringt
+         bereits geschlossene Einträge. */
+      d.addEventListener('toggle', () => {
+        zustandMelden(d);
+        if (exklusiv && d.open) andereSchliessen(d);
+      });
+
+      if (typeof d.animate !== 'function') return;
 
       schalter.addEventListener('click', (e) => {
+        /* HAT DAS DESIGN EINE EIGENE BEWEGUNG? Dann Finger weg.
+           Bei JEDEM Klick neu geprüft, nicht einmal beim Start: Ein Design
+           kann seine Übergänge je Breite anders setzen, und eine Messung beim
+           Laden würde die Medienabfrage übersehen.
+
+           Der Motor lässt dann das native Umschalten von <details> laufen –
+           kein preventDefault, keine Web-Animation. Die Mechanik (Exklusiv-
+           Logik, ARIA, Tastatur) bleibt, sie hängt am `toggle`-Ereignis. */
+        const inhalt = d.querySelector<HTMLElement>(':scope > :not(summary)');
+        if (inhalt && designBewegtSelbst(inhalt, box)) return;
+
         /* Bewegungswunsch bei JEDEM Klick neu lesen: Wer die Einstellung im
            Betriebssystem umstellt, soll die Seite nicht neu laden müssen. */
         const sanft = !bewegungReduziert();

@@ -58,9 +58,20 @@ export function sliderStarten(): void {
 
     function gehe(i: number, anhalten = false) {
       const n = (i + folien.length) % folien.length;
+      /* DIE GLÄTTUNG GEHÖRT DEM DESIGN.
+         Hier stand fest `behavior: 'smooth'`. Eine ausdrückliche Angabe
+         schlägt jedes CSS `scroll-behavior` an der Spur – ein Design mit
+         eigener Galerie-Bewegung konnte den Baustein damit nicht benutzen,
+         ohne sein Timing zu verlieren.
+
+         Jetzt wird gelesen, was an der Spur steht: Schreibt das Design
+         `scroll-behavior: auto`, springt es hart; schreibt es nichts, gilt
+         die Motor-Vorgabe aus global.css. „Bewegung reduzieren" schlägt
+         beides – das ist Barrierefreiheit, nicht Gestaltung. */
+      const ausCss = getComputedStyle(spur!).scrollBehavior;
       spur!.scrollTo({
         left: folien[n].offsetLeft - spur!.offsetLeft,
-        behavior: reduziert ? 'auto' : 'smooth',
+        behavior: reduziert ? 'auto' : ausCss === 'auto' ? 'auto' : 'smooth',
       });
       markiere(n);
       if (anhalten) stopp();
