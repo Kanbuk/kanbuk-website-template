@@ -153,3 +153,19 @@ nodeLauf([join('scripts', 'check.mjs'), ...(live ? ['--live'] : [])]);
 if (existsSync(join(WURZEL, 'scripts', 'browser.mjs'))) {
   nodeLauf([join('scripts', 'browser.mjs')]);
 }
+
+/* --- 5. Lebt der Formular-Empfänger? – NUR beim Live-Lauf -------------------
+   Diese Prüfung ruft eine ADRESSE IM NETZ an, nicht den Build. Deshalb hängt
+   sie am `--live`-Schalter: Bei jedem normalen `npm run check` wäre sie vom
+   Netz abhängig und würde beim Arbeiten ohne Verbindung grundlos rot.
+
+   Warum sie überhaupt hierhergehört: Alle anderen Tore lesen den Quelltext des
+   Empfängers nach Stichworten. Ein Fehler, der erst beim EINLESEN des Moduls
+   entsteht, ist dort unsichtbar – in einem Kundenprojekt war der Empfänger
+   deshalb an einem Tag zweimal tot, bei durchgehend grünen Toren. Sie
+   verschickt nichts und löst keine Mail aus (siehe Kopf von endpunkt.mjs).
+
+   Sie steht NEBEN browser.mjs, nicht an dessen Stelle. */
+if (live && existsSync(join(WURZEL, 'scripts', 'endpunkt.mjs'))) {
+  nodeLauf([join('scripts', 'endpunkt.mjs')]);
+}

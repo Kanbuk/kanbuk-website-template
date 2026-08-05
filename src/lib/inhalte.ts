@@ -27,7 +27,7 @@
  * Felder steht einmal in redaktion/felder.mjs und erzeugt von dort aus die
  * Eingabemaske und die Abfrage.
  */
-import type { SiteConfig, KatalogEintrag } from '../../content.config';
+import type { SiteConfig, KatalogEintrag } from '../../content.config.js';
 
 /**
  * Was in der Datei stehen darf. Alles optional – gepflegt wird, was gepflegt
@@ -45,13 +45,40 @@ export interface GepflegteInhalte {
   katalog?: KatalogEintrag[];
 }
 
-/* Die Datei ist der Normalfall NICHT vorhanden – ein Klon ohne
+/* WARUM `import.meta.glob` UND NICHT EIN NORMALER IMPORT:
+   Die Datei ist der Normalfall NICHT vorhanden – ein Klon ohne
    Redaktionssystem hat sie nie. `import.meta.glob` liefert dann ein leeres
-   Objekt, statt den Build mit „Modul nicht gefunden" abzubrechen. */
-const gefunden = import.meta.glob<GepflegteInhalte>('/daten/inhalte.json', {
-  import: 'default',
-  eager: true,
-});
+   Objekt, statt den Build mit „Modul nicht gefunden" abzubrechen.
+
+   UND WARUM DER AUFRUF UMKLAMMERT IST – DER SERVER KENNT DIE FUNKTION NICHT.
+   ===========================================================================
+   Diese Datei hängt über `content.config.ts` mit im Server-Bündel des
+   Formular-Empfängers (`api/contact.ts`). Vercel baut den als Node-ESM, und
+   dort ist `import.meta.glob` schlicht nicht vorhanden: Das Modul bricht beim
+   EINLESEN ab mit „(intermediate value).glob is not a function".
+
+   Folge: Der Empfänger ist tot, die Seite baut trotzdem, alle Tore bleiben
+   grün – und weil die Vorschau bewusst nichts abschickt, fällt es erst nach
+   dem Live-Gang auf, dadurch dass wochenlang keine Anfrage kommt. In einem
+   Kundenprojekt ist genau das dreimal passiert und blieb jedes Mal unbemerkt.
+
+   Die Umklammerung ist deshalb keine Vorsicht, sondern die Bedingung dafür,
+   dass Redaktionssystem und Formular nebeneinander existieren können. Im
+   Bau-Werkzeug läuft der Aufruf normal; im Server fällt er auf ein leeres
+   Objekt zurück – und der Server braucht die gepflegten Inhalte gar nicht,
+   er verschickt nur Mails.
+
+   `npm run check` beanstandet diesen Aufruf in der Importkette der Config,
+   `npm run endpunkt` ruft den Empfänger zusätzlich wirklich an. */
+let gefunden: Record<string, GepflegteInhalte> = {};
+try {
+  gefunden = import.meta.glob<GepflegteInhalte>('/daten/inhalte.json', {
+    import: 'default',
+    eager: true,
+  });
+} catch {
+  /* Kein Bau-Werkzeug – dann gibt es hier auch keine gepflegten Inhalte. */
+}
 
 const datei: GepflegteInhalte | undefined = Object.values(gefunden)[0];
 

@@ -17,9 +17,19 @@
  *      npm run preisliste
  *      npm run preisliste -- --quelle daten/preisliste.json --ziel daten/preisliste.ts
  *
- *  Danach in content.config.ts einbinden:
- *      import { PREISLISTE } from './daten/preisliste';
+ *  Danach in content.config.ts einbinden – MIT `.js`-ENDUNG:
+ *      import { PREISLISTE } from './daten/preisliste.js';
  *      …  preisliste: PREISLISTE,
+ *
+ *  DIE ENDUNG IST KEIN SCHÖNHEITSFEHLER. Hier stand sie bis 05.08.2026 nicht,
+ *  und damit empfahl der Motor genau die Schreibweise, die den
+ *  Formular-Empfänger umbringt: Beim Bauen der Seiten ist sie folgenlos, der
+ *  Server baut aber als Node-ESM und findet die Datei dann nicht. Das Modul
+ *  stirbt beim Einlesen, jede Anfrage läuft ins Leere – und kein Tor sieht es,
+ *  weil alle nur den Quelltext nach Stichworten durchlesen. In einem
+ *  Kundenprojekt ist genau das passiert. Ausgerechnet beim Wirt mit großer
+ *  Speisekarte, für den dieses Werkzeug gebaut ist. Seit 05.08. prüft
+ *  `npm run endpunkt` zusätzlich, ob der Empfänger wirklich lebt.
  *
  *  Rot (Exit 1) = die Quelle entspricht nicht dem Schema. Jede Meldung nennt
  *  den genauen Pfad, z. B.:
@@ -421,7 +431,11 @@ console.log(`✓ ${zeig(ziel)} erzeugt aus ${zeig(quelle)}
     Gruppen:     ${inQuelle.gruppen} → ${imZiel.gruppen}
     Positionen:  ${inQuelle.positionen} → ${imZiel.positionen}${preisHinweis}
 
-  In content.config.ts einbinden:
-    import { PREISLISTE } from './daten/preisliste';
+  In content.config.ts einbinden – die .js-Endung ist Pflicht:
+    import { PREISLISTE } from './daten/preisliste.js';
     …
-    preisliste: PREISLISTE,`);
+    preisliste: PREISLISTE,
+
+  Ohne die Endung baut die Seite weiterhin, aber der Formular-Empfänger
+  stirbt: Er läuft als Node-ESM und findet die Datei dann nicht.
+  Prüfen lässt sich das mit: npm run endpunkt`);

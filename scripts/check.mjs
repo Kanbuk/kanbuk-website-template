@@ -786,6 +786,81 @@ if (istLive && /Disallow:\s*\/\s*$/m.test(robots)) {
   }
 }
 
+/* WAS DEN FORMULAR-EMPFÄNGER BEIM EINLESEN UMBRINGT.
+   =============================================================================
+   `content.config.ts` wird von ZWEI Werkzeugen gelesen, die verschiedene
+   Regeln haben: vom Bündler (baut die Seiten) und von Node (baut den
+   Serverless-Empfänger unter api/). Zwei Schreibweisen gehen nur beim ersten
+   durch:
+
+     • ein Import ohne `.js`-Endung – Node sucht die Datei wörtlich
+     • `import.meta.glob` – das gibt es nur im Bündler
+
+   Beides bringt das Modul beim EINLESEN um. Die Seite baut weiter, alle Tore
+   bleiben grün, und jede Anfrage des Betriebs läuft ins Leere. In einem
+   Kundenprojekt ist der Empfänger deshalb an EINEM Tag zweimal gestorben.
+
+   Geprüft wird die ganze Importkette, nicht nur die Config selbst: Was von
+   dort importiert wird, landet mit im Server-Bündel. `npm run endpunkt` ruft
+   den Empfänger zusätzlich wirklich an – diese Regel hier greift schon vorher,
+   ohne Netz und ohne Deploy. */
+{
+  const gesehen = new Set();
+  const zuPruefen = [CONFIG];
+  const funde = [];
+  while (zuPruefen.length) {
+    const datei = zuPruefen.pop();
+    if (gesehen.has(datei) || !existsSync(datei)) continue;
+    gesehen.add(datei);
+    const roh = readFileSync(datei, 'utf-8');
+    const text = ohneKommentare(roh);
+    const name = kurz(datei);
+
+    /* NUR DER UNGESCHÜTZTE AUFRUF IST GEFÄHRLICH.
+       In einem `try` ist er zulässig und sogar nötig: Im Bau-Werkzeug läuft er,
+       im Server fällt er auf ein leeres Objekt zurück (src/lib/inhalte.ts).
+       Wer hier den bloßen Text beanstandet, zwingt den nächsten Chat dazu, die
+       richtige Absicherung wieder auszubauen, um das Tor grün zu bekommen –
+       genau der Fehler, der am 03.08.2026 beim Browser-Tor auflief. */
+    for (const treffer of text.matchAll(/import\.meta\.glob/g)) {
+      const davor = text.slice(0, treffer.index);
+      const letztesTry = davor.lastIndexOf('try');
+      let imTry = false;
+      if (letztesTry !== -1) {
+        let tiefe = 0;
+        for (const z of davor.slice(letztesTry)) {
+          if (z === '{') tiefe++;
+          else if (z === '}') tiefe--;
+        }
+        imTry = tiefe > 0;
+      }
+      if (imTry) continue;
+      funde.push(
+        `${name}: \`import.meta.glob\` ohne \`try\` – das kennt nur der Bündler, nicht der Server.`,
+      );
+    }
+    for (const m of text.matchAll(/from\s+['"](\.[^'"]*)['"]/g)) {
+      const ziel = m[1];
+      if (/\.(js|json|mjs|cjs)$/.test(ziel)) {
+        // Endung da – der Datei folgen, sie gehört zur Kette.
+        const abs = join(datei, '..', ziel.replace(/\.js$/, '.ts'));
+        if (existsSync(abs)) zuPruefen.push(abs);
+        else if (existsSync(join(datei, '..', ziel))) zuPruefen.push(join(datei, '..', ziel));
+        continue;
+      }
+      funde.push(`${name}: \`from '${ziel}'\` ohne \`.js\`-Endung – der Server findet die Datei nicht.`);
+    }
+  }
+  if (funde.length) {
+    fehler(
+      'Der Formular-Empfänger würde beim Einlesen sterben:\n' +
+        funde.map((f) => `    • ${f}`).join('\n') +
+        '\n    Die Seite baut trotzdem, aber KEINE Anfrage des Betriebs käme an.\n' +
+        '    Beides betrifft nur content.config.ts und was von dort importiert wird.',
+    );
+  }
+}
+
 /* FAQ-SCHEMA: gepflegte Fragen, die Google nie zu sehen bekommt.
    Wer `faq` füllt und `zeigtFaq` nicht kennt, bekommt kein FAQPage-Schema –
    die Antworten erscheinen dann nicht aufklappbar im Suchergebnis, und das ist
