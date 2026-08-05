@@ -218,12 +218,19 @@ holen, bauen.
 
 ## Entscheidungen, die nur der Inhaber treffen kann
 
-- **Lighthouse ≥ 95** steht in der Definition of Done, **kein Werkzeug misst
-  es.** Vereinbart am 03.08.: Zusage ehrlich abschwächen auf das, was die Tore
-  wirklich prüfen, und Lighthouse als manuellen Schritt vor dem Live-Gang
-  benennen. Kein neues npm-Paket. *(noch nicht umgesetzt)*
-- **Auftragsverarbeitungsvertrag nach Art. 28 DSGVO** — echter Live-Blocker,
-  kein Code. Anwalt oder WKO-Muster.
+- ~~**Lighthouse ≥ 95** steht in der Definition of Done, **kein Werkzeug misst
+  es.**~~ **Erledigt am 05.08.2026.** Die Zusage wird NICHT abgeschwächt: Der
+  Betreiber misst bei seinen Läufen durchgehend **99/100**, der Motor hält sie
+  also. Umgesetzt ist stattdessen die Ehrlichkeit darüber, wer sie prüft —
+  CLAUDE.md Punkt 4 sagt jetzt ausdrücklich „von Hand gemessen, das einzige
+  Ziel dieser Liste, das kein Tor prüft", und der `/deploy`-Skill hat den
+  Messschritt (4e). Vorher stand die Zusage zwischen neun automatischen
+  Prüfungen und las sich, als würde sie mitgemessen. Kein neues npm-Paket.
+- ~~**Auftragsverarbeitungsvertrag nach Art. 28 DSGVO**~~ **Entschieden am
+  05.08.2026:** Der Inhaber schließt ihn beim Onboarding mit jedem Kunden ab.
+  Damit ist es keine offene Frage mehr, sondern ein Ablaufschritt — er steht
+  im `/deploy`-Skill als Weg B, Schritt 0a, vor dem Umschalten auf live.
+  Bleibt ein Live-Blocker je Kunde, aber ein zugeteilter.
 - **Die Pflichtlektüre kürzen?** Rund ein Fünftel der 1.147 Zeilen CLAUDE.md
   sind Fallberichte. Konkrete Archiv-Kandidaten liegen vor. Jeder gestrichene
   Absatz ist eine teuer bezahlte Lehre — deshalb nicht ohne ausdrückliches Ja.

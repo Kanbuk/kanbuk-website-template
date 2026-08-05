@@ -91,6 +91,12 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
 4d. **`npm run bildschaerfe` grün** (achtes Tor). Misst, ob auf einem Gerät mit
    doppelter Punktdichte – also auf praktisch jedem Handy – genug Auflösung
    ankommt. Randlose Banner sind der Regelfall dafür.
+4e. **Lighthouse von Hand messen** (Ziel ≥ 95 in allen vier Kategorien).
+   Der einzige Punkt der Definition of Done, den **kein Tor prüft** – im
+   Browser die Entwicklerwerkzeuge öffnen, Bericht für **Handy** laufen
+   lassen. Bisherige Läufe liegen bei 99/100; ein schweres Design, ein großes
+   Foto oder ein eingebundener Dienst können das kippen, und automatisch fällt
+   es niemandem auf. Bei einem Kundenprojekt gehört der Wert in den Bericht.
 5. Beim Live-Gang zusätzlich: `npm run check -- --live` (Platzhalter, offene
    STAND.md-Punkte, Sitemap) und `npm audit --omit=dev` – Funde mit Schweregrad
    high/critical stoppen den Launch (dem Nutzer melden).
@@ -232,6 +238,21 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    mit: Claude leitet den Verlaufspfad aus dem Ordnerpfad ab. Vor dem Verschieben in
    `~/.claude/projects/` nachsehen und den passenden Ordner mitbenennen, sonst sind
    Verlauf und Projektgedächtnis nicht mehr erreichbar (gelöscht sind sie nicht).
+
+0a. **Auftragsverarbeitungsvertrag mit dem Kunden – vor dem Umschalten.**
+
+   Wer den Versand-Schlüssel hält und deployt, verarbeitet die Anfragen der
+   Besucher im Auftrag des Betriebs. Das ist Auftragsverarbeitung nach Art. 28
+   DSGVO und braucht einen Vertrag – **je Kunde einen, beim Onboarding**.
+
+   Kein Code, nichts zu bauen: nachfragen, ob er unterschrieben ist, und wenn
+   nicht, den Nutzer daran erinnern, bevor die Seite scharf geht. Ab dem
+   Moment, in dem das Formular sendet, laufen echte personenbezogene Daten.
+
+   > **Nicht zu verwechseln mit dem Vertrag, den die Datenschutzerklärung schon
+   > nennt.** Der betrifft den HOSTER. Der hier ist der zwischen Kanbuk und dem
+   > Betrieb – zwei verschiedene Verträge, und der Satz in der Erklärung deckt
+   > diesen hier nicht ab.
 
 1. **Live-Konfiguration** in `content.config.ts`:
    - `mode: 'live'` setzen (Formular an, `tel:` verlinkt, Indexierung + Sitemap).

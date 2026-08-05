@@ -1400,7 +1400,22 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
    und verschickt nichts. Alle übrigen Tore sehen sich die gebaute Website an
    und rufen nie den Server an – in einem Kundenprojekt war der Empfänger
    deshalb dreimal tot, bei jedes Mal komplett grünen Toren.
-4. Lighthouse-Ziel **≥ 95** in allen vier Kategorien.
+4. **Lighthouse ≥ 95 in allen vier Kategorien – VON HAND gemessen.**
+
+   Das ist der einzige Punkt dieser Liste, den **kein Tor prüft**. Er stand
+   hier lange wie die anderen, und das war die Lücke: Eine Zusage, die neben
+   neun automatischen Prüfungen steht, liest sich, als würde sie mitgemessen.
+
+   Also wirklich messen: Seite bauen, im Browser die Entwicklerwerkzeuge
+   öffnen, Lighthouse-Bericht für **Handy** laufen lassen. Ein Wert unter 95
+   ist ein Befund, kein Rundungsfehler.
+
+   > **Stand 05.08.2026:** Der Betreiber misst bei seinen Läufen durchgehend
+   > **99/100**. Der Motor hält die Zusage also – deshalb bleibt sie stehen
+   > und wird nicht abgeschwächt. Das ist eine Messung an den bisherigen
+   > Seiten, keine Garantie für jeden künftigen Klon: Ein schweres Design, ein
+   > großes Foto oder ein eingebundener Dienst können sie kippen, und
+   > **automatisch fällt das niemandem auf**.
 5. **STAND.md ist aktuell** (Phase, Lücken, Verlaufszeile dieser Sitzung).
    Ein offener Punkt `- [ ]` sperrt den Live-Gang. Soll einer bewusst offen
    bleiben, gehört **`(kein Blocker)`** in die Zeile – dann wird daraus ein

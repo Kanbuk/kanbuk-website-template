@@ -151,7 +151,18 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
       Abweichung, praktisch folgenlos. Bewusst offen gelassen.
 - [ ] **Auftragsverarbeitung Kanbuk ↔ Kunde.** Wer den Versand-Schlüssel hält und
       deployt, ist Auftragsverarbeiter und braucht mit jedem Kunden einen Vertrag
-      nach Art. 28 DSGVO. Noch nirgends vorgesehen.
+      nach Art. 28 DSGVO.
+
+      **Entschieden am 05.08.2026:** Der Inhaber schließt ihn beim Onboarding
+      mit jedem Kunden ab. Damit ist es keine offene Motor-Frage mehr, sondern
+      ein Schritt im Ablauf – er steht jetzt im `/deploy`-Skill (Weg B) vor dem
+      Umschalten auf live.
+
+      **Nicht zu verwechseln mit dem Vertrag, den die Datenschutzerklärung
+      bereits nennt.** Der betrifft den HOSTER (Kunde ↔ Vercel) und steht dort
+      als Aussage über die Grundlage des Hostings. Der hier gemeinte ist der
+      zwischen Kanbuk und dem Kunden – zwei verschiedene Verträge, und der
+      Satz in der Erklärung deckt den zweiten nicht ab.
 - [ ] **Der Redaktions-Anschluss war noch nie an einem echten Dienst.** *(kein Blocker)* Bewiesen
       ist er gegen einen selbst gestellten Server, der die Schnittstelle
       nachbildet – 21 Prüfungen plus die ganze Kette bis aufs gebaute HTML. Was
@@ -381,6 +392,22 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
   Version bleibt **2026.8.5** – sie folgt dem Kalender, und ein zwischendurch
   gesetztes 2026.8.6 hätte den Motor auf morgen datiert.
+
+  **Zwei Entscheidungen des Inhabers, gleicher Tag:**
+
+  - **Lighthouse bleibt bei ≥ 95** – die Zusage wird nicht abgeschwächt, weil
+    sie hält: gemessen durchgehend 99/100. Geändert hat sich nur die
+    Ehrlichkeit darüber, WER sie prüft. Es ist der einzige Punkt der Definition
+    of Done, den kein Tor misst, und er stand zwischen neun automatischen
+    Prüfungen – das las sich, als liefe er mit. CLAUDE.md sagt es jetzt
+    ausdrücklich, und der `/deploy`-Skill hat den Messschritt.
+  - **Der Auftragsverarbeitungsvertrag wird beim Onboarding je Kunde
+    geschlossen.** Damit ist er keine offene Motor-Frage mehr, sondern ein
+    Ablaufschritt vor dem Umschalten (`/deploy`, Weg B, Schritt 0a). Dabei
+    festgehalten, weil es sonst irgendwann jemand verwechselt: Der Vertrag, den
+    die Datenschutzerklärung nennt, betrifft den HOSTER. Der hier ist der
+    zwischen Kanbuk und dem Betrieb – zwei verschiedene, und der Satz in der
+    Erklärung deckt den zweiten nicht ab.
 
 - **2026-08-03 (abends)** – **Rückfluss aus einem zweisprachigen Beauty-Piloten
   (Relaunch, Deutsch + Englisch, 16 Seiten).** Elf Funde, alle im Klon zuerst
