@@ -228,6 +228,32 @@ const CSS_MERKMALE = [
     folge: 'Der GANZE Regelblock wird verworfen – im Zweifel verschwindet die halbe Seitenaufteilung samt Navigation.',
   },
   { name: ':has()', suche: /:has\(/, abSafari: 15.4, folge: 'Die ganze Regel wird verworfen.' },
+  /* :where() UND :is() – am 05.08.2026 nachgetragen, nach einem Beinahe-Unfall.
+     -------------------------------------------------------------------------
+     Beim Versuch, das Design den Motor überschreiben zu lassen, wurde
+     `scopedStyleStrategy: 'where'` gesetzt. Astro schreibt damit JEDEN
+     Komponenten-Selektor als `.klasse:where(.astro-xyz)`. Unter Safari 14
+     kennt der Browser `:where()` nicht und verwirft den Selektor – und damit
+     JEDEN Stil JEDER Motor-Komponente auf einmal: Navigation, Fußzeile,
+     Formular, Akkordeon, alles ohne Gestaltung.
+
+     Das Tor blieb grün und meldete brav „bleibt lesbar und bedienbar" – weil
+     `:where` in dieser Liste fehlte. Der Motor sagt aber „bedienbar ab
+     Safari 12" zu, und eine Seite ohne einen einzigen Komponenten-Stil ist
+     nicht „ärmer", sie ist kaputt.
+
+     Die Zeile wurde zurückgenommen; der Eintrag hier bleibt, damit es kein
+     zweites Mal unbemerkt passiert. Genau der Fall, vor dem der Dateikopf
+     warnt: „Ein Merkmal, das hier fehlt, fällt durch." */
+  {
+    name: ':where() / :is()',
+    suche: /:where\(|:is\(/,
+    abSafari: 14,
+    folge:
+      'Die ganze Regel wird verworfen. Steht das Merkmal in der Abgrenzung der ' +
+      'Komponenten-Stile (Astro `scopedStyleStrategy`), fällt die Gestaltung ALLER ' +
+      'Bausteine gleichzeitig aus – das ist kein „ärmer", sondern kaputt.',
+  },
   { name: 'color-mix()', suche: /color-mix\(/, abSafari: 16.2, folge: 'Die Farbe fällt aus.' },
   { name: '@layer', suche: /@layer\b/, abSafari: 15.4, folge: 'Die Reihenfolge der Stile stimmt nicht mehr.' },
   {

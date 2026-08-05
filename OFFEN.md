@@ -209,13 +209,43 @@ ist `ZUSTAENDIGKEIT.md`.
 
 | # | Paket | warum in dieser Reihenfolge |
 | --- | --- | --- |
-| **1** | **Spezifität** — `scopedStyleStrategy` setzen, damit Motor-Regeln nicht mehr schwerer wiegen als Design-Regeln | **Muss zuerst.** Solange Motor-Stile eine Klasse mehr wiegen, ist jede weitere Änderung wirkungslos — das Design kann sie gar nicht überschreiben. |
+| ~~**1**~~ | ~~**Spezifität** — `scopedStyleStrategy` setzen~~ **→ verworfen am 05.08.2026, siehe unten.** Der Motor gibt stattdessen sein Aussehen ab (Pakete 2–4). | Der Weg über die Gewichtung ist an zwei Messungen gescheitert. |
 | **2** | **Token** — Werte kommen aus dem Design, in beiden Lieferformen (benannt oder literal) | Der größte Brocken. Die Motor-Skala wird zum Rückfall für Stellen, an denen das Design schweigt. |
 | **3** | **Bewegung** — Akkordeon, Slider und Einblendung geben ihre Werte ab | Erst nach 1 wirksam. Beseitigt die doppelten Animationen. |
 | **4** | **Rahmen** — Kopf und Fuß zerlegbar machen, Rechtslinks platzierbar | Der Fußzeilen-Fall kann danach nicht wiederkehren. |
 | **5** | **Design-Tor reparieren** — Rahmenvergleich ist tot, zweite Export-Form (eine Datei je Seite) fehlt | **Muss vor dem Piloten.** Sonst ist beim Restaurant-Port genau die Prüfung blind, um die es geht. |
 | **6** | **Offene Fehler** — Slider-ARIA (falsche Rollen), doppelte Verpixelungs-Regel raus, `stock.mjs` raus, `karte.mjs` reparieren | Kleinkram, aber echte Fehler. |
 | **7** | **Pilot 3: Restaurant** | Die Messung. Wenn kaum noch Nacharbeit anfällt, ist der Motor fertig. |
+
+> ### Warum Paket 1 verworfen wurde – zweimal gemessen
+>
+> **Der Befund stimmt:** Motor-Komponenten-Stile wiegen schwerer als
+> Design-Stile. Astro hängt ohne besondere Angabe an jeden Selektor ein
+> Attribut (`.klasse[data-astro-cid-…]`), das Design bringt nur eine Klasse
+> mit. Gemessen am gebauten Ergebnis: Eine Design-Regel
+> `.formular__label-link { text-decoration: none }` blieb wirkungslos.
+>
+> **Der Fix funktioniert trotzdem nicht.** `scopedStyleStrategy: 'where'`
+> macht beide Regeln gleich schwer – dann entscheidet die Reihenfolge, und
+> Astro bündelt globale Stile VOR die Komponenten-Stile. Nachgemessen: Das
+> Design verlor weiterhin, beide Male.
+>
+> **Und er wäre gefährlich.** Astro schreibt damit jeden Komponenten-Selektor
+> als `.klasse:where(…)`. `:where()` gibt es erst ab Safari 14 – darunter
+> verwirft der Browser den Selektor und damit **jeden Stil jeder
+> Motor-Komponente**: Navigation, Fußzeile, Formular, alles ohne Gestaltung.
+> Der Motor sagt „bedienbar ab Safari 12" zu. Gezählt: 3 Vorkommen heute
+> gegen 104 mit der Einstellung.
+>
+> **Auch „Design-CSS zuletzt laden" geht nicht.** Astro legt einen Teil der
+> Komponenten-Stile als `<style>` HINTER die verlinkten Bündel – ein
+> Design-Stylesheet kann gar nicht zuverlässig zuletzt stehen.
+>
+> **Die richtige Antwort ist deshalb keine Gewichtung, sondern Verzicht:**
+> Nimmt man den Bausteinen ihr Aussehen (Pakete 2–4), gibt es nichts mehr zu
+> überschreiben. Für die wenige strukturelle CSS, die bleiben muss, ist
+> `!important` im Design-CSS der dokumentierte Ausweg – der wirkt in jedem
+> Browser.
 
 **Was der Inhaber dabei tut:** nichts lesen. Nach jedem Paket sieht er das
 Ergebnis an der Referenzseite oder am Port, nicht im Code. Zwei bis drei echte
