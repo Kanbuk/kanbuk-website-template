@@ -1237,6 +1237,16 @@ Hier ist sie:
 | 4 | `npm run altgeraet` | zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** – ansehen ist Pflicht |
 | 5 | `npm run browser` | hält den Build gegen die Browser-Untergrenze (Abschnitt 4a) |
 | 6 | `npm run abgleich` | hält die gebaute Seite gegen die Design-Datei (Abschnitt 9, Punkt 3c) |
+| 7 | `npm run unterlaengen` | abgeschnittene g, j, p, q, y – vor allem bei Verlaufs-Überschriften |
+| 8 | `npm run bildschaerfe` | kommt auf einem feinen Bildschirm (2×) genug Auflösung an? |
+| 9 | `npm run endpunkt` | ruft den Formular-Empfänger wirklich an (läuft in `check -- --live` mit) |
+
+**Warum die drei dazugekommen sind (05.08.2026):** Alle drei fangen Fehler, die
+durch die Tore 1 bis 6 *vollständig* hindurchrutschen – nichts läuft über,
+nichts ist überdeckt, keine Meldung, kein Kontrastproblem. Zwei davon hat im
+zweiten Testlauf der Betreiber selbst gefunden, Wochen nach dem Bau, an einer
+fertigen Website. Der dritte wäre erst dadurch aufgefallen, dass wochenlang
+keine Anfrage kommt.
 
 **Und danach das eigene Auge** – Definition of Done, Punkt 3d. Das ist kein
 Tor, weil es kein Befehl ist, aber es ist Pflicht: Grüne Technikprüfungen sagen
@@ -1256,6 +1266,9 @@ nichts über Design-Treue.
 | `npm run interaktion` | **Bedien-Prüfung** – fährt jeden Verhaltens-Baustein real (350 + 1440 px) |
 | `npm run browser` | **Browser-Prüfung** – hält den Build gegen `browser-untergrenze.json` (Abschnitt 4a) |
 | `npm run abgleich` | **Design-Prüfung** – hält die gebaute Seite gegen die `.dc.html` (Abschnitt 9, Punkt 3c) |
+| `npm run unterlaengen` | **Unterlängen-Prüfung** – schneidet die Seite g, j, p, q, y ab? (Abschnitt 4) |
+| `npm run bildschaerfe` | **Schärfe-Prüfung** – reicht die Auflösung auf einem 2×-Bildschirm? |
+| `npm run endpunkt` | **Empfänger-Prüfung** – lebt der Formular-Server? Verschickt nichts |
 | `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
 | `npm run bogen -- --fotos` | Kontaktbögen aller Fotos (Sichtpflicht mit 1–2 Reads statt 20) |
 | `npm run holen -- --url <…> --ziel <pfad>` | Download + Integritätsprüfung (nie Base64 durch den Chat!) |

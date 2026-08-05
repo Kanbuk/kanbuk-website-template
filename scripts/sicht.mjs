@@ -332,10 +332,29 @@ for (const seite of seiten) {
       return funde;
     });
 
-    // 1d) Matsch-Bilder: ein Bild, das breiter angezeigt wird, als seine
-    // Datei Pixel hat, wird vom Browser hochgerechnet und sieht verpixelt
-    // aus. Klassische Ursache: <Image widths={[…1000]}> unter einem
-    // Vollbreiten-Band. Fällt sonst erst dem Kunden am großen Monitor auf.
+    /* 1d) HOCHSKALIERTE Bilder – und NUR die.
+       Ein Bild, das breiter angezeigt wird, als seine Datei Pixel hat, wird
+       vom Browser hochgerechnet und sieht verpixelt aus. Klassische Ursache:
+       eine zu kurze `widths`-Liste unter einem Vollbreiten-Band.
+
+       WAS DIESE REGEL AUSDRÜCKLICH NICHT KANN – zweimal wichtig:
+
+       • Sie misst bei EINFACHER Punktdichte. Kein Kontext in dieser Datei
+         setzt einen `deviceScaleFactor`. Der häufige Fall „Datei genau so
+         groß wie der Kasten, aber der Bildschirm stellt doppelt so fein dar"
+         liegt unter der Schwelle 1.34 und wird nie gemeldet.
+       • Sie baut auf `naturalWidth`. Bei einem `srcset` rechnet der Browser
+         diese Zahl auf die Anzeigedichte ZURÜCK – die Messung findet dort
+         systematisch 100 %.
+
+       Solange diese Regel existiert und grün ist, glaubt jeder, die
+       Bildschärfe sei geprüft. Eine Prüfung, die nur den seltenen Fall findet
+       und dabei vollständig wirkt, ist gefährlicher als gar keine – deshalb
+       steht es hier ausdrücklich.
+
+       Die 2×-Messung mit richtig gelesenem `srcset` macht `npm run
+       bildschaerfe`. Beide sind nötig: Diese hier fängt den groben Fall bei
+       jedem Sicht-Lauf mit, jene den häufigen. */
     const matschig = await page.evaluate(() => {
       return [...document.images]
         .filter((b) => b.complete && b.naturalWidth > 0 && !b.currentSrc.startsWith('data:'))
@@ -570,7 +589,13 @@ for (const seite of seiten) {
     }
     for (const f of [...new Set(jsFehler)]) probleme.push(`${kennung}: JS-Fehler -> ${f.slice(0, 140)}`);
     for (const k of [...new Set(kaputt)]) probleme.push(`${kennung}: lädt nicht -> ${k.slice(0, 140)}`);
-    for (const m of matschig) probleme.push(`${kennung}: VERPIXELT (hochskaliert) -> ${m}\n      Abhilfe: widths der <Image> bis zur echten Anzeigebreite erweitern.`);
+    for (const m of matschig)
+      probleme.push(
+        `${kennung}: VERPIXELT (hochskaliert, bei 1× gemessen) -> ${m}\n` +
+          '      Abhilfe: widths des <Picture> bis zur echten Anzeigebreite erweitern.\n' +
+          '      Für feine Bildschirme (2×) misst „npm run bildschaerfe" – diese Regel hier\n' +
+          '      findet nur den groben Fall.',
+      );
     for (const k of lesbarkeit.kontrast) {
       probleme.push(
         `${kennung}: KONTRAST ZU SCHWACH -> ${k}\n      Farbe aufhellen/abdunkeln (content.config.ts -> design.farben) oder eine kräftigere Textstufe verwenden.`,
