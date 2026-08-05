@@ -550,6 +550,103 @@ Bild über Text; Sticky-Leisten am Handy prüfen (verdecken sie Inhalt?).
 
 ---
 
+## 4aa. Die Grenze: wer macht was (**am echten Design nachgezählt**)
+
+Am 05.08.2026 wurde eine vollständige Claude-Design-Ablage Datei für Datei
+ausgewertet – Website, Design-System, alle Token-Dateien. Vorher war „das
+Design liefert den Lack" eine Redewendung; hier steht, was das konkret heißt.
+
+### Was Claude Design WIRKLICH liefert
+
+Weit mehr, als der Motor bisher annahm:
+
+| Datei | Inhalt |
+| --- | --- |
+| `tokens/colors.css` | die volle Farbskala **plus** eine bedeutungstragende Ebene (`--surface-*`, `--text-*`, `--border-*`) |
+| `tokens/typography.css` | zwei bis drei Schriftfamilien, **13 Größenstufen**, 5 Gewichte, 5 Zeilenhöhen, 6 Sperrungen |
+| `tokens/spacing.css` | **16 Abstandsstufen**, Container-Breiten, Seitenrand, Sektionshöhe |
+| `tokens/radius.css` | **9 Radien** |
+| `tokens/shadows.css` | **7 Schatten**, inklusive Fokusring und Haarlinie |
+| `tokens/motion.css` | **4 Kurven, 5 Dauern, ein Press-Scale** |
+| `fonts.txt` | welche Schnitte gebraucht werden – mit dem Hinweis „muss lokal eingebettet werden" |
+| `design-system.js` | **24 fertige Komponenten als echter Code** – darunter Accordion, Tabs, Dialog, Tooltip, Switch und der komplette Formularsatz |
+| `<Projekt>.dc.html` | jede Seite, jeder Block, jeder Inline-Wert, jeder sichtbare Text |
+
+Gezählt an einer echten Website: 37× Button, 32× Icon, 16× Input, 12× Karte,
+10× Select – und Accordion, Tabs, Dialog sind alle drei im Einsatz.
+
+### Und was es NICHT liefert – nachgesehen im `<helmet>`
+
+Dort stehen **nur** `viewport`, die Stylesheets und das Bundle. Kein `title`,
+keine Description, kein Canonical, kein OG-Bild, kein JSON-LD, kein `robots`.
+
+Also: **Alles, was man sieht, kommt aus dem Design. Alles, was man nicht sieht,
+kommt aus dem Motor.** Das ist die Grenze, und sie ist überraschend sauber.
+
+### Der eigentliche Befund: der Motor ist ÄRMER als das Design
+
+| | Design | Motor |
+| --- | --- | --- |
+| Radien | 9 Stufen | **1** |
+| Schatten | 7 | **0** |
+| Bewegung | 4 Kurven + 5 Dauern | 3 Werte |
+| Schriftgrößen | 13 | 8 |
+| Abstände | 16 | 9 |
+
+**Und trotzdem gewann bisher der Motor**, weil der Port die Design-Werte in die
+Motor-Skala *übersetzte*. Bei 9 Radien auf 1 abzubilden heißt: acht Stufen
+verschwinden. Das erklärt „weicht ab, ohne sichtlichen Grund" besser als jede
+andere Vermutung – es ist kein Fehler beim Bauen, sondern Auflösungsverlust
+durch die Übersetzung selbst.
+
+> **Deshalb die Regel: Die Token-Dateien des Designs werden ÜBERNOMMEN, nicht
+> übersetzt.** Sie kommen als Dateien mit; die Motor-Token werden zu
+> Verweisen darauf (`--raum-m: var(--space-10)`). Dann gibt es eine Wahrheit
+> statt zweier, und die Umrechnungstabelle in Abschnitt 4 ist nur noch der
+> Rückfall für den Fall, dass ein Design keine Token mitbringt.
+
+### Die Zuständigkeitsliste
+
+**Immer Design – der Motor fasst es nicht an:**
+Farben · Schriftarten, -größen, Zeilenhöhen, Sperrungen, Gewichte · Abstände,
+Container, Seitenränder · Radien · Schatten · **Bewegung (Dauer, Kurve,
+Press-Scale)** · Layout und Blockfolge jeder Seite · alle sichtbaren Texte ·
+Aussehen und Zustände jeder Komponente.
+
+**Immer Motor – das Design liefert es nicht:**
+Titel, Description, Canonical, OG-Bild, JSON-LD, `robots.txt`, Sitemap,
+hreflang · echte Routen mit eigener URL · Formular-Versand samt Honeypot,
+Zeitfalle und IP-Bremse · der INHALT der Rechtsseiten · Einwilligung und
+2-Klick-Einbettung · Bildoptimierung · Öffnungszeiten-Logik in der Zeitzone des
+Betriebs · `mode` demo/live · die neun Tore.
+
+**Motor schlägt Design – drei Untergrenzen, ohne Ermessen:**
+Schrift unter 12 px · Kontrast unter dem WCAG-Wert · Eingabefelder unter 16 px.
+
+**Zwei Stellen, an denen der Motor das Design überstimmen MUSS:**
+
+Das Design lädt seine Schriften über Google Fonts und seine Symbole über
+`unpkg.com/lucide@latest` – **beides sind fremde Server beim Laden** und damit
+nach Abschnitt 2 verboten. Der Motor bettet die Schriften lokal ein
+(`npm run schrift`) und liefert Lucide vollständig mit (`<Symbol>`). Das ist
+keine Abweichung vom Design: Es sind dieselben Schriften und dieselben Symbole,
+nur von der eigenen Adresse. Die `fonts.txt` des Designs sagt das selbst.
+
+**Beide liefern es – Design gewinnt, Motor liefert die Mechanik:**
+
+| Baustein | Design liefert | Motor liefert |
+| --- | --- | --- |
+| Akkordeon, Tabs, Dialog, Slider | Aussehen, Zustände, **Bewegung** | Zuordnung, Tastatur, ARIA, Verhalten ohne JS |
+| Formularfelder | Aussehen und Anordnung | Versand, Prüfung, Schutz vor Massenzusendung |
+| Kopf- und Fußzeile | Struktur und Inhalt | `<Kopf>`/`<Fuss>` **nur, wenn das Design schweigt** |
+
+> **Der Fußzeilen-Fall.** Beim zweiten Port zeigte die gebaute Fußzeile noch
+> einmal das Kopf-Menü, während das Design dort ein Rechts-Menü vorsah. Ursache
+> ist genau diese Zeile: Der Motor-Baustein wurde benutzt, obwohl das Design
+> etwas anderes zeigt. Der Baustein ist der Rückfall, nicht die Vorgabe.
+
+---
+
 ## 4a. Die Browser-Untergrenze (**der Fall „grün, aber kaputt"**)
 
 Der Motor sagt zu, **ab welchem Browser** eine Seite funktioniert. Die Zahl steht
