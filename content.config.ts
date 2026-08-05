@@ -319,6 +319,33 @@ export interface FormularFeld {
    * einsprachig baut, merkt davon nichts.
    */
   labelEn?: string;
+  /**
+   * LINKS INNERHALB DER BESCHRIFTUNG – für Zustimmungs-Häkchen.
+   *
+   * Ein Pflicht-Häkchen „Ich habe die Datenschutzerklärung und die AGB
+   * gelesen" verweist sonst auf Dokumente, die an dieser Stelle nicht zu
+   * öffnen sind. Nachlesen hieße: scrollen, wegklicken, halb ausgefülltes
+   * Formular verlieren. Wo AGB im Spiel sind, steht darin meist eine
+   * Stornogebühr – genau dort zählt die zumutbare Kenntnisnahme.
+   *
+   * ```ts
+   * label: 'Ich habe die Datenschutzerklärung und die AGB gelesen.',
+   * labelLinks: [
+   *   { text: 'Datenschutzerklärung', ziel: '/datenschutz' },
+   *   { text: 'AGB', ziel: '/agb' },
+   * ],
+   * ```
+   *
+   * `text` ist der WORTLAUT, der in `label` verlinkt werden soll – der
+   * Baustein zerlegt die Beschriftung daran und baut die Links selbst.
+   * Kommt der Wortlaut nicht vor, hält der Build an: Ein Link, der still
+   * nicht entsteht, fällt niemandem auf.
+   *
+   * WARUM NICHT EINFACH HTML IM LABEL: Ein `set:html` aus der Konfiguration
+   * wäre ein offenes Tor – jeder Text aus einer Datei, die auch ein
+   * Redaktionssystem füllen kann, landete dann ungefiltert im Markup.
+   */
+  labelLinks?: { text: string; textEn?: string; ziel: string; zielEn?: string }[];
   typ: FeldTyp;
   pflicht?: boolean;
   /** Nur für typ 'auswahl'. */
@@ -397,6 +424,15 @@ export interface Formular {
   id: string;
   /** Betreff der E-Mail an den Betrieb. */
   betreff: string;
+  /**
+   * KLARTEXTNAME des Formulars für Leserinnen – z. B. `'Terminanfrage'`.
+   *
+   * Wird in der Datenschutzerklärung verwendet, wenn es MEHRERE Formulare
+   * gibt. Dort stand vorher der Mail-Betreff, also die Innensicht des Betriebs
+   * („Neue Anfrage über <domain>"). Bei einem einzigen Formular sagt die
+   * Überschrift ohnehin alles – dann wird das Feld nicht gebraucht.
+   */
+  bezeichnung?: string;
   felder: FormularFeld[];
   /**
    * MEHRSTUFIG (Assistent) – optional. Titel der Schritte, z. B.
@@ -883,8 +919,35 @@ export interface Rechtstexte {
   /** UID-Nummer, falls vorhanden. */
   uid: string;
   aufsichtsbehoerde: string;
-  /** Gewerbeberechtigung / Kammer-Mitgliedschaft. */
+  /**
+   * Die GEWERBEBEZEICHNUNG – wortgleich aus dem Gewerberegister (GISA).
+   * Beispiel: `'Handel mit Kraftfahrzeugen'`, `'Gastgewerbe'`, `'Kosmetik
+   * (Schönheitspflege)'`.
+   *
+   * NICHT die Kammer – die steht in `kammer`. § 5 Abs. 1 Z 6 ECG verlangt
+   * beides NEBENEINANDER: Kammer UND Gewerbebezeichnung.
+   *
+   * WARUM DAS GETRENNT IST: Hier stand beides in einem Feld, und der Musterwert
+   * war ausgerechnet die Kammer. Wer das Feld dann korrekt mit dem
+   * Registerwortlaut füllt – also genau der sorgfältige Kunde –, wirft die
+   * Kammer stillschweigend hinaus. Eine Pflichtangabe verschwindet, ohne dass
+   * irgendetwas anschlägt. In einem Kundenprojekt am 04.08.2026 real passiert.
+   *
+   * Den Wortlaut aus dem amtlichen Auszug abschreiben, nie aus der Tätigkeit
+   * ableiten: Was ein Betrieb tut und wofür er die Berechtigung hat, ist nicht
+   * dasselbe – ein freies Gewerbe heißt im Register oft ganz anders, als der
+   * Betrieb sich selbst nennt.
+   */
   gewerbe: string;
+  /**
+   * Die KAMMER, der der Betrieb angehört – bei Gewerbebetrieben in Österreich
+   * praktisch immer die Wirtschaftskammer des Bundeslandes.
+   * Beispiel: `'Wirtschaftskammer Wien'`.
+   *
+   * Optional, weil es Betriebe ohne Kammerzugehörigkeit gibt (neue Selbständige,
+   * manche freien Berufe haben stattdessen eine eigene Standesvertretung).
+   */
+  kammer?: string;
   firmenbuchnummer: string;
   firmenbuchgericht: string;
   /**
@@ -1298,6 +1361,16 @@ const konfig = {
         { name: 'email', label: 'E-Mail', typ: 'email', pflicht: true, autocomplete: 'email' },
         { name: 'telefon', label: 'Telefon', typ: 'tel', autocomplete: 'tel' },
         { name: 'nachricht', label: 'Nachricht', typ: 'textarea', pflicht: true },
+        /* Die Referenzseite fährt das Zustimmungs-Häkchen samt Link mit
+           Absicht: Sonst bliebe der Weg ungetestet, bis ihn der erste Kunde
+           mit AGB braucht – und Tore prüfen nur, was gebaut wird. */
+        {
+          name: 'datenschutz',
+          label: 'Ich habe die Datenschutzerklärung gelesen.',
+          labelLinks: [{ text: 'Datenschutzerklärung', ziel: '/datenschutz' }],
+          typ: 'haekchen',
+          pflicht: true,
+        },
       ],
     },
   ],
@@ -1314,7 +1387,8 @@ const konfig = {
     adresse: 'Musterstraße 1, 1010 Wien, Österreich',
     uid: 'ATU00000000',
     aufsichtsbehoerde: 'Magistratisches Bezirksamt für den 1. Bezirk',
-    gewerbe: 'Mitglied der WKO Wien',
+    gewerbe: 'PLATZHALTER: Gewerbebezeichnung laut GISA-Auszug',
+    kammer: 'Wirtschaftskammer Wien',
     firmenbuchnummer: 'FN 000000a',
     firmenbuchgericht: 'Handelsgericht Wien',
     unternehmensgegenstand: 'Beispielbetrieb zur Vorführung des Kanbuk-Motors',

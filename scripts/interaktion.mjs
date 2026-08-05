@@ -113,6 +113,7 @@ const ALLE_PRUEFUNGEN = [
      ohne Hinweis). Auf einem grünen Lauf entsteht sie nie – sie hier zu
      erwarten hiess, sie in jedem grünen Lauf zu vermissen. */
   ...(IST_VORSCHAU ? ['Formular (Vorschau)'] : ['Formular (Struktur)']),
+  'Zustimmungs-Häkchen',
 ];
 
 /* ZWEI BESCHRIFTUNGEN, EIN PRÜFSCHRITT.
@@ -1047,6 +1048,65 @@ for (const seite of seiten) {
     console.log(
       `  ${bewegung.length === 0 ? '✓' : '✗'} ${zielSeite} @ 390px  · zweiter Durchgang MIT Bewegung`,
     );
+  }
+  await kontext.close();
+}
+
+/* ===========================================================================
+   DRITTER DURCHGANG: DER LINK IM ZUSTIMMUNGS-HÄKCHEN
+   ===========================================================================
+   Ein Pflicht-Häkchen „Ich habe die Datenschutzerklärung gelesen" bekommt vom
+   Motor einen echten Link auf das genannte Dokument. Dabei gibt es genau eine
+   Falle, und sie ist rechtlicher Natur: Ein Klick auf diesen Link darf das
+   Häkchen NICHT setzen. Eine so erschlichene Zustimmung wäre keine – die
+   Besucherin wollte nachlesen, nicht zustimmen.
+
+   Warum das ein EIGENER Durchgang ist: Es lässt sich nicht im Seiten-Skript
+   messen. Ob ein Klick auf ein Kindelement die Beschriftung „durchschlägt",
+   entscheidet der Browser beim echten Klick; ein `element.click()` im Skript
+   löst genau diesen Weg nicht aus. Gemessen wird deshalb mit dem Zeiger.
+
+   Die Gegenrichtung gehört mit: Der Text NEBEN dem Link muss das Häkchen
+   weiterhin setzen. Ein Häkchen, das man nur noch im Kästchen selbst treffen
+   kann, ist am Handy eine Zumutung – und der Fehler wäre unsichtbar, weil er
+   wie eine ungenaue Berührung aussieht.
+   =========================================================================== */
+{
+  const kontext = await browser.newContext({ viewport: { width: 390, height: 900 } });
+  const page = await kontext.newPage();
+  /* Der Link öffnet einen neuen Tab (target="_blank") – der wird sofort wieder
+     geschlossen, sonst wartet der Durchgang darauf. */
+  kontext.on('page', (p) => p.close().catch(() => {}));
+
+  for (const s of seiten) {
+    await page.goto(BASIS + s, { waitUntil: 'load' });
+    const kaesten = page.locator('label[data-typ="haekchen"]:has(.formular__label-link)');
+    if ((await kaesten.count()) === 0) continue;
+
+    const label = kaesten.first();
+    const kasten = label.locator('input[type="checkbox"]');
+    const link = label.locator('.formular__label-link').first();
+    const fehler = [];
+
+    await link.click();
+    await page.waitForTimeout(250);
+    if (await kasten.isChecked()) {
+      fehler.push('Ein Klick auf den Link im Häkchen SETZT das Häkchen – das wäre eine erschlichene Zustimmung');
+    }
+
+    /* Ganz links im Label steht Text vor dem Link. */
+    await label.click({ position: { x: 4, y: 8 } });
+    await page.waitForTimeout(200);
+    if (!(await kasten.isChecked())) {
+      fehler.push('Ein Klick auf den Text des Häkchens setzt es nicht mehr – am Handy kaum noch zu treffen');
+    }
+
+    gesehen.add('Zustimmungs-Häkchen');
+    geprueft++;
+    const kennung = `${s} @ 390px`;
+    console.log(`  ${fehler.length === 0 ? '✓' : '✗'} ${kennung} — Zustimmungs-Häkchen ${fehler.length === 0 ? '✓' : '✗'}`);
+    for (const f of fehler) probleme.push(`${kennung}: Zustimmungs-Häkchen -> ${f}`);
+    break; // ein Beleg genügt – der Baustein ist auf allen Seiten derselbe
   }
   await kontext.close();
 }

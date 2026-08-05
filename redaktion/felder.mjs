@@ -119,7 +119,13 @@ export const RECHT = [
   { pfad: 'rechtstexte.uid', titel: 'UID-Nummer', typ: 'text', hinweis: 'z. B. ATU00000000' },
   { pfad: 'rechtstexte.firmenbuchnummer', titel: 'Firmenbuchnummer', typ: 'text' },
   { pfad: 'rechtstexte.firmenbuchgericht', titel: 'Firmenbuchgericht', typ: 'text' },
-  { pfad: 'rechtstexte.gewerbe', titel: 'Gewerbeberechtigung', typ: 'text' },
+  {
+    pfad: 'rechtstexte.gewerbe',
+    titel: 'Gewerbebezeichnung',
+    typ: 'text',
+    hinweis: 'Wortgleich aus dem Gewerberegister-Auszug (GISA). Nicht die Kammer – die steht im Feld darunter.',
+  },
+  { pfad: 'rechtstexte.kammer', titel: 'Kammerzugehörigkeit', typ: 'text', hinweis: 'z. B. Wirtschaftskammer Wien' },
   { pfad: 'rechtstexte.aufsichtsbehoerde', titel: 'Aufsichtsbehörde', typ: 'text' },
   {
     pfad: 'rechtstexte.unternehmensgegenstand',

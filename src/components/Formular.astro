@@ -24,7 +24,7 @@
  *
  * Verwendung:  <Formular id="kontakt" />
  */
-import { site } from '../../content.config';
+import { site, type FormularFeld } from '../../content.config';
 import { motorTexte, motorBeschriftungen } from '../lib/texte';
 
 interface Props {
@@ -90,6 +90,47 @@ const gruppen = istAssistent
       felder: formular.felder.filter((f) => (f.schritt ?? 1) === i + 1),
     }))
   : [{ titel: '', nr: 1, felder: formular.felder }];
+
+/* -----------------------------------------------------------------------
+   BESCHRIFTUNG MIT LINKS (Zustimmungs-Häkchen).
+   -----------------------------------------------------------------------
+   Ein Häkchen „Ich habe die Datenschutzerklärung und die AGB gelesen" nennt
+   Dokumente, die an dieser Stelle nicht zu öffnen sind. Der Baustein zerlegt
+   die Beschriftung deshalb an den in `labelLinks` genannten Wortlauten und
+   baut die Links selbst – bewusst OHNE `set:html` aus der Konfiguration, das
+   wäre ein offenes Tor für jeden Text, den auch ein Redaktionssystem füllt.
+
+   Der Wortlaut muss vorkommen, sonst hält der Build an: Ein Link, der still
+   nicht entsteht, fällt niemandem auf – und dann steht das Häkchen wieder
+   ohne Nachlesemöglichkeit da, also genau der Zustand, den das Feld behebt. */
+type Stueck = { text: string; ziel?: string };
+function mitLinks(feld: FormularFeld): Stueck[] {
+  const text = sprache === 'en' ? (feld.labelEn ?? feld.label) : feld.label;
+  if (!feld.labelLinks?.length) return [{ text }];
+
+  const stuecke: Stueck[] = [{ text }];
+  for (const verweis of feld.labelLinks) {
+    const wort = sprache === 'en' ? (verweis.textEn ?? verweis.text) : verweis.text;
+    const ziel = sprache === 'en' ? (verweis.zielEn ?? verweis.ziel) : verweis.ziel;
+    const stelle = stuecke.findIndex((s) => !s.ziel && s.text.includes(wort));
+    if (stelle < 0) {
+      throw new Error(
+        `Formular "${id}", Feld "${feld.name}": labelLinks nennt „${wort}", ` +
+          `aber die Beschriftung lautet „${text}". Der Wortlaut muss darin vorkommen – ` +
+          'sonst entsteht der Link nicht, und das fällt niemandem auf.',
+      );
+    }
+    const s = stuecke[stelle];
+    const pos = s.text.indexOf(wort);
+    const ersatz: Stueck[] = [];
+    if (pos > 0) ersatz.push({ text: s.text.slice(0, pos) });
+    ersatz.push({ text: wort, ziel });
+    const rest = s.text.slice(pos + wort.length);
+    if (rest) ersatz.push({ text: rest });
+    stuecke.splice(stelle, 1, ...ersatz);
+  }
+  return stuecke;
+}
 
 /* `pattern` IGNORIERT DER BROWSER bei number/date/time – dort prüft er nach
    eigenen Regeln. Ein Muster, das dort steht, tut also nichts, und zwar ohne
@@ -180,7 +221,19 @@ if (leer) {
         {gruppe.felder.map((f) => (
           <label class="formular__feld" data-feld={f.name} data-typ={f.typ}>
             <span class="formular__label">
-              {sprache === 'en' ? (f.labelEn ?? f.label) : f.label}
+              {mitLinks(f).map((s) =>
+                s.ziel ? (
+                  /* `onclick` mit stopPropagation wäre hier zu wenig: Gemessen
+                     wird unten im Bedien-Tor, dass ein Klick auf diesen Link
+                     das Häkchen NICHT setzt – eine so erschlichene Zustimmung
+                     wäre keine. */
+                  <a href={s.ziel} target="_blank" rel="noopener noreferrer" class="formular__label-link">
+                    {s.text}
+                  </a>
+                ) : (
+                  s.text
+                ),
+              )}
               {/* STANDARD: Der Motor kennzeichnet die FREIWILLIGEN Felder,
                   nicht die Pflichtfelder. Das ist eine Umkehr-Konvention –
                   sobald alle Felder Pflicht sind, steht hier gar nichts mehr.

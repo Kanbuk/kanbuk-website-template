@@ -53,7 +53,12 @@ const telHref = 'tel:' + (site.betrieb.telefon ?? '').replace(/[^+0-9]/g, '');
     {r.uid && <li>UID-Nummer: {r.uid}</li>}
     {r.firmenbuchnummer && <li>Firmenbuchnummer: {r.firmenbuchnummer}</li>}
     {r.firmenbuchgericht && <li>Firmenbuchgericht: {r.firmenbuchgericht}</li>}
+    {/* § 5 Abs. 1 Z 6 ECG verlangt Kammer UND Gewerbebezeichnung nebeneinander.
+        Sie standen hier in EINEM Feld, dessen Musterwert die Kammer war – wer
+        den Registerwortlaut korrekt einträgt, hat die Kammer damit gelöscht.
+        Deshalb zwei Felder, zwei Zeilen. */}
     {r.gewerbe && <li>Gewerbe: {r.gewerbe}</li>}
+    {r.kammer && <li>Kammerzugehörigkeit: {r.kammer}</li>}
     {r.aufsichtsbehoerde && <li>Aufsichtsbehörde: {r.aufsichtsbehoerde}</li>}
   </ul>
 

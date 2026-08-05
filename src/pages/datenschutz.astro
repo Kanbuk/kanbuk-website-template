@@ -266,10 +266,18 @@ const hatMerkliste =
         Einwilligung an weitere Dritte weiter und speichern sie nur so lange, wie es zur
         Bearbeitung Ihrer Anfrage erforderlich ist.
       </p>
+      {/* HIER STAND DER MAIL-BETREFF – also „Neue Anfrage über <domain>".
+          Das ist die Innensicht des Betriebs, eine Zeile, die nie für
+          Leserinnen gedacht war, und sie stand in JEDEM Klon, weil jeder Klon
+          mindestens ein Formular hat. Bei mehreren Formularen war es zudem
+          dreimal fast derselbe Betreff, also keine Unterscheidung.
+
+          Bei EINEM Formular sagt die Überschrift darüber ohnehin alles –
+          dann steht hier nur die Feldliste. */}
       <ul>
         {site.formulare.map((f) => (
           <li>
-            <strong>{f.betreff}:</strong>{' '}
+            {site.formulare.length > 1 && <strong>{f.bezeichnung ?? f.id}: </strong>}
             {f.felder.map((feld) => feld.label).join(', ')}
           </li>
         ))}
@@ -388,6 +396,11 @@ const hatMerkliste =
     <li>Löschung (Art. 17) und Einschränkung der Verarbeitung (Art. 18)</li>
     <li>Datenübertragbarkeit (Art. 20)</li>
     <li>Widerspruch gegen die Verarbeitung (Art. 21)</li>
+    {/* Der Widerruf fehlte in dieser Liste, obwohl der Widerruf-KNOPF weiter
+        oben in der Seite steht. Er gehört genau dorthin, wo jeder danach
+        sucht – und er wird gebraucht, sobald irgendwo eine Einwilligung
+        eingeholt wird: jede 2-Klick-Einbettung, jeder Eintrag in `dienste`. */}
+    <li>Widerruf einer erteilten Einwilligung mit Wirkung für die Zukunft (Art. 7 Abs. 2)</li>
   </ul>
   <p>
     Wenden Sie sich dazu bitte an <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>.

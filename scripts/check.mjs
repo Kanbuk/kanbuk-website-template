@@ -216,6 +216,33 @@ for (const f of htmlDateien) {
     fehler(`${name}: setzt ein Cookie – die Seite muss cookiefrei bleiben (sonst Banner-Pflicht)`);
   }
 
+  /* EIN ZUSTIMMUNGS-HÄKCHEN, DAS DOKUMENTE NENNT, MUSS SIE VERLINKEN.
+     „Ich habe die Datenschutzerklärung und die AGB gelesen" verweist sonst auf
+     Dokumente, die an dieser Stelle nicht zu öffnen sind: scrollen, wegklicken,
+     halb ausgefülltes Formular verlieren. Wo AGB im Spiel sind, steht darin
+     meist eine Stornogebühr – genau dort zählt die zumutbare Kenntnisnahme.
+
+     Gemessen wird die GEBAUTE Seite, nicht die Konfiguration: So greift die
+     Regel auch bei einem Formular, das ein Klon von Hand geschrieben hat.
+     Der Weg dorthin ist `labelLinks` am Feld (content.config.ts). */
+  for (const m of html.matchAll(/<label\b[^>]*data-typ="haekchen"[^>]*>([\s\S]*?)<\/label>/gi)) {
+    const inhalt = m[1];
+    const text = inhalt.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const genannt = ['Datenschutzerklärung', 'AGB', 'Geschäftsbedingungen', 'Widerrufsbelehrung'].filter(
+      (d) => text.includes(d),
+    );
+    if (!genannt.length) continue;
+    if (/<a\b[^>]*href=/i.test(inhalt)) continue;
+    fehler(
+      [
+        `${name}: Zustimmungs-Häkchen nennt ${genannt.join(' und ')}, verlinkt aber nichts.`,
+        `    Beschriftung: „${text.slice(0, 70)}"`,
+        '    In content.config.ts am Feld `labelLinks` setzen – der Motor baut die Links',
+        '    dann selbst, und ein Klick darauf setzt das Häkchen nicht (das wäre erschlichen).',
+      ].join('\n'),
+    );
+  }
+
   /* PDF-Links müssen halten, was ihr Text verspricht.
      Ein <a href="…​.pdf"> OHNE download-Attribut lädt nichts herunter – der
      Browser ÖFFNET das PDF (der Motor liefert es bewusst mit
