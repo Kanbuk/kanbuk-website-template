@@ -21,6 +21,7 @@ import Kopf from '../components/Kopf.astro';
 import Fuss from '../components/Fuss.astro';
 import Schwebeknopf from '../components/Schwebeknopf.astro';
 import Formular from '../components/Formular.astro';
+import Einbettung from '../components/Einbettung.astro';
 import Symbol from '../components/Symbol.astro';
 import { site } from '../../content.config';
 import { bild } from '../lib/bilder';
@@ -96,6 +97,27 @@ const heroBild = bild('hero.jpg');
             </div>
           </details>
         </div>
+      </div>
+    </section>
+
+    {/* 2-Klick-Einbettung – der Standardweg des Motors für eine bediente Karte
+        oder ein Video (CLAUDE.md 7a). Sie steht hier, damit das Bedien-Tor sie
+        wirklich anfährt: Bis 05.08.2026 hat keine Prüfung je hinter diesen
+        Klick geschaut, und in einem Kundenprojekt fiel die Karte danach auf
+        einen 150-Pixel-Streifen zusammen. Vor dem Klick geht kein Byte raus. */}
+    <section class="block block--getoent" data-reveal>
+      <div class="container container--schmal">
+        <h2>Verhaltens-Baustein: 2-Klick-Einbettung</h2>
+        <p class="block__intro">
+          Erst der Klick lädt den fremden Rahmen. Vorher wird nichts übertragen –
+          deshalb braucht die Seite dafür kein Banner.
+        </p>
+        <Einbettung
+          url="https://muster.example/karte"
+          titel="Anfahrt (Muster)"
+          anbieter="Muster Karten"
+          format="4 / 3"
+        />
       </div>
     </section>
 

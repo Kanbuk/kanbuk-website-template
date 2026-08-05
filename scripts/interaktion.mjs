@@ -106,6 +106,7 @@ const ALLE_PRUEFUNGEN = [
   'Vergleich',
   'Slider',
   'Lightbox',
+  'Einbettung',
   'Mobilmenü',
   /* „Formular" ohne Zusatz ist KEIN Prüfschritt, sondern die Beschriftung der
      Fehlermeldungen weiter unten (scharfes Formular in der Vorschau, Vorschau
@@ -129,10 +130,17 @@ console.log(`Interaktionstest: ${seiten.length} Seite(n) × ${BREITEN.length} Br
 
 for (const seite of seiten) {
   for (const breite of BREITEN) {
-    // „Bewegung reduzieren" macht den Test deterministisch: Slider springen
-    // sofort statt zu gleiten (kein Warten auf halbe Animationen), und der
-    // Auto-Durchlauf schaltet nicht mitten in der Messung weiter. Die Bausteine
-    // respektieren die Einstellung ohnehin – das ist ihr regulärer Pfad.
+    /* „Bewegung reduzieren" macht den Test deterministisch: Slider springen
+       sofort statt zu gleiten (kein Warten auf halbe Animationen), und der
+       Auto-Durchlauf schaltet nicht mitten in der Messung weiter. Die
+       Bausteine respektieren die Einstellung ohnehin – das ist ihr regulärer
+       Pfad.
+
+       WAS DAS KOSTET, und es stand lange nirgends: In dieser Einstellung wird
+       ECHTE Bewegung nie gesehen. Der Durchgang unten (`BEWEGUNG`) fährt
+       deshalb ein zweites Mal OHNE sie, nur für die Bausteine mit Animation.
+       Im Kundenprojekt lag genau dort einer der beiden Fehler, die der
+       Betreiber selbst gefunden hat. */
     const kontext = await browser.newContext({
       viewport: { width: breite, height: 900 },
       reducedMotion: 'reduce',
@@ -639,6 +647,70 @@ for (const seite of seiten) {
       ergebnisse.push({ baustein: 'Lightbox', ok: fehler.length === 0, detail: fehler.join('; ') });
     }
 
+    /* --- 2-Klick-Einbettung: den Ladeknopf WIRKLICH drücken -----------------
+       Hinter diesem Klick hat bis 05.08.2026 keine Prüfung nachgesehen – das
+       Wort „Einbettung" kam in dieser Datei kein einziges Mal vor. In einem
+       Kundenprojekt fiel die Karte nach dem Klick auf einen 150-Pixel-Streifen
+       zusammen; gefunden hat es der Betreiber, nicht das Tor.
+
+       Die 2-Klick-Karte ist der Standardweg des Motors für die Anfahrt
+       (CLAUDE.md 7a) – das trifft also praktisch jeden Kunden.
+
+       Geprüft wird, was der Besucher merkt: Entsteht überhaupt ein Rahmen,
+       hat er eine brauchbare Höhe, und läuft die Seite danach seitlich über?
+       Der Rahmen zeigt eine fremde Adresse, die es im Prüflauf nicht gibt –
+       gemessen wird deshalb der Kasten, nicht sein Inhalt. */
+    const einbettungen = await page.evaluate(() => document.querySelectorAll('[data-einbettung]').length);
+    if (einbettungen > 0) {
+      const fehler = [];
+      const vorher = await page.evaluate(() => document.querySelectorAll('iframe').length);
+      const geklickt = await page.evaluate(() => {
+        const box = document.querySelector('[data-einbettung]');
+        const knopf = box.querySelector('[data-einbettung-laden]') ?? box;
+        knopf.click();
+        return true;
+      });
+      if (!geklickt) fehler.push('Ladeknopf der Einbettung nicht gefunden');
+      await page.waitForTimeout(400);
+      const nachher = await page.evaluate(() => {
+        const box = document.querySelector('[data-einbettung]');
+        const rahmen = box.querySelector('iframe');
+        const doc = document.documentElement;
+        const br = box.getBoundingClientRect();
+        /* NICHT DIE HÖHE DES RAHMENS MESSEN, SONDERN DIE SICHTBARE.
+           Der Rahmen bekommt sein Seitenverhältnis per Inline-Stil und bleibt
+           deshalb gross, auch wenn der Kasten darunter zusammenfällt – der
+           Kasten trägt `overflow: hidden` und schneidet ihn einfach ab. Wer
+           den Rahmen misst, sieht 400 px, während der Besucher 150 sieht.
+           Beim ersten Lauf dieser Prüfung ist genau das passiert: Der
+           nachgestellte Fehler des Kundenprojekts ging durch. */
+        const rr = rahmen ? rahmen.getBoundingClientRect() : null;
+        const sichtbar = rr
+          ? Math.max(0, Math.min(rr.bottom, br.bottom) - Math.max(rr.top, br.top))
+          : 0;
+        return {
+          rahmen: document.querySelectorAll('iframe').length,
+          hoehe: Math.round(sichtbar),
+          boxHoehe: Math.round(br.height),
+          geladen: box.classList.contains('ist-geladen'),
+          ueberlauf: doc.scrollWidth > doc.clientWidth + 1,
+        };
+      });
+      if (nachher.rahmen <= vorher) fehler.push('Klick auf „laden" erzeugt keinen Rahmen');
+      if (!nachher.geladen) fehler.push('Die Einbettung markiert sich nicht als geladen (.ist-geladen)');
+      /* 150 px war der Wert aus dem Kundenprojekt. Alles unter 200 px ist für
+         eine Karte oder ein Video unbrauchbar – das ist kein Schönheitsmaß,
+         sondern die Grenze, ab der man nichts mehr erkennt. */
+      if (nachher.rahmen > vorher && nachher.hoehe < 200) {
+        fehler.push(
+          `Der Rahmen ist nach dem Klick nur ${nachher.hoehe} px hoch (Kasten ${nachher.boxHoehe} px) – ` +
+            'darauf ist nichts zu erkennen. Meist fehlt dem Kasten die Höhe, sobald der Platzhalter weg ist.',
+        );
+      }
+      if (nachher.ueberlauf) fehler.push('Nach dem Laden läuft die Seite seitlich über');
+      ergebnisse.push({ baustein: 'Einbettung', ok: fehler.length === 0, detail: fehler.join('; ') });
+    }
+
     // --- Mobilmenü: nur in der Handy-Ansicht – am Desktop ist der Schalter ---
     // ausgeblendet, und ab 900 px setzt der Baustein sich selbst zurück.
     if (breite < 900) {
@@ -900,6 +972,83 @@ for (const seite of seiten) {
 
     await kontext.close();
   }
+}
+
+/* ===========================================================================
+   ZWEITER DURCHGANG: MIT ECHTER BEWEGUNG
+   ===========================================================================
+   Der Hauptlauf oben fährt bewusst mit „Bewegung reduzieren" – das macht ihn
+   deterministisch. Der Preis: Animationen laufen dort gar nicht, also wird
+   auch nie geprüft, ob sie sauber aussehen.
+
+   Im Kundenprojekt lag dort einer der beiden Fehler, die der Betreiber selbst
+   gefunden hat: Das Akkordeon wanderte beim Zuklappen unter dem Finger weg.
+   Kein Tor hat es je gesehen, er fand es in fünf Minuten.
+
+   Dieser Durchgang ist deshalb kurz und gezielt: nur die Startseite, nur eine
+   Breite, nur die Bausteine mit Bewegung. Gemessen wird, ob sich beim Auf- und
+   Zuklappen etwas SPRINGEND verschiebt – also ob der Punkt, den der Finger
+   berührt, unter ihm wegläuft.
+   =========================================================================== */
+{
+  const kontext = await browser.newContext({ viewport: { width: 390, height: 900 } });
+  const page = await kontext.newPage();
+
+  /* DIE SEITE MIT DEM AKKORDEON SUCHEN, nicht die erste nehmen.
+     `seiten[0]` ist alphabetisch die 404-Seite – dort gibt es nichts zu
+     bewegen, und der Durchgang meldete brav „grün" für eine Messung, die
+     nie stattgefunden hat. */
+  let zielSeite = null;
+  for (const s of seiten) {
+    await page.goto(BASIS + s, { waitUntil: 'load' });
+    const hat = await page.evaluate(() => document.querySelectorAll('[data-akkordeon] details').length > 0);
+    if (hat) {
+      zielSeite = s;
+      break;
+    }
+  }
+  if (zielSeite) await page.waitForTimeout(300);
+
+  const bewegung = !zielSeite ? [] : await page.evaluate(async () => {
+    const fehler = [];
+    const details = [...document.querySelectorAll('[data-akkordeon] details')];
+    for (const d of details.slice(0, 3)) {
+      const summary = d.querySelector('summary');
+      if (!summary) continue;
+      d.open = false;
+      await new Promise((r) => setTimeout(r, 350));
+      const vorher = summary.getBoundingClientRect().top;
+      summary.click();
+      /* Mitten in der Animation messen, nicht danach: Genau dort wandert der
+         Griff weg, und genau dort liegt der Finger. */
+      await new Promise((r) => setTimeout(r, 120));
+      const mitten = summary.getBoundingClientRect().top;
+      await new Promise((r) => setTimeout(r, 400));
+      const nachher = summary.getBoundingClientRect().top;
+      const sprung = Math.max(Math.abs(mitten - vorher), Math.abs(nachher - vorher));
+      /* Ein Griff, der beim Öffnen des EIGENEN Eintrags stehen bleibt, ist
+         richtig. Verschiebt er sich um mehr als ein paar Pixel, läuft er unter
+         dem Finger weg. */
+      if (sprung > 8) {
+        fehler.push(
+          `Akkordeon: der Griff „${(summary.textContent || '').trim().slice(0, 28)}" wandert beim Klick um ${Math.round(sprung)} px`,
+        );
+      }
+      d.open = false;
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    return fehler;
+  });
+
+  if (zielSeite) {
+    for (const f of bewegung) probleme.push(`${zielSeite} @ 390px (mit Bewegung): ${f}`);
+    geprueft += 1;
+    gesehen.add('Akkordeon (Bewegung)');
+    console.log(
+      `  ${bewegung.length === 0 ? '✓' : '✗'} ${zielSeite} @ 390px  · zweiter Durchgang MIT Bewegung`,
+    );
+  }
+  await kontext.close();
 }
 
 await browser.close();
