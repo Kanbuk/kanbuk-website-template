@@ -578,7 +578,20 @@ for (const seite of seiten) {
 
         const fehler = [];
         let hinweis = '';
-        const aktivIndex = () => punkte.findIndex((p) => p.getAttribute('aria-selected') === 'true');
+        /* `aria-current`, NICHT `aria-selected`.
+           Hier stand `aria-selected` – und damit hat diese Prüfung die falsche
+           Auszeichnung nicht bloß durchgelassen, sondern ERZWUNGEN: Wer den
+           Baustein richtig auf `aria-current` umgestellt hätte, wäre hier rot
+           geworden und hätte es zurückgedreht.
+
+           `aria-selected` gehört zu Reitern und Auswahllisten; ein Karussell
+           ist eine Gruppe von Knöpfen, von denen einer der aktuelle ist. Die
+           Begründung steht ausführlich in src/lib/verhalten/slider.ts.
+
+           Warum es niemandem auffiel: Die Referenzseite hatte bis 05.08.2026
+           gar keinen Slider. In jedem Lauf stand er unter „nicht geprüft" –
+           die Regel lief nie. Seither steht einer auf der Startseite. */
+        const aktivIndex = () => punkte.findIndex((p) => p.getAttribute('aria-current') === 'true');
         const vorher = aktivIndex();
         const scrollVorher = spur.scrollLeft;
 

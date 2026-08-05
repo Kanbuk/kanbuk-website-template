@@ -166,10 +166,28 @@ try {
   ort = await koordinaten(adresse);
   console.log(`  gefunden: ${ort.name}`);
 } catch (e) {
+  /* EIN HAKEN FÜR EIN GITTERBILD IST EIN STILLER FEHLER.
+     Hier stand `process.exit(0)` – der Lauf endete mit Erfolg, und der
+     Platzhalter (ein graues Gitter mit Nadel) ging als „Karte" durch. Wer
+     `npm run karte` in einer Reihe von Befehlen ausführt, sieht die Warnung
+     zwischen zwanzig anderen Zeilen nicht; auf der Seite sieht das Gitter aus
+     wie eine stilisierte Karte, und die Anfahrt zeigt niemandem den Weg.
+
+     Jetzt endet der Lauf mit einem Fehler. Das Bild bleibt trotzdem liegen –
+     wer bewusst mit dem Platzhalter weiterbauen will, kann das; er weiß es
+     nur jetzt. */
   console.warn(`⚠ Adresse nicht auflösbar (${e.message}) – erzeuge Platzhalter-Karte.`);
   await platzhalter();
-  console.log(`✓ ${datei} erzeugt (Platzhalter). Vor dem Live-Gang gegen eine echte Karte tauschen.`);
-  process.exit(0);
+  console.error(
+    [
+      '',
+      `✗ ${datei} ist ein PLATZHALTER, keine Karte.`,
+      `  Die Adresse „${adresse}" wurde nicht gefunden.`,
+      '  Schreibweise prüfen (Straße Hausnummer, PLZ Ort) und erneut laufen lassen.',
+      '  Das Bild liegt trotzdem in fotos/ – auf der Seite wäre es ein graues Gitter.',
+    ].join('\n'),
+  );
+  process.exit(1);
 }
 
 const mitte = weltPixel(ort.lat, ort.lon, zoom);
@@ -244,7 +262,18 @@ try {
       laengengrad: ${ort.lon.toFixed(6)},
 `);
 } catch (e) {
+  /* Auch hier kein Haken für ein Gitterbild – siehe oben. Dieser Fall ist
+     meist vorübergehend (Kartenserver nicht erreichbar), deshalb sagt die
+     Meldung, dass ein zweiter Versuch sich lohnt. */
   console.warn(`⚠ Kacheln nicht ladbar (${e.message}) – erzeuge Platzhalter.`);
   await platzhalter();
-  console.log(`✓ ${datei} erzeugt (Platzhalter). Vor dem Live-Gang gegen eine echte Karte tauschen.`);
+  console.error(
+    [
+      '',
+      `✗ ${datei} ist ein PLATZHALTER, keine Karte.`,
+      '  Der Kartenserver war nicht erreichbar – meist hilft ein zweiter Versuch.',
+      '  Das Bild liegt trotzdem in fotos/ – auf der Seite wäre es ein graues Gitter.',
+    ].join('\n'),
+  );
+  process.exit(1);
 }

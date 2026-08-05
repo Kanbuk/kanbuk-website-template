@@ -41,7 +41,7 @@ interface Props {
   /** Strichstärke. Lucide zeichnet mit 2; dünnere Designs nehmen 1.5. */
   strichstaerke?: number;
 }
-const { name, set = 'lucide', label, class: klasse, strichstaerke = 2 } = Astro.props;
+const { name, set = 'lucide', label, class: klasse, strichstaerke = 2, ...rest } = Astro.props;
 
 /* Fremde Bibliotheken liegen als eigene Datei daneben. Bewusst über
    import.meta.glob statt eines dynamischen import: So merkt der Build, welche
@@ -87,7 +87,7 @@ if (!inhalt) {
 ---
 
 <svg
-  class:list={['symbol', klasse]}
+  class:list={['symbol', klasse]} {...rest} {...rest}
   data-symbol={name}
   xmlns="http://www.w3.org/2000/svg"
   viewBox="0 0 24 24"

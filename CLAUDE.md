@@ -501,7 +501,7 @@ bei jeder Schriftgröße stimmt.
 > Entwurf enthielt die Lösung an zwölf Stellen bereits** – der Port hatte sie
 > weggelassen. Seit 05.08.2026 misst `npm run unterlaengen` es nach.
 
-### Zwei CSS-Fallen, die keine Prüfung von selbst sieht
+### Drei CSS-Fallen, die keine Prüfung von selbst sieht
 
 **`:global(…)` gehört NICHT in eine eigenständige `.css`-Datei.** Es ist eine
 Astro-Funktion für `<style>`-Blöcke *in Komponenten*. In einer normalen
@@ -520,6 +520,36 @@ Mehrere Motor-Bausteine verlassen sich aber auf das Attribut (Merklisten-Zähler
 `global.css` jetzt `[hidden] { display: none !important; }`. **Diese Zeile nicht
 entfernen** – sonst zeigt der Zähler eine „0", obwohl nichts vorgemerkt ist,
 und „Zu dieser Auswahl gibt es nichts" steht über der vollen Liste.
+
+**Ein Motor-Baustein lässt sich vom Design anmalen – aber nur, weil er die
+Abgrenzung durchreicht.** Astro grenzt jeden `<style>`-Block über ein Attribut
+ab. Schreibt eine Seite
+
+```astro
+<Oeffnungszeiten class="design__zeiten" />
+<style> .design__zeiten { display: grid; gap: 1rem; } </style>
+```
+
+dann trägt das Element **nur die Kennung des Bausteins**, nicht die der Seite –
+und die Regel findet nichts. Sie sieht richtig aus und wirkt nie.
+
+Genau so stand am 05.08.2026 in der Fußzeile jeder Seite **„ImpressumDatenschutz"**
+in einem Wort: Die Anordnung der Rechtslinks lag im Elternteil. Kein Tor
+meldete es (nichts lief über, nichts war abgeschnitten, der Kontrast stimmte,
+beide Links waren anklickbar) – gefunden hat es das Auge im Kontaktbogen.
+
+**Behoben, nicht dokumentiert:** Alle zwölf Bausteine reichen die Kennung jetzt
+an ihr Wurzelelement durch, gemessen an jedem einzelnen. Eine Regel im
+`<style>` der Seite wirkt. **Kein `:global(…)` nötig** – und in einer
+`.css`-Datei wäre es ohnehin falsch (erste Falle oben).
+
+Wer einen **neuen** Baustein baut, der eine Klasse annimmt, muss zwei Zeilen
+mitschreiben, sonst hält das Prüf-Tor ihn an:
+
+```astro
+const { class: klasse, ...rest } = Astro.props;   /* auspacken */
+<div class:list={['name', klasse]} {...rest}>     /* durchreichen */
+```
 
 ### Pflichtmuster für Responsiveness
 

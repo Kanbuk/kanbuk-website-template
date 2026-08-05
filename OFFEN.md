@@ -214,7 +214,7 @@ ist `ZUSTAENDIGKEIT.md`.
 | **3** | **Bewegung** — Akkordeon, Slider und Einblendung geben ihre Werte ab | Erst nach 1 wirksam. Beseitigt die doppelten Animationen. |
 | **4** | **Rahmen** — Kopf und Fuß zerlegbar machen, Rechtslinks platzierbar | Der Fußzeilen-Fall kann danach nicht wiederkehren. |
 | ~~**5**~~ | ~~**Design-Tor reparieren**~~ **✓ erledigt 05.08.2026** — beide Export-Formen, alle Dateien, Kopf/Fuß getrennt, Fußzeilen-Regel | Form B: vorher 0 Seiten, jetzt 4 Seiten / 16 Blöcke / 2 Rahmen-Teile. Form A unverändert 11/43/1. |
-| **6** | **Offene Fehler** — Slider-ARIA (falsche Rollen), doppelte Verpixelungs-Regel raus, `stock.mjs` raus, `karte.mjs` reparieren | Kleinkram, aber echte Fehler. |
+| ~~**6**~~ | ~~**Offene Fehler**~~ **✓ erledigt 05.08.2026** — Slider-ARIA, tote Verpixelungs-Regel raus, `karte.mjs` scheitert jetzt laut, Fußzeilen-Falle in allen zwölf Bausteinen zu | Als „Kleinkram" geplant. Zwei der Funde waren keiner (siehe unten). |
 | **7** | **Pilot 3: Restaurant** | Die Messung. Wenn kaum noch Nacharbeit anfällt, ist der Motor fertig. |
 
 > ### Warum Paket 1 verworfen wurde – zweimal gemessen
@@ -254,6 +254,61 @@ Entscheidungen kommen als einzelne Frage in normaler Sprache.
 **Arbeitsregel, aus dem 05.08. gelernt:** ein Paket, eine Gegenprobe, ein
 Commit. An diesem Tag entstanden in einem Rutsch neun halbe Sachen, die eine
 Nachprüfung erst finden musste.
+
+> ### Was Paket 6 wirklich war – jeder Punkt gemessen
+>
+> Geplant als „Kleinkram". Zwei der vier Punkte waren keiner, und ein fünfter
+> kam dazu, den kein Tor gemeldet hatte.
+>
+> **1. Slider-ARIA — und das Tor, das den Fehler erzwang.** Die Punkte trugen
+> `role="tab"` und `aria-selected`; zu Reitern gehören aber Panels,
+> `aria-controls` und Pfeiltasten – nichts davon gab es. Ein Vorleseprogramm
+> kündigte „Registerkarte 1 von 5" an, die Pfeiltaste tat nichts. Richtig ist
+> `role="group"` am Behälter und `aria-current` am aktuellen Punkt.
+>
+> **Der eigentliche Fund steckt daneben:** Das Bedien-Tor prüfte auf
+> `aria-selected`. Es hat die falsche Auszeichnung nicht bloß durchgelassen,
+> sondern **erzwungen** – wer den Baustein richtig umgestellt hätte, wäre rot
+> geworden und hätte es zurückgedreht. Aufgefallen ist das erst, weil die
+> Referenzseite jetzt einen Slider hat; vorher stand er in jedem Lauf unter
+> „NICHT GEPRÜFT" und die Regel lief nie. **Ein Baustein ohne Vorkommen auf
+> der Referenzseite ist ein ungeprüfter Baustein.**
+>
+> **2. Die Verpixelungs-Regel im Sicht-Tor war tot, nicht doppelt.** Geplant
+> war, sie als Doppelung zu streichen. Die Messung sagt etwas Schlimmeres: Am
+> echten Fall (400-px-Datei auf 1440 px Anzeige) meldete sie bei **keiner** der
+> fünf Breiten etwas. Grund: Bei `srcset` teilt der Browser die Bildbreite
+> durch die Dichte der gewählten Fassung – `naturalWidth` meldet daraufhin
+> genau die Anzeigebreite, die Rechnung kommt immer auf 100 %. Da CLAUDE.md 9a
+> rohe `<img src>` verbietet, hat **jedes** Bild im Motor ein `srcset`. Die
+> Regel konnte nie anschlagen und stand in jedem Bericht mit „0 Funde".
+> `npm run bildschaerfe` fand denselben Fall bei allen fünf Breiten.
+>
+> **3. `npm run karte` beendete sich bei Misserfolg mit einem Haken.** Findet
+> es die Adresse nicht oder ist der Kartenserver stumm, legt es ein graues
+> Gitter mit Nadel an – und meldete Erfolg. Auf der Seite sieht das aus wie
+> eine stilisierte Karte. Jetzt endet der Lauf mit einem Fehler; das Bild
+> bleibt liegen, wer es bewusst will, kann es benutzen. Gegengeprobt an einer
+> erfundenen Adresse: Ausgang 1, Text nennt Datei und Ursache.
+>
+> **4. `stock.mjs` bleibt.** Geplant war, es zu entfernen. Es hängt an vier
+> Stellen (package.json, /port-Skill, CLAUDE.md, README) – ein Entfernen wäre
+> Aufräumen ohne Fehler dahinter. Bewusst gelassen.
+>
+> **5. Der Fund, der nicht geplant war: „ImpressumDatenschutz".** In der
+> Fußzeile jeder Seite standen die beiden Rechtslinks ohne Abstand in einem
+> Wort. Ursache: Die Anordnung lag in `Fuss.astro`, das `<nav>` gehört aber
+> `Rechtslinks.astro` – Astro grenzt Stile über ein Attribut ab, die Regel fand
+> nichts. **Kein Tor meldete es** (nichts lief über, nichts abgeschnitten,
+> Kontrast in Ordnung, beide Links klickbar). Gefunden hat es das Auge im
+> Kontaktbogen, Definition of Done Punkt 3d.
+>
+> Nachgemessen, wie weit die Falle reicht: **Alle zwölf Bausteine** mit
+> `class`-Eingang waren betroffen – jede Design-Regel auf einen von ihnen wäre
+> wirkungslos geblieben. Astros eigene `<Image>`/`<Picture>` sind es nicht
+> (sie reichen die Kennung durch); die Motor-Bausteine taten es nicht. Jetzt
+> tun sie es alle, einzeln im Browser gemessen. Eine Regel im Prüf-Tor hält es
+> fest, gegengeprobt durch Entfernen.
 
 ---
 

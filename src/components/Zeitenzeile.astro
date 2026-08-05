@@ -35,7 +35,7 @@ interface Props {
    */
   woche?: string;
 }
-const { class: klasse, zeitzone = 'Europe/Vienna', woche } = Astro.props;
+const { class: klasse, zeitzone = 'Europe/Vienna', woche, ...rest } = Astro.props;
 
 /* Der Normalfall-Text. `tage` und `zeit` sind die sichtbaren Angaben aus der
    Config – die maschinenlesbaren Felder braucht diese Zeile nicht, sie
@@ -71,5 +71,5 @@ const startText = trefferGebaut ? trefferGebaut.text : wochenText;
 ---
 
 {wochenText && (
-  <span class:list={['zeitenzeile', klasse]} data-zeitenzeile={JSON.stringify(plan)}>{startText}</span>
+  <span class:list={['zeitenzeile', klasse]} {...rest} {...rest} data-zeitenzeile={JSON.stringify(plan)}>{startText}</span>
 )}

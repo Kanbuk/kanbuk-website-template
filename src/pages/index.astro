@@ -31,6 +31,11 @@ import { bild } from '../lib/bilder';
    Bild-Pipeline bei JEDEM Build durchlaufen. Wäre hier kein Bild, würde ein
    kaputter Bildpfad still bleiben, bis er beim ersten Kunden auffällt. */
 const heroBild = bild('hero.jpg');
+/* Vier echte Fotos aus fotos/ – damit der Slider auch die Bild-Kette faehrt
+   und nicht nur seine Mechanik. */
+const galerieBilder = ['galerie-1.jpg', 'galerie-2.jpg', 'galerie-3.jpg', 'galerie-4.jpg']
+  .map((n) => bild(n))
+  .filter((b): b is NonNullable<typeof b> => Boolean(b));
 ---
 
 <BaseLayout pfad="/">
@@ -122,6 +127,45 @@ const heroBild = bild('hero.jpg');
       </div>
     </section>
 
+    {/* SLIDER – bis 05.08.2026 stand er in jedem Lauf des Bedien-Tors unter
+        „NICHT GEPRÜFT: auf keiner der Seiten vorgekommen". Ein Baustein, den
+        keine Referenzseite baut, wird von keinem Tor gefahren; sein erster
+        echter Einsatz wäre beim Kunden gewesen. Genau dabei fielen die
+        falschen ARIA-Rollen auf, die er jahrelang trug.
+        Ohne Auto-Durchlauf: Der macht die Bedien-Prüfung unzuverlässig, weil
+        er mitten in der Messung weiterschaltet. */}
+    <section class="block" data-reveal>
+      <div class="container container--schmal">
+        <h2>Verhaltens-Baustein: Slider</h2>
+        <p class="block__intro">
+          Blättert mit Knöpfen, Punkten und Wischen. Wie schnell er gleitet,
+          bestimmt das Design über <code>scroll-behavior</code>.
+        </p>
+        <div class="slider" data-slider>
+          <div class="slider__spur" data-slider-spur>
+            {galerieBilder.map((b, i) => (
+              <div class="slider__folie">
+                <Picture
+                  formats={['webp']}
+                  fallbackFormat="jpeg"
+                  src={b}
+                  alt={`Referenz-Bild ${i + 1} von ${galerieBilder.length} im Slider`}
+                  widths={[400, 800, 1200]}
+                  sizes="(min-width: 800px) 720px, 100vw"
+                  quality={70}
+                />
+              </div>
+            ))}
+          </div>
+          <div class="slider__bedienung">
+            <button type="button" class="slider__pfeil" data-slider-zurueck aria-label="Vorheriges Bild">‹</button>
+            <div class="slider__punkte" data-slider-punkte></div>
+            <button type="button" class="slider__pfeil" data-slider-vor aria-label="Nächstes Bild">›</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     {/* ÖFFNUNGSZEITEN MIT ABWEICHUNGEN – steht hier aus demselben Grund wie die
         Einbettung darüber: Was die Referenzseite nicht baut, prüft kein Tor.
         Der Baustein rechnete bis 05.08.2026 beim BAUEN, wann eine Abweichung
@@ -158,6 +202,71 @@ const heroBild = bild('hero.jpg');
 
 <style>
   /* So sieht portierter Code aus: NUR Tokens, keine festen Pixel, keine Farbwerte. */
+
+  /* Der Slider braucht nur zwei Dinge, um zu funktionieren: eine Spur, die
+     waagrecht scrollt, und Folien, die ihre Breite halten. Alles Weitere
+     bestimmt beim Kunden das Design. */
+  .slider__spur {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: var(--raum-xs);
+    scrollbar-width: none;
+  }
+  .slider__spur::-webkit-scrollbar { display: none; }
+  .slider__folie {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+  }
+  .slider__folie :global(img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+  .slider__bedienung {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--raum-xs);
+    margin-top: var(--raum-xs);
+  }
+  .slider__pfeil {
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid var(--farbe-linie);
+    border-radius: var(--radius);
+    background: none;
+    color: inherit;
+    font-size: var(--schrift-l);
+    cursor: pointer;
+  }
+  .slider__punkte {
+    display: flex;
+    gap: var(--raum-3xs);
+  }
+  .slider__punkte :global(.slider-punkt) {
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    position: relative;
+  }
+  .slider__punkte :global(.slider-punkt)::after {
+    content: '';
+    position: absolute;
+    inset: 50% auto auto 50%;
+    transform: translate(-50%, -50%);
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--farbe-linie);
+  }
+  .slider__punkte :global(.slider-punkt.ist-aktiv)::after {
+    background: var(--farbe-primaer);
+  }
 
 
   .hero {

@@ -35,13 +35,37 @@ export function sliderStarten(): void {
     const punkteBox = slider.querySelector<HTMLElement>('[data-slider-punkte]');
     const punkte: HTMLButtonElement[] = [];
     if (punkteBox) {
-      punkteBox.setAttribute('role', 'tablist');
+      /* KEINE REITER-ROLLEN AN EINEM KARUSSELL.
+         -------------------------------------------------------------------
+         Hier stand `role="tablist"` am Behälter, `role="tab"` an jedem Punkt
+         und `aria-selected` am aktiven. Das ist eine Zusage, die der Baustein
+         nicht einlöst: Zu Reitern gehören `role="tabpanel"` an den Folien,
+         `aria-controls` als Verbindung und Pfeiltasten zum Wechseln. Nichts
+         davon gibt es hier.
+
+         Für ein Vorleseprogramm ist das schlimmer als gar keine Rolle: Es
+         kündigt „Registerkarte 1 von 5" an, der Benutzer drückt die
+         Pfeiltaste – und nichts passiert. Wer sich darauf verlässt, kommt
+         durch die Galerie gar nicht durch.
+
+         Richtig ist die einfache Wahrheit: eine Gruppe von Knöpfen, von denen
+         einer der aktuelle ist. `aria-current` sagt genau das. */
+      punkteBox.setAttribute('role', 'group');
+      if (!punkteBox.hasAttribute('aria-label')) {
+        punkteBox.setAttribute('aria-label', slider.dataset.sliderPunkteLabel || 'Bildauswahl');
+      }
+      /* Die Beschriftung folgt der Seite, nicht dem Motor. `{n}` und `{m}`
+         werden ersetzt – eine englische Seite setzt
+         `data-slider-punkt-label="Image {n} of {m}"`. */
+      const muster = slider.dataset.sliderPunktLabel || 'Bild {n} von {m}';
       folien.forEach((_, i) => {
         const p = document.createElement('button');
         p.type = 'button';
         p.className = 'slider-punkt';
-        p.setAttribute('role', 'tab');
-        p.setAttribute('aria-label', `Bild ${i + 1} von ${folien.length}`);
+        p.setAttribute(
+          'aria-label',
+          muster.replace('{n}', String(i + 1)).replace('{m}', String(folien.length)),
+        );
         p.addEventListener('click', () => gehe(i, true));
         punkteBox.appendChild(p);
         punkte.push(p);
@@ -52,7 +76,11 @@ export function sliderStarten(): void {
       index = i;
       punkte.forEach((p, j) => {
         p.classList.toggle('ist-aktiv', j === i);
-        p.setAttribute('aria-selected', String(j === i));
+        /* `aria-current` statt `aria-selected`: Letzteres gehört zu Reitern
+           und Auswahllisten. Gesetzt wird es nur am aktuellen Punkt –
+           `aria-current="false"` überall sonst wäre Lärm im Vorleseprogramm. */
+        if (j === i) p.setAttribute('aria-current', 'true');
+        else p.removeAttribute('aria-current');
       });
     }
 

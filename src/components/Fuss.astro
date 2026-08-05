@@ -40,20 +40,20 @@ import Rechtslinks from './Rechtslinks.astro';
 interface Props {
   class?: string;
 }
-const { class: klasse } = Astro.props;
+const { class: klasse, ...rest } = Astro.props;
 
 const jahr = new Date().getFullYear();
 const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
 ---
 
-<footer class:list={['fuss', klasse]}>
+<footer class:list={['fuss', klasse]} {...rest} {...rest}>
   <div class="container">
     <slot />
 
     <div class="fuss__unten">
       <p class="fuss__recht-inhaber">© {jahr} {rechtsname}</p>
       <SocialLinks />
-      <Rechtslinks class="fuss__rechtslinks" />
+      <Rechtslinks />
       <Signatur />
     </div>
   </div>
@@ -72,13 +72,10 @@ const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
     justify-content: space-between;
     gap: var(--raum-2xs) var(--raum-m);
   }
-  /* Die Anordnung der Rechtslinks gehört zur Fußzeile, nicht zum Baustein –
-     deshalb steht sie hier und nicht in Rechtslinks.astro. Ein Design, das
-     sie woanders hinstellt, bringt seine eigene Anordnung mit. */
-  .fuss__rechtslinks {
-    display: flex;
-    gap: var(--raum-s);
-  }
+  /* Die Anordnung der Rechtslinks stand hier – und wirkte nie: Astro grenzt
+     Stile ab, das <nav> gehört einer anderen Datei, die Regel fand nichts.
+     In der Fußzeile stand deshalb „ImpressumDatenschutz". Der Baustein bringt
+     seine Anordnung jetzt selbst mit; die Begründung steht in seinem Kopf. */
   .fuss__recht-inhaber {
     margin: 0;
   }

@@ -24,12 +24,12 @@ interface Props {
   aktuell?: string;
   class?: string;
 }
-const { aktuell = '/', class: klasse } = Astro.props;
+const { aktuell = '/', class: klasse, ...rest } = Astro.props;
 
 const logo = site.betrieb.logo ? bild(site.betrieb.logo) : null;
 ---
 
-<header class:list={['kopf', klasse]}>
+<header class:list={['kopf', klasse]} {...rest} {...rest}>
   <div class="container kopf__inner">
     <a class="kopf__marke" href="/" aria-label={`${site.betrieb.name} – zur Startseite`}>
       {logo ? (

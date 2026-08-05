@@ -37,10 +37,10 @@ const VARIANTEN = [
 const schluessel = `${site.domain ?? ''}${site.betrieb.name ?? ''}`;
 let summe = 0;
 for (const zeichen of schluessel) summe = (summe + zeichen.charCodeAt(0)) % 9973;
-const { text = VARIANTEN[summe % VARIANTEN.length], class: klasse } = Astro.props;
+const { text = VARIANTEN[summe % VARIANTEN.length], class: klasse, ...rest } = Astro.props;
 ---
 
-<a class:list={['signatur', klasse]} href="https://kanbuk.com" target="_blank" rel="noopener">
+<a class:list={['signatur', klasse]} {...rest} href="https://kanbuk.com" target="_blank" rel="noopener">
   {text}
 </a>
 

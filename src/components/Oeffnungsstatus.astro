@@ -20,7 +20,7 @@ interface Props {
   /** Zeitzone des Betriebs. Standard: Wien. */
   zeitzone?: string;
 }
-const { class: klasse, zeitzone = 'Europe/Vienna' } = Astro.props;
+const { class: klasse, zeitzone = 'Europe/Vienna', ...rest } = Astro.props;
 
 const TAG_NR: Record<string, number> = { Su: 0, Mo: 1, Tu: 2, We: 3, Th: 4, Fr: 5, Sa: 6 };
 
@@ -92,7 +92,7 @@ const startText = offenJetzt ? texte.offen : texte.geschlossen;
 
 {fenster.length > 0 && (
   <span
-    class:list={['oeffnungsstatus', klasse, offenJetzt ? 'ist-offen' : 'ist-geschlossen']}
+    class:list={['oeffnungsstatus', klasse, offenJetzt ? 'ist-offen' : 'ist-geschlossen']} {...rest} {...rest}
     data-oeffnungsstatus
     data-zeiten={JSON.stringify(plan)}
   >{startText}</span>

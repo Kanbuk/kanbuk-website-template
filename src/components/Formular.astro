@@ -66,6 +66,7 @@ const {
   bezug,
   sprache = 'de',
   pflichtMarkierung = 'optional',
+  ...rest
 } = Astro.props;
 
 const formular = site.formulare.find((f) => f.id === id);
@@ -178,7 +179,7 @@ if (leer) {
 ---
 
 {istDemo && (
-  <div class:list={['formular-demo', klasse]} role="note" data-formular-demo>
+  <div class:list={['formular-demo', klasse]} role="note" data-formular-demo {...rest}>
     <strong>{b.vorschauTitel}</strong>
     <p>{t.formularDemo}</p>
   </div>
@@ -197,6 +198,7 @@ if (leer) {
 {(
   <form
     class:list={['formular', klasse, istAssistent && 'formular--assistent', istDemo && 'formular--vorschau']}
+    {...rest}
     method="post"
     action={istDemo ? undefined : versandZiel}
     data-formular={istDemo ? undefined : ''}

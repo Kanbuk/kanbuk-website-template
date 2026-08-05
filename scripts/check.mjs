@@ -1203,6 +1203,48 @@ if (istTemplate) {
 }
 
 // ---------------------------------------------------------------------------
+//  7c. EIN BAUSTEIN, DER EINE KLASSE ANNIMMT, MUSS SICH AUCH ANMALEN LASSEN
+//
+//  Astro grenzt Stile über ein Attribut ab. Ein Baustein, der `class` nur
+//  entgegennimmt, trägt am Ende NUR seine eigene Kennung – die Regel im
+//  <style> der aufrufenden Seite findet ihn nicht und wirkt nie.
+//
+//  Das ist am 05.08.2026 in der Fußzeile aufgeflogen: Dort stand
+//  „ImpressumDatenschutz" in einem Wort, auf jeder Seite, weil die
+//  Anordnung im Elternteil stand. Kein Tor meldete es – es lief nichts
+//  über, nichts war abgeschnitten, der Kontrast stimmte, beide Links waren
+//  anklickbar. Gefunden hat es das Auge im Kontaktbogen.
+//
+//  Behoben ist es, indem jeder Baustein die übrigen Eigenschaften an sein
+//  Wurzelelement durchreicht (`const { class: klasse, ...rest }` und
+//  `{...rest}` an der Wurzel). Damit trägt die Wurzel BEIDE Kennungen und
+//  die Regel des Elternteils greift.
+//
+//  Diese Regel hält das fest. Sie ist eine TEXTPRÜFUNG – sie sieht, ob die
+//  beiden Stellen da sind, nicht ob sie am richtigen Element stehen. Das
+//  reicht für ihren Zweck: Sie soll verhindern, dass ein NEUER Baustein die
+//  Falle unbemerkt wieder aufmacht.
+// ---------------------------------------------------------------------------
+{
+  const ordner = join(WURZEL, 'src', 'components');
+  if (existsSync(ordner)) {
+    for (const name of readdirSync(ordner).filter((n) => n.endsWith('.astro'))) {
+      const text = readFileSync(join(ordner, name), 'utf-8');
+      if (!/^\s*class\?:\s*string/m.test(text)) continue; // nimmt gar keine Klasse an
+      const packtAus = /\.\.\.rest\b/.test(text);
+      const reichtDurch = /\{\s*\.\.\.rest\s*\}/.test(text);
+      if (packtAus && reichtDurch) continue;
+      fehler(
+        `src/components/${name}: nimmt eine Klasse entgegen, reicht die Abgrenzung aber nicht durch.\n` +
+          `    Eine Regel im <style> der aufrufenden Seite wirkt damit NICHT – sie findet das Element nicht.\n` +
+          `    Zu tun: beim Auspacken „...rest" ergänzen und „{...rest}" ans Wurzelelement schreiben.\n` +
+          `    Muster: src/components/Rechtslinks.astro (dort steht auch die Begründung).`,
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 //  8a. FORMULAR-ENDPUNKT – die Türsteher-Schicht muss dranbleiben
 //
 //  api/contact.ts weist fremde Ursprünge ab, prüft das Format, begrenzt die

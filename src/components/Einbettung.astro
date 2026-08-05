@@ -88,7 +88,7 @@ const {
   kategorie = 'funktional',
   auto = false,
   sprache = 'de',
-  class: klasse,
+  class: klasse, ...rest
 } = Astro.props;
 
 const t =
@@ -112,7 +112,7 @@ const t =
 ---
 
 <div
-  class:list={['einbettung', klasse]}
+  class:list={['einbettung', klasse]} {...rest} {...rest}
   data-einbettung={url}
   data-einbettung-titel={titel}
   data-einbettung-anbieter={anbieter}

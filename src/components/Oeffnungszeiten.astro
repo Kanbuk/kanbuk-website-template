@@ -31,7 +31,7 @@ interface Props {
    */
   zeitzone?: string;
 }
-const { class: klasse, ohneSonderzeiten = false, zeitzone = 'Europe/Vienna' } = Astro.props;
+const { class: klasse, ohneSonderzeiten = false, zeitzone = 'Europe/Vienna', ...rest } = Astro.props;
 
 /* BEIM BAUEN WIRD NUR IN DIE SICHERE RICHTUNG GEFILTERT.
    Was zum Bauzeitpunkt schon vorbei ist, ist es zur Anzeigezeit erst recht –
@@ -69,7 +69,7 @@ function lesbar(s: { datum?: string; von?: string; bis?: string }): string {
 }
 ---
 
-<div class:list={['zeiten', klasse]}>
+<div class:list={['zeiten', klasse]} {...rest} {...rest}>
   <ul class="zeiten__liste">
     {site.betrieb.oeffnungszeiten.map((o) => (
       <li class="zeiten__zeile">

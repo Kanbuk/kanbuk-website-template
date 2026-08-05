@@ -27,6 +27,38 @@
  * WAS DER MOTOR HIER BESTIMMT und das Design nicht: dass der AGB-Link nur
  * erscheint, wenn es die Seite wirklich gibt (sonst ein toter Link auf JEDER
  * Seite), und die 44-Pixel-Fingerfläche. Beides ist Technik, kein Aussehen.
+ *
+ * DIE FALLE, DIE HIER SCHON EINMAL ZUGESCHNAPPT IST (05.08.2026)
+ * ==========================================================================
+ * Die Anordnung (nebeneinander, mit Abstand) stand zuerst in `Fuss.astro`:
+ *
+ *     <Rechtslinks class="fuss__rechtslinks" />
+ *     .fuss__rechtslinks { display: flex; gap: var(--raum-s); }
+ *
+ * Das sah richtig aus und wirkte NIE. Astro grenzt Stile über ein Attribut
+ * ab, und das `<nav>` hier trägt die Kennung DIESER Datei – nicht die von
+ * `Fuss.astro`. Die Regel dort fand nichts. Ergebnis in der Fußzeile:
+ * „ImpressumDatenschutz", auf jeder Seite, in einem Wort.
+ *
+ * Kein Tor hat es gemeldet: Es lief nichts über, nichts war abgeschnitten,
+ * der Kontrast stimmte, beide Links waren anklickbar. Gefunden hat es das
+ * Auge im Kontaktbogen.
+ *
+ * ZWEI DINGE SIND DARAUFHIN PASSIERT:
+ *
+ * 1. Der Baustein bringt seine Anordnung jetzt SELBST mit – aber nur,
+ *    solange das Design keine eigene mitbringt. Übergibt jemand eine Klasse,
+ *    schaltet die Motor-Anordnung ab und das Design hat freie Hand:
+ *
+ *        <Rechtslinks />                        → Motor stellt sie nebeneinander
+ *        <Rechtslinks class="spalte__liste" />  → Motor hält sich raus
+ *
+ * 2. Die Falle selbst ist zu – in allen zwölf Bausteinen, nicht nur hier.
+ *    Jeder reicht die Abgrenzungs-Kennung seines Elternteils an sein
+ *    Wurzelelement durch (`{...rest}`). Eine Regel im `<style>` der Seite,
+ *    die eine übergebene Klasse anmalt, WIRKT damit. Kein `:global(…)`
+ *    nötig. Das Prüf-Tor hält es fest, damit ein neuer Baustein die Falle
+ *    nicht wieder aufmacht.
  */
 import { site } from '../../content.config';
 
@@ -35,7 +67,7 @@ interface Props {
   /** Vorlesbare Bezeichnung der Gruppe. Auf Englisch überschreiben. */
   label?: string;
 }
-const { class: klasse, label = 'Rechtliches' } = Astro.props;
+const { class: klasse, label = 'Rechtliches', ...rest } = Astro.props;
 
 /* Der AGB-Link erscheint nur, wenn es die Seite wirklich gibt. Ein Link auf
    eine nicht gebaute Adresse wäre ein toter Link in JEDER Fußzeile – und damit
@@ -43,17 +75,27 @@ const { class: klasse, label = 'Rechtliches' } = Astro.props;
 const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
 ---
 
-<nav class:list={['rechtslinks', klasse]} aria-label={label}>
+<nav
+  class:list={['rechtslinks', klasse]}
+  data-angemalt={klasse ? '' : undefined}
+  aria-label={label}
+  {...rest}
+>
   <a href="/impressum">Impressum</a>
   <a href="/datenschutz">Datenschutz</a>
   {hatAgb && <a href="/agb">AGB</a>}
 </nav>
 
 <style>
-  /* Nur die Fingerfläche – Abstände, Richtung und Farbe bestimmt das Design.
-     Vorher standen hier zusätzlich `display: flex` und ein fester Abstand;
-     das ist Gestaltung und gehört nicht dem Motor. Ein Design, das die Links
-     untereinander stellen will, musste sie sonst erst zurückbiegen. */
+  /* Rückfall-Anordnung: nebeneinander, mit Abstand, umbrechend.
+     Sie gilt NUR ohne eigene Klasse (siehe Dateikopf). Sobald das Design eine
+     mitgibt, verschwindet sie – dann bestimmt das Design Richtung, Abstand
+     und Umbruch allein. */
+  .rechtslinks:not([data-angemalt]) {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--raum-s);
+  }
   .rechtslinks a {
     /* 44px Fingerfläche – die Rechtslinks sind am Handy sonst kaum zu treffen. */
     display: inline-flex;

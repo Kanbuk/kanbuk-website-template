@@ -291,6 +291,29 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-05** – **Paket 6 des Motor-Umbaus: „offene Fehler".** Als Kleinkram
+  geplant, zwei der Punkte waren keiner. (1) Der Slider trug Reiter-Rollen
+  (`role="tab"`, `aria-selected`) ohne die Mechanik dazu – ein Vorleseprogramm
+  kündigte Registerkarten an, die Pfeiltaste tat nichts. Jetzt `role="group"`
+  und `aria-current`. Dabei kam heraus, dass **das Bedien-Tor die falsche
+  Auszeichnung erzwang**: Es prüfte auf `aria-selected`. Aufgefallen ist es
+  erst, weil die Referenzseite jetzt einen Slider hat – vorher stand er in
+  jedem Lauf unter „NICHT GEPRÜFT". (2) Die Verpixelungs-Regel im Sicht-Tor war
+  nicht doppelt, sondern **tot**: Bei `srcset` meldet `naturalWidth` immer die
+  Anzeigebreite, die Rechnung kommt nie über die Schwelle. Am echten Fall
+  gemessen: null Funde bei fünf Breiten, während `npm run bildschaerfe`
+  denselben Fall überall fand. Raus, mit Begründung an ihrer Stelle.
+  (3) `npm run karte` beendete sich bei nicht gefundener Adresse mit einem
+  Haken und legte ein graues Gitter als „Karte" ab – jetzt lauter Fehler.
+  (4) `stock.mjs` bleibt bewusst.
+  **(5) Der Fund, der nicht geplant war:** In der Fußzeile jeder Seite stand
+  „ImpressumDatenschutz" in einem Wort. Ursache war die Astro-Abgrenzung – die
+  Anordnung lag im Elternteil, das Element gehört dem Baustein, die Regel fand
+  nichts. Kein Tor meldete es; gefunden hat es das Auge im Kontaktbogen.
+  Nachgemessen: **alle zwölf Bausteine mit `class`-Eingang** waren betroffen,
+  jede Design-Regel auf einen von ihnen wäre wirkungslos geblieben. Alle
+  reichen die Kennung jetzt durch, einzeln im Browser gemessen; eine
+  Prüf-Tor-Regel hält es fest.
 - **2026-08-05** – **Rückfluss aus einem zweisprachigen Beauty-Relaunch, zweiter
   Testlauf des Motors.** Ein strukturierter Befund über 66 Posten, davon 60
   bestätigt. Er stammt aus dem ZWEITEN vollständig durchgezogenen Port

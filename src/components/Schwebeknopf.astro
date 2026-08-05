@@ -79,7 +79,7 @@ interface Props {
   class?: string;
 }
 
-const { art = 'whatsapp', text, label, class: klasse } = Astro.props;
+const { art = 'whatsapp', text, label, class: klasse, ...rest } = Astro.props;
 const istDemo = site.mode === 'demo';
 
 const whatsapp = site.betrieb.socialLinks?.find((l) => l.plattform === 'whatsapp')?.url;
@@ -101,7 +101,7 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
 )}
 {ziel && (
   <a
-    class:list={['schwebeknopf', klasse]}
+    class:list={['schwebeknopf', klasse]} {...rest} {...rest}
     href={istDemo ? undefined : ziel}
     role={istDemo ? 'note' : undefined}
     aria-label={istDemo ? `${beschriftung} – in der Vorschau nicht aktiv` : beschriftung}
