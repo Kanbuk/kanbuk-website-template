@@ -350,14 +350,33 @@ const hatMerkliste =
 
         Bei EINEM Formular sagt die Überschrift darüber ohnehin alles –
         dann steht hier nur die Feldliste. */}
+    {/* ZUSTIMMUNGS-HÄKCHEN GEHÖREN NICHT IN DIE DATEN-AUFZÄHLUNG.
+        Ihre Beschriftung ist ein ganzer Satz. In der Liste stand dadurch
+        „Name, E-Mail, Telefon, Nachricht, Ich habe die Datenschutzerklärung
+        gelesen." – das liest sich wie eine erhobene Angabe und macht die
+        Aufzählung unbrauchbar. Dass die Zustimmung festgehalten wird, sagt
+        stattdessen der Satz darunter; er erscheint nur, wenn es wirklich ein
+        Häkchen gibt. Beim Lesen von `pruefung/texte.md` aufgefallen – kein
+        Tor misst, ob ein Rechtstext sich gut liest. */}
     <ul>
       {site.formulare.map((f) => (
         <li>
           {site.formulare.length > 1 && <strong>{f.bezeichnung ?? f.id}: </strong>}
-          {f.felder.map((feld) => (en ? (feld.labelEn ?? feld.label) : feld.label)).join(', ')}
+          {f.felder
+            .filter((feld) => feld.typ !== 'haekchen')
+            .map((feld) => (en ? (feld.labelEn ?? feld.label) : feld.label))
+            .join(', ')}
         </li>
       ))}
     </ul>
+    {site.formulare.some((f) => f.felder.some((feld) => feld.typ === 'haekchen')) && (
+      <p>
+        {w(
+          'Außerdem halten wir fest, welche Zustimmungen Sie im Formular gegeben haben – das ist der Nachweis Ihrer Einwilligung.',
+          'We also record which consents you gave in the form – this is the record of your consent.',
+        )}
+      </p>
+    )}
 
     {/* WAS DER MOTOR SONST NOCH TUT – und was hier lange fehlte.
         Alle drei Punkte stecken in Motor-Dateien (api/contact.ts,

@@ -263,6 +263,79 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-05** – **Rückfluss aus einem zweisprachigen Beauty-Relaunch, zweiter
+  Testlauf des Motors.** Ein strukturierter Befund über 66 Posten, davon 60
+  bestätigt. Er stammt aus dem ZWEITEN vollständig durchgezogenen Port
+  überhaupt – und der ist ein anderer Betriebstyp als der erste: zweisprachig,
+  Relaunch auf eine Adresse mit laufender Geschäftspost, echter Adressumzug,
+  **ohne Katalog**. Deshalb ist auch der Beleg-Kasten in CLAUDE.md Abschnitt 0
+  fortgeschrieben; er behauptete bis heute, hinter allen Sätzen stehe derselbe
+  eine Port.
+
+  **Drei neue Tore, damit es jetzt neun sind:** `unterlaengen` (abgeschnittene
+  g, j, p, q, y bei Verlaufs-Überschriften – nichts läuft über, nichts meldet
+  sich, und auf einem Bildschirmfoto sieht ein halbes „g" aus wie ein „g"),
+  `bildschaerfe` (kommt auf einem 2×-Bildschirm genug Auflösung an?) und
+  `endpunkt` (ruft den Formular-Empfänger wirklich an; läuft in
+  `check -- --live` mit). Das letzte hat den teuersten Anlass: Der Empfänger
+  war in einem Klon DREIMAL tot, jedes Mal bei komplett grünen Toren – alle
+  anderen Tore sehen sich die gebaute Website an und rufen nie den Server an.
+
+  **Redaktionssystem, 13 von 15 Posten.** Der Weg HINEIN war eine Einbahnstraße
+  (`npm run studio`, `npm run erstbefuellung`), die Abfrage las aus dem
+  Zwischenspeicher und backte verworfene Stände ein, die nächtliche Sicherung
+  meldete Erfolg auch ohne etwas geholt zu haben. Dazu die Bildbeschreibungen:
+  Ein selbst hochgeladenes Foto heißt nach seiner Prüfsumme und hätte sonst
+  nirgends einen Alt-Text – jedes Fotofeld verlangt jetzt ein
+  `beschreibungsfeld` daneben, und beim Abholen wird gewarnt, wenn ein Foto
+  getauscht wurde und seine Beschreibung nicht. Und das Prüf-Tor liest die
+  Feldzugehörigkeit jetzt aus `DOKUMENTE`, statt sie am Punkt im Pfad zu raten.
+
+  **Vier Rechtsbefunde.** Kammer und Gewerbebezeichnung standen in EINEM Feld,
+  dessen Musterwert die Kammer war – wer den Registerwortlaut korrekt einträgt,
+  löschte damit eine Pflichtangabe. Der Widerruf nach Art. 7 Abs. 2 fehlte in
+  der Rechteliste, obwohl der Widerruf-Knopf in der Seite steht. Die
+  Datenschutzerklärung führte die erhobenen Daten unter dem Betreff der
+  internen Mail auf. Und Zustimmungs-Häkchen verlinken jetzt, was sie nennen
+  (`labelLinks`), mit zwei Toren dahinter – eines davon klickt mit dem Zeiger
+  und misst nach, dass der Link das Häkchen NICHT setzt.
+
+  **Zweisprachigkeit, acht Posten.** Der Motor BAUT zweisprachige Seiten, aber
+  alles, was er selbst dazutat, war deutsch: Sprachverweise fehlten auf allen
+  Rechtsseiten (die Bedingung fragte `site.seiten`, dort steht die
+  Datenschutzerklärung nie), der Sprungmarken-Link, die Antworten des
+  Formular-Servers, die Bestätigungsmail, der 2-Klick-Hinweis. Alles hängt
+  jetzt an einer Stelle: `src/lib/sprachrouten.ts` liest das Verzeichnis
+  `src/pages/en/` – eine Liste in der Config würde beim nächsten Verschieben
+  einer Datei driften. Die Datenschutzerklärung steht seither EINMAL da, in
+  beiden Sprachen nebeneinander; die bisherige Handkopie kam mit dem Warnsatz
+  „muss mitgeändert werden" und wäre schon durch die Änderungen dieser Woche
+  zurückgefallen. Der deutsche Text ist dabei Wort für Wort unverändert –
+  maschinell verglichen.
+
+  **Regelwerk, 18 Posten.** Neu: `vorlagen/UMSTELLTAG-VORLAGE.md`, ein Ablauf
+  für den Relaunch (die eine Regel obenauf: erst umschalten und prüfen, DANN
+  die Adresse umhängen). Im `/deploy`-Skill der Abschnitt B2, die
+  Firewall-Regel als Ablaufschritt und die Weiterleitung der Abnahme-Adresse.
+  Im `/port`-Skill ist die falsche Dreierliste „nur noch drei Dinge" ersetzt –
+  CLAUDE.md hatte genau diesen Satz längst als falsch markiert, während er im
+  Skill unverändert stand, und der Skill liegt näher am Handeln. In CLAUDE.md
+  neu: Abschnitt 6d (die vollständige Zweisprachigkeits-Liste), 16 px als
+  dritte Motor-Untergrenze, die Gewerbe-Regel, die `.js`-Endung für alles, was
+  der Server liest, und die Rubrik „Nach dem Live-Gang (blockiert nicht)".
+
+  **Zwei Funde stammen aus dem eigenen Auge, nicht aus einem Tor:** In der
+  Datenschutzerklärung stand das Zustimmungs-Häkchen als ganzer Satz mitten in
+  der Datenaufzählung („Name, E-Mail, Telefon, Nachricht, Ich habe die
+  Datenschutzerklärung gelesen."). Und das Häkchen selbst stand auf der Seite
+  UNTER seinem Satz, bei 1440 px mittig im Nichts – der Formular-Baustein
+  hatte bis heute nie ein Ankreuzfeld zu sehen bekommen, weil die
+  Referenzseite keines hatte. Beides beim Lesen von `pruefung/texte.md` und
+  beim Ansehen der Kontaktbögen gefunden. Die Referenzseite führt das Häkchen
+  jetzt mit, damit der Weg nicht wieder ungeprüft bleibt.
+
+  Alle neun Tore grün, Kontaktbögen angesehen, Version auf 2026.8.6.
+
 - **2026-08-03 (abends)** – **Rückfluss aus einem zweisprachigen Beauty-Piloten
   (Relaunch, Deutsch + Englisch, 16 Seiten).** Elf Funde, alle im Klon zuerst
   behoben und hier nachgezogen. Zwei davon machten die PRÜFUNG selbst

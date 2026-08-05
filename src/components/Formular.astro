@@ -380,6 +380,37 @@ if (leer) {
     font-style: normal;
   }
 
+  /* EIN ANKREUZFELD STEHT NEBEN SEINEM SATZ, NICHT DARUNTER.
+     -----------------------------------------------------------------------
+     `.formular__feld` ist ein Raster: Beschriftung oben, Feld darunter. Das
+     stimmt für Textfelder und ist für ein Häkchen falsch – dort stand der
+     leere Kasten unter dem Satz und bei 1440 px mittig im Nichts. Es sah aus
+     wie ein vergessenes Element, und niemand erkennt darin die Zustimmung,
+     die er geben soll.
+
+     Warum das erst jetzt auffällt: Die Referenzseite hatte bis heute kein
+     Ankreuzfeld. Kein Tor misst „sieht falsch aus" – gefunden beim Ansehen
+     der Kontaktbögen (Definition of Done, Punkt 3).
+
+     Reihenfolge im Markup bleibt Beschriftung → Feld (so liest ein
+     Vorleseprogramm es richtig vor); die Anzeige dreht `order`. Das Feld
+     wächst nicht mit (`flex: 0 0 auto`) und rutscht auf die Höhe der ersten
+     Zeile (`margin-top`), damit es bei einem zweizeiligen Satz nicht in der
+     Mitte hängt. */
+  .formular__feld[data-typ='haekchen'] {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--raum-2xs);
+  }
+  .formular__feld[data-typ='haekchen'] .formular__label {
+    order: 2;
+  }
+  .formular__feld[data-typ='haekchen'] .formular__haekchen {
+    order: 1;
+    flex: 0 0 auto;
+    margin-top: 0.25em;
+  }
+
   /* Der <fieldset> bringt vom Browser einen Rahmen und Innenabstand mit, die
      jedes Design sonst erst wegräumen müsste. */
   .formular__schritt {

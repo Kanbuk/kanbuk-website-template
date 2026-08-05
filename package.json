@@ -1,7 +1,7 @@
 {
   "name": "kanbuk-website-template",
   "type": "module",
-  "version": "2026.8.5",
+  "version": "2026.8.6",
   "description": "Technischer Motor für Kunden-Websites – Design kommt aus Claude Design",
   "scripts": {
     "abgleich": "node scripts/abgleich.mjs",
