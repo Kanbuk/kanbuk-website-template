@@ -13,9 +13,12 @@ Ein Betrieb durchläuft höchstens drei Stufen. Die meisten bleiben auf Stufe 1.
 
 | Stufe | Was entsteht | Aufwand | Wann |
 | --- | --- | --- | --- |
-| **1 · Verkaufs-Demo** | Standalone-HTML aus Claude Design, online zum Verschicken | ~20–30 min | Lead will etwas sehen |
+| **1 · Verkaufs-Demo** | Standalone-HTML aus Claude Design, online zum Verschicken | ~20–30 min bauen + 2–5 min hochstellen | Lead will etwas sehen |
 | **2 · Die echte Website** | Der Motor-Klon, fertig gebaut, mit gezogenem Stecker | ~40–50 min | **erst wenn der Kunde zahlt** |
 | **3 · Live** | Eigene Domain, Formular scharf, bei Google sichtbar | ~1–2 h | Rechtsdaten und Zugänge sind da |
+
+*Die Zeiten sind gemessen, nicht geschätzt – Stand der ersten beiden Ports.
+Stufe 2 wird mit jedem Port kürzer, weil der Motor mehr abnimmt.*
 
 **Warum Stufe 2 erst nach der Zahlung kommt:** Wer nicht kauft, kostet dann nur
 die Demo. Das ist der ganze Grund für die Trennung – nicht Technik, sondern
@@ -74,14 +77,22 @@ Der Demo-Ordner schleppt Dateien mit, die der Motor selbst erzeugt, und seine
 Vercel-Verknüpfung zeigt aufs Demo-Projekt. Wer die mitnimmt, veröffentlicht
 die Kundenseite später versehentlich unter der Demo-Adresse.
 
-1. **Rechtsdaten beim Kunden einholen** – Firmenwortlaut, UID, Firmenbuchnummer
-   und -gericht, Gewerbebezeichnung und Kammer **wortgleich aus dem
-   GISA-Auszug**, Unternehmensgegenstand.
+1. **Rechtsdaten beschaffen** – Firmenwortlaut, UID, Firmenbuchnummer und
+   -gericht, Gewerbebezeichnung, Kammer, Unternehmensgegenstand.
 
-   > **Das ist der Schritt, der Live-Gänge verzögert.** Er dauert beim Kunden
-   > Tage, nicht Minuten – deshalb steht er ganz vorn und nicht am Live-Tag.
-   > Erfunden wird nichts: Was fehlt, wird Platzhalter, und der Platzhalter
-   > blockiert später den Live-Gang.
+   **Hat der Betrieb schon eine Website, stehen sie fast immer in deren
+   Impressum.** Dann holt der Motor sie sich von dort – nachsehen, abschreiben,
+   fertig. Das ist der Normalfall bei jedem Relaunch und kostet Minuten.
+
+   Nur wenn es keine Vorgänger-Seite gibt, muss der Betrieb sie liefern – und
+   das dauert dort Tage, nicht Minuten. Deshalb steht der Schritt ganz vorn und
+   nicht am Live-Tag.
+
+   > **Zwei Angaben nie aus dem Impressum ableiten, sondern aus dem amtlichen
+   > Auszug:** Gewerbebezeichnung und Kammer. Alte Impressen führen beides oft
+   > in einem Satz oder gar nicht – § 5 Abs. 1 Z 6 ECG verlangt beides
+   > nebeneinander. Erfunden wird nichts: Was fehlt, wird Platzhalter, und der
+   > Platzhalter blockiert später den Live-Gang.
 
 2. **Klon anlegen:**
    `npx degit Kanbuk/kanbuk-website-template kanbuk-kunden/<betrieb>`
