@@ -34,32 +34,40 @@ Drei Regeln dahinter:
 Ordnername, Projektname ohne Präfix, Subdomain ohne Präfix. Auch `package.json`
 trägt den Namen inklusive Präfix, also wie das Repo.
 
-### Wenn derselbe Betrieb ZWEI Ordner braucht
+### Ein Betrieb, ein Ordner – auch beim Übergang vom Demo zum Port
 
-Der Regelweg erzeugt für einen Lead nacheinander zwei Dinge, und sie leben
-eine Zeit lang nebeneinander:
+**Die Regel ist einfach: Am Ende trägt jeder Betrieb genau EINEN Ordner.**
+Alles andere ist Übergang und wird aufgeräumt.
 
-1. die **Verkaufs-Demo** aus dem Standalone-HTML (`npm run demo`) – schnell,
-   zum Verschicken, deployt auf `demo-<betrieb>.kanbuk.com`
-2. den **gebauten Klon** aus dem Motor – die echte Website, Abnahme-Vorschau
-   auf `<betrieb>.kanbuk.com`
+Der Weg erzeugt nacheinander drei Dinge, aber nur eines davon bleibt:
 
-Die Tabelle oben gibt beiden denselben Ordnernamen. Das kollidiert, und zwar
-nicht im Sonderfall, sondern auf dem Standardweg.
+| Ding | wo es hingehört | Lebensdauer |
+| --- | --- | --- |
+| Verkaufs-Demo (standalone, `npm run demo`) | `kanbuk-demos/<betrieb>` | bis der Klon steht |
+| Design-Quelle (`.dc.html` + `assets/`) | **`design/` IM Klon** | dauerhaft, im Klon |
+| gebauter Klon | `kanbuk-demos/<betrieb>` | bleibt (bei Buchung nach `kanbuk-kunden/`) |
 
-> **Der gebaute Klon behält den kurzen Namen, die Demo bekommt den Zusatz:**
->
-> | Was | Ordner |
-> | --- | --- |
-> | Verkaufs-Demo (standalone) | `kanbuk-demos/<betrieb>-verkaufsdemo` |
-> | Design-Quelle (`.dc.html` + `assets/`) | `kanbuk-demos/<betrieb>-design` |
-> | **gebauter Klon** | `kanbuk-demos/<betrieb>` → bei Buchung nach `kanbuk-kunden/<betrieb>` |
->
-> Begründung: Der Klon ist das bleibende Artefakt, die Demo das vergängliche.
-> Und die Design-Quelle gehört nicht in den Demo-Ordner – dort lag sie einmal,
-> und prompt hielt ein späterer Blick eine **deployte Demo** für eine
-> Materialsammlung. Die `.vercel`-Verknüpfung liegt IM Ordner, ein Umbenennen
-> bricht also nichts.
+Die Design-Quelle bekommt **keinen eigenen Ordner** – sie gehört in den Klon.
+Das sechste Tor sucht sie dort und nirgends sonst (`design/<Projekt>.dc.html`).
+
+**Die einzige echte Kollision:** Demo und Klon wollen beide
+`kanbuk-demos/<betrieb>`. Sie überschneiden sich aber nur für die Dauer des
+Ports. Also:
+
+1. Vor dem Port: die Demo einmal umbenennen auf `<betrieb>-verkaufsdemo`.
+   Die `.vercel`-Verknüpfung liegt IM Ordner, das bricht nichts.
+2. Port läuft, Klon entsteht unter `<betrieb>`, Design landet in seinem
+   `design/`.
+3. **Danach aufräumen:** Steht die Abnahme-Vorschau auf
+   `<betrieb>.kanbuk.com`, ist die Standalone-Demo überflüssig – der Klon kann
+   alles besser. Ordner löschen und `demo-<betrieb>.kanbuk.com` im Dashboard
+   auf die neue Vorschau weiterleiten (nicht entfernen: Der verschickte
+   Verkaufslink soll weiter irgendwo ankommen – dieselbe Regel wie bei der
+   Abnahme-Adresse in Schritt 6a).
+
+> Wer Schritt 3 auslässt, hat für jeden Lead dauerhaft zwei Ordner und zwei
+> Vercel-Projekte, die dasselbe zeigen – und in einem Jahr weiß niemand mehr,
+> welcher der beiden Stände der aktuelle ist.
 
 **Vercel-Realität (im Piloten gelernt, alle drei Punkte prüfen):**
 - Zugang: `npx vercel whoami` – falls nicht eingeloggt, den Nutzer durch
