@@ -66,18 +66,36 @@
  *    ✓ Bildzuschnitt (object-fit) – seitenweit, Werte vergleichbar
  *    ✓ Schriftenzahl – zwei im Design, eine gebaut = Überschriftenschrift fehlt
  *    ✓ Innenabstand oben je Block – NUR bei glattem Pixelwert, Toleranz 8 px
+ *    ✓ SCHRIFT DER ÜBERSCHRIFTEN, Wert für Wert (seit 05.08.2026): Größe,
+ *      Zeilenhöhe, Sperrung, Schnitt, Großschreibung – aber NUR, wo das Design
+ *      die Eigenschaft am Element SELBST deklariert. Die Zahl der wirklich
+ *      verglichenen Überschriften steht in der Ergebniszeile; „0" ist eine
+ *      ausgefallene Prüfung, kein bestandener Haken.
  *
  *  AN DAS AUGE ÜBERGEBEN (nicht maschinell vergleichbar, aber ausgegeben):
  *    → Bauteile je Seite (`<x-import>`); die gebaute Seite trägt keine Spur davon
  *    → Klick-Zustände je Seite (`<sc-if>` INNERHALB eines Blocks)
  *
  *  BEWUSST NICHT VERGLICHEN – und warum:
- *    ✗ Schriftgrößen, Radien, Zeilenhöhen, Sperrungen, Deckkraft, Übergänge,
- *      Verläufe, Spaltenaufteilung, gap: Das Design schreibt sie fast immer als
- *      Token (`var(--space-l)`, `clamp(...)`). Ohne die Token-Datei ist der
- *      Sollwert unbekannt, und aus dem NAMEN einen Wert zu raten hat in
+ *    ✗ Radien, Verläufe, Deckkraft, Übergänge, Spaltenaufteilung: Das Design
+ *      schreibt sie als Token (`var(--radius-lg)`). Ohne die Token-Datei ist
+ *      der Sollwert unbekannt, und aus dem NAMEN einen Wert zu raten hat in
  *      früheren Läufen genau die Falschmeldungen erzeugt, die einem das
  *      Hinsehen abgewöhnen. Lieber schweigen als raten.
+ *
+ *      HIER STANDEN BIS 05.08.2026 AUCH SCHRIFTGRÖSSEN, ZEILENHÖHEN UND
+ *      SPERRUNGEN – mit derselben Begründung, und die war für sie falsch. An
+ *      einer echten Design-Datei nachgezählt: 157 feste `font-size`-Werte und
+ *      KEIN EINZIGER Token, 120 `padding`, 113 `gap`, 71 `line-height`, alle
+ *      als Zahl. Nur bei den Radien stimmt die Aussage (37 Token gegen 7 feste
+ *      Werte). Das Tor hat also jahrelang genau die Werte nicht verglichen,
+ *      die vergleichbar sind – mit einem Argument, das für eine einzige
+ *      Eigenschaft gilt. Eine Begründung, die man nicht nachmisst, altert.
+ *
+ *    ✗ Innenabstände und `gap` flächendeckend: Dort weicht der Port
+ *      LEGITIM ab (fluide Skala, Handy-Ansicht – die es im Design gar nicht
+ *      gibt). Der bestehende Vergleich des oberen Innenabstands je Block
+ *      bleibt, wie er ist.
  *    ✗ Grundfarbe als WERT (nur die Umkehr-Klasse zählt) – gleicher Grund.
  *    ✗ Ob ein Text inhaltlich stimmt. Es zählt Blöcke, es liest nicht Korrektur.
  *    ✗ Alles, was das Design nur in einer Zeichnung andeutet.
@@ -278,6 +296,31 @@ const designSeiten = await (async () => {
           const ueberschrift = [...b.querySelectorAll('h1,h2')].find(
             (h) => !inWiederholung(h) && !h.textContent.includes('{{'),
           );
+          /* DIE SCHRIFT DER ÜBERSCHRIFT – gerechnet, nicht aus dem Text geraten.
+             Erfasst wird NUR, was das Design am Element SELBST deklariert; alles
+             andere bliebe die Vorgabe des Browsers und würde gegen die Vorgabe
+             des Motors gemessen. Genau daraus entstünde der Fehlalarm, der
+             diese ganze Vergleichsklasse bisher verhindert hat. */
+          const typo = (() => {
+            if (!ueberschrift) return null;
+            const roh = ueberschrift.getAttribute('style') || '';
+            const deklariert = new Set(
+              [...roh.matchAll(/(?:^|;)\s*([a-zA-Z-]+)\s*:/g)].map((m) => m[1].trim().toLowerCase()),
+            );
+            if (deklariert.size === 0) return null;
+            const s = getComputedStyle(ueberschrift);
+            const groesse = parseFloat(s.fontSize) || 0;
+            return {
+              deklariert: [...deklariert],
+              fontSize: groesse,
+              // Verhältnis statt Pixel: Wandert die Größe aus einem erlaubten
+              // Grund, wandert die Zeilenhöhe mit – das Verhältnis bleibt.
+              zeile: s.lineHeight === 'normal' || !groesse ? null : parseFloat(s.lineHeight) / groesse,
+              sperrung: s.letterSpacing === 'normal' || !groesse ? 0 : parseFloat(s.letterSpacing) / groesse,
+              schnitt: parseFloat(s.fontWeight) || 400,
+              grossschreibung: s.textTransform,
+            };
+          })();
           bloecke.push({
             tag: b.tagName.toLowerCase(),
             klasse: b.getAttribute('class') || '',
@@ -285,6 +328,7 @@ const designSeiten = await (async () => {
             grundfarbe: grund(b),
             polsterung: stilWert(b, 'padding') || stilWert(b, 'padding-block'),
             ueberschrift: ueberschrift ? ueberschrift.textContent.trim().slice(0, 60) : '',
+            typo,
             /* DREI EIGENSCHAFTEN, DIE DAS TOR BIS ZUM 30.07.2026 GAR NICHT ANSAH
                (nachgezählt: je null Treffer im Skript). Ein Design konnte sich
                in Schatten, Rahmen und Bildzuschnitt unterscheiden, und der
@@ -479,6 +523,28 @@ async function gebauteSeite(pfad) {
              nie gerendert), und die gebaute Höhe hängt an der Textlänge des
              echten Inhalts. Ein Vergleich hätte bei jedem Block angeschlagen. */
           ueberschrift: h ? h.textContent.trim().slice(0, 60) : '',
+          /* Gegenstück zur Schrift-Erfassung der Design-Seite. Hier ohne
+             Deklarations-Bedingung: Verglichen wird ohnehin nur, was das
+             DESIGN deklariert – die gebaute Seite liefert dazu den
+             gerechneten Ist-Wert, egal woher er kommt. */
+          typo: h
+            ? (() => {
+                const hs = getComputedStyle(h);
+                const groesse = parseFloat(hs.fontSize) || 0;
+                return {
+                  fontSize: groesse,
+                  zeile:
+                    hs.lineHeight === 'normal' || !groesse ? null : parseFloat(hs.lineHeight) / groesse,
+                  sperrung:
+                    hs.letterSpacing === 'normal' || !groesse
+                      ? 0
+                      : parseFloat(hs.letterSpacing) / groesse,
+                  schnitt: parseFloat(hs.fontWeight) || 400,
+                  grossschreibung: hs.textTransform,
+                  textIstGross: (h.textContent || '').trim() === (h.textContent || '').trim().toUpperCase(),
+                };
+              })()
+            : null,
           /* Gegenstücke zu den Eigenschaften der Design-Seite.
              DIE SCHRIFTFAMILIE FEHLT HIER MIT ABSICHT: Sie wurde zwar erhoben,
              aber nie verglichen – und ein Vergleich wäre auch nicht möglich
@@ -541,6 +607,13 @@ async function gebauteSeite(pfad) {
 // ---------------------------------------------------------------------------
 const befunde = [];
 const zeilen = [];
+/* WIE VIELE UEBERSCHRIFTEN WURDEN WIRKLICH AUF SCHRIFT VERGLICHEN?
+   Die Regel greift nur, wo das Design die Eigenschaft am Element SELBST
+   deklariert. Ein Design, das seine Ueberschriften ueber eine Klasse in einer
+   eigenen CSS-Datei formatiert, liefert null vergleichbare Elemente - und die
+   Pruefung schweigt dann, ohne dass es jemand merkt. Deshalb steht die Zahl in
+   der Ergebniszeile: „0 verglichen" ist eine Aussage, kein Haken. */
+let verglicheneSchrift = 0;
 /** Was das Tor NICHT vergleichen kann, aber dem Auge übergibt (siehe unten). */
 const sichtliste = [];
 const melde = (schwere, seiteName, was, design, gebaut) =>
@@ -639,6 +712,110 @@ for (const dSeite of designSeiten.seiten) {
     }
     if (d.hatRahmen && !g.hatRahmen) {
       melde('mittel', dSeite.schalter, `„${d.ueberschrift}" hat im Design einen Rahmen, gebaut keinen`, 'border gesetzt', '0px');
+    }
+
+    /* DIE SCHRIFT DER ÜBERSCHRIFT – Wert gegen Wert.
+       =======================================================================
+       Bis 05.08.2026 stand im Kopf dieser Datei, Schriftgrößen und
+       Zeilenhöhen seien nicht vergleichbar, weil „das Design sie fast immer
+       als Token schreibt". An einer echten Design-Datei nachgezählt ist das
+       für diese Eigenschaften das GEGENTEIL: 157 feste font-size-Werte und
+       kein einziger Token, 71 Zeilenhöhen, alle als Zahl. Nur bei den Radien
+       stimmt die Aussage (37 Token gegen 7 feste Werte) – die bleiben deshalb
+       weiter draußen.
+
+       Das Tor hat also genau die Werte nicht verglichen, die vergleichbar
+       sind, mit einer Begründung, die für eine einzige Eigenschaft gilt.
+
+       DIE TRAGENDE REGEL IST EINE STRUKTUR-BEDINGUNG, keine Eigenschaft:
+       Verglichen wird NUR, was das Design am Element SELBST deklariert
+       (`d.typo.deklariert`). Sonst misst man die Vorgabe des Browsers auf der
+       Design-Seite gegen die Vorgabe des Motors auf der gebauten – die
+       Design-Datei bringt ihr Grund-Stylesheet nämlich nicht mit. Das wäre
+       die einzige echte Fehlalarmquelle hier, und sie ist damit weg.
+
+       Die Toleranzen sind bewusst großzügig: Jede deckt eine Abweichung ab,
+       die der Port laut Regelwerk machen DARF. */
+    if (d.typo && g.typo) {
+      const nennt = (name) => d.typo.deklariert.includes(name);
+
+      /* SCHRIFTGRÖSSE: melden nur, wenn die Abweichung GLEICHZEITIG über 2 px
+         und über 8 % liegt. Die 8 % decken das Ersetzen einer Design-Stufe
+         durch die nächste Motor-Stufe ab (CLAUDE.md 4, Umrechnungstabelle).
+         Unter 12 px im Design wird gar nicht verglichen – dort schlägt die
+         Untergrenze des Motors das Design, Abweichen ist Pflicht. */
+      if (nennt('font-size') && d.typo.fontSize >= 12 && g.typo.fontSize) {
+        const ab = Math.abs(g.typo.fontSize - d.typo.fontSize);
+        if (ab > 2 && ab / d.typo.fontSize > 0.08) {
+          melde(
+            'mittel',
+            dSeite.schalter,
+            `„${d.ueberschrift}": Schriftgröße weicht ab`,
+            `${Math.round(d.typo.fontSize)}px`,
+            `${Math.round(g.typo.fontSize)}px`,
+          );
+        }
+      }
+
+      /* ZEILENHÖHE als VERHÄLTNIS, nicht in Pixeln. Weicht die Größe aus
+         einem erlaubten Grund ab, wandert die Zeilenhöhe mit – das Verhältnis
+         bleibt. `normal` auf einer der beiden Seiten wird übersprungen: Die
+         Design-Datei lädt die Schriftdateien nicht und fällt auf eine
+         Systemschrift zurück. */
+      if (nennt('line-height') && d.typo.zeile != null && g.typo.zeile != null) {
+        if (Math.abs(g.typo.zeile - d.typo.zeile) > 0.15) {
+          melde(
+            'mittel',
+            dSeite.schalter,
+            `„${d.ueberschrift}": Zeilenhöhe weicht ab`,
+            d.typo.zeile.toFixed(2),
+            g.typo.zeile.toFixed(2),
+          );
+        }
+      }
+
+      /* SPERRUNG in em, aus demselben Grund. Eng toleriert (0,01 em), weil
+         der Motor selbst nirgends ein letter-spacing setzt – es gibt also
+         keinen Grund, warum es abweichen sollte. */
+      if (nennt('letter-spacing') && Math.abs(g.typo.sperrung - d.typo.sperrung) > 0.01) {
+        melde(
+          'mittel',
+          dSeite.schalter,
+          `„${d.ueberschrift}": Sperrung weicht ab`,
+          `${d.typo.sperrung.toFixed(3)}em`,
+          `${g.typo.sperrung.toFixed(3)}em`,
+        );
+      }
+
+      /* SCHRIFTSCHNITT: 200 Einheiten. 600 gegen 700 ist ein Streit über den
+         Schnitt und schweigt; 400 gegen 700 ist der Fehler. */
+      if (nennt('font-weight') && Math.abs(g.typo.schnitt - d.typo.schnitt) >= 200) {
+        melde(
+          'mittel',
+          dSeite.schalter,
+          `„${d.ueberschrift}": Schriftschnitt weicht ab`,
+          String(d.typo.schnitt),
+          String(g.typo.schnitt),
+        );
+      }
+
+      /* GROSSSCHREIBUNG: Schlüsselwörter, also exakt. Übersprungen wird, was
+         ohnehin schon groß geschrieben dasteht – dort ist `text-transform`
+         wirkungslos und die Abweichung folgenlos. */
+      if (
+        nennt('text-transform') &&
+        d.typo.grossschreibung !== g.typo.grossschreibung &&
+        !g.typo.textIstGross
+      ) {
+        melde(
+          'mittel',
+          dSeite.schalter,
+          `„${d.ueberschrift}": Großschreibung weicht ab`,
+          d.typo.grossschreibung,
+          g.typo.grossschreibung,
+        );
+      }
+      verglicheneSchrift++;
     }
 
     /* INNENABSTAND – der einzige MASS, das sich wirklich vergleichen lässt.
@@ -868,9 +1045,21 @@ console.log(
     `${schwer.length} schwer, ${mittel.length} mittel`,
 );
 console.log('');
+console.log(
+  `  Schrift der Überschriften Wert für Wert verglichen: ${verglicheneSchrift} Überschrift(en).` +
+    (verglicheneSchrift === 0
+      ? '\n  ACHTUNG: NULL. Der Vergleich greift nur, wo das Design die Eigenschaft am\n' +
+        '  Element SELBST deklariert. Formatiert dieses Design seine Überschriften über\n' +
+        '  eine Klasse in einer eigenen CSS-Datei, hat hier nichts stattgefunden –\n' +
+        '  das ist dann keine bestandene Prüfung, sondern eine ausgefallene.'
+      : ''),
+);
+console.log('');
 console.log('  WAS DIESES TOR NICHT SIEHT (CLAUDE.md Abschnitt 9, Punkt 3c):');
-console.log('  Schriftgrößen, Radien, Zeilenhöhen, Sperrungen, Verläufe, Deckkraft,');
+console.log('  Radien und Verläufe (das Design schreibt sie als Token), Deckkraft,');
 console.log('  Übergänge, Spaltenaufteilung – und ob ein Text inhaltlich stimmt.');
+console.log('  Schrift, Zeilenhöhe und Sperrung werden seit 05.08.2026 verglichen,');
+console.log('  aber NUR an Überschriften und nur, wo das Design sie selbst deklariert.');
 console.log('  Die vollständige Liste steht im Kopf dieser Datei, Abschnitt „Was das');
 console.log('  Tor vergleicht". Dafür bleiben die Bögen aus `npm run sicht` und das');
 console.log('  eigene Auge zuständig (Definition of Done, Punkt 3d).');
