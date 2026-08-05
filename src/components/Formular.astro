@@ -26,6 +26,7 @@
  */
 import { site, type FormularFeld } from '../../content.config';
 import { motorTexte, motorBeschriftungen } from '../lib/texte';
+import { hatEnglischeFassung } from '../lib/sprachrouten';
 
 interface Props {
   /** ID aus content.config.ts -> formulare */
@@ -111,7 +112,17 @@ function mitLinks(feld: FormularFeld): Stueck[] {
   const stuecke: Stueck[] = [{ text }];
   for (const verweis of feld.labelLinks) {
     const wort = sprache === 'en' ? (verweis.textEn ?? verweis.text) : verweis.text;
-    const ziel = sprache === 'en' ? (verweis.zielEn ?? verweis.ziel) : verweis.ziel;
+    /* AUF EINER ENGLISCHEN SEITE ZEIGT DER LINK AUF DIE ENGLISCHE FASSUNG,
+       sofern es sie gibt – abgeleitet aus dem Verzeichnis, dieselbe Regel wie
+       beim Datenschutz-Pfad (src/lib/sprachrouten.ts). Sonst stünde unter dem
+       Häkchen, mit dem jemand die Kenntnisnahme bestätigt, ein Verweis auf
+       einen Text in einer anderen Sprache – und die Einwilligung wäre keine.
+       `zielEn` schlägt die Ableitung, für den Fall, dass die englische Fassung
+       woanders liegt. */
+    const ziel =
+      sprache === 'en'
+        ? (verweis.zielEn ?? (hatEnglischeFassung(verweis.ziel) ? `/en${verweis.ziel}` : verweis.ziel))
+        : verweis.ziel;
     const stelle = stuecke.findIndex((s) => !s.ziel && s.text.includes(wort));
     if (stelle < 0) {
       throw new Error(
@@ -164,11 +175,15 @@ if (leer) {
   </div>
 )}
 
+{/* DIE SPRACHE HÄNGT AN DER ADRESSE (`action`), nicht an einem Feld im
+    Körper. Grund: Sie muss auch auf dem Weg OHNE JavaScript ankommen, und
+    dort schickt der Browser das Formular unverändert ab. `form.action` trägt
+    sie dann von selbst mit – das Skript muss nichts dazutun. */}
 {(
   <form
     class:list={['formular', klasse, istAssistent && 'formular--assistent', istDemo && 'formular--vorschau']}
     method="post"
-    action={istDemo ? undefined : '/api/contact'}
+    action={istDemo ? undefined : sprache === 'de' ? '/api/contact' : `/api/contact?lang=${sprache}`}
     data-formular={istDemo ? undefined : ''}
     data-formular-vorschau={istDemo ? '' : undefined}
     data-formular-id={formular.id}

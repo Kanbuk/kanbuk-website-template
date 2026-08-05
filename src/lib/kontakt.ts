@@ -31,11 +31,81 @@ function saeubern(wert: string, maxLaenge = 5000): string {
   return wert.replace(/[\r\n]+/g, ' ').trim().slice(0, maxLaenge);
 }
 
-export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Promise<KontaktErgebnis> {
+export type Sprache = 'de' | 'en';
+
+/* ===========================================================================
+   DIE ANTWORTEN DES SERVERS IN DER SPRACHE DER SEITE
+   ===========================================================================
+   Der Motor baut zweisprachige Seiten – seine Server-Antworten waren fest
+   deutsch. Das fällt ausgerechnet dann auf, wenn etwas schiefgeht: Das
+   Formular-Skript zeigt bevorzugt die Serverantwort an, weil sie genauer ist
+   („zu viele Anfragen" statt „hat nicht geklappt"). Ein englischsprachiger
+   Interessent bekommt also deutschen Text in genau dem Moment, in dem er
+   Hilfe braucht.
+
+   Deutsch kennt zusätzlich die Unterscheidung du/Sie (CLAUDE.md Abschnitt 3),
+   Englisch nicht – deshalb steht dort je Schlüssel ein Paar und hier nur ein
+   Satz. Die Musterformulierungen sind neutral: Sie gehören dem Motor, nicht
+   einem Kunden.
+   =========================================================================== */
+type Schluessel =
+  | 'format'
+  | 'fremd'
+  | 'zuLang'
+  | 'zuViele'
+  | 'unbekannt'
+  | 'email'
+  | 'pflichtfelder'
+  | 'nichtErreichbar'
+  | 'versand';
+
+const MELDUNGEN: Record<Schluessel, { de: string | [string, string]; en: string }> = {
+  format: { de: 'Ungültiges Format.', en: 'Invalid format.' },
+  fremd: { de: 'Anfrage von einer fremden Adresse.', en: 'Request from an unknown origin.' },
+  zuLang: { de: 'Die Nachricht ist zu lang.', en: 'Your message is too long.' },
+  zuViele: {
+    de: 'Zu viele Anfragen. Bitte in ein paar Minuten erneut versuchen.',
+    en: 'Too many requests. Please try again in a few minutes.',
+  },
+  unbekannt: { de: 'Unbekanntes Formular.', en: 'Unknown form.' },
+  email: {
+    de: ['Bitte gib eine gültige E-Mail-Adresse an.', 'Bitte geben Sie eine gültige E-Mail-Adresse an.'],
+    en: 'Please enter a valid email address.',
+  },
+  pflichtfelder: { de: 'Bitte ausfüllen:', en: 'Please fill in:' },
+  nichtErreichbar: {
+    de: [
+      'Das Formular ist gerade nicht erreichbar. Bitte melde dich direkt – ',
+      'Das Formular ist gerade nicht erreichbar. Bitte melden Sie sich direkt – ',
+    ],
+    en: 'The form is currently unavailable. Please contact us directly – ',
+  },
+  versand: {
+    de: 'Die Nachricht konnte gerade nicht gesendet werden.',
+    en: 'Your message could not be sent right now.',
+  },
+};
+
+/**
+ * Eine Server-Antwort in der Sprache der Seite.
+ * `duzt` wirkt nur auf Deutsch – Englisch kennt die Unterscheidung nicht.
+ */
+export function meldung(schluessel: Schluessel, sprache: Sprache = 'de', duzt = false): string {
+  const eintrag = MELDUNGEN[schluessel];
+  if (sprache === 'en') return eintrag.en;
+  return Array.isArray(eintrag.de) ? eintrag.de[duzt ? 0 : 1] : eintrag.de;
+}
+
+export async function verarbeiteKontakt(
+  rohdaten: Eingabe,
+  env: KontaktEnv,
+  sprache: Sprache = 'de',
+): Promise<KontaktErgebnis> {
   /* Die Ansprache des Betriebs gilt auch für die Meldungen des Servers – sonst
      siezt genau die eine Stelle, an der etwas schiefgeht (CLAUDE.md
      Abschnitt 3). Rechtstexte bleiben davon unberührt, die sind formal. */
   const duzt = site.ansprache === 'du';
+  const sagt = (s: Schluessel) => meldung(s, sprache, duzt);
 
   // 0) Eingaben normalisieren: Der Body kommt vom Client und kann ALLES enthalten
   //    (Zahlen, Objekte, Arrays). Alles Nicht-String wird verworfen – sonst
@@ -65,7 +135,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
   const id = (daten.formular ?? '').trim();
   const formular = id ? site.formulare.find((f) => f.id === id) : site.formulare[0];
   if (!formular) {
-    return { status: 400, json: { fehler: 'Unbekanntes Formular.' } };
+    return { status: 400, json: { fehler: sagt('unbekannt') } };
   }
 
   // 3) Pflichtfelder laut Config prüfen
@@ -73,7 +143,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     .filter((f) => f.pflicht && !(daten[f.name] ?? '').trim())
     .map((f) => f.label);
   if (fehlend.length > 0) {
-    return { status: 400, json: { fehler: `Bitte ausfüllen: ${fehlend.join(', ')}.` } };
+    return { status: 400, json: { fehler: `${sagt('pflichtfelder')} ${fehlend.join(', ')}.` } };
   }
 
   // 4) E-Mail-Felder auf Format prüfen
@@ -87,9 +157,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     return {
       status: 400,
       json: {
-        fehler: duzt
-          ? 'Bitte gib eine gültige E-Mail-Adresse an.'
-          : 'Bitte geben Sie eine gültige E-Mail-Adresse an.',
+        fehler: sagt('email'),
       },
     };
   }
@@ -131,9 +199,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
            Für den Besucher zählt nur: Es liegt nicht an ihm, und wie er den
            Betrieb sonst erreicht. */
         fehler:
-          (duzt
-            ? 'Das Formular ist gerade nicht erreichbar. Bitte melde dich direkt – '
-            : 'Das Formular ist gerade nicht erreichbar. Bitte melden Sie sich direkt – ') +
+          sagt('nichtErreichbar') +
           /* Klammern sind hier PFLICHT: `a ? x : y` bindet schwächer als `+`.
              Ohne sie wäre die ganze vorangehende Verkettung die Bedingung –
              also immer wahr – und der Satz nennte auch dann eine Telefonnummer,
@@ -144,6 +210,29 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
       },
     };
   }
+
+  /* DER ABSENDER TRÄGT DEN NAMEN DES BETRIEBS, nicht den des Postfachs.
+     -------------------------------------------------------------------------
+     Steht in CONTACT_FROM nur die nackte Adresse, zeigen Gmail und die meisten
+     Programme den Teil vor dem @ an. In einem Kundenprojekt stand im
+     Posteingang des Interessenten schlicht „anfrage" – wer eine Terminanfrage
+     stellt, bekommt als Antwort eine Mail von „anfrage" statt vom Betrieb.
+     Das sieht nach Spam aus und wird weggeklickt.
+
+     Der Name steht ohnehin in der Config; ihn zusätzlich in einer
+     Umgebungsvariablen zu verlangen hiesse nur, dass ihn der nächste Kunde
+     genauso vergisst. Ist in CONTACT_FROM bereits ein Anzeigename gesetzt
+     (erkennbar am `<`), bleibt der stehen.
+
+     Die Anführungszeichen-Säuberung ist Pflicht: Ein Betriebsname mit
+     Anführungszeichen oder spitzen Klammern zerlegt sonst die Kopfzeile, und
+     dann geht die Mail gar nicht hinaus. */
+  /* Eigene Konstante, weil TypeScript die Prüfung oben nicht als Einschränkung
+     dieses Feldes sieht – zur Laufzeit ist an dieser Stelle beides gesetzt. */
+  const versandAdresse = env.CONTACT_FROM ?? '';
+  const absender = versandAdresse.includes('<')
+    ? versandAdresse
+    : `${site.betrieb.name.replace(/["<>]/g, '')} <${versandAdresse.trim()}>`;
 
   // 6) Nachricht aus den konfigurierten Feldern bauen – in der Reihenfolge der Config.
   const zeilen = [`${formular.betreff} – ${site.betrieb.name}`, ''];
@@ -172,7 +261,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: env.CONTACT_FROM,
+        from: absender,
         to: [site.betrieb.email],
         ...(antwortAdresse && { reply_to: antwortAdresse }),
         subject: `${formular.betreff} – ${site.betrieb.name}`,
@@ -188,7 +277,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
          niemand es merkte (der Betrieb wundert sich nur, dass keine Anfragen
          kommen). Im Vercel-Protokoll ist die Zeile jetzt auffindbar. */
       console.error('[kontakt] Resend hat abgelehnt:', antwort.status, await antwort.text().catch(() => ''));
-      return { status: 502, json: { fehler: 'Die Nachricht konnte gerade nicht gesendet werden.' } };
+      return { status: 502, json: { fehler: sagt('versand') } };
     }
 
     /* Bestätigung an den ABSENDER – nur wenn eine E-Mail-Adresse vorliegt.
@@ -227,7 +316,7 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: env.CONTACT_FROM,
+            from: absender,
             to: [antwortAdresse],
             reply_to: site.betrieb.email,
             /* DER BETREFF DER BESTÄTIGUNG IST NICHT DER INTERNE.
@@ -236,9 +325,9 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
                Website"). Der Absender bekam damit die Innensicht des Betriebs
                in sein Postfach, in genau dem Moment, in dem er gerade seine
                Telefonnummer und persönliche Angaben hinterlassen hat. */
-            subject: bestaetigungBetreff(),
-            text: bestaetigungText(formular, daten),
-            html: bestaetigungHtml(formular, daten),
+            subject: bestaetigungBetreff(sprache),
+            text: bestaetigungText(formular, daten, sprache),
+            html: bestaetigungHtml(formular, daten, sprache),
           }),
         });
         /* AUCH HIER MUSS DER GRUND INS PROTOKOLL.
@@ -265,6 +354,6 @@ export async function verarbeiteKontakt(rohdaten: Eingabe, env: KontaktEnv): Pro
     return { status: 200, json: { ok: true } };
   } catch (e) {
     console.error('[kontakt] Versand fehlgeschlagen:', e);
-    return { status: 502, json: { fehler: 'Die Nachricht konnte gerade nicht gesendet werden.' } };
+    return { status: 502, json: { fehler: sagt('versand') } };
   }
 }

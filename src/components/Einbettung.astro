@@ -68,6 +68,15 @@ interface Props {
    * nirgends – der Baustein hat zwei Zweige dafür, und beide waren toter Code.
    */
   auto?: boolean;
+  /**
+   * Sprache der Seite, auf der der Kasten steht.
+   *
+   * Der Hinweistext IST die Einwilligungserklärung für diesen einen Fall –
+   * der Klick auf den Knopf ist die Zustimmung. Eine Einwilligung in einer
+   * Sprache, die der Besucher nicht versteht, ist keine (Art. 7 DSGVO).
+   * Auf einer englischen Seite stand hier bisher deutscher Text.
+   */
+  sprache?: 'de' | 'en';
   class?: string;
 }
 
@@ -78,21 +87,28 @@ const {
   format = '16 / 9',
   kategorie = 'funktional',
   auto = false,
+  sprache = 'de',
   class: klasse,
 } = Astro.props;
 
 const t =
-  site.ansprache === 'du'
+  sprache === 'en'
     ? {
-        hinweis: `Beim Laden werden Daten an ${anbieter} übertragen – auch deine IP-Adresse.`,
-        knopf: `${anbieter} laden`,
-        dauerhaft: 'Erst nach deinem Klick. Vorher wird nichts übertragen.',
+        hinweis: `Loading this will transfer data to ${anbieter} – including your IP address.`,
+        knopf: `Load ${anbieter}`,
+        dauerhaft: 'Only after your click. Nothing is transferred before that.',
       }
-    : {
-        hinweis: `Beim Laden werden Daten an ${anbieter} übertragen – auch Ihre IP-Adresse.`,
-        knopf: `${anbieter} laden`,
-        dauerhaft: 'Erst nach Ihrem Klick. Vorher wird nichts übertragen.',
-      };
+    : site.ansprache === 'du'
+      ? {
+          hinweis: `Beim Laden werden Daten an ${anbieter} übertragen – auch deine IP-Adresse.`,
+          knopf: `${anbieter} laden`,
+          dauerhaft: 'Erst nach deinem Klick. Vorher wird nichts übertragen.',
+        }
+      : {
+          hinweis: `Beim Laden werden Daten an ${anbieter} übertragen – auch Ihre IP-Adresse.`,
+          knopf: `${anbieter} laden`,
+          dauerhaft: 'Erst nach Ihrem Klick. Vorher wird nichts übertragen.',
+        };
 ---
 
 <div

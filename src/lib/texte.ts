@@ -8,6 +8,7 @@
  * Umschaltung über content.config.ts -> ansprache.
  */
 import type { Ansprache } from '../../content.config';
+import { hatEnglischeFassung } from './sprachrouten';
 
 export interface MotorTexte {
   /** Rechtlicher Hinweis unter dem Formular (vor dem Datenschutz-Link). */
@@ -85,12 +86,18 @@ export interface MotorBeschriftungen {
   optional: string;
   bitteWaehlen: string;
   datenschutz: string;
-  /** Rechtsseiten bleiben üblicherweise deutsch – der Link zeigt dorthin. */
+  /**
+   * WIRD ABGELEITET, NICHT GEPFLEGT – siehe `motorBeschriftungen()` unten.
+   * Der Wert hier ist der Rückfall für den Fall, dass es keine englische
+   * Erklärung gibt.
+   */
   datenschutzPfad: string;
   vorschauTitel: string;
   honeypot: string;
   zurueck: string;
   weiter: string;
+  /** Sprungmarke ganz oben – der erste Text, den ein Vorleseprogramm ansagt. */
+  zumInhalt: string;
 }
 
 const BESCHRIFTUNGEN: Record<'de' | 'en', MotorBeschriftungen> = {
@@ -104,19 +111,21 @@ const BESCHRIFTUNGEN: Record<'de' | 'en', MotorBeschriftungen> = {
     honeypot: 'Bitte dieses Feld frei lassen',
     zurueck: 'Zurück',
     weiter: 'Weiter',
+    zumInhalt: 'Zum Inhalt springen',
   },
   en: {
     senden: 'Send',
     optional: '(optional)',
     bitteWaehlen: 'Please choose',
     datenschutz: 'privacy policy',
-    /* Zeigt auf die deutsche Erklärung, solange es keine englische Route gibt.
-       Baut ein Klon eine (etwa /en/datenschutz), wird der Pfad hier gesetzt. */
+    /* Rückfall auf die deutsche Erklärung. Gibt es /en/datenschutz, setzt
+       `motorBeschriftungen()` den Pfad selbst – siehe dort. */
     datenschutzPfad: '/datenschutz',
     vorschauTitel: 'Preview: nothing is sent',
     honeypot: 'Please leave this field empty',
     zurueck: 'Back',
     weiter: 'Next',
+    zumInhalt: 'Skip to content',
   },
 };
 
@@ -126,6 +135,24 @@ export function motorTexte(ansprache: Ansprache, sprache: 'de' | 'en' = 'de'): M
   return ansprache === 'du' ? DU : SIE;
 }
 
+/**
+ * DER DATENSCHUTZ-PFAD WIRD ABGELEITET, NICHT VON HAND GESETZT.
+ * ---------------------------------------------------------------------------
+ * Hier stand für Englisch fest `/datenschutz`, mit dem Hinweis „baut ein Klon
+ * eine englische Route, wird der Pfad hier gesetzt". Dafür musste ein Klon
+ * eine Motor-Bibliotheksdatei ändern – genau der Handgriff, den der nächste
+ * Klon wieder vergisst.
+ *
+ * Was daran hängt: Der Link steht direkt unter dem Häkchen, mit dem die
+ * Besucherin bestätigt, die Erklärung gelesen zu haben. Eine Einwilligung ist
+ * in verständlicher Sprache einzuholen (Art. 7 DSGVO) – ein Verweis auf die
+ * deutsche Fassung erfüllt das auf einer englischen Seite nicht.
+ *
+ * Gibt es `src/pages/en/datenschutz.astro`, zeigt der Link dorthin. Sonst
+ * bleibt es beim deutschen Pfad, und das ist dann auch richtig so.
+ */
 export function motorBeschriftungen(sprache: 'de' | 'en' = 'de'): MotorBeschriftungen {
-  return BESCHRIFTUNGEN[sprache];
+  const basis = BESCHRIFTUNGEN[sprache];
+  if (sprache !== 'en' || !hatEnglischeFassung('/datenschutz')) return basis;
+  return { ...basis, datenschutzPfad: '/en/datenschutz' };
 }

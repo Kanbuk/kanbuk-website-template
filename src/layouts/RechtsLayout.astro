@@ -22,11 +22,24 @@ interface Props {
   pfad: string;
   /** Eigene Meta-Description – jede Seite braucht eine eigene (prüft check.mjs). */
   beschreibung: string;
+  /**
+   * SPRACHE DIESER RECHTSSEITE.
+   *
+   * Ohne diesen Prop konnte ein Klon gar keine englische Rechtsseite bauen,
+   * ohne am Motor zu schrauben. Gebraucht wird sie: Art. 12 Abs. 1 DSGVO
+   * verlangt die Pflichtinformation in verständlicher Sprache, sobald ein
+   * englisches Formular personenbezogene Daten erhebt.
+   *
+   * Erst dadurch bekommt eine Seite unter /en/ die richtige `lang`-Auszeichnung
+   * und die richtigen Motortexte. Impressum und AGB bleiben üblicherweise
+   * deutsch – siehe den Kommentar im Kopf von src/pages/datenschutz.astro.
+   */
+  sprache?: 'de' | 'en';
 }
-const { titel, pfad, beschreibung } = Astro.props;
+const { titel, pfad, beschreibung, sprache = 'de' } = Astro.props;
 ---
 
-<BaseLayout pfad={pfad} titel={titel} beschreibung={beschreibung}>
+<BaseLayout pfad={pfad} titel={titel} beschreibung={beschreibung} sprache={sprache}>
   <Kopf aktuell={pfad} />
   <main id="inhalt" class="rechtsseite">
     <div class="container container--schmal">

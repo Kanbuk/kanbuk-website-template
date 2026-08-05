@@ -192,6 +192,25 @@ function auslieferungsRegeln() {
             { source: '/(.*)', headers: kopfzeilen },
             { source: '/fonts/(.*)', headers: [schriftCache] },
           ],
+          /* ZWEI ERKENNTNISSE AUS EINER ECHTEN DOMAINUMSTELLUNG – bitte lesen,
+             bevor hier jemand etwas ergänzt.
+
+             (1) KEINE EIGENE REGEL „Kurzform -> www" (oder umgekehrt).
+             Vercel kennt dieselbe Weiterleitung als Einstellung an der Domain.
+             Zwei Mechanismen für dieselbe Sache sind kein doppelter Boden:
+             Zeigen sie in verschiedene Richtungen, ist es eine Endlosschleife
+             und die Seite ist VOLLSTÄNDIG weg. Genau dieser Zustand bestand in
+             einem Kundenprojekt kurz. Ohne die Regel hier ist eine falsch
+             gedrehte Einstellung nur ein stiller Schönheitsfehler.
+
+             (2) ZWEI SPRÜNGE BEI ADRESSEN MIT SCHRÄGSTRICH SIND NORMAL.
+             Alte Adressen mit Schrägstrich am Ende (WordPress-Normalfall, und
+             genau so stehen sie bei Google) laufen erst durch Vercels eigene
+             Normalisierung und dann durch die Weiterleitung. Ein
+             `source: '/pfad{/}?'` wurde nachgemessen und ändert daran nichts.
+             Schaden entsteht keiner – beide Sprünge sind dauerhaft (301/308),
+             das Ranking vererbt sich. Der Hinweis erspart dem nächsten Chat
+             eine Fehlersuche an einer Stelle, die in Ordnung ist. */
           ...(site.weiterleitungen.length > 0 && {
             redirects: site.weiterleitungen.map((w) => {
               const { pfad, has } = zerlegeWeiterleitung(w.von);

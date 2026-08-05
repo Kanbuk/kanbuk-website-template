@@ -124,8 +124,28 @@ function pflichtangaben(): string {
     .join(' · ');
 }
 
+/* ===========================================================================
+   DIE BESTÄTIGUNG IN DER SPRACHE DER ANFRAGE
+   ===========================================================================
+   Sie ist die EINZIGE Nachricht, die ein Interessent bekommt, bevor jemand
+   persönlich antwortet. Bei einem zweisprachigen Kunden bekam eine englische
+   Anfrage bisher eine deutsche Bestätigung.
+
+   Übernommen ist die STRUKTUR, nicht ein fremder Text: Die Sätze hier sind
+   neutrale Musterformulierungen des Motors. Deutsch führt zusätzlich die
+   du/Sie-Unterscheidung, Englisch kennt sie nicht.
+   =========================================================================== */
+type Sprache = 'de' | 'en';
+
+/** Wählt aus [du, Sie, englisch] die passende Fassung. */
+function satz(du: string, sie: string, en: string, sprache: Sprache): string {
+  if (sprache === 'en') return en;
+  return duzen ? du : sie;
+}
+
 /** Der Betreff – aus Sicht des ABSENDERS, nicht des Betriebs. */
-export function bestaetigungBetreff(): string {
+export function bestaetigungBetreff(sprache: Sprache = 'de'): string {
+  if (sprache === 'en') return einstellung.betreffEn ?? `Your enquiry to ${b.name}`;
   return einstellung.betreff ?? `Ihre Anfrage bei ${b.name}`;
 }
 
@@ -134,31 +154,49 @@ const anschrift = `${b.adresse.strasse}, ${b.adresse.plz} ${b.adresse.ort}`;
 /* --------------------------------------------------------------------------
  *  TEXTFASSUNG – geht immer, auch im ältesten Mailprogramm.
  * ----------------------------------------------------------------------- */
-export function bestaetigungText(formular: Formular, daten: Record<string, string>): string {
+export function bestaetigungText(
+  formular: Formular,
+  daten: Record<string, string>,
+  sprache: Sprache = 'de',
+): string {
   const zeilen: string[] = [
-    duzen ? 'Danke für deine Anfrage!' : 'Vielen Dank für Ihre Anfrage!',
+    satz('Danke für deine Anfrage!', 'Vielen Dank für Ihre Anfrage!', 'Thank you for your enquiry!', sprache),
     '',
-    duzen
-      ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
-      : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.',
+    satz(
+      'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.',
+      'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.',
+      'We have received your enquiry and will get back to you as soon as possible.',
+      sprache,
+    ),
     '',
   ];
 
   if (einstellung.angabenWiederholen) {
-    zeilen.push(duzen ? 'Das hast du uns geschickt:' : 'Das haben Sie uns geschickt:', '');
+    zeilen.push(
+      satz('Das hast du uns geschickt:', 'Das haben Sie uns geschickt:', 'This is what you sent us:', sprache),
+      '',
+    );
     for (const z of ausgefuellt(formular, daten)) zeilen.push(`${z.label}: ${z.wert}`);
     zeilen.push('');
   } else {
     zeilen.push(
-      duzen
-        ? 'Aus Datenschutzgründen wiederholen wir deine Angaben hier nicht.'
-        : 'Aus Datenschutzgründen wiederholen wir Ihre Angaben hier nicht.',
+      satz(
+        'Aus Datenschutzgründen wiederholen wir deine Angaben hier nicht.',
+        'Aus Datenschutzgründen wiederholen wir Ihre Angaben hier nicht.',
+        'For data protection reasons we do not repeat your details here.',
+        sprache,
+      ),
       '',
     );
   }
 
   zeilen.push(
-    duzen ? 'Bei Rückfragen erreichst du uns direkt:' : 'Bei Rückfragen erreichen Sie uns direkt:',
+    satz(
+      'Bei Rückfragen erreichst du uns direkt:',
+      'Bei Rückfragen erreichen Sie uns direkt:',
+      'If you have any questions, you can reach us directly:',
+      sprache,
+    ),
     '',
     b.name,
     anschrift,
@@ -205,7 +243,11 @@ const SCHRIFT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif
  */
 const BASIS = (site.mode === 'demo' ? (site.vorschauDomain ?? site.domain) : site.domain).replace(/\/$/, '');
 
-export function bestaetigungHtml(formular: Formular, daten: Record<string, string>): string {
+export function bestaetigungHtml(
+  formular: Formular,
+  daten: Record<string, string>,
+  sprache: Sprache = 'de',
+): string {
   const angaben = einstellung.angabenWiederholen ? ausgefuellt(formular, daten) : [];
   const pflicht = pflichtangaben();
 
@@ -222,7 +264,7 @@ export function bestaetigungHtml(formular: Formular, daten: Record<string, strin
 
   const angabenBlock = angaben.length
     ? `<tr><td style="padding:0 28px 8px;font-family:${SCHRIFT};font-size:14px;color:${F.text};">
-         ${duzen ? 'Das hast du uns geschickt:' : 'Das haben Sie uns geschickt:'}
+         ${satz('Das hast du uns geschickt:', 'Das haben Sie uns geschickt:', 'This is what you sent us:', sprache)}
        </td></tr>
        <tr><td style="padding:0 28px 20px;">
          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -238,16 +280,19 @@ export function bestaetigungHtml(formular: Formular, daten: Record<string, strin
          </table>
        </td></tr>`
     : `<tr><td style="padding:0 28px 20px;font-family:${SCHRIFT};font-size:13px;color:${F.text};opacity:.7;">
-         ${duzen
-           ? 'Aus Datenschutzgründen wiederholen wir deine Angaben hier nicht.'
-           : 'Aus Datenschutzgründen wiederholen wir Ihre Angaben hier nicht.'}
+         ${satz(
+           'Aus Datenschutzgründen wiederholen wir deine Angaben hier nicht.',
+           'Aus Datenschutzgründen wiederholen wir Ihre Angaben hier nicht.',
+           'For data protection reasons we do not repeat your details here.',
+           sprache,
+         )}
        </td></tr>`;
 
   return `<!doctype html>
-<html lang="de"><head><meta charset="utf-8">
+<html lang="${sprache}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>${sicher(bestaetigungBetreff())}</title>
+<title>${sicher(bestaetigungBetreff(sprache))}</title>
 </head>
 <body style="margin:0;padding:0;background:${F.grund};">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${F.grund};">
@@ -257,18 +302,26 @@ export function bestaetigungHtml(formular: Formular, daten: Record<string, strin
       <tr><td style="background:${F.primaer};padding:20px 28px;font-family:${SCHRIFT};">${kopf}</td></tr>
 
       <tr><td style="padding:28px 28px 12px;font-family:${SCHRIFT};font-size:20px;font-weight:700;color:${F.text};">
-        ${duzen ? 'Danke für deine Anfrage!' : 'Vielen Dank für Ihre Anfrage!'}
+        ${satz('Danke für deine Anfrage!', 'Vielen Dank für Ihre Anfrage!', 'Thank you for your enquiry!', sprache)}
       </td></tr>
       <tr><td style="padding:0 28px 20px;font-family:${SCHRIFT};font-size:15px;line-height:1.55;color:${F.text};">
-        ${duzen
-          ? 'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.'
-          : 'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.'}
+        ${satz(
+          'Wir haben deine Anfrage erhalten und melden uns so bald wie möglich.',
+          'Wir haben Ihre Anfrage erhalten und melden uns so bald wie möglich.',
+          'We have received your enquiry and will get back to you as soon as possible.',
+          sprache,
+        )}
       </td></tr>
 
       ${angabenBlock}
 
       <tr><td style="padding:0 28px 24px;font-family:${SCHRIFT};font-size:14px;line-height:1.6;color:${F.text};">
-        ${duzen ? 'Bei Rückfragen erreichst du uns direkt:' : 'Bei Rückfragen erreichen Sie uns direkt:'}<br>
+        ${satz(
+          'Bei Rückfragen erreichst du uns direkt:',
+          'Bei Rückfragen erreichen Sie uns direkt:',
+          'If you have any questions, you can reach us directly:',
+          sprache,
+        )}<br>
         <strong>${sicher(b.name)}</strong><br>
         ${sicher(anschrift)}<br>
         ${sicher(b.telefon)} · ${sicher(b.email)}

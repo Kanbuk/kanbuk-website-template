@@ -13,7 +13,7 @@
  */
 // Die .js-Endung ist Pflicht: Vercel baut Server-Dateien als Node-ESM –
 // ohne Endung stürzt die Funktion beim Start ab (FUNCTION_INVOCATION_FAILED).
-import { verarbeiteKontakt, type Eingabe } from '../src/lib/kontakt.js';
+import { verarbeiteKontakt, meldung, type Eingabe, type Sprache } from '../src/lib/kontakt.js';
 import { site } from '../content.config.js';
 
 export const config = { runtime: 'nodejs' };
@@ -129,16 +129,24 @@ export async function POST(request: Request): Promise<Response> {
        'text/plain' bleibt gesperrt – dieses Format behandeln Browser als
        „einfache Anfrage" ohne Vorab-Nachfrage, weshalb darüber jede fremde
        Seite den Endpunkt direkt ansprechen konnte. */
+  /* DIE SPRACHE DER SEITE steht als `?lang=` an der Adresse (das Formular
+     setzt sie in `action`, siehe Formular.astro). Sie muss VOR der ersten
+     Meldung feststehen – auch eine Abweisung wegen Format oder Menge ist eine
+     Antwort an einen Menschen. Alles, was nicht 'en' ist, gilt als Deutsch:
+     Eine unbekannte Angabe darf keine leere Meldung erzeugen. */
+  const sprache: Sprache = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'de';
+  const sagt = (s: 'format' | 'fremd' | 'zuLang' | 'zuViele') => meldung(s, sprache);
+
   const typ = (request.headers.get('content-type') ?? '').toLowerCase();
   const istJson = typ.includes('application/json');
   const istFormular = typ.includes('application/x-www-form-urlencoded');
   if (!istJson && !istFormular) {
-    return antwort(415, { fehler: 'Ungültiges Format.' });
+    return antwort(415, { fehler: sagt('format') });
   }
 
   // 2) Fremder Ursprung -> abweisen.
   if (!ursprungPasst(request)) {
-    return abweisung(request, 403, 'Anfrage von einer fremden Adresse.');
+    return abweisung(request, 403, sagt('fremd'));
   }
 
   /* 3) Größe begrenzen – und zwar in BYTES, nicht in Zeichen.
@@ -155,11 +163,11 @@ export async function POST(request: Request): Promise<Response> {
         Hosters) – im Code geht es an dieser Stelle nicht. */
   const laenge = Number(request.headers.get('content-length') ?? '0');
   if (laenge > MAX_BYTES) {
-    return abweisung(request, 413, 'Die Nachricht ist zu lang.');
+    return abweisung(request, 413, sagt('zuLang'));
   }
   const roh = await request.text();
   if (new TextEncoder().encode(roh).length > MAX_BYTES) {
-    return abweisung(request, 413, 'Die Nachricht ist zu lang.');
+    return abweisung(request, 413, sagt('zuLang'));
   }
 
   // 4) Zu viele Anfragen aus derselben Quelle.
@@ -168,7 +176,7 @@ export async function POST(request: Request): Promise<Response> {
     request.headers.get('x-real-ip') ||
     'unbekannt';
   if (zuVieleAnfragen(ip)) {
-    return abweisung(request, 429, 'Zu viele Anfragen. Bitte in ein paar Minuten erneut versuchen.');
+    return abweisung(request, 429, sagt('zuViele'));
   }
 
   let daten: Eingabe = {};
@@ -186,10 +194,14 @@ export async function POST(request: Request): Promise<Response> {
     }
   }
 
-  const { status, json } = await verarbeiteKontakt(daten, {
-    RESEND_API_KEY: process.env.RESEND_API_KEY,
-    CONTACT_FROM: process.env.CONTACT_FROM,
-  });
+  const { status, json } = await verarbeiteKontakt(
+    daten,
+    {
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      CONTACT_FROM: process.env.CONTACT_FROM,
+    },
+    sprache,
+  );
 
   /* Ohne JavaScript hat der Browser gerade die Seite verlassen – er erwartet
      eine SEITE zurück, keine Datenzeile. Also auf die Danke-Seite umleiten

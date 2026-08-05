@@ -1121,6 +1121,16 @@ export interface Bestaetigung {
    */
   betreff?: string;
   /**
+   * Der Betreff für Anfragen von einer englischen Seite.
+   * Standard: „Your enquiry to <Betrieb>".
+   *
+   * Die Bestätigung ist die einzige Nachricht, die ein Interessent bekommt,
+   * bevor jemand persönlich antwortet – auf Deutsch bei einer englischen
+   * Anfrage wirkt sie wie an den Falschen geschickt. Wer einsprachig baut,
+   * braucht das Feld nicht.
+   */
+  betreffEn?: string;
+  /**
    * DIE ANGABEN IN DER MAIL WIEDERHOLEN? Standard: **nein**.
    *
    * Beide Antworten sind vertretbar, und es ist eine Entscheidung PRO KUNDE:

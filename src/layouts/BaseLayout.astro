@@ -19,6 +19,8 @@ import fontsCssRoh from '../styles/fonts.css?raw';
 import { site, jsonLdTyp } from '../../content.config';
 import { cssVariablen } from '../lib/theme';
 import { motorHinweis } from '../lib/motorfehler';
+import { hatEnglischeFassung } from '../lib/sprachrouten';
+import { motorBeschriftungen } from '../lib/texte';
 import DemoBar from '../components/DemoBar.astro';
 import Einwilligung from '../components/Einwilligung.astro';
 
@@ -134,6 +136,11 @@ const ogBild = new URL(
 const rootStyle = `:root { ${cssVariablen(site)} }`;
 
 const mehrsprachig = site.sprachen.length > 1;
+
+/* Bekommt DIESE Seite Sprachverweise? Nur, wenn es sie wirklich in beiden
+   Sprachen gibt – gemessen am Verzeichnis src/pages/en/, nicht an der Config.
+   Warum, steht in src/lib/sprachrouten.ts und unten am hreflang-Block. */
+const hatSprachpaar = mehrsprachig && hatEnglischeFassung(pfad);
 
 /** Kurzcodes -> volle schema.org-Tagesnamen. Google versteht NUR die vollen
     Namen ("Monday") – mit "Mo" würden die Öffnungszeiten still ignoriert. */
@@ -468,21 +475,29 @@ const jsonLd = {
     />
 
     {/* Sprachverweise NUR für Seiten, die es wirklich in beiden Sprachen gibt.
-        Hilfsseiten wie /danke oder /404 stehen nicht in der Seiten-Config und
-        werden nicht übersetzt – für sie hreflang auszugeben hieße, Google eine
-        englische Fassung zu versprechen, die es nicht gibt (das Prüf-Tor
-        blockt das zu Recht).
+        Hilfsseiten wie /danke oder /404 werden nicht übersetzt – für sie
+        hreflang auszugeben hieße, Google eine englische Fassung zu versprechen,
+        die es nicht gibt (das Prüf-Tor blockt das zu Recht).
+
+        GEFRAGT WIRD DAS VERZEICHNIS, NICHT DIE CONFIG. Hier stand
+        `mehrsprachig && seite` – also „steht die Seite in site.seiten?".
+        Impressum, Datenschutz und AGB stehen dort nie, ihre Texte kommen aus
+        `rechtstexte`; die Datenschutzerklärung gibt es bei jedem
+        zweisprachigen Kunden trotzdem zweimal. Google sah damit zwei
+        unverbundene Seiten mit demselben Inhalt in zwei Sprachen.
+        Begründung ausführlich in src/lib/sprachrouten.ts.
+
         x-default zeigt auf die HAUPTSPRACHE, nicht auf die aktuelle Seite:
         Es beantwortet die Frage „welche Fassung, wenn keine passt?" – bisher
         zeigte jede Sprachfassung auf sich selbst, was die Angabe wertlos macht. */}
-    {mehrsprachig && seite && site.sprachen.map((s) => (
+    {hatSprachpaar && site.sprachen.map((s) => (
       <link
         rel="alternate"
         hreflang={s}
         href={new URL(s === 'de' ? pfad : `/${s}${pfad === '/' ? '' : pfad}`, basisAdresse).href}
       />
     ))}
-    {mehrsprachig && seite && (
+    {hatSprachpaar && (
       <link rel="alternate" hreflang="x-default" href={new URL(pfad, basisAdresse).href} />
     )}
 
@@ -557,7 +572,12 @@ const jsonLd = {
   </head>
   <body>
     {istDemo && <DemoBar />}
-    <a class="skip-link" href="#inhalt">Zum Inhalt springen</a>
+    {/* Der ERSTE Text, den ein Vorleseprogramm ansagt und den ein
+        Tastaturbenutzer erreicht. Er stand fest auf Deutsch – wer die Seite
+        nicht sehen kann, bekam auf der englischen Fassung als Erstes eine
+        fremdsprachige Ansage. Der Text liegt bei den übrigen Motor-
+        Beschriftungen (src/lib/texte.ts), nicht hier im Markup. */}
+    <a class="skip-link" href="#inhalt">{motorBeschriftungen(sprache).zumInhalt}</a>
     <slot />
 
     {/* Rendert nur, wenn zustimmungspflichtige Dienste konfiguriert sind.

@@ -1,0 +1,476 @@
+---
+/**
+ * DER INHALT DER DATENSCHUTZERKLÄRUNG – EINMAL, IN ZWEI SPRACHEN.
+ * ===========================================================================
+ * WARUM ES DIESE DATEI GIBT:
+ *
+ * Eine zweite Sprachfassung war bisher eine vollständige Handkopie der Seite,
+ * mit einem Warnsatz im Dateikopf: „inhaltlich identisch – wird dort etwas
+ * geändert, MUSS es hier mitgeändert werden." Das ist ehrlich, aber es ist
+ * genau die Sorte Zusage, die eine Datei nicht halten kann.
+ *
+ * Und der Motor entwickelt diese Erklärung ständig weiter: der
+ * Drittland-Absatz, der Merklisten-Absatz, die Einbettungs-Suche im Markup,
+ * der Widerruf nach Art. 7 Abs. 2 – alles Änderungen der letzten Wochen. Jede
+ * einzelne hätte eine Kopie zurückfallen lassen. Ein Rechtstext, der in einer
+ * Sprache älter ist als in der anderen, ist genau der Fehler, gegen den dieser
+ * ganze Abschnitt gebaut ist.
+ *
+ * Deshalb: Der Aufbau steht EINMAL hier, die Sätze stehen daneben in beiden
+ * Sprachen. Eine neue Bedingung kann gar nicht nur in einer Fassung landen –
+ * sie steht im Markup, und das gibt es nur einmal.
+ *
+ * SO ENTSTEHT DIE ENGLISCHE ROUTE (im Klon, drei Zeilen):
+ *
+ *   ---
+ *   import RechtsLayout from '../../layouts/RechtsLayout.astro';
+ *   import DatenschutzInhalt from '../../components/DatenschutzInhalt.astro';
+ *   ---
+ *   <RechtsLayout titel="Privacy policy" pfad="/datenschutz" sprache="en"
+ *     beschreibung={…}><DatenschutzInhalt sprache="en" /></RechtsLayout>
+ *
+ * Sobald `src/pages/en/datenschutz.astro` existiert, ziehen die
+ * Sprachverweise (hreflang) und der Link unter dem Zustimmungs-Häkchen von
+ * selbst nach – beide fragen das Verzeichnis (src/lib/sprachrouten.ts).
+ *
+ * IMPRESSUM UND AGB BLEIBEN EINSPRACHIG, und das ist Absicht: Das Impressum
+ * ist eine Pflichtangabe nach österreichischem Recht mit festen Begriffen
+ * (Firmenbuch, UID, Gewerbe) – eine Übersetzung erfindet dafür Wörter, die im
+ * Register nicht vorkommen. AGB sind Vertragsrecht; eine übersetzte Fassung
+ * wäre eine zweite Vertragsgrundlage, und welche gilt, entscheidet dann
+ * niemand. Die Datenschutzerklärung ist der Sonderfall: Art. 12 Abs. 1 DSGVO
+ * verlangt die Pflichtinformation in verständlicher Sprache, sobald ein
+ * englisches Formular personenbezogene Daten erhebt.
+ *
+ * WARUM DIE TEXTE ALS HTML-ZEICHENKETTEN DASTEHEN: So steht je Absatz genau
+ * ein Satzpaar nebeneinander und nicht zweimal dieselbe Verschachtelung. Die
+ * Zeichenketten sind Motor-Literale aus dieser Datei – nichts davon kommt aus
+ * der Konfiguration oder aus einem Redaktionssystem, deshalb ist `set:html`
+ * hier unbedenklich (anders als bei Feldbeschriftungen, siehe Formular.astro).
+ */
+import { site, brauchtEinwilligung, type Kategorie } from '../../content.config';
+
+interface Props {
+  sprache?: 'de' | 'en';
+}
+const { sprache = 'de' } = Astro.props;
+const en = sprache === 'en';
+/** Wählt zwischen deutscher und englischer Fassung. */
+const w = (de: string, eng: string) => (en ? eng : de);
+
+const r = site.rechtstexte;
+
+/** Sobald Dienste aktiv sind, MUSS die Erklärung sie nennen (Rechtspflicht). */
+const hatDienste = brauchtEinwilligung(site);
+
+const KATEGORIE_TITEL: Record<string, { de: string; en: string }> = {
+  funktional: { de: 'Komfort-Dienste', en: 'Convenience services' },
+  statistik: { de: 'Statistik / Reichweitenmessung', en: 'Statistics / audience measurement' },
+  marketing: { de: 'Marketing', en: 'Marketing' },
+};
+
+/** Dienste nach Kategorie gruppieren – so liest es sich wie eine Behörde es erwartet. */
+const dienstNachKategorie = (['funktional', 'statistik', 'marketing'] as Kategorie[])
+  .map((k) => [k, site.dienste.filter((d) => d.kategorie === k)] as const)
+  .filter(([, liste]) => liste.length > 0);
+
+/* ---------------------------------------------------------------------------
+ *  WAS DIE SEITE WIRKLICH EINBETTET – aus dem Markup gelesen, nicht behauptet
+ *
+ *  Vorher gab es genau EINEN Absatz („Karte / Anfahrt"), gesteuert von einem
+ *  Handschalter in der Config. Der Baustein `<Einbettung>` ist aber allgemein –
+ *  er trägt Google Maps, ein Video oder einen Instagram-Beitrag. Bettete ein
+ *  Klon ein Video ein, stand dazu KEIN Wort in der Erklärung; es gab nicht
+ *  einmal einen Schalter dafür. Und der Schalter selbst ging schief: In einem
+ *  Kundenprojekt war die 2-Klick-Karte zwanzig Minuten online, während die
+ *  Erklärung wörtlich behauptete „Es wird keine Karte eingebettet".
+ *
+ *  Deshalb wird jetzt der Quelltext der Seiten durchsucht. Die Wahrheit steht
+ *  damit nur noch an EINER Stelle: dort, wo die Einbettung wirklich steht.
+ *  Das Prüf-Tor hält beides zusätzlich gegeneinander.
+ * ------------------------------------------------------------------------ */
+const seitenQuellen = import.meta.glob<string>('/src/**/*.astro', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+const einbettungsAnbieter = [
+  ...new Set(
+    Object.entries(seitenQuellen)
+      // Die Erklärung selbst und der Baustein zählen nicht als Einsatz.
+      .filter(([pfad]) => !/DatenschutzInhalt\.astro$|Einbettung\.astro$/.test(pfad))
+      .flatMap(([, quelle]) =>
+        [...String(quelle).matchAll(/<Einbettung\b[^>]*?anbieter=["']([^"']+)["']/g)].map((m) => m[1]),
+      ),
+  ),
+].sort();
+
+/* Dienste, die Daten in ein Drittland geben – NAMENTLICH. Vorher entstand der
+   USA-Absatz allein daraus, DASS überhaupt ein Dienst eingetragen war. Bei
+   einem europäischen Werkzeug behauptete die Erklärung damit eine
+   Übermittlung, die es gar nicht gibt – samt falscher Rechtsgrundlage. */
+/* Ein Dienst OHNE `drittland`-Angabe taucht hier bewusst nirgends auf: Die
+   Erklärung darf nichts behaupten, was niemand eingetragen hat. Dass die
+   Angabe fehlt, meldet das Prüf-Tor (scripts/check.mjs) – dort gehört sie hin,
+   nicht in eine Rechtsseite, die sie dann irgendwie formulieren müsste. */
+const drittlandDienste = site.dienste.filter((d) => d.drittland && d.drittland !== 'keines');
+
+/* GIBT ES ÜBERHAUPT EINE KARTE?
+   Der Karten-Absatz stand ohne jede Bedingung da – jeder Klon ohne Anfahrt
+   behauptete „Für die Anfahrt zeigen wir ein statisches Bild" und verwies auf
+   einen Link, den es auf der Seite nicht gibt. Bei einer Praxis oder einer
+   Kanzlei ohne Karte ist das schlicht eine falsche Aussage über die eigene
+   Seite – dieselbe Klasse Fehler wie der Karten-Absatz, der einmal behauptete,
+   es gebe KEINE Karte, während eine online war. */
+const hatKarte = !!site.betrieb.adresse.karteBild;
+
+/* DIE MERKLISTE HAENGT AM ATTRIBUT, NICHT AM KATALOG.
+   Der Absatz stand unter `site.katalog` – ausgeloest wird der Baustein aber
+   durch `data-merken="id"` im Markup. Ein Wirt kann Gerichte vormerken lassen,
+   ein Studio Kurse, eine Galerie Bilder: alles ohne Katalog in der Config.
+   Dann speichert die Seite etwas auf dem Geraet des Besuchers, und die
+   Erklaerung schwieg dazu – waehrend sie zwei Absaetze weiter oben „keine
+   Cookies" sagt. Gelesen wird deshalb wie beim Karten-Absatz aus dem MARKUP,
+   nicht aus einem Schalter. Das Pruef-Tor haelt beides gegeneinander. */
+/* WARUM DIE BEIDEN KATALOG-DATEIEN AUSGENOMMEN SIND – das ist kein Schönheits-
+   fehler, sondern derselbe Fehler wie oben, nur andersherum. Der Quelltext-Scan
+   findet `data-merken` in `KatalogListe.astro` und in der Katalog-Detailseite.
+   Diese Dateien liegen in JEDEM Klon auf der Platte, auch bei einem Tischler,
+   einer Praxis oder einem Wirt ohne Katalog – gebaut werden sie dort nie
+   (`getStaticPaths` gibt ohne `katalog` eine leere Liste zurück, und die Liste
+   wird nur von dieser einen Route eingebunden).
+
+   Gemessen am 03.08.2026: Klon ohne Katalog gebaut → null Seiten mit
+   `data-merken`, und die Datenschutzerklärung trug trotzdem den Absatz
+   „Merkliste" mit dem Satz, der Browser speichere etwas auf dem Gerät. Das ist
+   eine falsche Aussage über die eigene Seite in einer Rechtsseite – und sie
+   stand so in jedem Klon.
+
+   Ihre Bedingung ist `site.katalog`, und die steht bereits in der Zeile
+   darunter. Der Scan bleibt für den Fall, für den er gebaut wurde: eigenes
+   Markup im Klon (Gerichte vormerken, Kurse merken, Bilder sammeln). Dass
+   beides zusammenpasst, hält das Prüf-Tor gegen den fertigen Build – seit
+   heute in BEIDE Richtungen. */
+const hatMerkliste =
+  !!site.katalog ||
+  Object.entries(seitenQuellen)
+    .filter(([pfad]) => !/DatenschutzInhalt\.astro$|KatalogListe\.astro$|katalogEintrag\]\.astro$/.test(pfad))
+    .some(([, quelle]) => /data-merken[=\s>]/.test(String(quelle)));
+---
+
+<p
+  set:html={w(
+    'Der Schutz Ihrer persönlichen Daten ist uns wichtig. Wir verarbeiten Ihre Daten ausschließlich auf Grundlage der gesetzlichen Bestimmungen (DSGVO, TKG 2021).',
+    'Protecting your personal data matters to us. We process your data solely on the basis of the applicable law (GDPR, Austrian TKG 2021).',
+  )}
+/>
+
+<h2>{w('Verantwortlicher', 'Controller')}</h2>
+<address>
+  <strong>{r.firmenwortlaut}</strong><br />
+  {r.adresse}<br />
+  {w('E-Mail: ', 'Email: ')}<a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
+</address>
+
+{/* Dieser Abschnitt richtet sich nach content.config.ts -> dienste.
+    Ohne Dienste ist die Seite cookiefrei; sobald einer aktiv ist, wäre die
+    Aussage „keine Cookies" falsch – und eine falsche Datenschutzerklärung
+    ist ein echtes Rechtsrisiko. Deshalb schaltet der Text automatisch um. */}
+{!hatDienste ? (
+  <>
+    <h2>{w('Keine Cookies, kein Tracking', 'No cookies, no tracking')}</h2>
+    <p
+      set:html={w(
+        'Diese Website verwendet <strong>keine Cookies</strong>, kein Analyse-Werkzeug und keine Tracking-Skripte. Es werden keine Nutzungsprofile erstellt. Deshalb benötigt diese Seite auch keinen Cookie-Banner.',
+        'This website uses <strong>no cookies</strong>, no analytics tool and no tracking scripts. No usage profiles are created. That is why this site needs no cookie banner.',
+      )}
+    />
+  </>
+) : (
+  <>
+    <h2>{w('Einwilligung, Cookies und externe Dienste', 'Consent, cookies and external services')}</h2>
+    <p
+      set:html={w(
+        'Diese Website nutzt Dienste, die erst geladen werden, <strong>nachdem Sie zugestimmt haben</strong>. Ohne Ihre Einwilligung wird nichts davon geladen, es werden keine Daten an diese Anbieter übertragen und keine Cookies gesetzt (Art. 6 Abs. 1 lit. a DSGVO, § 165 Abs. 3 TKG 2021).',
+        'This website uses services that are only loaded <strong>after you have consented</strong>. Without your consent nothing of this is loaded, no data is transferred to these providers and no cookies are set (Art. 6(1)(a) GDPR, § 165(3) TKG 2021).',
+      )}
+    />
+    <p>
+      <span
+        set:html={w(
+          'Ihre Entscheidung speichern wir lokal in Ihrem Browser (localStorage) – dabei werden keine Daten an uns übertragen. Gespeichert werden nur die von Ihnen freigegebenen Kategorien, der Zeitpunkt und eine Kennung der Dienste-Liste. Der Eintrag bleibt, bis Sie ihn selbst löschen <strong>oder wir die Liste der Dienste ändern – dann werden Sie automatisch erneut gefragt</strong>. Sie können Ihre Einwilligung jederzeit mit Wirkung für die Zukunft widerrufen:',
+          'We store your decision locally in your browser (localStorage) – no data is transferred to us in the process. Only the categories you released, the time and an identifier of the service list are stored. The entry remains until you delete it yourself <strong>or we change the list of services – then you will automatically be asked again</strong>. You may withdraw your consent at any time with effect for the future:',
+        )}
+      />{' '}
+      <button type="button" class="ds-widerruf" data-einwilligung-widerruf>
+        {w('Einwilligung widerrufen', 'Withdraw consent')}
+      </button>.
+    </p>
+
+    {dienstNachKategorie.map(([kategorie, liste]) => (
+      <>
+        <h3>{KATEGORIE_TITEL[kategorie]?.[sprache] ?? kategorie}</h3>
+        <ul>
+          {liste.map((d) => (
+            <li>
+              <strong>{d.name}</strong> – {w('Anbieter:', 'Provider:')} {d.anbieter}.<br />
+              {w('Zweck:', 'Purpose:')} {d.zweck}.
+              {d.setztCookies && <> {w('Dieser Dienst setzt Cookies.', 'This service sets cookies.')}</>}
+              {' '}{w('Datenschutzerklärung des Anbieters:', "Provider's privacy policy:")}{' '}
+              <a href={d.datenschutzUrl} target="_blank" rel="noopener noreferrer">{d.datenschutzUrl}</a>
+            </li>
+          ))}
+        </ul>
+      </>
+    ))}
+
+    {drittlandDienste.length > 0 && (
+      <>
+        <h3>{w('Übermittlung in Drittländer', 'Transfer to third countries')}</h3>
+        <p>
+          {w(
+            'Bei den folgenden Diensten werden Daten außerhalb der EU verarbeitet:',
+            'With the following services data is processed outside the EU:',
+          )}
+        </p>
+        <ul>
+          {drittlandDienste.map((d) => (
+            <li>
+              <strong>{d.name}</strong> ({d.anbieter}) – {d.drittland}
+            </li>
+          ))}
+        </ul>
+        <p>
+          {w(
+            'Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a, Art. 49 Abs. 1 lit. a DSGVO). Alle übrigen genannten Dienste verarbeiten ausschließlich innerhalb der EU beziehungsweise des EWR.',
+            'The legal basis is your consent (Art. 6(1)(a), Art. 49(1)(a) GDPR). All other services named process data exclusively within the EU or the EEA.',
+          )}
+        </p>
+      </>
+    )}
+  </>
+)}
+
+{/* Ein Absatz je TATSÄCHLICH eingebettetem Anbieter – siehe Kopf dieser
+    Datei. Kein Handschalter mehr: Was im Markup steht, steht hier. */}
+{einbettungsAnbieter.length > 0 ? (
+  <>
+    <h2>{w('Eingebettete Inhalte (Zwei-Klick-Lösung)', 'Embedded content (two-click solution)')}</h2>
+    <p
+      set:html={w(
+        'An einzelnen Stellen binden wir Inhalte fremder Anbieter ein. Sie werden <strong>erst geladen, wenn Sie darauf klicken</strong> – vorher wird nichts übertragen. Der Klick ist Ihre Einwilligung für diesen Fall (Art. 6 Abs. 1 lit. a DSGVO).',
+        'In a few places we embed content from third-party providers. It is <strong>only loaded once you click on it</strong> – nothing is transferred before that. The click is your consent for that individual case (Art. 6(1)(a) GDPR).',
+      )}
+    />
+    <ul>
+      {einbettungsAnbieter.map((anbieter) => (
+        <li>
+          <strong>{anbieter}</strong>{' '}
+          <span
+            set:html={w(
+              '– beim Klick werden Ihre <strong>IP-Adresse</strong> und Angaben zu Ihrem Browser an diesen Anbieter übertragen. Es gelten dann zusätzlich dessen Datenschutzbestimmungen.',
+              "– on clicking, your <strong>IP address</strong> and details about your browser are transferred to this provider. That provider's privacy terms then apply in addition.",
+            )}
+          />
+        </li>
+      ))}
+    </ul>
+    {hatKarte && (
+      <p
+        set:html={w(
+          'Für die Anfahrt zeigen wir zusätzlich ein <strong>statisches Kartenbild</strong> (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden) – dabei wird nichts übertragen.',
+          'For directions we additionally show a <strong>static map image</strong> (map data from OpenStreetMap, embedded when the page was built) – nothing is transferred in the process.',
+        )}
+      />
+    )}
+  </>
+) : hatKarte ? (
+  <>
+    <h2>{w('Karte / Anfahrt', 'Map / directions')}</h2>
+    <p
+      set:html={w(
+        'Für die Anfahrt zeigen wir ein <strong>statisches Bild</strong> (Kartendaten von OpenStreetMap, beim Erstellen der Seite eingebunden). Es wird keine Karte eingebettet, es werden also keine Daten übertragen, solange Sie nicht selbst auf einen Link zu einem Kartendienst klicken. Erst dann gelten dessen Datenschutzbestimmungen.',
+        "For directions we show a <strong>static image</strong> (map data from OpenStreetMap, embedded when the page was built). No map is embedded, so no data is transferred unless you click a link to a map service yourself. Only then do that service's privacy terms apply.",
+      )}
+    />
+  </>
+) : null}
+
+<h2>{w('Server-Logfiles (Hosting)', 'Server log files (hosting)')}</h2>
+<p
+  set:html={w(
+    'Beim Aufruf der Website werden durch den Hosting-Anbieter automatisch technische Daten (z. B. IP-Adresse, Datum und Uhrzeit, aufgerufene Seite, Browsertyp) in sogenannten Server-Logfiles gespeichert. Diese Verarbeitung dient dem sicheren und stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden nicht mit anderen Quellen zusammengeführt.',
+    'When the website is accessed, the hosting provider automatically stores technical data (e.g. IP address, date and time, page requested, browser type) in what are called server log files. This processing serves secure and stable operation (Art. 6(1)(f) GDPR). The data is not combined with other sources.',
+  )}
+/>
+
+{/* Die aufgezählten Daten kommen aus den ECHTEN Formularfeldern. Vorher stand
+    hier eine feste Liste (Name, E-Mail, Telefon, Nachricht) – bei einem
+    Reservierungsformular mit Datum, Uhrzeit und Personenzahl nannte die
+    Erklärung also weniger Daten, als tatsächlich erhoben werden. */}
+{site.formulare.length > 0 && (
+  <>
+    <h2>
+      {site.formulare.length > 1 ? w('Formulare', 'Forms') : w('Kontaktformular', 'Contact form')}
+    </h2>
+    <p>
+      <span
+        set:html={
+          site.formulare.length > 1
+            ? w(
+                'Wenn Sie uns über eines unserer Formulare schreiben, verarbeiten wir die von Ihnen angegebenen Daten, um Ihre Anfrage zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Der Versand an unser Postfach erfolgt über den Dienst <strong>Resend</strong>',
+                'When you write to us using one of our forms, we process the data you provide in order to answer your enquiry (Art. 6(1)(b) and (f) GDPR). Delivery to our mailbox is handled by the service <strong>Resend</strong>',
+              )
+            : w(
+                'Wenn Sie uns über das Kontaktformular schreiben, verarbeiten wir die von Ihnen angegebenen Daten, um Ihre Anfrage zu beantworten (Art. 6 Abs. 1 lit. b und f DSGVO). Der Versand an unser Postfach erfolgt über den Dienst <strong>Resend</strong>',
+                'When you write to us using the contact form, we process the data you provide in order to answer your enquiry (Art. 6(1)(b) and (f) GDPR). Delivery to our mailbox is handled by the service <strong>Resend</strong>',
+              )
+        }
+      />
+      {site.versandRegion === 'EU'
+        ? w(
+            ' (Resend, Inc.; die Verarbeitung findet in der Europäischen Union statt)',
+            ' (Resend, Inc.; processing takes place within the European Union)',
+          )
+        : w(
+            ' (Resend, Inc., USA – abgesichert über die EU-Standardvertragsklauseln)',
+            ' (Resend, Inc., USA – safeguarded by the EU standard contractual clauses)',
+          )}
+      {w(
+        '. Wir geben Ihre Daten nicht ohne Ihre Einwilligung an weitere Dritte weiter und speichern sie nur so lange, wie es zur Bearbeitung Ihrer Anfrage erforderlich ist.',
+        '. We do not pass your data on to further third parties without your consent and store it only as long as is necessary to handle your enquiry.',
+      )}
+    </p>
+    {/* HIER STAND DER MAIL-BETREFF – also „Neue Anfrage über <domain>".
+        Das ist die Innensicht des Betriebs, eine Zeile, die nie für
+        Leserinnen gedacht war, und sie stand in JEDEM Klon, weil jeder Klon
+        mindestens ein Formular hat. Bei mehreren Formularen war es zudem
+        dreimal fast derselbe Betreff, also keine Unterscheidung.
+
+        Bei EINEM Formular sagt die Überschrift darüber ohnehin alles –
+        dann steht hier nur die Feldliste. */}
+    <ul>
+      {site.formulare.map((f) => (
+        <li>
+          {site.formulare.length > 1 && <strong>{f.bezeichnung ?? f.id}: </strong>}
+          {f.felder.map((feld) => (en ? (feld.labelEn ?? feld.label) : feld.label)).join(', ')}
+        </li>
+      ))}
+    </ul>
+
+    {/* WAS DER MOTOR SONST NOCH TUT – und was hier lange fehlte.
+        Alle drei Punkte stecken in Motor-Dateien (api/contact.ts,
+        src/lib/kontakt.ts), nicht in Kundendaten. Sie treffen also JEDEN
+        Klon; in einem Kundenprojekt mussten sie in mehreren Prüfrunden
+        nachgetragen werden.
+
+        Das verdeckte Feld `bezug` fehlte in dieser Aufzählung. Es wird
+        wirklich übertragen (Formular.astro) und landet in der Mail an den
+        Betrieb – bei einem Katalog steht darin, welchen Eintrag jemand
+        angesehen hat. Die Liste oben kommt aus der Feldliste der Config
+        und kennt es nicht; damit zählte die Erklärung weniger auf, als
+        tatsächlich übertragen wird. */}
+    <p
+      set:html={w(
+        'Beim Absenden werden zusätzlich <strong>technisch notwendige Angaben</strong> mitgeschickt: welches Formular es war und wann die Seite geladen wurde. Beides dient ausschließlich der Abwehr automatisierter Massenzusendungen und wird nicht ausgewertet. Haben Sie das Formular von einem bestimmten Eintrag aus geöffnet, wird außerdem <strong>die Bezeichnung dieses Eintrags</strong> mitgeschickt – damit wir wissen, worauf sich Ihre Anfrage bezieht.',
+        'When you submit the form, <strong>technically necessary details</strong> are sent along as well: which form it was and when the page was loaded. Both serve solely to fend off automated bulk messages and are not evaluated. If you opened the form from a particular entry, <strong>the name of that entry</strong> is sent as well – so that we know what your enquiry refers to.',
+      )}
+    />
+    <p
+      set:html={w(
+        'Ihre <strong>IP-Adresse</strong> wird beim Absenden für kurze Zeit im Arbeitsspeicher unseres Servers gezählt, um zu erkennen, ob aus einer Quelle auffällig viele Anfragen kommen. Sie wird nicht gespeichert, nicht protokolliert und nach wenigen Minuten verworfen (Art. 6 Abs. 1 lit. f DSGVO – Schutz vor Missbrauch).',
+        'When you submit, your <strong>IP address</strong> is counted for a short time in our server memory in order to detect whether an unusual number of requests is coming from one source. It is not stored, not logged and discarded after a few minutes (Art. 6(1)(f) GDPR – protection against misuse).',
+      )}
+    />
+    {/* DER ABSATZ MUSS DEM SCHALTER FOLGEN.
+        Hier stand fest verdrahtet „Sie enthält KEINE Ihrer Angaben" – während
+        `bestaetigung.angabenWiederholen: true` genau das Gegenteil einschaltet
+        und die Config das für Handwerk und Handel ausdrücklich empfiehlt.
+        Eine Erklärung, die das Gegenteil dessen behauptet, was die Seite tut,
+        ist der teuerste Fehler dieser Datei – und er entsteht lautlos, weil
+        niemand den Rechtstext liest, wenn er einen Schalter umlegt. */}
+    {site.bestaetigung?.angabenWiederholen ? (
+      <p
+        set:html={w(
+          'Haben Sie eine E-Mail-Adresse angegeben, senden wir Ihnen eine automatische <strong>Empfangsbestätigung</strong>. Darin wiederholen wir die Angaben, die Sie im Formular gemacht haben, damit Sie sie prüfen können. Die Bestätigung geht ausschließlich an die von Ihnen angegebene Adresse.',
+          'If you have given an email address, we send you an automatic <strong>confirmation of receipt</strong>. In it we repeat the details you entered in the form so that you can check them. The confirmation goes solely to the address you provided.',
+        )}
+      />
+    ) : (
+      <p
+        set:html={w(
+          'Haben Sie eine E-Mail-Adresse angegeben, senden wir Ihnen eine automatische <strong>Empfangsbestätigung</strong>. Sie enthält <strong>keine</strong> Ihrer Angaben, sondern nur den Hinweis, dass die Anfrage angekommen ist, und unsere Kontaktdaten.',
+          'If you have given an email address, we send you an automatic <strong>confirmation of receipt</strong>. It contains <strong>none</strong> of your details, only a note that the enquiry has arrived, together with our contact details.',
+        )}
+      />
+    )}
+  </>
+)}
+
+{/* MERKLISTE. Sie liegt im Speicher des GERÄTS (localStorage), geht an
+    keinen Server und braucht kein Banner – sie ist funktional und wird vom
+    Besucher selbst ausgelöst. Zwei Pflichten bleiben trotzdem: Sie muss hier
+    stehen (§ 165 TKG / ePrivacy erfassen jede Speicherung auf dem Endgerät),
+    und die Aussage „keine Cookies" oben darf nicht so stehen bleiben, als
+    würde gar nichts gespeichert. */}
+{hatMerkliste && (
+  <>
+    <h2>{w('Merkliste', 'Saved items')}</h2>
+    <p
+      set:html={w(
+        'Wenn Sie einen Eintrag vormerken, speichert Ihr Browser die Kennung dieses Eintrags <strong>auf Ihrem Gerät</strong> (im sogenannten lokalen Speicher). Diese Angabe wird <strong>nicht an uns übertragen</strong>, nicht ausgewertet und nicht mit anderen Daten verknüpft – wir erfahren nicht, was Sie sich vorgemerkt haben. Es handelt sich um kein Cookie, sondern um eine von Ihnen selbst ausgelöste Funktion. Sie können die Merkliste jederzeit leeren, indem Sie die Einträge wieder abwählen oder die Websitedaten in Ihrem Browser löschen.',
+        'When you save an entry, your browser stores the identifier of that entry <strong>on your device</strong> (in what is called local storage). This detail is <strong>not transferred to us</strong>, not evaluated and not linked with other data – we do not learn what you have saved. It is not a cookie but a function you trigger yourself. You can clear the list at any time by deselecting the entries or deleting the website data in your browser.',
+      )}
+    />
+  </>
+)}
+
+{/* Auftragsverarbeiter, die bei JEDEM Klon mitlaufen. Sie fehlten komplett –
+    dabei verarbeitet der Hosting-Anbieter bei jedem Seitenaufruf die
+    IP-Adresse des Besuchers. */}
+<h2>{w('Hosting', 'Hosting')}</h2>
+<p
+  set:html={w(
+    'Diese Website wird bei <strong>Vercel Inc.</strong> (340 S Lemon Ave #4133, Walnut, CA 91789, USA) gehostet. Beim Aufruf der Seite verarbeitet Vercel technisch notwendige Verbindungsdaten (u. a. IP-Adresse, Zeitpunkt, aufgerufene Adresse, Browsertyp) in Server-Protokollen. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und zuverlässigen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Die Verarbeitung erfolgt auf Grundlage eines Auftragsverarbeitungsvertrags mit dem Anbieter; für die Übermittlung in die USA stützen wir uns auf die Standardvertragsklauseln der Europäischen Kommission.',
+    'This website is hosted by <strong>Vercel Inc.</strong> (340 S Lemon Ave #4133, Walnut, CA 91789, USA). When the page is accessed, Vercel processes technically necessary connection data (including IP address, time, address requested, browser type) in server logs. The legal basis is our legitimate interest in secure and reliable operation (Art. 6(1)(f) GDPR). Processing takes place on the basis of a data processing agreement with the provider; for the transfer to the USA we rely on the standard contractual clauses of the European Commission.',
+  )}
+/>
+
+{/* HIER STAND ZUSÄTZLICH „und den EU-US Data Privacy Framework".
+    Das ist eine Zusage über eine FREMDE Firma und einen Zertifizierungsstand,
+    den niemand hier prüft und der sich jederzeit ändern kann – für JEDEN
+    Klon, ungefragt. Der Motor darf über Dritte nichts behaupten, was er nicht
+    belegt; das ist dieselbe Regel wie bei Paragraphenangaben und
+    Menüpunkten fremder Oberflächen (CLAUDE.md Abschnitt 0 und 6b).
+
+    Die Standardvertragsklauseln bleiben stehen: Sie sind die Grundlage, auf
+    die sich der Betrieb selbst stützt, keine Aussage über den Anbieter.
+
+    DER AUFTRAGSVERARBEITUNGSVERTRAG IST ABER EINE ECHTE PFLICHT und steht
+    als offener Punkt in STAND.md – er muss wirklich abgeschlossen sein,
+    sonst behauptet dieser Absatz etwas, das es nicht gibt. Bei einem anderen
+    Hoster gehört der ganze Abschnitt neu geschrieben. */}
+
+<h2>{w('Ihre Rechte', 'Your rights')}</h2>
+<p>{w('Ihnen stehen nach der DSGVO folgende Rechte zu:', 'Under the GDPR you have the following rights:')}</p>
+<ul>
+  <li>{w('Auskunft über die zu Ihrer Person gespeicherten Daten (Art. 15)', 'Access to the data stored about you (Art. 15)')}</li>
+  <li>{w('Berichtigung unrichtiger Daten (Art. 16)', 'Rectification of inaccurate data (Art. 16)')}</li>
+  <li>{w('Löschung (Art. 17) und Einschränkung der Verarbeitung (Art. 18)', 'Erasure (Art. 17) and restriction of processing (Art. 18)')}</li>
+  <li>{w('Datenübertragbarkeit (Art. 20)', 'Data portability (Art. 20)')}</li>
+  <li>{w('Widerspruch gegen die Verarbeitung (Art. 21)', 'Objection to processing (Art. 21)')}</li>
+  {/* Der Widerruf fehlte in dieser Liste, obwohl der Widerruf-KNOPF weiter
+      oben in der Seite steht. Er gehört genau dorthin, wo jeder danach
+      sucht – und er wird gebraucht, sobald irgendwo eine Einwilligung
+      eingeholt wird: jede 2-Klick-Einbettung, jeder Eintrag in `dienste`. */}
+  <li>{w('Widerruf einer erteilten Einwilligung mit Wirkung für die Zukunft (Art. 7 Abs. 2)', 'Withdrawal of consent given, with effect for the future (Art. 7(2))')}</li>
+</ul>
+<p>
+  {w('Wenden Sie sich dazu bitte an ', 'To do so, please contact ')}
+  <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>.
+  {w(
+    ' Außerdem haben Sie das Recht auf Beschwerde bei der österreichischen Datenschutzbehörde (',
+    ' You also have the right to lodge a complaint with the Austrian data protection authority (',
+  )}<a href="https://www.dsb.gv.at" target="_blank" rel="noopener noreferrer">www.dsb.gv.at</a>).
+</p>
