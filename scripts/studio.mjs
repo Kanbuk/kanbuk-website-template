@@ -113,13 +113,53 @@ datei(
   ) + '\n',
 );
 
-datei(
-  'sanity.cli.js',
-  `import { defineCliConfig } from 'sanity/cli';
+/* DER STUDIO-NAME wird aus dem Ordnernamen abgeleitet: `<kunde>-studio` wird
+   zu `<kunde>`. Sanity erlaubt dort nur Kleinbuchstaben, Ziffern und
+   Bindestriche. */
+const studioName = name.replace(/-studio$/, '').replace(/[^a-z0-9-]/gi, '').toLowerCase();
 
-export default defineCliConfig({
+datei(
+  /* ALS .ts, NICHT ALS .js – und das ist kein Geschmack, sondern notwendig.
+     Sanity sucht genau zwei Dateinamen: `sanity.cli.js` und `sanity.cli.ts`.
+     Die .js-Fassung liest es intern mit `require` ein. Die package.json dieses
+     Studios enthält aber `"type": "module"`, und damit ist jede .js-Datei ein
+     ES-Modul, in dem es kein `require` gibt. */
+  'sanity.cli.ts',
+  `/*
+ * ALS .ts, NICHT ALS .js – und das ist kein Geschmack, sondern notwendig.
+ *
+ * Sanity sucht genau zwei Dateinamen: \`sanity.cli.js\` und \`sanity.cli.ts\`.
+ * Die .js-Fassung liest es intern mit \`require\` ein. Die package.json dieses
+ * Studios enthält aber "type": "module", und damit ist jede .js-Datei ein
+ * ES-Modul, in dem es kein \`require\` gibt. Ergebnis:
+ *
+ *   Error reading "sanity.cli.js": require is not defined in ES module scope
+ *
+ * Und jetzt das Gefährliche daran: \`sanity deploy\` bricht deswegen NICHT ab.
+ * Es gibt die Fehlermeldung aus, druckt seine Hilfeseite – und beendet sich
+ * mit RÜCKGABE 0. Wer nur auf den Rückgabewert schaut, hält das für Erfolg.
+ * In einem Kundenprojekt genau so passiert; aufgefallen erst, als die
+ * Studio-Adresse abgerufen wurde und 404 lieferte.
+ *
+ * Die .ts-Fassung geht durch Sanitys eigenen Übersetzer und umgeht das.
+ *
+ * \`defineCliConfig\` steht hier bewusst nicht: Der benannte Export lässt sich
+ * in dieser Version ebenfalls nicht auflösen, und er ist ohnehin nur eine
+ * Typ-Hilfe. Ein schlichtes Objekt tut dasselbe und hängt an keiner Version.
+ */
+export default {
   api: { projectId: '${dienst.projekt}', dataset: '${datensatz}' },
-});
+  /**
+   * Die Adresse des Studios: ${studioName}.sanity.studio
+   *
+   * Ohne diese Angabe fragt \`sanity deploy\` beim ersten Mal danach und bleibt
+   * stehen, bis jemand tippt – in einem Ablauf ohne Tastatur bleibt er hängen.
+   *
+   * NICHT MEHR ÄNDERN: Es ist die Adresse, die der Betrieb sich merkt und im
+   * Browser speichert. Ein neuer Name heisst ein totes Lesezeichen.
+   */
+  studioHost: '${studioName}',
+};
 `,
 );
 
