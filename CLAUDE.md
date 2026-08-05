@@ -7,6 +7,11 @@
 
 ## 0. Mit wem du arbeitest (**zuerst lesen**)
 
+**Der Ablauf im Ganzen steht in `ABLAUF.md`** – eine Seite: welche drei
+Stufen ein Betrieb durchläuft, welcher Ordner wann entsteht (lokal, GitHub,
+Vercel) und was die neun Tore prüfen. Wer wissen will, WO im Prozess er gerade
+ist, liest dort; diese Datei sagt, wie gebaut wird.
+
 **Lies als Allererstes `STAND.md`** – das Gedächtnis dieses Projekts. Dort stehen
 Phase, Lücken-Inventar und bisherige Entscheidungen. Nach jeder Arbeitssitzung
 **aktualisierst du sie** (Pflicht): Verlaufszeile ergänzen, erledigte Punkte abhaken,
