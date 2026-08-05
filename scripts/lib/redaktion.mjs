@@ -6,11 +6,30 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { BETRIEB, RECHT, KATALOG } from '../../redaktion/felder.mjs';
 
-/** Die drei Dokumente, in die sich die Feldliste aufteilt. */
+/**
+ * DIE NAHTSTELLE DES REDAKTIONS-BAUSTEINS – hier steht, was zusammengehört.
+ * ---------------------------------------------------------------------------
+ * Alles, was mit gepflegten Inhalten zu tun hat, leitet sich aus dieser Liste
+ * ab: die Eingabemaske (`npm run maske`), die Abfrage (`npm run inhalte`), die
+ * Erstbefüllung und die Regeln des Prüf-Tors. Ein viertes Dokument entsteht
+ * deshalb HIER und wirkt überall – es gibt keine zweite Stelle, an der die
+ * Zuordnung noch einmal steht.
+ *
+ * WARUM DAS AUSDRÜCKLICH DASTEHT: Es war schon so gebaut, sagte es aber
+ * nirgends. Das Prüf-Tor hat die Zugehörigkeit deshalb am PUNKT im Pfad
+ * geraten – „mit Punkt gehört in die Config, ohne Punkt ist ein Katalogfeld".
+ * Für die drei Dokumente von heute stimmt das zufällig. Ein viertes (Team,
+ * Räume, Kurse) hätte ebenfalls punktlose Felder und wäre stillschweigend
+ * gegen den Katalog-Typ geprüft worden: entweder Fehlalarme oder – schlimmer –
+ * ein Feld, das durchgeht und nirgends erscheint.
+ *
+ * `motorTyp` ist die Antwort darauf: der Typ in content.config.ts, in dem die
+ * Pfade dieses Dokuments beginnen. Das Prüf-Tor liest ihn, statt zu raten.
+ */
 export const DOKUMENTE = [
-  { typ: 'betrieb', titel: 'Betriebsdaten', felder: BETRIEB, einzeln: true },
-  { typ: 'impressum', titel: 'Impressum', felder: RECHT, einzeln: true },
-  { typ: 'eintrag', titel: 'Katalog-Eintrag', felder: KATALOG, einzeln: false },
+  { typ: 'betrieb', titel: 'Betriebsdaten', felder: BETRIEB, einzeln: true, motorTyp: 'SiteConfig' },
+  { typ: 'impressum', titel: 'Impressum', felder: RECHT, einzeln: true, motorTyp: 'SiteConfig' },
+  { typ: 'eintrag', titel: 'Katalog-Eintrag', felder: KATALOG, einzeln: false, motorTyp: 'KatalogEintrag' },
 ];
 
 /**

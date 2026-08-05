@@ -1817,6 +1817,23 @@ if (istLive || nurLive) {
   const hatDienst = existsSync('redaktion/dienst.json');
   const hatInhalte = existsSync('daten/inhalte.json');
 
+  /* DIE NAHTSTELLE, gegen die alle Regeln hier laufen: DOKUMENTE sagt, welches
+     Feld zu welchem Dokument gehört und in welchem Typ der Config seine Pfade
+     beginnen. Einmal geholt, von beiden Regeln benutzt. */
+  let dokumente = [];
+  if (existsSync('redaktion/felder.mjs')) {
+    try {
+      dokumente = (await import('./lib/redaktion.mjs')).DOKUMENTE;
+    } catch (e) {
+      fehler(
+        [
+          `redaktion/felder.mjs lässt sich nicht lesen: ${e.message}`,
+          '    Ohne die Feldliste entsteht keine Eingabemaske – der Betrieb kann nichts pflegen.',
+        ].join('\n'),
+      );
+    }
+  }
+
   // --- 1. Jedes angebotene Feld muss es im Motor wirklich geben ------------
   //
   // Ein Feld in der Maske, das der Motor nicht kennt, ist eine Einladung ins
@@ -1824,8 +1841,6 @@ if (istLive || nurLive) {
   // nirgends. Der Pfad wird deshalb Stück für Stück durch die Typen der
   // Config verfolgt.
   if (existsSync('redaktion/felder.mjs')) {
-    const felderText = readFileSync('redaktion/felder.mjs', 'utf-8');
-
     /** Die Felder eines `export interface X { … }` als Name -> Typ. */
     const schnittstelle = (name) => {
       const block = configText.match(new RegExp(`^export interface ${name} \\{([\\s\\S]*?)^\\}`, 'm'));
@@ -1853,26 +1868,38 @@ if (istLive || nurLive) {
       return undefined;
     };
 
-    /* OHNE KOMMENTARE LESEN – dieselbe Lehre wie bei der Marker-Suche.
-       Ein Erklärtext, der die Benutzung zeigt („{ pfad: '…', typ: 'auswahl' }"),
-       sah für diese Regel aus wie ein echtes Feld, und das Tor meldete
-       prompt: „bietet „…" an, aber „…" fehlt in „KatalogEintrag"". Passiert
-       beim ersten Beispiel, das jemand schreibt – hier am 03.08.2026 sofort. */
-    const pfade = [...ohneKommentare(felderText).matchAll(/pfad:\s*'([^']+)'/g)].map((m) => m[1]);
-    // Die Katalogfelder stehen ohne Vorsatz in der Liste (id, titel, …), die
-    // übrigen mit ihrem vollen Weg durch die Config.
-    for (const pfad of pfade) {
-      const mangel = pfad.includes('.')
-        ? verfolge('SiteConfig', pfad)
-        : verfolge('KatalogEintrag', pfad);
-      if (!mangel) continue;
-      fehler(
-        [
-          `redaktion/felder.mjs bietet „${pfad}" an, aber ${mangel}.`,
-          '    Die Eingabemaske entsteht aus dieser Liste. Ein Feld, das der Motor nicht',
-          '    kennt, füllt der Betrieb aus – und es erscheint nirgends auf der Website.',
-        ].join('\n'),
-      );
+    /* DIE ZUGEHÖRIGKEIT WIRD GELESEN, NICHT AM PUNKT GERATEN.
+       Hier stand: „mit Punkt gegen SiteConfig, ohne Punkt gegen
+       KatalogEintrag". Für die drei Dokumente von heute stimmt das zufällig –
+       ein viertes (Team, Räume, Kurse) hätte ebenfalls punktlose Felder und
+       wäre still gegen den Katalog-Typ geprüft worden. Die Wahrheit steht in
+       DOKUMENTE (scripts/lib/redaktion.mjs), samt `motorTyp`.
+
+       Importiert statt im Text gesucht: Damit fällt zugleich die alte Falle
+       weg, dass ein Beispiel im Erklärkommentar („{ pfad: '…' }") wie ein
+       echtes Feld aussah und das Tor prompt meldete. */
+    for (const dok of dokumente) {
+      if (!dok.motorTyp) {
+        fehler(
+          [
+            `scripts/lib/redaktion.mjs: Dokument „${dok.typ}" hat kein \`motorTyp\`.`,
+            '    Ohne ihn weiß das Prüf-Tor nicht, gegen welchen Typ der Config es die',
+            '    Felder halten soll – und prüft dieses Dokument gar nicht.',
+          ].join('\n'),
+        );
+        continue;
+      }
+      for (const feld of dok.felder) {
+        const mangel = verfolge(dok.motorTyp, feld.pfad);
+        if (!mangel) continue;
+        fehler(
+          [
+            `redaktion/felder.mjs bietet „${feld.pfad}" an, aber ${mangel}.`,
+            '    Die Eingabemaske entsteht aus dieser Liste. Ein Feld, das der Motor nicht',
+            '    kennt, füllt der Betrieb aus – und es erscheint nirgends auf der Website.',
+          ].join('\n'),
+        );
+      }
     }
   }
 
@@ -1899,24 +1926,27 @@ if (istLive || nurLive) {
       .map((f) => readFileSync(f, 'utf-8'))
       .join('\n');
 
-    const felderText = readFileSync('redaktion/felder.mjs', 'utf-8');
-    for (const m of felderText.matchAll(/pfad:\s*'([^']+)'/g)) {
-      const letzter = m[1].split('.').pop();
-      // Katalogfelder liest der Motor generisch (KatalogEintrag) – dort ist
-      // ein Feld nie eine Attrappe, es steht im Typ.
-      if (!m[1].includes('.')) continue;
-      /* KEIN Template-Literal für ein Suchmuster: Dort wird `\b` zum
-         BACKSPACE-Zeichen statt zur Wortgrenze, und `\[` verliert seinen
-         Backslash. Das Muster trifft dann nie – und eine Regel, die nie
-         trifft, meldet jedes Feld als Attrappe. Beim Bauen genau so passiert. */
-      if (new RegExp('[.\\[\'"]' + letzter + '\\b').test(quellen)) continue;
-      warnung(
-        [
-          `redaktion/felder.mjs bietet „${m[1]}" an, aber nichts liest „${letzter}".`,
-          '    Der Betrieb füllt das Feld aus, sieht „veröffentlicht" – und auf der',
-          '    Website ändert sich nichts. Entweder ausgeben oder das Feld entfernen.',
-        ].join('\n'),
-      );
+    /* ÜBERSPRUNGEN WERDEN LISTEN-DOKUMENTE, NICHT „Felder ohne Punkt".
+       Ein Katalogeintrag wird über seinen Typ ausgegeben, dort ist kein Feld
+       eine Attrappe. Maßgeblich ist `einzeln: false` in DOKUMENTE – ein
+       viertes Listen-Dokument fällt damit von selbst richtig heraus, statt
+       daran zu hängen, ob im Pfad zufällig ein Punkt steht. */
+    for (const dok of dokumente.filter((d) => d.einzeln)) {
+      for (const feld of dok.felder) {
+        const letzter = feld.pfad.split('.').pop();
+        /* KEIN Template-Literal für ein Suchmuster: Dort wird `\b` zum
+           BACKSPACE-Zeichen statt zur Wortgrenze, und `\[` verliert seinen
+           Backslash. Das Muster trifft dann nie – und eine Regel, die nie
+           trifft, meldet jedes Feld als Attrappe. Beim Bauen genau so passiert. */
+        if (new RegExp('[.\\[\'"]' + letzter + '\\b').test(quellen)) continue;
+        warnung(
+          [
+            `redaktion/felder.mjs bietet „${feld.pfad}" an, aber nichts liest „${letzter}".`,
+            '    Der Betrieb füllt das Feld aus, sieht „veröffentlicht" – und auf der',
+            '    Website ändert sich nichts. Entweder ausgeben oder das Feld entfernen.',
+          ].join('\n'),
+        );
+      }
     }
   }
 
