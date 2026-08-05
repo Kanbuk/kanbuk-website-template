@@ -34,6 +34,33 @@ Drei Regeln dahinter:
 Ordnername, Projektname ohne Präfix, Subdomain ohne Präfix. Auch `package.json`
 trägt den Namen inklusive Präfix, also wie das Repo.
 
+### Wenn derselbe Betrieb ZWEI Ordner braucht
+
+Der Regelweg erzeugt für einen Lead nacheinander zwei Dinge, und sie leben
+eine Zeit lang nebeneinander:
+
+1. die **Verkaufs-Demo** aus dem Standalone-HTML (`npm run demo`) – schnell,
+   zum Verschicken, deployt auf `demo-<betrieb>.kanbuk.com`
+2. den **gebauten Klon** aus dem Motor – die echte Website, Abnahme-Vorschau
+   auf `<betrieb>.kanbuk.com`
+
+Die Tabelle oben gibt beiden denselben Ordnernamen. Das kollidiert, und zwar
+nicht im Sonderfall, sondern auf dem Standardweg.
+
+> **Der gebaute Klon behält den kurzen Namen, die Demo bekommt den Zusatz:**
+>
+> | Was | Ordner |
+> | --- | --- |
+> | Verkaufs-Demo (standalone) | `kanbuk-demos/<betrieb>-verkaufsdemo` |
+> | Design-Quelle (`.dc.html` + `assets/`) | `kanbuk-demos/<betrieb>-design` |
+> | **gebauter Klon** | `kanbuk-demos/<betrieb>` → bei Buchung nach `kanbuk-kunden/<betrieb>` |
+>
+> Begründung: Der Klon ist das bleibende Artefakt, die Demo das vergängliche.
+> Und die Design-Quelle gehört nicht in den Demo-Ordner – dort lag sie einmal,
+> und prompt hielt ein späterer Blick eine **deployte Demo** für eine
+> Materialsammlung. Die `.vercel`-Verknüpfung liegt IM Ordner, ein Umbenennen
+> bricht also nichts.
+
 **Vercel-Realität (im Piloten gelernt, alle drei Punkte prüfen):**
 - Zugang: `npx vercel whoami` – falls nicht eingeloggt, den Nutzer durch
   `npx vercel login` führen (Firmen- bzw. eigenes Konto).

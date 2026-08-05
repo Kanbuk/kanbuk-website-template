@@ -427,6 +427,53 @@ console.log(
     `${designSeiten.rahmen.length} Rahmen-Teil(e)`,
 );
 
+/* NULL ERKANNTE SEITEN IST KEIN GRÜNES TOR.
+   ---------------------------------------------------------------------------
+   Die Seitenerkennung setzt EINE bestimmte Export-Form voraus: alle Seiten in
+   EINER Datei, jede unter einem Schalter `<sc-if value="{{ isX }}">` direkt in
+   `<main>`. Claude Design liefert aber auch eine zweite Form – eine Datei JE
+   Seite, und der Schalter im Inneren steht dann für etwas anderes (etwa die
+   Sprache: `{{ de }}` / `{{ en }}`).
+
+   In dieser zweiten Form findet die Schleife oben NICHTS. Ohne diese Prüfung
+   lief das Tor dann durch: „0 Seite(n) im Design", danach vergleicht die
+   Hauptschleife null Seiten, und am Ende steht ein grüner Haken. Also genau
+   der Zustand, den der Kasten weiter oben für die FEHLENDE Datei schon
+   abgestellt hat – nur eine Ebene später und deshalb übersehen.
+
+   Ein Tor, das grün meldet, ohne etwas verglichen zu haben, ist schlimmer als
+   keines: Punkt 3c der Definition of Done gilt als erfüllt, und niemand sieht
+   mehr nach. Deshalb hier ein Abbruch mit der Diagnose statt eines Hakens.
+
+   Mehrere .dc.html im Ordner sind ein starker Hinweis auf die zweite Form –
+   verglichen würde ohnehin nur die erste Datei (`designDatei()` nimmt
+   `treffer[0]`), also wird auch das gesagt. */
+if (designSeiten.seiten.length === 0) {
+  const weitere = readdirSync(DESIGN).filter((f) => f.endsWith('.dc.html'));
+  console.log(
+    '\n✗ In der Design-Datei wurde KEINE einzige Seite erkannt.\n' +
+      '\n' +
+      '  Erwartet wird ein Seiten-Schalter je Seite, direkt in <main>:\n' +
+      '      <main><sc-if value="{{ isHome }}"> … </sc-if></main>\n' +
+      '\n' +
+      (weitere.length > 1
+        ? `  Im Ordner design/ liegen ${weitere.length} .dc.html-Dateien ` +
+          `(${weitere.join(', ')}).\n` +
+          '  Verglichen wurde nur die erste. Das deutet auf die andere Export-Form\n' +
+          '  hin: EINE Datei JE SEITE. Die versteht dieses Tor noch nicht.\n'
+        : '  Gefunden wurde keiner. Möglich ist die andere Export-Form – eine\n' +
+          '  Datei je Seite – die dieses Tor noch nicht versteht.\n') +
+      '\n' +
+      '  DAS IST KEIN GRÜNES TOR (CLAUDE.md Abschnitt 9, Punkt 3c).\n' +
+      '  Punkt 3d bleibt Pflicht und ersetzt es hier: Design-Datei neben die\n' +
+      '  gebaute Seite legen und Block für Block mit eigenen Augen vergleichen.\n' +
+      '  Und: als Motor-Meldung in STAND.md eintragen – das Tor gehört auf\n' +
+      '  diese zweite Export-Form erweitert.',
+  );
+  await browser.close();
+  process.exit(1);
+}
+
 // ---------------------------------------------------------------------------
 //  2. Zuordnung Design-Seite -> Route
 //

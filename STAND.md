@@ -189,7 +189,24 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
      Details: CLAUDE.md Abschnitt 0 → „Motor-Meldung". Der Inhaber trägt diese
      Punkte ins Master-Template zurück – NICHT selbst am Template arbeiten. -->
 
-- *(keine)*
+- **Das Design-Tor kennt nur EINE Export-Form.** `npm run abgleich` erwartet
+  alle Seiten in einer Datei, jede unter `<sc-if value="{{ isX }}">` direkt in
+  `<main>`. Claude Design liefert aber auch eine zweite Form: **eine Datei je
+  Seite**, und der Schalter im Inneren steht dort für etwas anderes (bei einem
+  vorbereiteten Gastro-Design: die Sprache, `{{ de }}` / `{{ en }}`).
+
+  In dieser Form erkennt das Tor **null Seiten** – und lief bis 05.08.2026
+  trotzdem grün durch. Also derselbe Zustand, den der Kasten für die FEHLENDE
+  Design-Datei längst abstellt, nur eine Ebene später und deshalb übersehen.
+  Punkt 3c der Definition of Done galt damit als erfüllt, ohne dass ein
+  einziger Block verglichen wurde.
+
+  *Vorläufig behoben:* Null erkannte Seiten sind jetzt ein Abbruch mit
+  Diagnose, kein Haken (`scripts/abgleich.mjs`, gegengeprüft an beiden
+  Export-Formen: alte Form 11 Seiten/43 Blöcke unverändert, neue Form bricht ab
+  und nennt die Dateien). *Offen bleibt:* Das Tor auf die zweite Form zu
+  erweitern – eine Datei je Seite, Zuordnung über den Dateinamen. Bis dahin
+  ersetzt Punkt 3d (das eigene Auge) den Vergleich, und der ist ohnehin Pflicht.
 
 ## Vorgemerkt: Gesundheitsberufe (Praxis, Zahnarzt, Physio, Psychotherapie)
 
