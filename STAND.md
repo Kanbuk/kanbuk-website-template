@@ -334,7 +334,53 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   beim Ansehen der Kontaktbögen gefunden. Die Referenzseite führt das Häkchen
   jetzt mit, damit der Weg nicht wieder ungeprüft bleibt.
 
-  Alle neun Tore grün, Kontaktbögen angesehen, Version auf 2026.8.6.
+  Alle neun Tore grün, Kontaktbögen angesehen.
+
+  **Nachprüfung desselben Tages, und sie hat sich gelohnt.** Jeder der sechs
+  Befund-Abschnitte wurde einzeln gegen den Template-Stand gehalten, danach ein
+  Skeptiker auf jedes „erledigt" angesetzt. Ergebnis: neun Posten waren nur
+  halb da – und die Hälfte davon in Dingen, die als fertig gemeldet waren.
+
+  - **Die Sprache lief an drei Stellen aus.** Die häufigste Formularmeldung
+    überhaupt („Bitte ausfüllen: …") nannte die DEUTSCHEN Feldnamen, auch auf
+    einer englischen Seite; die Ausfall-Meldung hängte „Telefon …" in einen
+    englischen Satz; und die Angaben-Liste der Bestätigungsmail war die einzige
+    Textstelle der Datei ohne Sprachparameter. Dazu der Weg OHNE JavaScript:
+    Dort wird der Meldungstext verworfen (der Browser bekommt eine SEITE), also
+    landete ein englischer Absender trotz `?lang=en` auf der deutschen
+    Fehlerseite. Das Formular sagt dem Server jetzt mit `&en=1`, ob es die
+    englischen Antwortseiten überhaupt gibt – nachsehen kann der Server das
+    nicht, er läuft in Node ohne Bau-Werkzeug.
+  - **Der Motor hatte seine eigene Zeitbombe.** `Oeffnungszeiten.astro`
+    rechnete beim BAUEN aus, welche Abweichung noch bevorsteht – genau das,
+    was CLAUDE.md Abschnitt 5 seit heute verbietet. Ein Betriebsurlaub, der
+    nach dem letzten Bau endet, wäre für immer stehengeblieben. Jetzt
+    entscheidet der Browser, in der Zeitzone des Betriebs. Gegengeprüft mit
+    vorgestellter Uhr: vorher sichtbar, nachher weg, dazwischen genau der eine
+    abgelaufene Eintrag ausgeblendet.
+  - **Der Grund, warum es niemand sah:** Die Referenzseite baute den Baustein
+    gar nicht – kein `<Oeffnungszeiten />`, keine `sonderzeiten` in der Config.
+    Beides steht jetzt drin. Was die Referenzseite nicht baut, prüft kein Tor.
+  - **Zwei tote Regeln.** Die Abbruchbedingung der Erstbefüllung zählte
+    Dokument-TYPEN statt Inhalte und war damit konstant falsch; `--probe` stürzte
+    im leeren Fall ab. Und meine erste Fassung der Feiertags-Regel suchte im
+    gebauten HTML nach abgelaufenen Terminen – die der Bau vorher wegfiltert.
+    Sie liest jetzt die Config.
+  - **Der Link im Zustimmungs-Häkchen hatte keine einzige Stilregel.** Setzt
+    eine Design-Datei `a { text-decoration: none }`, ist er von Text nicht mehr
+    zu unterscheiden – und beide Tore bleiben grün, weil das eine `<a href=`
+    sucht und das andere klickt.
+  - **Die Tor-Zählung war durch die drei neuen Tore selbst falsch geworden:**
+    Überschrift „die sechs Tore" über neun Zeilen, und die Definition of Done
+    kannte `unterlaengen`, `bildschaerfe` und `endpunkt` gar nicht. Genau die
+    Verwirrung, gegen die die Nummerierung einmal eingeführt wurde.
+  - Dazu: Danke- und Fehlerseite siezten in Titel und Beschreibung hart; die
+    Search-Console-Auswertung, der 16-px-Vorrang, das Unterlängen-Rezept und
+    die Rubrik „Nach dem Live-Gang" fehlten in den Skills; die
+    Anleitungs-Vorlage behauptete eine Wartezeit, die ohne Webhook falsch ist.
+
+  Version bleibt **2026.8.5** – sie folgt dem Kalender, und ein zwischendurch
+  gesetztes 2026.8.6 hätte den Motor auf morgen datiert.
 
 - **2026-08-03 (abends)** – **Rückfluss aus einem zweisprachigen Beauty-Piloten
   (Relaunch, Deutsch + Englisch, 16 Seiten).** Elf Funde, alle im Klon zuerst

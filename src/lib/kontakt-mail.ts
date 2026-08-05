@@ -73,14 +73,25 @@ function einzeilig(wert: string): string {
   return wert.replace(/[\r\n]+/g, ' ').trim().slice(0, MAX_WERT);
 }
 
-function ausgefuellt(formular: Formular, daten: Record<string, string>) {
+/* DIE ANGABEN-LISTE WAR DIE EINZIGE TEXTSTELLE OHNE SPRACHE.
+   Titel, Fliesstext, Datenschutzsatz und Kontaktzeile schalten laengst um –
+   hier standen weiter die deutschen Feldbeschriftungen und ein fest
+   verdrahtetes „Ihre Auswahl". Sichtbar wird es, sobald ein Kunde
+   `bestaetigung.angabenWiederholen` einschaltet: Dann steht in der englischen
+   Mail „This is what you sent us:" und darunter „Vorname / Nachricht /
+   Ihre Auswahl". */
+function ausgefuellt(formular: Formular, daten: Record<string, string>, sprache: Sprache = 'de') {
   const zeilen: { label: string; wert: string }[] = [];
   for (const feld of formular.felder) {
     const wert = (daten[feld.name] ?? '').trim();
-    if (wert) zeilen.push({ label: feld.label, wert: einzeilig(wert) });
+    if (!wert) continue;
+    const label = sprache === 'en' ? (feld.labelEn ?? feld.label) : feld.label;
+    zeilen.push({ label, wert: einzeilig(wert) });
   }
   const bezug = (daten.bezug ?? '').trim();
-  if (bezug) zeilen.push({ label: 'Ihre Auswahl', wert: einzeilig(bezug) });
+  if (bezug) {
+    zeilen.push({ label: sprache === 'en' ? 'Your selection' : 'Ihre Auswahl', wert: einzeilig(bezug) });
+  }
   return zeilen;
 }
 
@@ -176,7 +187,7 @@ export function bestaetigungText(
       satz('Das hast du uns geschickt:', 'Das haben Sie uns geschickt:', 'This is what you sent us:', sprache),
       '',
     );
-    for (const z of ausgefuellt(formular, daten)) zeilen.push(`${z.label}: ${z.wert}`);
+    for (const z of ausgefuellt(formular, daten, sprache)) zeilen.push(`${z.label}: ${z.wert}`);
     zeilen.push('');
   } else {
     zeilen.push(
@@ -248,7 +259,7 @@ export function bestaetigungHtml(
   daten: Record<string, string>,
   sprache: Sprache = 'de',
 ): string {
-  const angaben = einstellung.angabenWiederholen ? ausgefuellt(formular, daten) : [];
+  const angaben = einstellung.angabenWiederholen ? ausgefuellt(formular, daten, sprache) : [];
   const pflicht = pflichtangaben();
 
   /* Der Kopf: Logo, wenn eines eingetragen ist – sonst der Name als Text.

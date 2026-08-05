@@ -234,11 +234,26 @@ in den Kontext zu laden.
      `sitemap_index.xml` mit **Unterstrich**, Motor: `sitemap-index.xml` mit
      **Bindestrich**. Standard-Eintrag setzen, in jedem Projekt mit
      Vorgänger-Website.
-  2. **Search-Console-Export auswerten.** Die Sitemap zeigt nur, was die alte
-     Seite HEUTE listet – der Export zeigt, was Google AUSLIEFERT. Bei jedem
-     Betrieb mit wechselndem Angebot (Kurse, Objekte, Aktionen) sind das genau
-     die Adressen, die aus der Sitemap verschwunden sind und trotzdem noch
-     Treffer bringen.
+  2. **Search-Console-Export auswerten – und ins Repo legen** (`daten/search-console/`).
+     Die Sitemap zeigt nur, was die alte Seite HEUTE listet; der Export zeigt,
+     was Google AUSLIEFERT. Bei jedem Betrieb mit wechselndem Angebot (Kurse,
+     Objekte, Aktionen) sind das genau die Adressen, die aus der Sitemap
+     verschwunden sind und trotzdem noch Treffer bringen.
+
+     **Er wird abgelegt, nicht nur überflogen** – aus zwei Gründen. Er ist der
+     Ausgangsstand: Vier Wochen nach dem Umzug will jemand wissen, ob die
+     Sichtbarkeit gehalten hat, und ohne Vorher-Zahlen ist jede Antwort
+     geraten. Und er entscheidet drei Fragen, die sonst nach Gefühl entschieden
+     werden:
+
+     | Frage | Was der Export dazu sagt |
+     | --- | --- |
+     | **www oder Kurzform** als Hauptadresse? | welche der beiden die Klicks hat |
+     | Worauf zielt die Sichtprüfung? | der Handy-Anteil |
+     | Welche Sprache steht an der Wurzel? | die Sprache der stärksten Anfragen |
+
+     Bei einer echten Umstellung lag die Vermutung zur Adressrichtung messbar
+     daneben.
   3. **DNS-Zone beim Anbieter EXPORTIEREN**, nicht von außen abfragen, und den
      Export als Wiederherstellungspunkt ins Repo legen. Eine Abfrage zeigt, was
      gerade beantwortet wird; der Export zeigt, was eingetragen ist. Im
@@ -376,11 +391,30 @@ wird dabei ersetzt.
 > - Für jede Komponente die Definition im `_ds_bundle.js` lesen – **nicht** vom
 >   Bildschirmfoto ableiten.
 > - **Jede Abweichung beim Entstehen notieren und begründen.** Sie gehört in den
->   Abschlussbericht. Zwei Abweichungen sind sogar Pflicht und brauchen keine
->   Diskussion: Schrift unter 12 px und zu geringer Kontrast – da schlägt der
->   Motor das Design (CLAUDE.md Abschnitt 4).
+>   Abschlussbericht. DREI Abweichungen sind sogar Pflicht und brauchen keine
+>   Diskussion: Schrift unter 12 px, zu geringer Kontrast – und
+>   **Eingabefelder unter 16 px**. Da schlägt der Motor das Design (CLAUDE.md
+>   Abschnitt 4). Die dritte ist der Regelfall, nicht die Ausnahme: Designs
+>   geben für Felder fast immer 14 px vor, und darunter zoomt jedes iPhone beim
+>   Antippen in die Seite hinein.
 
 **Beim Übertragen gilt außerdem:**
+- **Überschrift mit Farbverlauf? Dann IMMER beide Zeilen mitnehmen:**
+  ```css
+  padding-block: 0.09em;   /* vergrössert den Malkasten */
+  margin-block: -0.09em;   /* nimmt das Aussenmass exakt zurück */
+  ```
+  Bei `background-clip: text` ist die Schrift ein Fenster auf den Hintergrund,
+  und der endet an der Elementkante – zusammen mit der Zeilenhöhe 1, die
+  dieselben Designs vorgeben, frisst das jedes g, j, p, q, y. Das Layout
+  verschiebt sich dabei um kein Pixel. Ausführlich in CLAUDE.md Abschnitt 4;
+  `npm run unterlaengen` misst es nach.
+- **Bildgrössen gestaffelt angeben, nicht eine Liste für alles.** Ein randloses
+  Banner braucht andere `widths` als ein Kartenbild. Eine gemeinsame Liste
+  bedient immer das kleinere – und das grosse Bild landet am Handy bei einem
+  Bruchteil der nötigen Auflösung, ohne dass es unscharf *aussieht*, solange
+  man nicht auf einem feinen Bildschirm hinsieht. `npm run bildschaerfe` misst
+  es nach.
 - Wo das Design schweigt: Token statt fester Pixel (**Umrechnungstabelle in
   CLAUDE.md Abschnitt 4**).
 - Jede Farbe wird zu `var(--farbe-…)`. Nie ein Hex-Wert im Markup.
@@ -489,16 +523,21 @@ wird dabei ersetzt.
 
 **Die acht Stufen, in dieser Reihenfolge:**
 
-| | Befehl | prüft |
-| --- | --- | --- |
-| 1 | `npm run check` | baut, Typen, Standard der fertigen Seite |
-| 2 | `npm run sicht` | echter Browser bei 350/430/768/1440 px + Bögen ansehen |
-| 3 | `npm run interaktion` | jedes Bedienelement wird wirklich geklickt |
-| 4 | `npm run browser` | Browser-Untergrenze + `npm run altgeraet` ansehen |
-| 5 | `npm run unterlaengen` | abgeschnittene g, j, p, q, y – vor allem bei Verlaufs-Überschriften |
-| 6 | `npm run bildschaerfe` | kommt auf einem feinen Bildschirm (2×) genug Auflösung an? |
-| 7 | **`npm run abgleich`** | gebaute Seite gegen die Design-Datei |
-| 8 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Stufe 8 unten) |
+**Die Stufennummer ist NICHT die Tornummer** – die Tore sind in CLAUDE.md
+Abschnitt 10 durchnummeriert, und dort steht `abgleich` als sechstes. Hier zählt
+die Reihenfolge des Abarbeitens. Damit sich beide Zählungen nie widersprechen,
+steht die Tornummer in der letzten Spalte.
+
+| Stufe | Befehl | prüft | Tor |
+| --- | --- | --- | --- |
+| 1 | `npm run check` | baut, Typen, Standard der fertigen Seite | 1 |
+| 2 | `npm run sicht` | echter Browser bei 350/430/768/1440 px + Bögen ansehen | 2 |
+| 3 | `npm run interaktion` | jedes Bedienelement wird wirklich geklickt | 3 |
+| 4 | `npm run browser` | Browser-Untergrenze + `npm run altgeraet` ansehen | 5 (+4) |
+| 5 | `npm run unterlaengen` | abgeschnittene g, j, p, q, y – vor allem bei Verlaufs-Überschriften | 7 |
+| 6 | `npm run bildschaerfe` | kommt auf einem feinen Bildschirm (2×) genug Auflösung an? | 8 |
+| 7 | **`npm run abgleich`** | gebaute Seite gegen die Design-Datei | 6 |
+| 8 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Stufe 8 unten) | – |
 
 > Stufe 7 und 8 sind BEIDE Pflicht und ersetzen einander nicht: Das Werkzeug
 > findet „Block fehlt / Block erfunden", das Auge alles darin.
@@ -637,6 +676,13 @@ mit Dateinamen, fehlende Rechtsdaten, fehlende Texte), getroffene Entscheidungen
 Verlaufszeile. Diese Datei ist das Gedächtnis des Projekts – der nächste Chat
 (z. B. bei Buchung, Wochen später) kennt NUR sie. `npm run check -- --live`
 blockiert den Live-Gang, solange dort offene Punkte stehen.
+
+**Dazu die Rubrik `### Nach dem Live-Gang (blockiert nicht)`** mit ihren sechs
+Standardpunkten (Wortlaut in CLAUDE.md Abschnitt 9, Punkt 5). Sie gehören
+hinein, obwohl – nein: WEIL – sie erst nach dem Umschalten passieren können.
+Als normale Häkchen würden sie die Live-Prüfung blockieren, und dann werden sie
+gestrichen, um grün zu werden. Danach sendet das Formular nachweislich nie eine
+echte Testanfrage.
 
 Dann der Bericht an den Nutzer, kurz und ehrlich:
 - **Vorschau-URL** (lokal), was gebaut wurde (Seiten, Sprachen, Funktionen)

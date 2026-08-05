@@ -31,10 +31,15 @@ import { site } from '../../content.config';
 const duzen = site.ansprache === 'du';
 ---
 
+{/* Auch hier folgen Titel und Beschreibung der Ansprache – siehe danke.astro. */}
 <BaseLayout
   pfad="/anfrage-fehler"
-  titel="Die Anfrage kam nicht an"
-  beschreibung="Die Nachricht konnte nicht entgegengenommen werden. Hier stehen die direkten Kontaktwege."
+  titel={duzen ? 'Deine Anfrage kam nicht an' : 'Ihre Anfrage kam nicht an'}
+  beschreibung={
+    duzen
+      ? 'Deine Nachricht konnte nicht entgegengenommen werden. Hier stehen die direkten Kontaktwege.'
+      : 'Ihre Nachricht konnte nicht entgegengenommen werden. Hier stehen die direkten Kontaktwege.'
+  }
   noindex
 >
   <Kopf aktuell="/anfrage-fehler" />

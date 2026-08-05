@@ -79,6 +79,15 @@ const t = motorTexte(site.ansprache, sprache);
 const b = motorBeschriftungen(sprache);
 const istDemo = site.mode === 'demo';
 
+/* Wohin das Formular sendet – samt Sprache und dem Hinweis, ob es die
+   englischen Antwortseiten wirklich gibt. Begründung am <form> unten. */
+const enAntwortseiten =
+  sprache === 'en' && hatEnglischeFassung('/danke') && hatEnglischeFassung('/anfrage-fehler');
+const versandZiel =
+  sprache === 'de'
+    ? '/api/contact'
+    : `/api/contact?lang=${sprache}${enAntwortseiten ? '&en=1' : ''}`;
+
 /* Mehrstufig? Dann die Felder auf die Schritte verteilen. Ein Feld ohne
    `schritt` landet in Schritt 1 – so wird aus einem bestehenden Formular durch
    Ergänzen von `schritte` kein leerer erster Schritt. */
@@ -178,12 +187,18 @@ if (leer) {
 {/* DIE SPRACHE HÄNGT AN DER ADRESSE (`action`), nicht an einem Feld im
     Körper. Grund: Sie muss auch auf dem Weg OHNE JavaScript ankommen, und
     dort schickt der Browser das Formular unverändert ab. `form.action` trägt
-    sie dann von selbst mit – das Skript muss nichts dazutun. */}
+    sie dann von selbst mit – das Skript muss nichts dazutun.
+
+    `&en=1` sagt dem Server zusätzlich, dass es unter /en/ wirklich eine Danke-
+    UND eine Fehlerseite gibt. Ohne diese Angabe leitet er den Weg ohne
+    JavaScript auf die deutschen – lieber eine Seite in der falschen Sprache
+    als eine 404. Nachsehen kann der Server das nicht selbst: Er läuft in Node
+    ohne Bau-Werkzeug, nur der Bau kennt das Verzeichnis. */}
 {(
   <form
     class:list={['formular', klasse, istAssistent && 'formular--assistent', istDemo && 'formular--vorschau']}
     method="post"
-    action={istDemo ? undefined : sprache === 'de' ? '/api/contact' : `/api/contact?lang=${sprache}`}
+    action={istDemo ? undefined : versandZiel}
     data-formular={istDemo ? undefined : ''}
     data-formular-vorschau={istDemo ? '' : undefined}
     data-formular-id={formular.id}
@@ -409,6 +424,18 @@ if (leer) {
     order: 1;
     flex: 0 0 auto;
     margin-top: 0.25em;
+  }
+
+  /* DER LINK IM HÄKCHEN MUSS ALS LINK ERKENNBAR BLEIBEN.
+     Farbe erbt er bewusst (das Design bestimmt sie), aber ohne eigene Regel
+     hängt seine Erkennbarkeit allein an der Browser-Vorgabe – und fast jedes
+     Design setzt irgendwo `a { text-decoration: none }`. Dann steht mitten im
+     Zustimmungssatz ein Wort, das aussieht wie Text und ein Dokument öffnet.
+     Beide Tore blieben dabei grün: Das eine sucht `<a href=`, das andere
+     klickt. Deshalb steht die Unterstreichung hier und nicht im Design. */
+  .formular__label-link {
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 
   /* Der <fieldset> bringt vom Browser einen Rahmen und Innenabstand mit, die

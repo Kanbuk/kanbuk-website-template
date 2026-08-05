@@ -138,10 +138,14 @@ export async function verarbeiteKontakt(
     return { status: 400, json: { fehler: sagt('unbekannt') } };
   }
 
-  // 3) Pflichtfelder laut Config prüfen
+  /* 3) Pflichtfelder laut Config prüfen.
+        DIE BESCHRIFTUNG IN DER SPRACHE DER SEITE. Hier stand `f.label` – also
+        immer die deutsche. Auf einer englischen Seite las die Besucherin
+        „Please fill in: Vorname, Nachricht." Das ist die HÄUFIGSTE Meldung des
+        Formulars überhaupt, und `labelEn` steht seit jeher am Feld. */
   const fehlend = formular.felder
     .filter((f) => f.pflicht && !(daten[f.name] ?? '').trim())
-    .map((f) => f.label);
+    .map((f) => (sprache === 'en' ? (f.labelEn ?? f.label) : f.label));
   if (fehlend.length > 0) {
     return { status: 400, json: { fehler: `${sagt('pflichtfelder')} ${fehlend.join(', ')}.` } };
   }
@@ -204,9 +208,11 @@ export async function verarbeiteKontakt(
              Ohne sie wäre die ganze vorangehende Verkettung die Bedingung –
              also immer wahr – und der Satz nennte auch dann eine Telefonnummer,
              wenn keine hinterlegt ist. */
+          /* Auch diese zwei Woerter folgen der Sprache – sonst steht in einem
+             englischen Satz „Telefon …, E-Mail …". */
           (site.betrieb.telefon
-            ? `Telefon ${site.betrieb.telefon}, E-Mail ${site.betrieb.email}.`
-            : `E-Mail ${site.betrieb.email}.`),
+            ? `${sprache === 'en' ? 'Phone' : 'Telefon'} ${site.betrieb.telefon}, ${sprache === 'en' ? 'email' : 'E-Mail'} ${site.betrieb.email}.`
+            : `${sprache === 'en' ? 'Email' : 'E-Mail'} ${site.betrieb.email}.`),
       },
     };
   }

@@ -452,6 +452,11 @@ und „Zu dieser Auswahl gibt es nichts" steht über der vollen Liste.
 ### Pflichtmuster für Responsiveness
 
 ```css
+/* Eingabefelder nie unter 16px – sonst zoomt jedes iPhone beim Antippen.
+   Der Motor setzt es in global.css; hier steht es, damit es niemand im
+   Design-CSS wieder überschreibt. */
+input, textarea, select { font-size: max(16px, var(--schrift-m)); }
+
 /* Grid, das nie überläuft – min() ist Pflicht */
 grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
 
@@ -742,6 +747,16 @@ Bei sehr großen Karten (mehrere Kategorien, hunderte Positionen) in
 > ist es in einem Kundenprojekt passiert, und das Werkzeug hat die falsche
 > Schreibweise damals selbst vorgesagt. Das neunte Tor (`npm run endpunkt`)
 > findet es jetzt, aber erst beim Live-Gang.
+
+**Eine Telefonnummer ist KEIN Pflichtfeld.** Nicht jeder Betrieb veroeffentlicht
+eine – bei manchen laeuft die Terminvergabe ueber einen Messenger, bei anderen
+soll schlicht niemand anrufen. § 5 ECG verlangt eine *schnelle elektronische
+Kontaktaufnahme*, und die E-Mail-Adresse erfuellt das. Vorcheck und Pruef-Tor
+nehmen `telefon` deshalb aus ihren Pflichtlisten aus.
+
+> Ohne diese Klarstellung bleiben genau zwei falsche Auswege: eine Nummer
+> erfinden oder einen `PLATZHALTER` setzen, der dann den Live-Gang blockiert.
+> Beides ist in einem Klon passiert, bevor die Regel fiel.
 
 **Allergene sind in der Gastronomie Pflicht** (österreichische Kennzeichnung A–R),
 sobald Speisen gelistet sind. Feld: `PreisPosition.allergene`.
@@ -1094,6 +1109,14 @@ und zwar unauffällig:
 | **Danke- und Fehlerseite** | eigene Routen unter `/en/`, sonst landet ein englischer Absender nach dem Absenden auf einer deutschen Seite |
 | **OG-Bildtext** | `og:image:alt` folgt der Seitensprache |
 
+**Eine bekannte Grenze:** Die Bildbeschreibungen eines Katalog-Eintrags
+(`bildAlt`) gibt es nur einmal, in der Sprache, in der der Betrieb sie pflegt.
+Ein zweites Feld dafür ist bewusst NICHT eingebaut – es wäre heute eine
+Attrappe, weil der Motor keine englischen Katalog-Detailseiten baut (die
+Adresse eines Eintrags ist einsprachig). Braucht ein Kunde das wirklich, ist
+es Motor-Arbeit und keine Konfiguration; ein Feld anzubieten, das nirgends
+gelesen wird, verbietet Abschnitt 6c aus gutem Grund.
+
 **Was der Motor von selbst richtig macht** (nichts zu tun): Sprachverweise
 (hreflang) inklusive der Rechtsseiten, `x-default`, der Sprungmarken-Link ganz
 oben, die Antworten des Formular-Servers, die Bestätigungsmail, der Link unter
@@ -1365,6 +1388,18 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
    waren alle Tore grün, während Bänder die falsche Farbe hatten und Abschnitte
    fehlten. Prüfe dabei BEIDE Richtungen: fehlt etwas aus dem Design, und steht
    auf der Seite etwas, das im Design gar nicht vorkommt?
+3e. **`npm run unterlaengen` ist grün** – das siebte Tor. Schneidet die Seite
+   g, j, p, q, y ab? Der Klassiker bei Überschriften mit Farbverlauf, und er
+   rutscht durch alle anderen Tore: Es läuft nichts über, es meldet sich
+   nichts, und auf einem Bildschirmfoto sieht ein halbes „g" aus wie ein „g".
+3f. **`npm run bildschaerfe` ist grün** – das achte Tor. Kommt auf einem Gerät
+   mit doppelter Punktdichte genug Auflösung an? Randlose Banner landen sonst
+   bei einem Bruchteil dessen, was das Original hergibt.
+3g. **Beim Live-Gang zusätzlich `npm run endpunkt`** – das neunte Tor; es läuft
+   in `npm run check -- --live` mit. Es ruft den Formular-Empfänger wirklich an
+   und verschickt nichts. Alle übrigen Tore sehen sich die gebaute Website an
+   und rufen nie den Server an – in einem Kundenprojekt war der Empfänger
+   deshalb dreimal tot, bei jedes Mal komplett grünen Toren.
 4. Lighthouse-Ziel **≥ 95** in allen vier Kategorien.
 5. **STAND.md ist aktuell** (Phase, Lücken, Verlaufszeile dieser Sitzung).
    Ein offener Punkt `- [ ]` sperrt den Live-Gang. Soll einer bewusst offen
@@ -1448,11 +1483,18 @@ keines optimiert wurde.
 
 ## 10. Werkzeuge
 
-### Die sechs Tore, durchnummeriert
+### Die neun Tore, durchnummeriert
 
 Der Text nennt an mehreren Stellen „das fünfte Tor" und „das sechste Tor" –
 **eins bis vier standen nirgends.** Wer die Nummer las, musste die Liste raten.
-Hier ist sie:
+Hier ist sie.
+
+**Die Überschrift wird mitgezählt.** Sie hieß nach dem Zuwachs vom 05.08.2026
+noch „die sechs Tore", während die Tabelle darunter neun Zeilen hatte – genau
+die Nummern-Verwirrung, gegen die sie einmal eingeführt wurde. Kommt ein Tor
+dazu, ziehen Überschrift, Tabelle, Definition of Done (Abschnitt 9), die
+Befehlstabelle unten sowie `/port` Etappe 5 und `/deploy` Weg B **gemeinsam**
+nach.
 
 | Tor | Befehl | prüft |
 | --- | --- | --- |

@@ -448,7 +448,13 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    nicht der volle Posteingang, sondern die Absender-Domain des Betriebs auf
    einer Sperrliste – danach kommt auch seine normale Geschäftspost nicht mehr
    an.
-10. Live-URL an den Nutzer.
+10. **Die Rubrik `### Nach dem Live-Gang (blockiert nicht)` in STAND.md
+    abarbeiten** – Wortlaut in CLAUDE.md Abschnitt 9, Punkt 5. Sechs Punkte,
+    die erst jetzt moeglich sind: echte Testanfrage, Firewall-Regel,
+    Vorschau-Adresse weiterleiten, Sitemap einreichen, altes Hosting
+    weiterlaufen lassen, vier Wochen den 404-Bericht mitlesen. Abhaken, was
+    erledigt ist – der Rest bleibt sichtbar stehen.
+11. Live-URL an den Nutzer.
 
 ---
 

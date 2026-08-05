@@ -29,6 +29,12 @@ import { BETRIEB, RECHT, KATALOG } from '../../redaktion/felder.mjs';
 export const DOKUMENTE = [
   { typ: 'betrieb', titel: 'Betriebsdaten', felder: BETRIEB, einzeln: true, motorTyp: 'SiteConfig' },
   { typ: 'impressum', titel: 'Impressum', felder: RECHT, einzeln: true, motorTyp: 'SiteConfig' },
+  /* OHNE KATALOG GEHÖRT DIESE ZEILE HERAUS – ersatzlos.
+     Beim Kleinbetrieb ist „kein Katalog" der Normalfall: Friseur, Wirt,
+     Installateur, Studio haben keinen. Bleibt die Zeile stehen, bekommt der
+     Betrieb im Studio einen Dokumenttyp „Katalog-Eintrag" angeboten, den er
+     nie füllen soll, und die Abfrage fragt bei jedem Abruf danach. Die
+     Erstbefüllung läuft trotzdem (sie bricht ohne Katalog nicht mehr ab). */
   { typ: 'eintrag', titel: 'Katalog-Eintrag', felder: KATALOG, einzeln: false, motorTyp: 'KatalogEintrag' },
 ];
 

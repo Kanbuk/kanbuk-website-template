@@ -107,12 +107,27 @@ const eintraege = site.katalog?.eintraege ?? [];
    Kleinbetrieb der Normalfall: Friseur, Wirt, Installateur, Studio haben
    keinen. Betriebsdaten und Impressum gehören aber sehr wohl hinein.
 
-   Abgebrochen wird jetzt nur noch, wenn es NIRGENDS etwas zu befüllen gibt. */
+   Abgebrochen wird jetzt nur noch, wenn es NIRGENDS etwas zu befüllen gibt.
+
+   GEZÄHLT WIRD INHALT, NICHT DIE ZAHL DER DOKUMENT-TYPEN. Hier stand
+   `einzelDokumente.length === 0` – und diese Liste ist in
+   scripts/lib/redaktion.mjs fest mit zwei Einträgen belegt. Die Bedingung war
+   damit konstant falsch: toter Code, der nie auslösen konnte. Bei einem
+   Betrieb ohne Katalog UND ohne gefüllte Betriebsdaten lief das Skript
+   stattdessen durch, meldete je Dokument „übersprungen" und schloss mit der
+   Erfolgszeile „0 Eintrag/Einträge im Dienst angelegt". */
 const einzelDokumente = DOKUMENTE.filter((d) => d.einzeln);
-if (eintraege.length === 0 && einzelDokumente.length === 0) {
+const hatEinzelInhalt = einzelDokumente.some((dok) =>
+  dok.felder.some((feld) => {
+    const wert = lies(site, feld.pfad);
+    if (wert === undefined || wert === null || wert === '') return false;
+    return !(Array.isArray(wert) && wert.length === 0);
+  }),
+);
+if (eintraege.length === 0 && !hatEinzelInhalt) {
   raus(
     'In content.config.ts gibt es nichts, was sich in den Dienst bringen liesse.',
-    'Weder Katalog-Einträge noch Einzeldokumente (Betriebsdaten, Impressum).\n' +
+    'Weder Katalog-Einträge noch gefüllte Betriebs- oder Impressumsfelder.\n' +
       'Dann legt der Betrieb seine Inhalte direkt im Studio an.',
   );
 }
@@ -314,6 +329,13 @@ for (const dok of einzelDokumente) {
 console.log(`\n  ${dokumente.length} Dokument(e) vorbereitet, ${bildVerweise.size} Bild(er) verknüpft.`);
 
 if (nurProbe) {
+  /* `dokumente` kann leer sein. `JSON.stringify(undefined)` gibt dann den Wert
+     `undefined` zurück, und `.split` darauf beendet die Probe mit einem
+     Absturz statt mit einer Auskunft. */
+  if (dokumente.length === 0) {
+    console.log('\n  Es wäre nichts zu schreiben – kein Eintrag und kein gefülltes Feld.\n');
+    process.exit(0);
+  }
   console.log('\n  So sähe der erste Eintrag im Dienst aus:\n');
   console.log(
     JSON.stringify(dokumente[0], null, 2)

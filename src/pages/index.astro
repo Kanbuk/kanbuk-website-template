@@ -23,6 +23,7 @@ import Schwebeknopf from '../components/Schwebeknopf.astro';
 import Formular from '../components/Formular.astro';
 import Einbettung from '../components/Einbettung.astro';
 import Symbol from '../components/Symbol.astro';
+import Oeffnungszeiten from '../components/Oeffnungszeiten.astro';
 import { site } from '../../content.config';
 import { bild } from '../lib/bilder';
 
@@ -118,6 +119,23 @@ const heroBild = bild('hero.jpg');
           anbieter="Muster Karten"
           format="4 / 3"
         />
+      </div>
+    </section>
+
+    {/* ÖFFNUNGSZEITEN MIT ABWEICHUNGEN – steht hier aus demselben Grund wie die
+        Einbettung darüber: Was die Referenzseite nicht baut, prüft kein Tor.
+        Der Baustein rechnete bis 05.08.2026 beim BAUEN, wann eine Abweichung
+        vorbei ist. Ein Betriebsurlaub, der nach dem letzten Bau endet, wäre
+        damit für immer stehengeblieben – und niemand hätte es gemeldet, weil
+        die Seite dabei nicht kaputt aussieht, nur falsch. */}
+    <section class="block block--getoent" data-reveal>
+      <div class="container container--schmal">
+        <h2>Verhaltens-Baustein: Öffnungszeiten</h2>
+        <p class="block__intro">
+          Die Wochenzeiten plus Feiertage und Betriebsurlaub. Ob eine Abweichung
+          noch bevorsteht, entscheidet der Browser – in der Zeitzone des Betriebs.
+        </p>
+        <Oeffnungszeiten />
       </div>
     </section>
 

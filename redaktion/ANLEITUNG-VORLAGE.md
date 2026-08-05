@@ -24,6 +24,10 @@ Drei Regeln für die fertige Anleitung:
    erzeugt", sondern „die Änderung landet auf der Website".
 3. **Ein Bildschirmfoto je Schritt** schlägt jeden Satz. Wo eines beiliegt, die
    Beschreibung kurz halten.
+4. **Die Ansprache folgt `content.config.ts → ansprache`.** Diese Vorlage ist
+   durchgehend in der Sie-Form geschrieben. Duzt der Betrieb, wird sie beim
+   Einrichten umgestellt – ein Klon musste sie dafür komplett neu schreiben,
+   ein Blick in die Config vorher spart das.
 
 ---
 
@@ -55,8 +59,15 @@ einfach, dann machen wir das.
 3. Felder ausfüllen. Wichtig sind: <Pflichtfelder eintragen>
 4. <Beschriftung des Veröffentlichen-Knopfs> anklicken
 
-**Die Website braucht danach ein paar Minuten**, bis die Änderung zu sehen
-ist. Das ist normal – die Seiten werden neu erzeugt, damit sie schnell bleiben.
+**Die Website braucht danach <Wartezeit eintragen – beim eingerichteten Weg
+nachgemessen, nicht geschätzt>, bis die Änderung zu sehen ist.** Das ist
+normal – die Seiten werden neu erzeugt, damit sie schnell bleiben.
+
+<!-- FÜR DEN BETREUER: Die Zahl hängt daran, WIE veröffentlicht wird. Mit
+     eingerichtetem Webhook sind es Minuten, ohne ihn bis zum nächsten
+     nächtlichen Lauf – also bis zu einen Tag. Hier stand „ein paar Minuten"
+     als feste Behauptung; ohne Webhook ist das schlicht falsch, und der
+     Betrieb meldet einen Fehler, der keiner ist. -->
 
 ## Ein Foto tauschen
 
@@ -81,9 +92,13 @@ Ladenschluss –, gehört unter <Beschriftung des Sonderzeiten-Feldes>. Diese
 Angaben gehen auch an Google: Wer am Feiertag nach Ihnen sucht, sieht dann
 dort schon, dass geschlossen ist.
 
-**Bitte auch vergangene Einträge stehen lassen oder entfernen – aber nicht
-umdatieren.** Ein Betriebsurlaub, der auf ein neues Datum umgeschrieben wird,
-wirkt sofort; sicherer ist ein neuer Eintrag.
+**Vergangene Einträge verschwinden von selbst.** Sobald ein Feiertag oder ein
+Urlaub vorbei ist, zeigt die Website ihn nicht mehr an – Sie müssen nichts
+aufräumen. Sie können ihn trotzdem löschen, wenn die Liste unübersichtlich
+wird.
+
+**Bitte aber nicht umdatieren.** Ein Betriebsurlaub, der auf ein neues Datum
+umgeschrieben wird, wirkt sofort; sicherer ist ein neuer Eintrag.
 
 ## Wenn sich Ihre Anschrift ändert
 

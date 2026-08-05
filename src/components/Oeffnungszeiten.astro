@@ -8,8 +8,12 @@
  * 25. Dezember zeigten Website und Google die normalen Zeiten, und der Gast
  * stand vor der Tür. Genau der Ärger, der als Bewertung zurückkommt.
  *
- * Zeigt automatisch nur BEVORSTEHENDE Abweichungen (Stand: Bauzeitpunkt) –
- * alte Feiertage verschwinden beim nächsten Build von selbst.
+ * Zeigt nur BEVORSTEHENDE Abweichungen – und zwar im Browser entschieden,
+ * nicht beim Bauen. Warum das der Unterschied ist, der zählt, steht in
+ * src/lib/verhalten/abweichende-zeiten.ts: Ein Bau entsteht aus einer
+ * Änderung, nie aus dem Verstreichen von Zeit. Ein beim Bauen weggefilterter
+ * Feiertag wäre richtig – ein NACH dem Bau abgelaufener bliebe für immer
+ * stehen (CLAUDE.md Abschnitt 5, „Zeitbombe").
  *
  * Verwendung:  <Oeffnungszeiten />
  *              <Oeffnungszeiten class="…" />   (Design malt an)
@@ -20,15 +24,29 @@ interface Props {
   class?: string;
   /** Abweichungen ausblenden (z. B. wenn sie an anderer Stelle stehen). */
   ohneSonderzeiten?: boolean;
+  /**
+   * Zeitzone des BETRIEBS – nicht die des Besuchers. Ein Gast aus Tokio sähe
+   * sonst am frühen Nachmittag Wiener Zeit schon den nächsten Tag.
+   * Gleicher Prop wie bei `<Oeffnungsstatus />` und `<Zeitenzeile />`.
+   */
+  zeitzone?: string;
 }
-const { class: klasse, ohneSonderzeiten = false } = Astro.props;
+const { class: klasse, ohneSonderzeiten = false, zeitzone = 'Europe/Vienna' } = Astro.props;
 
-const heute = new Date();
+/* BEIM BAUEN WIRD NUR IN DIE SICHERE RICHTUNG GEFILTERT.
+   Was zum Bauzeitpunkt schon vorbei ist, ist es zur Anzeigezeit erst recht –
+   das darf also raus und bläht das Markup nicht auf. Alles andere kommt ins
+   Markup und wird im Browser entschieden. */
+const gebautAm = new Intl.DateTimeFormat('en-CA', {
+  timeZone: zeitzone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
+
 const kommende = (site.betrieb.sonderzeiten ?? [])
-  .filter((s) => {
-    const ende = s.bis ?? s.datum;
-    return ende ? new Date(`${ende}T23:59:59`) >= heute : false;
-  })
+  .map((s) => ({ ...s, ende: s.bis ?? s.datum ?? '' }))
+  .filter((s) => s.ende !== '' && s.ende >= gebautAm)
   .sort((a, b) => (a.von ?? a.datum ?? '').localeCompare(b.von ?? b.datum ?? ''));
 
 /** '2026-12-25' -> '25. Dezember'; Zeiträume als '1.–14. August'. */
@@ -62,11 +80,15 @@ function lesbar(s: { datum?: string; von?: string; bis?: string }): string {
   </ul>
 
   {!ohneSonderzeiten && kommende.length > 0 && (
-    <div class="zeiten__abweichung">
+    <div
+      class="zeiten__abweichung"
+      data-abweichende-zeiten
+      data-zeitzone={zeitzone}
+    >
       <p class="zeiten__abweichung-titel">Abweichende Zeiten</p>
       <ul class="zeiten__liste">
         {kommende.map((s) => (
-          <li class="zeiten__zeile">
+          <li class="zeiten__zeile" data-ende={s.ende}>
             <span class="zeiten__tag">
               {lesbar(s)}
               {s.anlass && <span class="zeiten__anlass"> · {s.anlass}</span>}

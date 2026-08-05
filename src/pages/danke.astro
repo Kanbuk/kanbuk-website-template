@@ -23,10 +23,20 @@ import { site } from '../../content.config';
 const duzen = site.ansprache === 'du';
 ---
 
+{/* TITEL UND BESCHREIBUNG FOLGEN DER ANSPRACHE.
+    Der Fliesstext unten schaltete laengst um, diese zwei Zeilen nicht – auf
+    einer durchgehend duzenden Seite stand im Browser-Tab und in der
+    Google-Vorschau als Einziges die Sie-Form. Es ist derselbe Fehler wie bei
+    den Serverantworten: Die Ansprache gilt fuer ALLES, was der Motor
+    schreibt. */}
 <BaseLayout
   pfad="/danke"
-  titel="Danke für Ihre Nachricht"
-  beschreibung={`Ihre Anfrage an ${site.betrieb.name} ist eingegangen. Wir melden uns so bald wie möglich.`}
+  titel={duzen ? 'Danke für deine Nachricht' : 'Danke für Ihre Nachricht'}
+  beschreibung={
+    duzen
+      ? `Deine Anfrage an ${site.betrieb.name} ist eingegangen. Wir melden uns so bald wie möglich.`
+      : `Ihre Anfrage an ${site.betrieb.name} ist eingegangen. Wir melden uns so bald wie möglich.`
+  }
   noindex
 >
   <Kopf aktuell="/danke" />

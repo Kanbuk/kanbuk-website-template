@@ -216,6 +216,7 @@ for (const f of htmlDateien) {
     fehler(`${name}: setzt ein Cookie – die Seite muss cookiefrei bleiben (sonst Banner-Pflicht)`);
   }
 
+
   /* EIN ZUSTIMMUNGS-HÄKCHEN, DAS DOKUMENTE NENNT, MUSS SIE VERLINKEN.
      „Ich habe die Datenschutzerklärung und die AGB gelesen" verweist sonst auf
      Dokumente, die an dieser Stelle nicht zu öffnen sind: scrollen, wegklicken,
@@ -1023,6 +1024,38 @@ if (referenzReste.length > 0) {
 for (const feld of ['name', 'claim', 'kurzbeschreibung', 'email', 'domain']) {
   const re = new RegExp(`${feld}:\\s*['"]\\s*['"]`);
   if (re.test(configWerte)) fehler(`content.config.ts: Feld "${feld}" ist leer`);
+}
+
+/* SIND ALLE FEIERTAGE UND BETRIEBSURLAUBE SCHON VORBEI?
+   ---------------------------------------------------------------------------
+   Eine Liste, in der jeder Eintrag abgelaufen ist, ist eine tote Liste: Der
+   nächste Feiertag steht nirgends – weder auf der Seite noch bei Google.
+
+   GEMESSEN WIRD DIE CONFIG, NICHT DIE GEBAUTE SEITE. Ein erster Versuch
+   suchte im HTML nach `data-ende` – und konnte nie auslösen, weil der Bau
+   abgelaufene Einträge längst weggefiltert hat. Eine Regel, die nur greift,
+   wenn das Problem nicht vorliegt, ist keine.
+
+   Warnung, kein Fehler: Ein Betrieb ohne Sonderzeiten ist völlig in Ordnung
+   (dann steht hier gar nichts), und eine abgelaufene Liste hält keinen
+   Live-Gang auf – sie gehört nur nachgetragen. */
+{
+  const block = configWerte.match(/sonderzeiten:\s*\[([\s\S]*?)\n\s*\],/);
+  if (block) {
+    const daten = [...block[1].matchAll(/(?:datum|bis):\s*'(\d{4}-\d{2}-\d{2})'/g)].map((m) => m[1]);
+    const heute = new Date().toISOString().slice(0, 10);
+    if (daten.length > 0 && daten.every((d) => d < heute)) {
+      warnung(
+        [
+          `content.config.ts: Alle ${daten.length} Einträge unter \`sonderzeiten\` sind vorbei ` +
+            `(letzter endete ${daten.sort().pop()}).`,
+          '    Auf der Seite fällt das nicht auf – der Browser blendet vergangene Abweichungen',
+          '    aus, und sie sieht damit richtig aus. Sie nennt nur keinen einzigen kommenden',
+          '    Feiertag mehr, und Google bekommt ebenfalls keinen.',
+        ].join('\n'),
+      );
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

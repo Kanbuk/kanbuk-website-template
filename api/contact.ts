@@ -109,11 +109,26 @@ function antwort(status: number, json: Record<string, unknown>): Response {
  * senden.
  *
  * 303, damit ein Neuladen die Sendung nicht wiederholt.
- */
-function abweisung(request: Request, status: number, text: string): Response {
+ *
+ * DIE ZIELSEITE FOLGT DER SPRACHE – aber nur, wenn es sie wirklich gibt.
+ * Auf dem Weg OHNE JavaScript zaehlt die uebersetzte Meldung nicht: Der
+ * Browser bekommt eine SEITE, der Text im Rumpf wird verworfen. Ein
+ * englischsprachiger Absender landete damit trotz `?lang=en` auf der
+ * deutschen Fehlerseite.
+ *
+ * Woher der Server weiss, ob es /en/anfrage-fehler gibt: Das FORMULAR sagt es
+ * ihm (`&en=1` in seiner `action`), denn nur der Bau kennt das Verzeichnis –
+ * hier laeuft Node ohne Bau-Werkzeug. Es sind genau zwei feste Ziele, keine
+ * Adresse aus der Anfrage; ein manipuliertes `en=1` kann hoechstens auf die
+ * englische Fehlerseite desselben Projekts fuehren. */
+function zielSeite(pfad: '/danke' | '/anfrage-fehler', enSeiten: boolean): string {
+  return enSeiten ? `/en${pfad}` : pfad;
+}
+
+function abweisung(request: Request, status: number, text: string, enSeiten = false): Response {
   const typ = (request.headers.get('content-type') ?? '').toLowerCase();
   if (typ.includes('application/x-www-form-urlencoded')) {
-    return new Response(null, { status: 303, headers: { Location: '/anfrage-fehler' } });
+    return new Response(null, { status: 303, headers: { Location: zielSeite('/anfrage-fehler', enSeiten) } });
   }
   return antwort(status, { fehler: text });
 }
@@ -134,7 +149,12 @@ export async function POST(request: Request): Promise<Response> {
      Meldung feststehen – auch eine Abweisung wegen Format oder Menge ist eine
      Antwort an einen Menschen. Alles, was nicht 'en' ist, gilt als Deutsch:
      Eine unbekannte Angabe darf keine leere Meldung erzeugen. */
-  const sprache: Sprache = new URL(request.url).searchParams.get('lang') === 'en' ? 'en' : 'de';
+  const adresse = new URL(request.url);
+  const sprache: Sprache = adresse.searchParams.get('lang') === 'en' ? 'en' : 'de';
+  /* Setzt das Formular nur, wenn es unter /en/ wirklich eine Danke- und eine
+     Fehlerseite gibt (siehe Formular.astro). Ohne die Angabe bleibt es bei den
+     deutschen Seiten – lieber eine Seite in der falschen Sprache als eine 404. */
+  const enSeiten = sprache === 'en' && adresse.searchParams.get('en') === '1';
   const sagt = (s: 'format' | 'fremd' | 'zuLang' | 'zuViele') => meldung(s, sprache);
 
   const typ = (request.headers.get('content-type') ?? '').toLowerCase();
@@ -146,7 +166,7 @@ export async function POST(request: Request): Promise<Response> {
 
   // 2) Fremder Ursprung -> abweisen.
   if (!ursprungPasst(request)) {
-    return abweisung(request, 403, sagt('fremd'));
+    return abweisung(request, 403, sagt('fremd'), enSeiten);
   }
 
   /* 3) Größe begrenzen – und zwar in BYTES, nicht in Zeichen.
@@ -163,11 +183,11 @@ export async function POST(request: Request): Promise<Response> {
         Hosters) – im Code geht es an dieser Stelle nicht. */
   const laenge = Number(request.headers.get('content-length') ?? '0');
   if (laenge > MAX_BYTES) {
-    return abweisung(request, 413, sagt('zuLang'));
+    return abweisung(request, 413, sagt('zuLang'), enSeiten);
   }
   const roh = await request.text();
   if (new TextEncoder().encode(roh).length > MAX_BYTES) {
-    return abweisung(request, 413, sagt('zuLang'));
+    return abweisung(request, 413, sagt('zuLang'), enSeiten);
   }
 
   // 4) Zu viele Anfragen aus derselben Quelle.
@@ -176,7 +196,7 @@ export async function POST(request: Request): Promise<Response> {
     request.headers.get('x-real-ip') ||
     'unbekannt';
   if (zuVieleAnfragen(ip)) {
-    return abweisung(request, 429, sagt('zuViele'));
+    return abweisung(request, 429, sagt('zuViele'), enSeiten);
   }
 
   let daten: Eingabe = {};
@@ -221,7 +241,7 @@ export async function POST(request: Request): Promise<Response> {
        bei einem Wirt harmlos, bei einer Praxis stünde dort das Thema der
        Anfrage. Auch das ist mit der eigenen Route erledigt: Es steht nichts
        mehr in der Adresse.) */
-    const ziel = ok ? '/danke' : '/anfrage-fehler';
+    const ziel = zielSeite(ok ? '/danke' : '/anfrage-fehler', enSeiten);
     return new Response(null, { status: 303, headers: { Location: ziel } });
   }
 

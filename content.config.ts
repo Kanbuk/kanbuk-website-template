@@ -1238,6 +1238,19 @@ const konfig = {
       { tag: 'Samstag', zeit: '09:00–13:00', tageISO: ['Sa'], vonISO: '09:00', bisISO: '13:00' },
       { tag: 'Sonntag', zeit: 'geschlossen' },
     ],
+    /* MUSTERWERTE, damit die Referenzseite den Weg wirklich fährt.
+       Ohne einen Eintrag hier wird der Abweichungs-Block nie gebaut – und
+       genau deshalb ist jahrelang niemandem aufgefallen, dass er beim Bauen
+       gerechnet hat (CLAUDE.md Abschnitt 5, „Zeitbombe"). Was die
+       Referenzseite nicht baut, prüft kein Tor.
+
+       Die Daten laufen irgendwann ab; das Prüf-Tor meldet es dann, weil eine
+       Liste, in der alles vorbei ist, auch bei einem echten Kunden ein Fund
+       ist. */
+    sonderzeiten: [
+      { von: '2026-12-24', bis: '2026-12-26', zeit: 'geschlossen', anlass: 'Weihnachten' },
+      { datum: '2026-12-31', zeit: '09:00–13:00', anlass: 'Silvester', vonISO: '09:00', bisISO: '13:00' },
+    ],
     socialLinks: [
       { plattform: 'instagram', url: 'https://www.instagram.com/musterbetrieb' },
       { plattform: 'facebook', url: 'https://www.facebook.com/musterbetrieb' },
