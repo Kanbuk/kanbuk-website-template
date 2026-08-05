@@ -590,8 +590,40 @@ bauen – anschließen und im Design anmalen.
 | **Kopf / Fuß** | `<Kopf aktuell={pfad} />`, `<Fuss />` | Kopfleiste mit Handy-Navigation, Fußzeile mit Rechtslinks |
 | **Öffnungszeiten** | `<Oeffnungszeiten />` | Wochenzeiten + Feiertage/Betriebsurlaub (`betrieb.sonderzeiten`) |
 | **Öffnungs-Status** | `<Oeffnungsstatus />` | „Jetzt geöffnet · bis 22:00" – rechnet in der Zeitzone des Betriebs |
+| **Zeitenzeile** | `<Zeitenzeile />` | Die Öffnungszeiten als TEXT (Kopfleiste, Fußzeile) – schaltet am Urlaubstag von selbst um |
 | **Einwilligung** | automatisch, wenn `dienste` gefüllt | Pixel/Tracking (Abschnitt 7a) |
 | **Einbettung** | `<Einbettung url=… />` | Maps/YouTube per 2-Klick (Abschnitt 7a) |
+
+### Jede Zeitangabe, die beim BAUEN gerechnet wird, ist eine Zeitbombe
+
+Ein rein statischer Motor hat genau **eine** Klasse von Fehlern, die sich
+selbst versteckt: alles, was von „heute" abhängt.
+
+Die Seite kennt genau ein Datum – das des Bauens. Und ein Bau entsteht nur aus
+einer **Änderung**, nie aus dem Verstreichen von Zeit. Wer also beim Bauen
+ausrechnet, ob gerade Betriebsurlaub ist, schreibt das Ergebnis von damals
+fest:
+
+> Der Betrieb trägt seinen Urlaub im Voraus ein. Damit löst er einen Bau aus –
+> bei dem der Urlaub noch **Zukunft** ist. Am Urlaubstag selbst baut nichts
+> mehr. **Die Sperre wird nie sichtbar.** Und nach ihrem Ende bleibt
+> „geschlossen" ebenso lange stehen, bis zufällig jemand etwas anderes ändert.
+>
+> Google zeigt derweil das Richtige – die Sonderzeiten stehen korrekt im
+> JSON-LD. Die Website widerspricht der Suchmaschine, und der Betrieb erfährt
+> davon durch Kundschaft vor verschlossener Tür.
+
+**Die Regel:** Was von „heute" abhängt, wird im **Browser** verglichen, nicht
+beim Bauen gerechnet. Beide Textfassungen gehören ins Markup; der Browser
+entscheidet nur, welche gilt – in der Zeitzone des **Betriebs**, nicht der des
+Besuchers.
+
+Der Motor macht das für `<Oeffnungsstatus />` und `<Zeitenzeile />` bereits so.
+**Baut das Design eine eigene Zeitangabe** – „heute geöffnet bis …",
+„Betriebsurlaub bis …" in Kopf- oder Fußleiste, und das verlangt fast jedes
+Design –, dann nicht selbst rechnen, sondern einen dieser beiden Bausteine
+anschließen. Ohne JavaScript bleibt jeweils der gebaute Stand stehen; das ist
+die richtige Reaktion, nie eine leere Fläche.
 
 Sie vergeben nur ARIA-Attribute und Zustandsklassen (`.ist-aktiv`, `.ist-offen`).
 Alles funktioniert **ohne JS** sinnvoll. Details stehen im Kopf jeder Datei.

@@ -1,0 +1,75 @@
+---
+/**
+ * Zeitenzeile – MOTOR-Baustein: „Mo–Fr 9–18 Uhr" bzw. „Betriebsurlaub bis 18.01."
+ *
+ * Fast jedes Design will die Öffnungszeiten irgendwo als TEXT stehen haben –
+ * in der Kopfleiste, in der Fußzeile, auf der Kontaktseite. Als beim Bauen
+ * gerechneter Text ist das eine Zeitbombe: Trägt der Betrieb einen
+ * Betriebsurlaub im Voraus ein, löst er damit einen Bau aus, bei dem der
+ * Urlaub noch Zukunft ist – am Urlaubstag selbst baut nichts mehr, weil ein
+ * Bau nur aus einer Änderung entsteht. Die Sperre wird nie sichtbar, und nach
+ * ihrem Ende bleibt „geschlossen" ebenso lange stehen.
+ *
+ * Deshalb liegen hier BEIDE Textfassungen im Markup, und der Browser
+ * vergleicht nur zwei Datumsangaben in der Zeitzone des Betriebs. Ohne
+ * JavaScript bleibt der gebaute Stand stehen – im Regelfall derselbe Text.
+ *
+ * ABGRENZUNG: `<Oeffnungsstatus />` rechnet aus, OB gerade offen ist („Jetzt
+ * geöffnet · bis 22:00"). Diese Zeile tauscht einen fertigen TEXT. Viele
+ * Designs verlangen beides an verschiedenen Stellen.
+ *
+ * Verwendung:  <Zeitenzeile />
+ *              <Zeitenzeile class="kopf__zeiten" />
+ *              <Zeitenzeile woche="Täglich 11–23 Uhr" />
+ */
+import { site } from '../../content.config';
+
+interface Props {
+  class?: string;
+  /** Zeitzone des Betriebs. Standard: Wien. */
+  zeitzone?: string;
+  /**
+   * Der Text für den Normalfall. Ohne Angabe baut der Motor ihn aus
+   * `betrieb.oeffnungszeiten` zusammen – das Design darf ihn überschreiben,
+   * weil dort oft eine kürzere Fassung gewünscht ist („Mo–Sa ab 9 Uhr").
+   */
+  woche?: string;
+}
+const { class: klasse, zeitzone = 'Europe/Vienna', woche } = Astro.props;
+
+/* Der Normalfall-Text. `tage` und `zeit` sind die sichtbaren Angaben aus der
+   Config – die maschinenlesbaren Felder braucht diese Zeile nicht, sie
+   vergleicht nur Datumsangaben. */
+const wochenText =
+  woche ??
+  site.betrieb.oeffnungszeiten
+    .map((o) => `${o.tag} ${o.zeit}`.trim())
+    .filter(Boolean)
+    .join(' · ');
+
+/* Sonderzeiten mit fertigem Text. `anlass` zuerst, weil „Betriebsurlaub" mehr
+   sagt als eine Uhrzeit; ohne Anlass bleibt die Zeitangabe. */
+const sonder = (site.betrieb.sonderzeiten ?? [])
+  .map((s) => ({
+    von: s.von ?? s.datum ?? '',
+    bis: s.bis ?? s.datum ?? '',
+    text: [s.anlass, s.zeit].filter(Boolean).join(' · '),
+  }))
+  .filter((s) => s.von && s.bis && s.text);
+
+const plan = { zeitzone, woche: wochenText, sonder };
+
+/* Stand zum BAUZEITPUNKT – damit ohne JavaScript nichts Leeres dasteht. */
+const heuteGebaut = new Intl.DateTimeFormat('en-CA', {
+  timeZone: zeitzone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
+const trefferGebaut = sonder.find((s) => heuteGebaut >= s.von && heuteGebaut <= s.bis);
+const startText = trefferGebaut ? trefferGebaut.text : wochenText;
+---
+
+{wochenText && (
+  <span class:list={['zeitenzeile', klasse]} data-zeitenzeile={JSON.stringify(plan)}>{startText}</span>
+)}

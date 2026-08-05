@@ -29,6 +29,7 @@ import { assistentStarten } from './assistent';
 import { einwilligungStarten } from './einwilligung';
 import { einbettungStarten } from './einbettung';
 import { oeffnungsstatusStarten } from './oeffnungsstatus';
+import { zeitenzeileStarten } from './zeitenzeile';
 import { dialogStarten } from './dialog';
 import { merklisteStarten } from './merkliste';
 
@@ -60,6 +61,7 @@ export function verhaltenStarten(): void {
   assistentStarten();
   formulareStarten();
   oeffnungsstatusStarten();
+  zeitenzeileStarten();
   dialogStarten();
   /* Merkliste NACH dem Filter: Sie meldet ihren Zustand per Ereignis, der
      Filter hört darauf – so bleiben beide widerspruchsfrei. */
