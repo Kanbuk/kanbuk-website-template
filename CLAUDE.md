@@ -371,6 +371,38 @@ Verwandt und ebenso unsichtbar: `content.config.ts → design.farben` muss
 halbdurchsichtige Leisten; bei einer anderen Schreibweise fällt die Rechnung
 still auf Schwarz zurück (das Prüf-Tor meldet es).
 
+### Farbverlauf in der Schrift – zwei Zeilen, sonst fehlen die Unterlängen
+
+Füllt ein Design eine Überschrift mit einem Farbverlauf (`background-clip:
+text`), ist die Schrift kein gefärbtes Zeichen mehr, sondern **ein Fenster auf
+den Hintergrund**. Der endet an der Kante des Elements. Alles, was darüber
+hinausragt, bekommt gar keine Füllung – es wird nicht überdeckt, sondern **nie
+gemalt**. Zusammen mit der Zeilenhöhe `1` bis `1.04`, die dieselben Designs
+vorgeben, frisst das zuverlässig jedes **g, j, p, q, y** und das Komma. Aus
+„Designkategorien" wird optisch „Desi_nkate_orien", auf der größten
+Überschrift der Seite.
+
+**Das Rezept, immer beide Zeilen:**
+
+```css
+.ueberschrift-mit-verlauf {
+  padding-block: 0.09em;   /* vergrößert den Malkasten */
+  margin-block: -0.09em;   /* nimmt das Außenmaß exakt zurück */
+}
+```
+
+Das Layout verschiebt sich dabei um **kein Pixel** – deshalb ist es kein
+Kompromiss, sondern die richtige Schreibweise. `em` und nicht `px`, damit es
+bei jeder Schriftgröße stimmt.
+
+> **Warum das eine eigene Regel ist:** Es rutscht durch ALLE Tore. Es läuft
+> nichts über, es wird nichts überdeckt, es gibt keine Meldung und kein
+> Kontrastproblem – und auf einem Screenshot sieht ein halbes „g" aus wie ein
+> „g". In einem Kundenprojekt hat es der Betreiber Wochen nach dem Bau selbst
+> gefunden. Ein ganzer Abend ging für die Ursachensuche drauf, **und der
+> Entwurf enthielt die Lösung an zwölf Stellen bereits** – der Port hatte sie
+> weggelassen. Seit 05.08.2026 misst `npm run unterlaengen` es nach.
+
 ### Zwei CSS-Fallen, die keine Prüfung von selbst sieht
 
 **`:global(…)` gehört NICHT in eine eigenständige `.css`-Datei.** Es ist eine

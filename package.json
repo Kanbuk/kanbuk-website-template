@@ -30,6 +30,7 @@
     "sicht": "node scripts/sicht.mjs",
     "stock": "node scripts/stock.mjs",
     "studio": "node scripts/studio.mjs",
+    "unterlaengen": "node scripts/unterlaengen.mjs",
     "vorcheck": "node scripts/vorcheck.mjs"
   },
   "dependencies": {
