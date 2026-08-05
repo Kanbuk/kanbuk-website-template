@@ -167,7 +167,13 @@ if (!datei) {
   process.exit(vorlage ? 0 : 1);
 }
 
-console.log(`Design: ${basename(datei)}`);
+{
+  const alle = readdirSync(DESIGN).filter((f) => f.endsWith('.dc.html')).sort();
+  /* ALLE nennen, nicht nur die erste. Bis 05.08.2026 stand hier der Name
+     EINER Datei, waehrend bei Form B vier danebenlagen – wer die Zeile las,
+     hielt den Vergleich fuer vollstaendig. */
+  console.log(alle.length === 1 ? `Design: ${alle[0]}` : `Design: ${alle.length} Dateien – ${alle.join(', ')}`);
+}
 
 // ---------------------------------------------------------------------------
 //  1. Die Bauanleitung lesen – mit einem echten DOM, nicht mit Textsuche
@@ -183,9 +189,24 @@ console.log(`Design: ${basename(datei)}`);
 const browser = await chromium.launch();
 const seite = await browser.newPage();
 
+/* ALLE .dc.html LESEN, NICHT NUR DIE ERSTE.
+   In Form B (eine Datei je Seite) liegen im Ordner mehrere; `designDatei()`
+   nahm bis 05.08.2026 `treffer[0]` und verglich stillschweigend nur eine.
+   In Form A gibt es ohnehin nur eine – dann laeuft die Schleife einmal. */
 const designSeiten = await (async () => {
-  await seite.setContent(readFileSync(datei, 'utf-8'), { waitUntil: 'domcontentloaded' });
-  return seite.evaluate(() => {
+  const dateien = readdirSync(DESIGN)
+    .filter((f) => f.endsWith('.dc.html'))
+    .sort()
+    .map((f) => join(DESIGN, f));
+
+  const seitenAlle = [];
+  let rahmenAlle = [];
+  const schriftenAlle = new Set();
+
+  for (const d of dateien) {
+    await seite.setContent(readFileSync(d, 'utf-8'), { waitUntil: 'domcontentloaded' });
+    const stamm = basename(d).replace(/\.dc\.html$/, '');
+    const teil = await seite.evaluate((DATEI_STAMM) => {
     /** Aus einem style-Attribut die zwei Werte holen, auf die es ankommt. */
     const stilWert = (el, name) => {
       const roh = el.getAttribute('style') || '';
@@ -218,10 +239,34 @@ const designSeiten = await (async () => {
       return false;
     };
 
+    /* ===================================================================
+       ZWEI EXPORT-FORMEN, UND CLAUDE DESIGN LIEFERT BEIDE.
+       ===================================================================
+       FORM A – alle Seiten in EINER Datei. Jede Seite steht unter einem
+       Schalter `<sc-if value="{{ isX }}">` direkt in `<main>`. So kommt es
+       bei Projekten MIT eigenem Design-System.
+
+       FORM B – eine Datei JE SEITE. Kein Seiten-Schalter; unter `<x-dc>`
+       liegen `<helmet>` und ein einziger Wrapper, darin `<header>`, die
+       Abschnitte und `<footer>`. So kommt es bei Projekten OHNE
+       Design-System – und das ist der Regelfall bei Demos.
+
+       Bis 05.08.2026 kannte das Tor nur Form A. Bei Form B fand es NULL
+       Seiten und setzte trotzdem den Haken – also grün, ohne einen einzigen
+       Block verglichen zu haben. Der Abbruch dagegen kam am selben Tag; jetzt
+       kommt die Fähigkeit dazu.
+
+       Gemessen an einem echten Export der Form B: `<x-dc>` hat zwei Kinder,
+       `<helmet>` und einen `<div>`; darin 5 Abschnitte, teils mit `<main>`,
+       teils ohne.
+       =================================================================== */
     const seiten = [];
+    const seitenWurzeln = [];
+
+    /* FORM A zuerst versuchen. */
     for (const sc of document.querySelectorAll('sc-if')) {
-      const schalter = (sc.getAttribute('value') || '').match(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/);
-      if (!schalter) continue;
+      const treffer = (sc.getAttribute('value') || '').match(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/);
+      if (!treffer) continue;
       /* Ein Seiten-Schalter steht DIREKT in <main>. Zwei Fallen, beide im
          ersten Lauf am 29.07.2026 aufgelaufen:
 
@@ -231,8 +276,31 @@ const designSeiten = await (async () => {
             Blockzahl mit einzelnen <span>.
          2. Zustände INNERHALB einer Seite (isSellForm, hasResults, sellDone)
             sehen genauso aus. Sie sind keine Seiten. */
-      if (!/^is[A-Z]/.test(schalter[1])) continue;
+      if (!/^is[A-Z]/.test(treffer[1])) continue;
       if (!sc.parentElement || sc.parentElement.tagName !== 'MAIN') continue;
+      seitenWurzeln.push({ schalter: treffer[1], wurzel: sc });
+    }
+
+    /* FORM B: Die DATEI ist die Seite. Ihr Name wird zum Schalter – die
+       Zuordnung in abgleich.json läuft dann über den Dateinamen statt über
+       einen `is`-Namen. */
+    const rahmenTeile = [];
+    if (seitenWurzeln.length === 0) {
+      const aussen = document.querySelector('x-dc') || document.body;
+      const huellen = [...aussen.children].filter((k) => k.tagName !== 'HELMET' && k.tagName !== 'STYLE');
+      const huelle = huellen.length === 1 ? huellen[0] : aussen;
+      /* `<main>` ist der Inhaltsbereich, wenn es eines gibt. Gibt es keines –
+         auch das kommt vor –, ist es alles ausser Kopf- und Fusszeile. Die
+         beiden sind dann zugleich der RAHMEN; in Form A steht der ausserhalb
+         von `<main>` und wird weiter unten geholt. */
+      const main = huelle.querySelector(':scope > main');
+      for (const k of huelle.children) {
+        if (k.tagName === 'HEADER' || k.tagName === 'FOOTER') rahmenTeile.push(k);
+      }
+      seitenWurzeln.push({ schalter: DATEI_STAMM, wurzel: main || huelle, ohneRahmen: !main });
+    }
+
+    for (const { schalter, wurzel: sc, ohneRahmen } of seitenWurzeln) {
 
       /* Fast jedes Design verpackt eine Seite noch einmal in einen Rahmen,
          der nur die Seitenfarbe trägt – manchmal zwei. Zählt man den, hat
@@ -271,7 +339,10 @@ const designSeiten = await (async () => {
       };
 
       const bloecke = [];
-      for (const kind of sc.children) {
+      const inhaltsKinder = ohneRahmen
+        ? [...sc.children].filter((k) => k.tagName !== 'HEADER' && k.tagName !== 'FOOTER')
+        : [...sc.children];
+      for (const kind of inhaltsKinder) {
         for (const b of hineingehen(kind)) {
           /* Nur h1/h2 zählen als Block-Überschrift. h3 trägt im Design die
              Titel EINZELNER Karten („Ford B-MAX") – die wandern mit dem
@@ -376,16 +447,34 @@ const designSeiten = await (async () => {
           });
         }
       }
-      seiten.push({ schalter: schalter[1], bloecke });
+      /* In Form B sind Kopf- und Fusszeile Geschwister des Inhalts, nicht
+         Kinder – sie stehen deshalb nicht in `bloecke`, sondern im Rahmen. */
+      seiten.push({ schalter, bloecke });
     }
 
     /* Der RAHMEN: alles ausserhalb von <main>, also Kopfleiste, Fusszeile und
        was sonst auf jeder Seite steht (Schwebeknöpfe, globale Dialoge). Genau
        dort saß im Testlauf der grobste Befund – ein Knopf, der auf keiner der
        sechzehn Seiten existierte. */
+    /* IN FORM B STEHT DER RAHMEN IM WRAPPER, NICHT DANEBEN.
+       Dort liegen unter `<x-dc>` nur `<helmet>` und EIN `<div>`; Kopf- und
+       Fusszeile sind dessen Kinder. Die Schleife unten fände deshalb genau
+       einen „Rahmen-Teil" – den Wrapper – und damit nichts Brauchbares.
+       Gemessen an einem echten Export: `<x-dc>` hat zwei Kinder.
+       `rahmenTeile` wurde oben beim Erkennen der Form gefüllt. */
+    /* Die sichtbaren Beschriftungen der Verweise eines Rahmenteils.
+       Sie sind das einzige Merkmal, das in BEIDEN Export-Formen dasteht: Form A
+       navigiert ueber `onClick` ohne href, Form B ueber echte Adressen. Der
+       Text steht immer. */
+    const verweiseVon = (el) =>
+      [...el.querySelectorAll('a,button')]
+        .map((a) => (a.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase())
+        .filter((t) => t && t.length < 40 && !t.includes('{{'));
+
     const rahmen = [];
     const wurzel = document.querySelector('x-dc') || document.body;
-    for (const el of wurzel.children) {
+    const rahmenQuelle = rahmenTeile.length > 0 ? rahmenTeile : [...wurzel.children];
+    for (const el of rahmenQuelle) {
       if (el.tagName === 'MAIN' || el.tagName === 'HELMET' || el.tagName === 'STYLE') continue;
       const inneres = el.tagName === 'SC-IF' ? el.firstElementChild : el;
       if (!inneres) continue;
@@ -400,6 +489,7 @@ const designSeiten = await (async () => {
           (inneres.getAttribute('aria-label') || '').slice(0, 40) ||
           (inneres.getAttribute('class') || '').slice(0, 40) ||
           inneres.tagName.toLowerCase(),
+        verweise: verweiseVon(inneres),
       });
     }
     /* Welche Schriften nennt das Design ueberhaupt? Gezaehlt werden die
@@ -416,7 +506,17 @@ const designSeiten = await (async () => {
       }
     }
     return { seiten, rahmen, schriften: [...schriften] };
-  });
+    }, stamm);
+
+    seitenAlle.push(...teil.seiten);
+    for (const f of teil.schriften) schriftenAlle.add(f);
+    /* Der Rahmen ist auf jeder Seite derselbe – der erste Fund gilt. Waere er
+       je Datei verschieden, waere das ein Design-Befund; ihn hier zu mitteln
+       wuerde ihn verstecken. */
+    if (rahmenAlle.length === 0) rahmenAlle = teil.rahmen;
+  }
+
+  return { seiten: seitenAlle, rahmen: rahmenAlle, schriften: [...schriftenAlle], dateien: dateien.length };
 })();
 
 const designSchriften = new Set(designSeiten.schriften ?? []);
@@ -622,6 +722,9 @@ async function gebauteSeite(pfad) {
         tag: el.tagName.toLowerCase(),
         fest: getComputedStyle(el).position === 'fixed',
         kennung: (el.getAttribute('aria-label') || el.getAttribute('class') || el.tagName).slice(0, 40),
+        verweise: [...el.querySelectorAll('a,button')]
+          .map((a) => (a.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase())
+          .filter((t) => t && t.length < 40),
       }));
     // Zusätzlich alles fest Positionierte irgendwo im Dokument (Schwebeknöpfe
     // hängen oft tiefer im Baum).
@@ -1012,6 +1115,47 @@ if (rahmenGebaut) {
       dFest.map((r) => r.kennung).join(', ') || '(unbenannt)',
       gFest.map((r) => r.kennung).join(', ') || 'keines',
     );
+  }
+
+  /* ZEIGT DIE FUSSZEILE DIE NAVIGATION DER KOPFLEISTE?
+     -----------------------------------------------------------------------
+     Genau das ist beim zweiten Port passiert: In der Fußzeile stand noch
+     einmal das Kopf-Menü, während das Design dort ein Rechts-Menü vorsah.
+     Der Betrieb fand es bei der Abnahme; kein Tor hat es gemeldet, weil am
+     Rahmen bis heute genau EINE Zahl verglichen wurde – wie viele Elemente
+     fest positioniert sind.
+
+     Verglichen werden die Beschriftungen der Verweise. Sie stehen in BEIDEN
+     Export-Formen da: Form A navigiert über `onClick` ohne Adresse, Form B
+     über echte Adressen – der Text steht immer.
+
+     Gemeldet wird nur der eindeutige Fall: Das DESIGN zeigt in der Fußzeile
+     etwas anderes als in der Kopfleiste (Überschneidung unter der Hälfte),
+     die GEBAUTE Seite aber fast dasselbe (über vier Fünftel). Alles
+     dazwischen bleibt still – ein Tor, das rauscht, bringt niemandem etwas. */
+  const kopfFuss = (liste) => ({
+    kopf: liste.find((r) => r.tag === 'header'),
+    fuss: liste.find((r) => r.tag === 'footer'),
+  });
+  const dRahmen = kopfFuss(designSeiten.rahmen);
+  const gRahmen = kopfFuss(rahmenGebaut.rahmen);
+  if (dRahmen.kopf && dRahmen.fuss && gRahmen.kopf && gRahmen.fuss) {
+    const anteil = (a = [], b = []) => {
+      if (a.length === 0) return 0;
+      const menge = new Set(b);
+      return a.filter((t) => menge.has(t)).length / a.length;
+    };
+    const imDesign = anteil(dRahmen.fuss.verweise, dRahmen.kopf.verweise);
+    const gebaut = anteil(gRahmen.fuss.verweise, gRahmen.kopf.verweise);
+    if (imDesign < 0.5 && gebaut > 0.8) {
+      melde(
+        'schwer',
+        'Rahmen · Fußzeile',
+        'Die Fußzeile zeigt fast dieselben Verweise wie die Kopfleiste – im Design steht dort etwas anderes.',
+        `Fußzeile im Design: ${(dRahmen.fuss.verweise || []).slice(0, 6).join(', ') || '(keine)'}`,
+        `Fußzeile gebaut: ${(gRahmen.fuss.verweise || []).slice(0, 6).join(', ') || '(keine)'}`,
+      );
+    }
   }
 
   /* DIE BAUTEILE VON KOPF UND FUSS GEHEN AN DAS AUGE – wie die der Blöcke.

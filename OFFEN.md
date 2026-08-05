@@ -213,7 +213,7 @@ ist `ZUSTAENDIGKEIT.md`.
 | **2** | **Token** — Werte kommen aus dem Design, in beiden Lieferformen (benannt oder literal) | Der größte Brocken. Die Motor-Skala wird zum Rückfall für Stellen, an denen das Design schweigt. |
 | **3** | **Bewegung** — Akkordeon, Slider und Einblendung geben ihre Werte ab | Erst nach 1 wirksam. Beseitigt die doppelten Animationen. |
 | **4** | **Rahmen** — Kopf und Fuß zerlegbar machen, Rechtslinks platzierbar | Der Fußzeilen-Fall kann danach nicht wiederkehren. |
-| **5** | **Design-Tor reparieren** — Rahmenvergleich ist tot, zweite Export-Form (eine Datei je Seite) fehlt | **Muss vor dem Piloten.** Sonst ist beim Restaurant-Port genau die Prüfung blind, um die es geht. |
+| ~~**5**~~ | ~~**Design-Tor reparieren**~~ **✓ erledigt 05.08.2026** — beide Export-Formen, alle Dateien, Kopf/Fuß getrennt, Fußzeilen-Regel | Form B: vorher 0 Seiten, jetzt 4 Seiten / 16 Blöcke / 2 Rahmen-Teile. Form A unverändert 11/43/1. |
 | **6** | **Offene Fehler** — Slider-ARIA (falsche Rollen), doppelte Verpixelungs-Regel raus, `stock.mjs` raus, `karte.mjs` reparieren | Kleinkram, aber echte Fehler. |
 | **7** | **Pilot 3: Restaurant** | Die Messung. Wenn kaum noch Nacharbeit anfällt, ist der Motor fertig. |
 
