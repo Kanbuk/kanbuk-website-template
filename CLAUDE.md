@@ -7,6 +7,11 @@
 
 ## 0. Mit wem du arbeitest (**zuerst lesen**)
 
+**Wer was liefert, steht in `ZUSTAENDIGKEIT.md`** – 283 Punkte, am echten
+Claude-Design-Projekt erarbeitet: was das Design vorgibt, was der Motor
+vorgibt, und wer bei Streit die Wahrheit spricht. Der Kurzschluss daraus
+steht in Abschnitt 4aa.
+
 **Der Ablauf im Ganzen steht in `ABLAUF.md`** – eine Seite: welche drei
 Stufen ein Betrieb durchläuft, welcher Ordner wann entsteht (lokal, GitHub,
 Vercel) und was die neun Tore prüfen. Wer wissen will, WO im Prozess er gerade
@@ -555,6 +560,39 @@ Bild über Text; Sticky-Leisten am Handy prüfen (verdecken sie Inhalt?).
 Am 05.08.2026 wurde eine vollständige Claude-Design-Ablage Datei für Datei
 ausgewertet – Website, Design-System, alle Token-Dateien. Vorher war „das
 Design liefert den Lack" eine Redewendung; hier steht, was das konkret heißt.
+
+### Zwei Sorten Lieferung – und der Motor erkennt selbst, welche er hat
+
+Was ankommt, hängt davon ab, wie das Projekt verkauft wurde. **Das geht den
+Motor nichts an** – er muss nur mit beidem arbeiten können.
+
+| | **Nur Webdesign** | **Design-System + Webdesign** |
+| --- | --- | --- |
+| Wann | Demos und der Regelfall | Vollpreis-Kunden, große Projekte ohne Demo |
+| Was ankommt | `<Projekt>.dc.html` + Bilder | dazu `design-system.js` und `tokens/*.css` |
+| Benannte Werte | **keine** – null Token | vollständige Skalen mit Namen |
+| Wo die Werte stehen | direkt im Block: `#F6F1E4`, `font-size:13.5px` | `--surface-page`, `--text-md` |
+| Schriften | Google-Fonts-Link im Kopf | eigene `fonts.txt` |
+
+Nachgezählt an zwei echten Projekten: Das Webdesign ohne System hatte **0
+`:root`-Variablen**, dafür 22 Farbwerte und 21 Schriftgrößen literal im Markup.
+Das Projekt mit System hatte sie alle benannt.
+
+> **Die Regel, die daraus folgt – sie gilt für beide Fälle gleich:**
+>
+> **Der Motor nimmt die Werte so, wie sie kommen. Er übersetzt sie nicht in
+> eine eigene Skala.**
+>
+> - Kommen sie **benannt** (Token-Dateien): Die Dateien werden eingebunden,
+>   die Motor-Token werden zu Verweisen darauf.
+> - Kommen sie **literal** (nur `.dc.html`): Die Werte werden übernommen, wie
+>   sie dastehen. Kein Umrechnen, kein Runden auf die nächste Motor-Stufe.
+>
+> Erkennen kann der Motor das selbst: Liegt in `design/` eine `tokens/`-Ablage
+> oder ein `design-system.js`, ist es der zweite Fall.
+
+Die Umrechnungstabelle weiter unten ist damit **nur noch der Rückfall für die
+Stellen, an denen das Design wirklich schweigt** – nicht die Zielsprache.
 
 ### Was Claude Design WIRKLICH liefert
 
