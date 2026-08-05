@@ -66,6 +66,37 @@ Veröffentlichen-Knopfs>. Das erste Foto ist immer das Hauptbild.
 > **Bitte auch die Bildbeschreibung anpassen.** Sie steht unter dem Foto und ist
 > für zwei Dinge da: für Menschen, die schlecht sehen, und für Google. Ein Satz
 > genügt: was auf dem Bild zu sehen ist.
+>
+> Sie wechselt **nicht** von selbst mit: Die Beschreibungen stehen in einer
+> eigenen Liste, in der Reihenfolge der Fotos. Wer nur das Bild tauscht, hat
+> danach die Beschreibung des alten darunter stehen.
+
+## Öffnungszeiten, Feiertage und Betriebsurlaub
+
+Die normale Woche steht unter <Beschriftung des Öffnungszeiten-Feldes>, eine
+Zeile je Tag oder Tagesgruppe.
+
+Alles, was davon abweicht – Feiertage, Betriebsurlaub, ein früherer
+Ladenschluss –, gehört unter <Beschriftung des Sonderzeiten-Feldes>. Diese
+Angaben gehen auch an Google: Wer am Feiertag nach Ihnen sucht, sieht dann
+dort schon, dass geschlossen ist.
+
+**Bitte auch vergangene Einträge stehen lassen oder entfernen – aber nicht
+umdatieren.** Ein Betriebsurlaub, der auf ein neues Datum umgeschrieben wird,
+wirkt sofort; sicherer ist ein neuer Eintrag.
+
+## Wenn sich Ihre Anschrift ändert
+
+Anschrift und Telefonnummer können Sie selbst ändern. **Melden Sie sich in
+diesem Fall bitte trotzdem kurz** – zwei Dinge auf der Website hängen mit dran
+und ändern sich nicht von allein:
+
+- das **Kartenbild** auf der Anfahrtsseite (es ist ein festes Bild, kein
+  bedienbarer Kartenausschnitt – das ist Absicht, so lädt die Seite ohne
+  fremde Dienste und ohne Cookie-Banner)
+- der **Eintrag im Impressum**, wenn sich auch der Firmensitz ändert
+
+Beides ist in wenigen Minuten erledigt, aber es muss jemand anstoßen.
 
 ## Etwas ist verkauft / vergeben / nicht mehr im Programm
 

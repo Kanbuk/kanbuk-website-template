@@ -68,6 +68,34 @@ eintragen → `npm run maske` → im Studio veröffentlichen. Fertig.
 Das Prüf-Tor kontrolliert, dass jedes angebotene Feld im Motor wirklich
 existiert, und dass die Maske zur Feldliste passt.
 
+### Zu jedem Fotofeld gehört ein Feld für die Bildbeschreibungen
+
+```js
+{ pfad: 'bilder',  titel: 'Fotos', typ: 'bilder', beschreibungsfeld: 'bildAlt' },
+{ pfad: 'bildAlt', titel: 'Bildbeschreibungen', typ: 'liste-text' },
+```
+
+`beschreibungsfeld` ist **Pflicht** bei jedem `typ: 'bilder'`; ohne die Angabe
+hält `npm run maske` an.
+
+**Warum so hart:** Ein Foto, das der Betrieb selbst hochlädt, heißt nach seiner
+Prüfsumme und steht in keiner Zuordnungsliste – es gibt schlicht keinen anderen
+Ort, an dem ein Alt-Text herkäme. In einem Kundenprojekt standen deshalb vier
+gepflegte Fotos ohne jede Beschreibung online. Das Prüf-Tor kann das nicht
+melden: Es sieht die gepflegten Bilder erst beim Bauen.
+
+**Das Beschreibungsfeld ist ausdrücklich KEIN Pflichtfeld.** Ein Pflichtfeld
+hindert den Betrieb am Veröffentlichen – und dann steht „Foto" darin, was für
+ein Vorleseprogramm schlechter ist als gar nichts. Die Prüfung richtet sich an
+den, der die Feldliste baut, nicht an den Betrieb.
+
+**Die Beschreibung hängt an der Position, nicht am Bild.** `bildAlt[0]` gehört
+zu Foto 1. Tauscht der Betrieb ein Foto aus und lässt die Beschreibung stehen,
+steht unter dem neuen Bild der Satz zum alten – ein Alt-Text ist da, er ist nur
+falsch. `npm run inhalte` vergleicht deshalb gegen den vorigen Stand und
+**warnt**, wenn sich ein Foto geändert hat und seine Beschreibung nicht. Das ist
+die einzige Stelle, an der sich das überhaupt bemerken lässt.
+
 ---
 
 ## Einrichten

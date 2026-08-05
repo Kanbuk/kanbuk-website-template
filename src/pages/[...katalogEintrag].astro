@@ -81,9 +81,23 @@ const katalog = site.katalog!;
    dasteht (das ließe das Prüf-Tor ohnehin nicht durch). */
 const listenSeite = site.seiten.find((s) => s.pfad === katalog.pfad);
 
+/* DER RÜCKFALL SAGT, WAS ER IST – er tut nicht so, als beschriebe er das Bild.
+   Hier stand `?? eintrag.titel`. Ein Titel ist keine Bildbeschreibung: Er liest
+   sich wie eine, und deshalb merkt niemand, dass sie fehlt. Für ein
+   Vorleseprogramm heisst „BMW 320d" bei allen fünf Fotos desselben Eintrags
+   fünfmal dasselbe – das ist schlechter als eine ehrliche Nummer, weil es die
+   Lücke verdeckt.
+
+   ZWEITE FALLE, DIE DAMIT ZUSAMMENHÄNGT: `bildAlt` ist eine POSITIONSLISTE –
+   `bildAlt[i]` gehört zu Foto `i`. Wer im Studio ein Foto tauscht oder die
+   Reihenfolge ändert, verschiebt damit die Beschreibungen, ohne dass es
+   auffällt. `npm run inhalte` warnt seit 05.08.2026, wenn ein Foto gewechselt
+   hat und seine Beschreibung nicht. */
 const bilder = (eintrag?.bilder ?? []).map((datei, i) => ({
   quelle: bild(datei),
-  alt: eintrag?.bildAlt?.[i] ?? eintrag?.titel ?? '',
+  alt:
+    eintrag?.bildAlt?.[i] ??
+    (eintrag?.titel ? `${eintrag.titel} – Foto ${i + 1}` : `Foto ${i + 1}`),
 }));
 const hauptbild = bilder.find((b) => b.quelle)?.quelle;
 

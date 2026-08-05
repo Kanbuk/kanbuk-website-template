@@ -39,6 +39,57 @@ export function pruefeNamen() {
       }
       gesehen.set(name, feld.pfad);
     }
+
+    /* ZU JEDEM FOTOFELD GEHÖRT EIN FELD FÜR DIE BILDBESCHREIBUNGEN.
+       -----------------------------------------------------------------------
+       In einem Kundenprojekt standen vier selbst gepflegte Fotos live ohne
+       jede Beschreibung. Nicht aus Nachlässigkeit: Ein Foto, das der Betrieb
+       hochlädt, heisst nach seiner Prüfsumme und steht in keiner
+       Zuordnungsliste – es gibt schlicht keinen Ort, an dem die Beschreibung
+       sonst herkäme. Das Prüf-Tor kann es nicht melden, weil es die gepflegten
+       Bilder erst zur Bauzeit sieht.
+
+       Deshalb wird das zugehörige Feld hier VERLANGT, und zwar benannt:
+       `{ typ: 'bilder', beschreibungsfeld: 'bildAlt' }`. Wer ein zweites
+       Fotofeld anlegt (Team, Galerie, Räume), stösst auf diese Meldung, statt
+       eine Maske zu erzeugen, in der die Beschreibungen einfach fehlen.
+
+       KEIN PFLICHTFELD. Ein Pflichtfeld hier hindert den Betrieb am
+       Veröffentlichen – und dann steht erfahrungsgemäss „Foto" im Feld, was
+       für ein Vorleseprogramm schlechter ist als gar nichts. Die Prüfung
+       richtet sich an den, der die Feldliste baut, nicht an den Betrieb. */
+    for (const feld of dok.felder) {
+      if (feld.typ !== 'bilder') continue;
+      const zielName = feld.beschreibungsfeld;
+      if (!zielName) {
+        throw new Error(
+          `redaktion/felder.mjs: Feld „${feld.pfad}" hat typ 'bilder', aber kein \`beschreibungsfeld\`. ` +
+            `Zu Fotos gehört ein Feld für die Bildbeschreibungen – sonst gehen selbst hochgeladene ` +
+            `Fotos ohne Alt-Text online, und kein Tor kann das melden. ` +
+            `Beispiel: \`beschreibungsfeld: 'bildAlt'\`.`,
+        );
+      }
+      const ziel = dok.felder.find((f) => feldName(f) === zielName);
+      if (!ziel) {
+        throw new Error(
+          `redaktion/felder.mjs: Feld „${feld.pfad}" verweist auf das Beschreibungsfeld „${zielName}", ` +
+            `das es im Dokument „${dok.typ}" nicht gibt.`,
+        );
+      }
+      if (ziel.typ !== 'liste-text') {
+        throw new Error(
+          `redaktion/felder.mjs: Das Beschreibungsfeld „${ziel.pfad}" hat typ '${ziel.typ}'. ` +
+            `Bildbeschreibungen sind eine Liste in der Reihenfolge der Fotos – also typ 'liste-text'.`,
+        );
+      }
+      if (ziel.pflicht) {
+        throw new Error(
+          `redaktion/felder.mjs: Das Beschreibungsfeld „${ziel.pfad}" ist als Pflichtfeld eingetragen. ` +
+            `Das hindert den Betrieb am Veröffentlichen, und dann steht „Foto" im Feld – für ein ` +
+            `Vorleseprogramm schlechter als gar nichts. Hinweis statt Pflicht.`,
+        );
+      }
+    }
   }
 }
 

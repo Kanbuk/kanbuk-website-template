@@ -363,6 +363,47 @@ async function haupt() {
   }
 
   // ---------------------------------------------------------------------------
+  //  5a. EIN GETAUSCHTES FOTO ERBT SONST DIE BESCHREIBUNG DES ALTEN
+  // ---------------------------------------------------------------------------
+  /* -------------------------------------------------------------------------
+     -------------------------------------------------------------------------
+     `bildAlt` ist eine POSITIONSLISTE: `bildAlt[i]` gehört zu Foto `i`.
+     Tauscht der Betrieb im Studio ein Foto aus, heisst die neue Datei nach
+     ihrer Prüfsumme – ein völlig anderer Name –, aber die Beschreibung an
+     derselben Position bleibt stehen. Auf der Seite steht dann unter einem
+     neuen Bild der Satz zum alten.
+
+     DAS KANN KEIN TOR SEHEN: Ein Alt-Text ist da, er ist nicht leer, er ist
+     nicht zu kurz. Nur stimmt er nicht. Für ein Vorleseprogramm ist das
+     schlimmer als gar kein Text, und Google liest ihn genauso.
+
+     Hier ist der einzige Ort, an dem es auffallen KANN, weil nur hier der
+     vorige Stand danebenliegt. Gewarnt, nicht abgebrochen: Der Betrieb soll
+     veröffentlichen können, und vielleicht passt die Beschreibung ja doch. */
+  if (vorhanden?.katalog) {
+    const vorher = new Map(vorhanden.katalog.map((e) => [e.id, e]));
+    for (const e of eintraege) {
+      const frueher = vorher.get(e.id);
+      if (!frueher?.bilder || !e.bilder) continue;
+      for (let i = 0; i < e.bilder.length; i++) {
+        if (!frueher.bilder[i] || frueher.bilder[i] === e.bilder[i]) continue;
+        const beschreibungGleich =
+          Array.isArray(e.bildAlt) &&
+          Array.isArray(frueher.bildAlt) &&
+          e.bildAlt[i] &&
+          e.bildAlt[i] === frueher.bildAlt[i];
+        if (beschreibungGleich) {
+          warne(
+            `Eintrag „${e.id}": Foto ${i + 1} wurde getauscht, seine Bildbeschreibung nicht.\n` +
+              `    Sie lautet weiterhin „${String(e.bildAlt[i]).slice(0, 50)}" – das beschreibt das ALTE Bild.\n` +
+              '    Im Studio nachziehen; kein Tor kann das melden, weil ein Text ja dasteht.',
+          );
+        }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   //  5b. VERKAUFT IST NICHT GELÖSCHT (CLAUDE.md 6a)
   // ---------------------------------------------------------------------------
   /* Ein Eintrag, der im Dienst verschwindet, wird hier NICHT aus der Datei

@@ -168,8 +168,25 @@ export const KATALOG = [
     werte: ['inkl. USt.', 'zzgl. USt.', 'differenzbesteuert gem. § 24 UStG', 'Preis auf Anfrage'],
     hinweis: 'Steht direkt hinter dem Preis dieses Eintrags.',
   },
-  { pfad: 'bilder', titel: 'Fotos', typ: 'bilder', hinweis: 'Das erste Foto ist das Hauptbild.' },
-  { pfad: 'bildAlt', titel: 'Bildbeschreibungen', typ: 'liste-text', hinweis: 'Für Blinde und für Google. Gleiche Reihenfolge wie die Fotos.' },
+  /* `beschreibungsfeld` ist Pflicht bei jedem Fotofeld – die Begründung steht
+     bei der Prüfung in scripts/lib/redaktion.mjs. Kurz: Ein selbst
+     hochgeladenes Foto heisst nach seiner Prüfsumme und hätte sonst nirgends
+     einen Alt-Text. */
+  {
+    pfad: 'bilder',
+    titel: 'Fotos',
+    typ: 'bilder',
+    beschreibungsfeld: 'bildAlt',
+    hinweis: 'Das erste Foto ist das Hauptbild.',
+  },
+  {
+    pfad: 'bildAlt',
+    titel: 'Bildbeschreibungen',
+    typ: 'liste-text',
+    hinweis:
+      'Ein kurzer Satz je Foto, in derselben Reihenfolge. Wird Blinden vorgelesen und von Google gelesen. ' +
+      'Beim Tauschen eines Fotos die Beschreibung mittauschen – sie hängt an der Position, nicht am Bild.',
+  },
   { pfad: 'merkmale', titel: 'Merkmalstabelle', typ: 'merkmale' },
   { pfad: 'verfuegbar', titel: 'Verfügbar', typ: 'ja-nein', hinweis: 'Aus = raus aus der Liste. Die Seite bleibt erreichbar, damit alte Google-Treffer nicht ins Leere laufen.' },
   { pfad: 'statusText', titel: 'Hinweis statt Preis', typ: 'text', hinweis: 'z. B. bereits verkauft' },
