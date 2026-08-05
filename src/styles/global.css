@@ -89,7 +89,14 @@ html {
   -webkit-text-size-adjust: 100%;
   /* Sprungmarken landen sonst UNTER einer klebenden Kopfleiste: Der Skip-Link
      „Zum Inhalt" und jeder Anker springen an eine Stelle, die von der Leiste
-     verdeckt ist. Das Design setzt --kopf-hoehe auf seine echte Leistenhöhe. */
+     verdeckt ist.
+
+     `--kopf-hoehe` MISST SICH SELBST – Kopf.astro trägt sie beim Laden ein und
+     zieht bei jeder Größenänderung nach. Hier stand „Das Design setzt
+     --kopf-hoehe", während der Dateikopf von Kopf.astro dasselbe von sich
+     behauptete: Beide Seiten verließen sich auf die andere, gesetzt hat es
+     niemand, und der Rückfall 0px galt auf jeder Seite jedes Kunden.
+     Ein Design mit eigener Leiste darf den Wert weiterhin überschreiben. */
   scroll-padding-top: calc(var(--kopf-hoehe, 0px) + var(--raum-xs));
 }
 

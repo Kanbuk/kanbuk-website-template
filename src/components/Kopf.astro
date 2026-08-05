@@ -29,7 +29,7 @@ const { aktuell = '/', class: klasse, ...rest } = Astro.props;
 const logo = site.betrieb.logo ? bild(site.betrieb.logo) : null;
 ---
 
-<header class:list={['kopf', klasse]} {...rest} {...rest}>
+<header class:list={['kopf', klasse]} {...rest}>
   <div class="container kopf__inner">
     <a class="kopf__marke" href="/" aria-label={`${site.betrieb.name} – zur Startseite`}>
       {logo ? (
@@ -41,6 +41,51 @@ const logo = site.betrieb.logo ? bild(site.betrieb.logo) : null;
     <Navigation aktuell={aktuell} />
   </div>
 </header>
+
+{/* DIE HÖHE DER LEISTE MISST SICH SELBST.
+    ==========================================================================
+    `global.css` rechnet `scroll-padding-top` aus `--kopf-hoehe` – und dieser
+    Dateikopf sagte zu, den Wert zu liefern. **Er wurde nirgends gesetzt.**
+    Beide Seiten verließen sich auf die andere; der Rückfall ist `0px`.
+
+    Die Folge ist unauffällig und trifft jede Seite: Wer mit der Tastatur
+    „Zum Inhalt" springt oder einen Anker anklickt, landet um die Leistenhöhe
+    zu hoch – die Überschrift steckt hinter der klebenden Leiste. Kein Tor
+    sieht das: Es läuft nichts über, nichts ist abgeschnitten, der Kontrast
+    stimmt.
+
+    Warum gemessen und nicht geschrieben: Die Höhe gehört dem Design (Logo,
+    Innenabstand, Schriftgröße, am Handy anders als am Bildschirm). Eine feste
+    Zahl im Motor wäre bei jedem zweiten Kunden falsch. Gemessen stimmt sie
+    immer – auch wenn das Design die Leiste beim Scrollen schrumpfen lässt.
+
+    Ohne JavaScript bleibt es beim alten Verhalten (Rückfall `0px`). Das ist
+    richtig: Ein Sprung, der etwas zu hoch landet, ist ein Schönheitsfehler –
+    eine Leiste, die ohne JS gar keinen Platz mehr bekäme, wäre einer nicht.
+
+    Schreibweise nach CLAUDE.md 4a: kein Zerlegen in Klammern, sonst ist das
+    GESAMTE Skriptbündel für ältere Browser ein Lesefehler. */}
+<script is:inline>
+  (function () {
+    var leiste = document.currentScript && document.currentScript.previousElementSibling;
+    if (!leiste || leiste.tagName !== 'HEADER') leiste = document.querySelector('header.kopf');
+    if (!leiste) return;
+    function messen() {
+      var hoehe = Math.round(leiste.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--kopf-hoehe', hoehe + 'px');
+    }
+    messen();
+    if (typeof ResizeObserver === 'function') {
+      new ResizeObserver(messen).observe(leiste);
+    } else {
+      window.addEventListener('resize', messen);
+    }
+    /* Schriften kommen später an und ändern die Höhe noch einmal. */
+    if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+      document.fonts.ready.then(messen);
+    }
+  })();
+</script>
 
 <style>
   .kopf {

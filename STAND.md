@@ -291,6 +291,25 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-05** – **Unabhängige Nachprüfung der Grenze Design/Motor.** Sechs
+  Prüfer je eine Dimension, danach je ein Skeptiker gegen ihre Funde. Ergebnis:
+  Die unsichtbare Schicht ist vollständig, die Design-Werte kommen an und
+  schlagen die Motor-Skala, die Fußzeile ist zerlegt. **Neun Funde behoben**,
+  jeder am Code oder im Browser nachgemessen – darunter: `--kopf-hoehe` setzte
+  niemand (jede Sprungmarke landete hinter der klebenden Leiste, auf jeder
+  Seite jedes Kunden); das Design-Tor maß die zwei Seiten in verschiedener
+  Fensterbreite und konnte grün melden, ohne eine Seite verglichen zu haben;
+  der Zustimmungs-Häkchen-Test klickte das Kästchen statt den Text daneben und
+  maß damit eine Selbstverständlichkeit; die Fußzeilen-Regel konnte
+  rechnerisch nie anschlagen; `:where()` konnte das Browser-Tor nicht rot
+  machen. **Zwei Lehren über die Gegenproben selbst:** Eine frühere eigene
+  Messung war unrealistisch (Fußzeile ohne die Pflichtteile nachgestellt), und
+  ein erster Gegentest blieb grün, weil er nach dem falschen Text suchte –
+  eine grüne Gegenprobe muss selbst gegengeprobt werden. **Offen geblieben:**
+  drei Stellen, an denen der Motor seine EIGENEN sichtbaren Texte nur deutsch
+  liefert (Rechtslinks-Ziele, Einwilligungs-Banner, die drei Zeit-Bausteine).
+  Blockiert einen einsprachigen Piloten nicht, gehört vor den nächsten
+  zweisprachigen Kunden erledigt. Einzelheiten in OFFEN.md.
 - **2026-08-05** – **Paket 6 des Motor-Umbaus: „offene Fehler".** Als Kleinkram
   geplant, zwei der Punkte waren keiner. (1) Der Slider trug Reiter-Rollen
   (`role="tab"`, `aria-selected`) ohne die Mechanik dazu – ein Vorleseprogramm

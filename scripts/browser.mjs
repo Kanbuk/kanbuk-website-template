@@ -245,6 +245,36 @@ const CSS_MERKMALE = [
      Die Zeile wurde zurückgenommen; der Eintrag hier bleibt, damit es kein
      zweites Mal unbemerkt passiert. Genau der Fall, vor dem der Dateikopf
      warnt: „Ein Merkmal, das hier fehlt, fällt durch." */
+  /* DER GEFÄHRLICHE FALL – und nur der wird rot.
+     Ein erster Versuch am 05.08.2026 setzte `kaputt` auf jedes `:where()`.
+     Ergebnis: sofort ein Fehlalarm, denn Astro bringt in seiner eigenen
+     Bild-Schicht `:where([data-astro-image])` mit. Dort fällt auf Safari 13
+     eine Bildgröße aus – ärmer, aber nicht kaputt.
+
+     Katastrophal ist es nur an EINER Stelle: in der Abgrenzung der
+     Komponenten-Stile, die `scopedStyleStrategy: 'where'` erzeugt. Dann
+     verwirft ein älterer Safari jeden Selektor jedes Bausteins – Navigation,
+     Fußzeile, Formular, Akkordeon stehen gleichzeitig ohne Gestaltung da.
+     Genau danach sucht diese Zeile, und nur sie wird rot.
+
+     WIE DIE ABGRENZUNG WIRKLICH AUSSIEHT – am 05.08.2026 nachgesehen, nicht
+     vermutet: Astro schreibt `:where(.astro-<hash>)`, also eine KLASSE. Der
+     erste Versuch suchte nach `:where([data-astro-cid…])` – dem Attribut, das
+     im Standardfall im MARKUP steht. Der Gegentest blieb deshalb grün,
+     obwohl die gefährliche Einstellung gesetzt war: eine Sicherung, die
+     genau dann schweigt, wenn sie gebraucht wird. */
+  {
+    name: ':where() in der Komponenten-Abgrenzung',
+    suche: /:where\(\.astro-[0-9a-z]+\)/,
+    abSafari: 14,
+    kaputt: true,
+    folge:
+      'Ein älterer Safari verwirft damit JEDEN Stil JEDER Komponente auf einmal – ' +
+      'Navigation, Fußzeile, Formular, Akkordeon ohne Gestaltung. Das ist kein „ärmer", ' +
+      'sondern kaputt, und es widerspricht der Zusage „bedienbar ab Safari 12". ' +
+      'Ursache ist immer `scopedStyleStrategy: \'where\'` in astro.config.ts – ' +
+      'diese Einstellung ist zweimal gemessen und bewusst verworfen (OFFEN.md, Paket 1).',
+  },
   {
     name: ':where() / :is()',
     suche: /:where\(|:is\(/,
@@ -428,7 +458,21 @@ for (const stueck of cssStuecke) {
     // Alle Vorkommen mit Ersatzwert abgesichert? Dann ist nichts zu melden.
     if (treffer.every((t) => istAbgesichert(stueck.code, t.index, merkmal))) continue;
 
-    if (merkmal.abSafari <= grenze.vollstaendig_ab_safari) {
+    /* „ÄRMER" UND „KAPUTT" SIND NICHT DASSELBE.
+       Zwischen den beiden Grenzen wird Aussehen bewusst nicht gerettet – das
+       ist die Entscheidung aus CLAUDE.md 4a. Sie gilt aber nur für Merkmale,
+       deren Ausfall die Seite ÄRMER macht. Ein Merkmal, das die Seite
+       BEDIENUNBAR oder gestaltungslos macht, fällt nicht darunter: Der Motor
+       sagt „bedienbar ab Safari 12" zu, und diese Zusage steht über der
+       Aussehen-Grenze.
+
+       Aufgefallen am 05.08.2026: `:where()` wurde eigens in die Liste
+       aufgenommen, weil es in der Abgrenzung der Komponenten-Stile die
+       Gestaltung ALLER Bausteine gleichzeitig kippt – und landete wegen
+       „ab Safari 14 < 15.4" trotzdem im Hinweis-Topf. Die Sicherung konnte
+       also nie rot werden, und die Hinweiszeile sah bei drei harmlosen
+       Vorkommen genauso aus wie bei hundert gefährlichen. */
+    if (merkmal.abSafari <= grenze.vollstaendig_ab_safari && !merkmal.kaputt) {
       einschraenkungen.add(`${merkmal.name} (ab Safari ${merkmal.abSafari}) – ${merkmal.folge}`);
       continue;
     }

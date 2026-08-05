@@ -1107,11 +1107,33 @@ for (const seite of seiten) {
       fehler.push('Ein Klick auf den Link im Häkchen SETZT das Häkchen – das wäre eine erschlichene Zustimmung');
     }
 
-    /* Ganz links im Label steht Text vor dem Link. */
-    await label.click({ position: { x: 4, y: 8 } });
-    await page.waitForTimeout(200);
-    if (!(await kasten.isChecked())) {
-      fehler.push('Ein Klick auf den Text des Häkchens setzt es nicht mehr – am Handy kaum noch zu treffen');
+    /* DER KLICK MUSS NEBEN DAS KÄSTCHEN GEHEN, NICHT DARAUF.
+       Hier stand `position: { x: 4, y: 8 }` – „ganz links im Label steht Text
+       vor dem Link". Am 05.08.2026 im Browser nachgemessen: Das Kästchen sitzt
+       bei 0/4 und ist 13×13 px groß, der Punkt 4/8 liegt also MITTEN DARIN.
+       Die Prüfung klickte das Kästchen und stellte danach fest, dass es
+       angehakt ist – eine Selbstverständlichkeit.
+
+       Damit war genau die Zusage ungemessen, für die es die Regel gibt: dass
+       der TEXT das Häkchen setzt. Ohne das muss der Besucher am Handy ein
+       13-Pixel-Kästchen treffen, um überhaupt absenden zu können.
+
+       Jetzt wird der Punkt aus der gemessenen Lage des Kästchens abgeleitet,
+       nicht geraten – und vorher geprüft, dass daneben überhaupt Platz ist. */
+    const lage = await label.evaluate((el) => {
+      const lk = el.getBoundingClientRect();
+      const k = el.querySelector('input[type="checkbox"]').getBoundingClientRect();
+      return { rechtsVomKasten: Math.round(k.right - lk.left + 6), labelBreite: Math.round(lk.width) };
+    });
+    if (lage.rechtsVomKasten + 4 >= lage.labelBreite) {
+      fehler.push('Neben dem Kästchen ist kein Text – die Fingerfläche ist nur das Kästchen selbst');
+    } else {
+      await kasten.uncheck().catch(() => {});
+      await label.click({ position: { x: lage.rechtsVomKasten, y: 8 } });
+      await page.waitForTimeout(200);
+      if (!(await kasten.isChecked())) {
+        fehler.push('Ein Klick auf den Text des Häkchens setzt es nicht mehr – am Handy kaum noch zu treffen');
+      }
     }
 
     gesehen.add('Zustimmungs-Häkchen');

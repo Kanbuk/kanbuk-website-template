@@ -92,7 +92,7 @@ const startText = offenJetzt ? texte.offen : texte.geschlossen;
 
 {fenster.length > 0 && (
   <span
-    class:list={['oeffnungsstatus', klasse, offenJetzt ? 'ist-offen' : 'ist-geschlossen']} {...rest} {...rest}
+    class:list={['oeffnungsstatus', klasse, offenJetzt ? 'ist-offen' : 'ist-geschlossen']} {...rest}
     data-oeffnungsstatus
     data-zeiten={JSON.stringify(plan)}
   >{startText}</span>

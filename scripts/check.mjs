@@ -372,6 +372,37 @@ for (const f of htmlDateien) {
       }
     }
   }
+
+  /* GEPFLEGTE SOCIAL-ADRESSEN, DIE AUF DER SEITE NICHT VORKOMMEN.
+     `betrieb.socialLinks` wandert automatisch ins JSON-LD (`sameAs`) – die
+     Adressen stehen damit im Google-Datenblock. Baut ein Port seine eigene
+     Fußzeile und vergisst `<SocialLinks />`, findet sie auf der WEBSITE
+     niemand. Für einen Betrieb, dessen Terminvergabe über Instagram läuft,
+     ist das ein verlorener Kanal – und es fällt niemandem auf, weil bei
+     Google alles richtig aussieht.
+
+     Absichtlich nur ein HINWEIS: Ein Design darf die Icons bewusst weglassen.
+     Ein Blocker wäre hier falsch – aber schweigen war es auch. */
+  /* Gelesen wird der Text der Config, nicht ein Modul – dieses Tor führt
+     content.config.ts nie aus (siehe Dateikopf). Gesucht sind die Adressen im
+     socialLinks-Block. */
+  const socialBlock = ohneKommentare(configTextFrueh).match(/socialLinks\s*:\s*\[([\s\S]*?)\]/)?.[1] ?? '';
+  const ziele = [...socialBlock.matchAll(/url\s*:\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  if (ziele.length > 0) {
+    const irgendwoSichtbar = htmlDateien.some((f) => {
+      const html = readFileSync(f, 'utf-8');
+      /* Im JSON-LD stehen sie immer – gesucht wird ein echter Link im Markup. */
+      const ohneSchema = html.replace(/<script[^>]*application\/ld\+json[^>]*>[\s\S]*?<\/script>/g, '');
+      return ziele.some((u) => ohneSchema.includes(`href="${u}"`) || ohneSchema.includes(`href='${u}'`));
+    });
+    if (!irgendwoSichtbar) {
+      warnung(
+        `${ziele.length} Social-Adresse(n) sind gepflegt, stehen aber auf keiner Seite als Link.\n` +
+          `    Sie erscheinen dadurch nur im Google-Datenblock, nicht auf der Website.\n` +
+          `    Abhilfe: <SocialLinks /> dorthin stellen, wo das Design die Icons zeigt.`,
+      );
+    }
+  }
 }
 
 // Dienste ohne Datenschutz-Angaben = rechtlich unvollständig.

@@ -31,6 +31,8 @@
  * Ohne JavaScript stehen alle Schritte untereinander und das Formular ist
  * ganz normal absendbar.
  */
+import { bewegungReduziert } from './hilfen';
+
 export function assistentStarten(): void {
   document.querySelectorAll<HTMLFormElement>('[data-assistent]').forEach((form) => {
     const schritte = Array.from(form.querySelectorAll<HTMLElement>('[data-assistent-schritt]'));
@@ -117,9 +119,13 @@ export function assistentStarten(): void {
       // Steht der Anfang schon sichtbar unter der Kopfleiste? Dann nichts tun.
       if (kasten.top >= kopfHoehe && kasten.top < window.innerHeight * 0.6) return;
 
+      /* „Bewegung reduzieren" schlaegt die Gleitbewegung – wer die
+         Systemeinstellung wegen Schwindel oder Migraene aktiviert hat, bekam
+         hier trotzdem eine. Der Motor sagt an drei anderen Stellen zu, das zu
+         respektieren; diese eine fehlte. */
       window.scrollTo({
         top: window.scrollY + kasten.top - kopfHoehe - 12,
-        behavior: 'smooth',
+        behavior: bewegungReduziert() ? 'auto' : 'smooth',
       });
     }
 

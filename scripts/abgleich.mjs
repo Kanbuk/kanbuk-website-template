@@ -187,7 +187,14 @@ if (!datei) {
 //  zu laden. Es geht um die Struktur, nicht um die Darstellung.
 // ---------------------------------------------------------------------------
 const browser = await chromium.launch();
-const seite = await browser.newPage();
+/* DIESELBE FENSTERBREITE WIE DIE GEBAUTE SEITE (1440). Hier stand ein blankes
+   `newPage()` – das sind 1280 px, während die gebaute Seite weiter unten mit
+   1440 gemessen wird. Jeder fluide Wert (`clamp()`, `vw`, `%`) fällt bei 1280
+   anders aus als bei 1440; allein daraus entstehen rund 9 % Unterschied, und
+   die Toleranz des Schriftvergleichs liegt darunter. Das Tor meldete damit
+   richtig gebaute Überschriften als Abweichung – und ein Tor, dessen
+   Meldungen man wegwischt, ist wertlos. */
+const seite = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 
 /* ALLE .dc.html LESEN, NICHT NUR DIE ERSTE.
    In Form B (eine Datei je Seite) liegen im Ordner mehrere; `designDatei()`
@@ -601,6 +608,27 @@ if (!existsSync(ZUORDNUNG)) {
 }
 
 const zuordnung = JSON.parse(readFileSync(ZUORDNUNG, 'utf-8'));
+
+/* EINE LEERE ZUORDNUNG DARF NICHT GRÜN WERDEN.
+   Der Entwurf oben schreibt jeden Schalter mit "" – und "" heißt weiter unten
+   „bewusst weggelassen, überspringen". Wer den Entwurf also einfach liegen
+   lässt und noch einmal startet, bekommt einen Lauf, der JEDE Seite
+   überspringt und mit Haken endet. In der Abnahme-Liste gilt der Punkt damit
+   als erledigt, obwohl nichts verglichen wurde.
+
+   Genau dieser Fehlertyp wurde an zwei anderen Stellen dieses Tores schon
+   abgestellt; er war nur eine Ebene tiefer gerutscht. */
+if (designSeiten.seiten.length > 0 && designSeiten.seiten.every((s) => !zuordnung[s.schalter])) {
+  console.log(
+    `\n✗ In design/abgleich.json ist keine einzige Adresse eingetragen.\n` +
+      `  Alle ${designSeiten.seiten.length} Design-Seite(n) wären damit „bewusst weggelassen" –\n` +
+      `  der Lauf hätte NICHTS verglichen und trotzdem grün gemeldet.\n` +
+      `  Trage je Schalter die Adresse ein, z. B. "isHome": "/".`,
+  );
+  await browser.close();
+  process.exit(1);
+}
+
 const fehlend = designSeiten.seiten.filter((s) => !(s.schalter in zuordnung));
 if (fehlend.length) {
   console.log(
@@ -1145,9 +1173,23 @@ if (rahmenGebaut) {
       const menge = new Set(b);
       return a.filter((t) => menge.has(t)).length / a.length;
     };
-    const imDesign = anteil(dRahmen.fuss.verweise, dRahmen.kopf.verweise);
-    const gebaut = anteil(gRahmen.fuss.verweise, gRahmen.kopf.verweise);
-    if (imDesign < 0.5 && gebaut > 0.8) {
+    /* DIE PFLICHTLINKS ZÄHLEN NICHT MIT – sonst kann die Regel nie anschlagen.
+       Sie wurde gebaut, weil beim zweiten Port die Fußzeile das KOPF-Menü
+       wiederholte. Nachgerechnet am 05.08.2026: Die gebaute Fußzeile trägt
+       IMMER Impressum, Datenschutz und den Kanbuk-Verweis, und die stehen im
+       Kopf-Menü nie. Bei einem Kopf-Menü von vier bis sechs Punkten – dem
+       Normalfall beim Wiener Kleinbetrieb – kommt der Anteil damit nie über
+       80 %. Die Regel war ein Netz, das nie gespannt war.
+
+       Gezählt wird jetzt nur, was ÜBER die Pflichtteile hinaus in der Fußzeile
+       steht. Genau das ist die Frage: Steht dort das Kopf-Menü statt dessen,
+       was das Design zeigt? */
+    const PFLICHT = /^(impressum|datenschutz|agb|website von kanbuk|kanbuk|imprint|privacy|terms)$/i;
+    const ohnePflicht = (liste = []) => liste.filter((t) => !PFLICHT.test(String(t).trim()));
+    const imDesign = anteil(ohnePflicht(dRahmen.fuss.verweise), dRahmen.kopf.verweise);
+    const gebaut = anteil(ohnePflicht(gRahmen.fuss.verweise), gRahmen.kopf.verweise);
+    /* Unter zwei freien Verweisen ist der Anteil Zufall (ein Treffer = 100 %). */
+    if (ohnePflicht(gRahmen.fuss.verweise).length >= 2 && imDesign < 0.5 && gebaut > 0.8) {
       melde(
         'schwer',
         'Rahmen · Fußzeile',

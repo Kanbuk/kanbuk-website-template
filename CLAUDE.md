@@ -713,7 +713,16 @@ nur von der eigenen Adresse. Die `fonts.txt` des Designs sagt das selbst.
 > eigene Fußzeile, werden sie dort hineingestellt, wo das Design sie zeigt –
 > statt `<Fuss>` anzumalen. Vorher steckten sie fest in einer Zeile am unteren
 > Rand, und genau daraus entstand der Fußzeilen-Fall des zweiten Ports.
-> Vergisst ein Port sie, blockt das Prüf-Tor jede Seite.
+>
+> **Was passiert, wenn ein Port sie vergisst – die drei sind NICHT gleich
+> abgesichert.** Hier stand pauschal „blockt das Prüf-Tor jede Seite", und das
+> stimmte nur für den ersten:
+>
+> | Baustein | vergessen heißt |
+> | --- | --- |
+> | `<Rechtslinks />` | **Build blockiert, immer.** Impressum und Datenschutz müssen von jeder Seite erreichbar sein. |
+> | `<Signatur />` | **Blockiert erst beim Live-Gang** (`check -- --live`). In der Vorschau ist der Backlink noch nicht Pflicht. |
+> | `<SocialLinks />` | **Hinweis, kein Blocker** – und nur, wenn `betrieb.socialLinks` gefüllt ist. Dann stehen die Adressen zwar im Google-Datenblock, aber auf der Website findet sie niemand. Für einen Betrieb, dessen Terminvergabe über Instagram läuft, ein verlorener Kanal. Blockieren wäre falsch: Ein Design darf sie bewusst weglassen. |
 
 > **Der Fußzeilen-Fall.** Beim zweiten Port zeigte die gebaute Fußzeile noch
 > einmal das Kopf-Menü, während das Design dort ein Rechts-Menü vorsah. Ursache

@@ -101,7 +101,7 @@ const beschriftung = label ?? (art === 'telefon' ? 'Anrufen' : 'Über WhatsApp s
 )}
 {ziel && (
   <a
-    class:list={['schwebeknopf', klasse]} {...rest} {...rest}
+    class:list={['schwebeknopf', klasse]} {...rest}
     href={istDemo ? undefined : ziel}
     role={istDemo ? 'note' : undefined}
     aria-label={istDemo ? `${beschriftung} – in der Vorschau nicht aktiv` : beschriftung}

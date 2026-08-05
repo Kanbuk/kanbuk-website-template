@@ -55,6 +55,8 @@ function schreiben(liste: string[]): void {
   }
 }
 
+import { bewegungReduziert } from './hilfen';
+
 export function merklisteStarten(): void {
   const knoepfe = document.querySelectorAll<HTMLElement>('[data-merken]');
   const zaehler = document.querySelectorAll<HTMLElement>('[data-merkliste-anzahl]');
@@ -120,7 +122,9 @@ export function merklisteStarten(): void {
       });
     }
     anzeigen();
-    if (an && knopf) knopf.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    /* Siehe assistent.ts: „Bewegung reduzieren" gilt auch hier. */
+    if (an && knopf)
+      knopf.scrollIntoView({ block: 'center', behavior: bewegungReduziert() ? 'auto' : 'smooth' });
   }
 
   document.querySelectorAll<HTMLElement>('[data-merkliste-nur]').forEach((k) => {

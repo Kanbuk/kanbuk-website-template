@@ -69,7 +69,7 @@ function lesbar(s: { datum?: string; von?: string; bis?: string }): string {
 }
 ---
 
-<div class:list={['zeiten', klasse]} {...rest} {...rest}>
+<div class:list={['zeiten', klasse]} {...rest}>
   <ul class="zeiten__liste">
     {site.betrieb.oeffnungszeiten.map((o) => (
       <li class="zeiten__zeile">

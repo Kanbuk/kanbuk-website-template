@@ -312,6 +312,66 @@ Nachprüfung erst finden musste.
 
 ---
 
+## Nachprüfung der Grenze Design/Motor (05.08.2026, unabhängig)
+
+Sechs Prüfer haben je eine Dimension untersucht, danach hat je ein Skeptiker
+versucht, ihre Funde zu widerlegen. **Antwort auf die Ausgangsfrage:
+weitgehend ja** – die unsichtbare Schicht ist vollständig, die Werte des
+Designs kommen an und schlagen die Motor-Skala, die Fußzeile ist zerlegt.
+
+**Neun Funde wurden am Code oder im Browser nachgemessen und behoben:**
+
+| # | Fund | Nachgemessen |
+| --- | --- | --- |
+| 1 | **`--kopf-hoehe` setzte niemand.** Kopf.astro sagte zu, sie zu liefern; global.css sagte, das Design setze sie. Beide verließen sich auf die andere, der Rückfall `0px` galt auf jeder Seite jedes Kunden. Jede Sprungmarke und der Skip-Link landeten hinter der klebenden Leiste. | Leiste misst sich jetzt selbst: 69/73/77 px bei 350/768/1440 – Sprungziel liegt darunter |
+| 2 | **Das Design-Tor maß die zwei Seiten in verschiedener Fensterbreite** (Design 1280, gebaut 1440). Jeder fluide Wert weicht dadurch ab – Fehlalarme beim Schriftvergleich. | beide jetzt 1440 |
+| 3 | **Das Design-Tor konnte grün melden, ohne eine Seite verglichen zu haben.** Der Entwurf schreibt jeden Schalter mit `""`, und `""` heißt „überspringen". Wer den Entwurf liegen lässt, bekommt einen Haken für null Vergleiche. | bricht jetzt laut ab |
+| 4 | **Der Zustimmungs-Häkchen-Test war eine Tautologie.** Er klickte auf Position 4/8 im Label – das Kästchen sitzt bei 0/4 und ist 13×13 px groß, der Punkt lag mitten darin. Gemessen wurde also, dass ein Klick aufs Kästchen es ankreuzt. | Klickpunkt wird jetzt aus der Lage des Kästchens abgeleitet; Tor weiter grün |
+| 5 | **Die Fußzeilen-Regel des Design-Tors konnte rechnerisch nie anschlagen.** Die gebaute Fußzeile trägt immer drei Pflichtlinks, die es oben nie gibt – über 80 % Überschneidung bräuchte ein Kopf-Menü mit über zwölf Punkten. *(Die frühere Gegenprobe war unrealistisch: Sie stellte eine Fußzeile ohne die Pflichtteile nach.)* | Pflichtlinks zählen nicht mehr mit |
+| 6 | **`:where()` konnte das Tor nicht rot machen.** Es wurde eigens aufgenommen, weil es die Gestaltung ALLER Bausteine kippt – und landete wegen „ab Safari 14 < 15.4" im Hinweis-Topf. | jetzt rot, gegengeprobt in beide Richtungen |
+| 7 | **„Bewegung reduzieren" wurde an zwei Stellen übergangen** (Assistent-Schritt, Merklisten-Umschalter). | beide fragen jetzt |
+| 8 | **Falsche Zusage in CLAUDE.md:** „Vergisst ein Port sie, blockt das Prüf-Tor jede Seite" galt nur für die Rechtslinks. Signatur blockt erst live, Social-Icons gar nicht. | Tabelle richtiggestellt; neuer Hinweis, wenn Social-Adressen gepflegt sind, aber auf keiner Seite verlinkt |
+| 9 | **`{...rest}` stand doppelt** in neun Bausteinen – Folge eines zweimal gelaufenen Hilfsskripts. | bereinigt |
+
+> **Zwei Lehren über die Gegenproben selbst.** Bei Fund 5 war meine eigene
+> frühere Messung unrealistisch – sie stellte den Fall ohne die Pflichtteile
+> nach, die in Wahrheit immer da sind. Bei Fund 6 war der erste Gegentest
+> grün, weil das Suchmuster nach dem falschen Text suchte: Astro schreibt
+> `:where(.astro-<hash>)`, nicht das Attribut. **Eine Gegenprobe, die grün
+> ist, muss selbst gegengeprobt werden** – sonst beweist sie nur, dass sie
+> nichts findet.
+
+### Was offen bleibt: Zweisprachigkeit der Motor-eigenen Texte
+
+**Blockiert den Restaurant-Piloten nicht** (einsprachig), gehört aber vor den
+nächsten zweisprachigen Kunden erledigt:
+
+- [ ] **Die Rechtslinks in der Fußzeile zeigen immer auf die deutschen
+      Adressen.** Auf einer englischen Seite führt „Datenschutz" damit zur
+      deutschen Erklärung, obwohl die englische gebaut wird. Das Formular
+      leitet die richtige Adresse bereits selbst ab – dieser Baustein fragt
+      nicht.
+- [ ] **Der Einwilligungs-Banner ist immer deutsch.** Sobald ein Kunde einen
+      Dienst einträgt und zweisprachig fährt, entscheidet ein englischer
+      Besucher in einer Sprache, die er nicht versteht. Der Motor kennt das
+      Argument selbst – bei der 2-Klick-Einbettung steht es wörtlich.
+- [ ] **Die drei Zeit-Bausteine bleiben deutsch** (Öffnungszeiten,
+      Öffnungs-Status, Zeitenzeile). Der Status wäre ein Handgriff; die
+      eingetragenen Zeiten und Anlässe („Mo–Fr", „Weihnachten") stehen in der
+      Config und brauchen dort ein zweites Feld. **Das ist Motor-Arbeit, keine
+      Konfiguration.** Abschnitt 6d nennt diese drei Bausteine bisher nicht –
+      ein Port kann die Liste vollständig abarbeiten und fährt trotzdem
+      deutsch aus.
+
+### Vier Verdachtsfälle haben sich als falsch erwiesen
+
+Damit sind sie geprüft und sauber: dass die Werte-Datei irreführend
+beschrieben sei; dass das Design Rundungen nicht setzen könne; dass
+Anfrage-Fenster und Bildergalerie eine Design-Vorgabe brechen; dass das
+Empfänger-Tor am Live-Tag fälschlich grün meldet.
+
+---
+
 ## Reihenfolge (Restbestand der Gesamtprüfung)
 
 1. ~~**Die 7 schweren aus A**~~ — erledigt am 03.08.2026.
