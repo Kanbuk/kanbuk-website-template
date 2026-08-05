@@ -678,6 +678,13 @@ nur von der eigenen Adresse. Die `fonts.txt` des Designs sagt das selbst.
 | Formularfelder | Aussehen und Anordnung | Versand, Prüfung, Schutz vor Massenzusendung |
 | Kopf- und Fußzeile | Struktur und Inhalt | `<Kopf>`/`<Fuss>` **nur, wenn das Design schweigt** |
 
+> **Die Pflichtteile der Fußzeile sind einzeln zu haben** (seit 05.08.2026):
+> `<Rechtslinks />`, `<Signatur />`, `<SocialLinks />`. Baut das Design seine
+> eigene Fußzeile, werden sie dort hineingestellt, wo das Design sie zeigt –
+> statt `<Fuss>` anzumalen. Vorher steckten sie fest in einer Zeile am unteren
+> Rand, und genau daraus entstand der Fußzeilen-Fall des zweiten Ports.
+> Vergisst ein Port sie, blockt das Prüf-Tor jede Seite.
+
 > **Der Fußzeilen-Fall.** Beim zweiten Port zeigte die gebaute Fußzeile noch
 > einmal das Kopf-Menü, während das Design dort ein Rechts-Menü vorsah. Ursache
 > ist genau diese Zeile: Der Motor-Baustein wurde benutzt, obwohl das Design

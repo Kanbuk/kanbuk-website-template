@@ -1,23 +1,41 @@
 ---
 /**
- * Fuss – MOTOR-Baustein: die Fußzeile mit allem, was auf JEDER Seite stehen muss.
+ * Fuss – MOTOR-Baustein: die Fußzeile für den Fall, dass das Design SCHWEIGT.
  *
- * Enthält bewusst die Pflichtteile, die beim Handbau am ehesten verlorengehen:
- *   – Links auf /impressum und /datenschutz (Pflicht in Österreich; das
- *     Prüf-Tor blockt jede Seite ohne sie)
- *   – die Kanbuk-Signatur (Live-Pflicht)
- *   – die Social-Icons, sobald welche in der Config stehen
+ * ==========================================================================
+ * ZUERST LESEN: Zeigt das Design eine eigene Fußzeile, wird SIE gebaut.
+ * ==========================================================================
+ * Dieser Baustein ist der Rückfall, nicht die Vorgabe. Er stellt die
+ * Pflichtteile in einer sinnvollen Reihenfolge zusammen – mehr nicht.
  *
- * Das Design malt an (`:global(.fuss…)`), die Reihenfolge lässt sich per Slot
- * ergänzen: Alles, was zwischen die Marke und die Rechtslinks gehört (Adresse,
- * Öffnungszeiten, Spalten), kommt als Kindelement herein.
+ * Hat das Design eine eigene Fußzeile (vier Spalten, Öffnungszeiten, Karte,
+ * was auch immer), dann wird sie nachgebaut und die Pflichtteile werden
+ * einzeln hineingestellt:
  *
- * Verwendung:  <Fuss />           oder mit eigenem Inhalt:
+ *     <footer class="…">           <!-- die Fußzeile des DESIGNS -->
+ *       …Spalten des Designs…
+ *       <Rechtslinks class="…" />  <!-- dorthin, wo das Design sie zeigt -->
+ *       <Signatur />
+ *     </footer>
+ *
+ * WARUM DAS HIER SO DEUTLICH STEHT: Bis 05.08.2026 steckten Copyright,
+ * Social-Icons, Rechtslinks und Signatur fest in einer unveränderlichen
+ * unteren Zeile; dem Design blieb nur ein Slot DARÜBER. Wer sie woanders
+ * brauchte, musste die Fußzeile selbst schreiben und die Pflichtteile dabei
+ * von Hand nachziehen. Beim zweiten Port ging genau das schief: In der
+ * Fußzeile stand noch einmal das Kopf-Menü, während das Design dort das
+ * Rechts-Menü vorsah. Der Betrieb fand es bei der Abnahme.
+ *
+ * Das Netz dahinter: Fehlen Impressum oder Datenschutz, blockt das Prüf-Tor
+ * JEDE Seite. Eigenbau ist deshalb ungefährlich.
+ *
+ * Verwendung:  <Fuss />           oder mit eigenem Inhalt darüber:
  *              <Fuss><div class="…">…</div></Fuss>
  */
 import { site } from '../../content.config';
 import SocialLinks from './SocialLinks.astro';
 import Signatur from './Signatur.astro';
+import Rechtslinks from './Rechtslinks.astro';
 
 interface Props {
   class?: string;
@@ -26,11 +44,6 @@ const { class: klasse } = Astro.props;
 
 const jahr = new Date().getFullYear();
 const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
-
-/* Der AGB-Link erscheint nur, wenn es die Seite wirklich gibt. Ein Link auf
-   eine nicht gebaute Adresse wäre ein toter Link in JEDER Fußzeile – und damit
-   auf jeder einzelnen Seite der Website. */
-const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
 ---
 
 <footer class:list={['fuss', klasse]}>
@@ -40,11 +53,7 @@ const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
     <div class="fuss__unten">
       <p class="fuss__recht-inhaber">© {jahr} {rechtsname}</p>
       <SocialLinks />
-      <nav class="fuss__rechtslinks" aria-label="Rechtliches">
-        <a href="/impressum">Impressum</a>
-        <a href="/datenschutz">Datenschutz</a>
-        {hatAgb && <a href="/agb">AGB</a>}
-      </nav>
+      <Rechtslinks class="fuss__rechtslinks" />
       <Signatur />
     </div>
   </div>
@@ -63,15 +72,12 @@ const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
     justify-content: space-between;
     gap: var(--raum-2xs) var(--raum-m);
   }
+  /* Die Anordnung der Rechtslinks gehört zur Fußzeile, nicht zum Baustein –
+     deshalb steht sie hier und nicht in Rechtslinks.astro. Ein Design, das
+     sie woanders hinstellt, bringt seine eigene Anordnung mit. */
   .fuss__rechtslinks {
     display: flex;
     gap: var(--raum-s);
-  }
-  .fuss__rechtslinks a {
-    /* 44px Fingerfläche – die Rechtslinks sind am Handy sonst kaum zu treffen. */
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
   }
   .fuss__recht-inhaber {
     margin: 0;

@@ -82,6 +82,27 @@ Design eine eigene Fußzeile mit anderen Spalten, wird sie gebaut, nicht `<Fuss>
 angemalt. Zeigt es ein zweispaltiges Formular mit gerahmten Feldern und Sternchen,
 wird genau das gebaut, nicht die Standard-Optik des Motors geliefert.
 
+> **Und die Pflichtteile stellst du einzeln hinein — sie sind zerlegbar:**
+>
+> ```astro
+> <footer class="…">          <!-- die Fußzeile des DESIGNS -->
+>   …Spalten des Designs…
+>   <Rechtslinks class="…" /> <!-- dorthin, wo das Design sie zeigt -->
+>   <Signatur />              <!-- Live-Pflicht, Platz bestimmt das Design -->
+>   <SocialLinks />
+> </footer>
+> ```
+>
+> Bis 05.08.2026 steckten sie fest in einer unveränderlichen Zeile am unteren
+> Rand von `<Fuss>`; dem Design blieb nur ein Slot darüber. Wer sie woanders
+> brauchte, schrieb die Fußzeile selbst — und zog die Pflichtteile von Hand
+> nach. **Beim zweiten Port ging genau das schief:** In der Fußzeile stand noch
+> einmal das Kopf-Menü, während das Design dort das Rechts-Menü vorsah. Der
+> Betrieb fand es bei der Abnahme.
+>
+> Vergisst du sie trotzdem, kommst du nicht durch: Ohne Link auf Impressum und
+> Datenschutz blockt das Prüf-Tor **jede** Seite.
+
 **Und: Dokumentierte Abweichung ist keine Erlaubnis.** „Steht ja im Bericht" macht
 aus einem Fehler keine Entscheidung. Der Kunde hat sein Design abgenommen und
 erwartet es wieder – eine Abweichungsliste liest er als Mängelliste. Deshalb in
