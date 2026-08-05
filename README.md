@@ -166,8 +166,13 @@ Details: [CLAUDE.md, Abschnitt 7a](CLAUDE.md).
 | `npm run interaktion` | **Bedien-Prüfung** – fährt jeden Baustein real (Tabs, Menü, Akkordeon …); sagt am Ende, was auf dieser Seite NICHT vorkam |
 | `npm run browser` | **Browser-Prüfung** – hält den Build gegen `browser-untergrenze.json` |
 | `npm run abgleich` | **Design-Prüfung** – hält die gebaute Seite gegen die `.dc.html` |
+| `npm run unterlaengen` | **Unterlängen-Prüfung** – schneidet die Seite g, j, p, q, y ab? |
+| `npm run bildschaerfe` | **Schärfe-Prüfung** – reicht die Auflösung auf einem 2×-Bildschirm? |
+| `npm run endpunkt` | **Empfänger-Prüfung** – lebt der Formular-Server? Verschickt nichts |
 | `npm run altgeraet` | Zeigt in Bildern, wie die Seite auf einem alten Browser **aussieht** |
 | `npm run icons` | Symbol-Bibliothek neu holen (liegt schon im Repo – nur bei Versionswechsel) |
+| `npm run studio` | Eingabe-Studio als Nachbarordner anlegen (optional, Redaktionssystem) |
+| `npm run erstbefuellung` | Vorhandenen Bestand einmalig in den Redaktionsdienst bringen (optional) |
 | `npm run maillogo` | Logo der Bestätigungsmail als PNG (SVG zeigen Mailprogramme nicht) |
 | `npm run inhalte` | Gepflegte Inhalte und Bilder vom Redaktionsdienst holen (optional) |
 | `npm run maske` | Eingabemaske für den Betrieb aus der Feldliste erzeugen (optional) |

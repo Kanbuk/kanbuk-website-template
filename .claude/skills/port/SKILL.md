@@ -26,8 +26,37 @@ ganz am Anfang** – danach gilt Ein-Rutsch ohne jede Unterbrechung:
 
 1. **Claude-Design-Link** (ohne ihn geht nichts)
 2. **Kundenname** (für `package.json`, Berichte, STAND.md)
-3. **Betriebsdaten**, soweit nicht im Design: Adresse, Telefon, E-Mail, Öffnungszeiten
+3. **Betriebsdaten**, soweit nicht im Design: Adresse, E-Mail, Öffnungszeiten –
+   und die **Telefonnummer, falls es eine gibt**.
+
+   > Telefon ist ausdrücklich **kein** Pflichtfeld. Nicht jeder Betrieb
+   > veröffentlicht eine Nummer (Terminvergabe läuft dann etwa über einen
+   > Messenger); § 5 ECG verlangt eine schnelle elektronische
+   > Kontaktaufnahme, und die E-Mail-Adresse erfüllt das. Die Prüf-Tore
+   > nehmen `telefon` deshalb aus ihren Pflichtlisten aus. Ohne diesen Satz
+   > gibt es genau zwei falsche Auswege: eine Nummer erfinden oder einen
+   > PLATZHALTER setzen, der den Live-Gang blockiert. Beides ist schon
+   > passiert.
+
 4. **Gab es eine alte Website?** (deren Adressen → Weiterleitungen, Abschnitt 7b)
+
+   **Wenn ja, gehören vier weitere Angaben in DIESE Runde** – sie lassen sich
+   nicht nachträglich improvisieren und kosten später alle Zeit:
+
+   - **(a) Zugang zur Search Console der alten Domain.** Der Export ist
+     Pflichtschritt (CLAUDE.md 7b) und entscheidet später Sachfragen, siehe
+     Etappe 1.
+   - **(b) Wer kann die DNS-Einträge ändern, und bei welchem Anbieter liegt
+     die Zone?**
+   - **(c) Läuft die Geschäftspost über dieselbe Domain?** Dann gilt der
+     Nicht-anfassen-Kasten der Umstell-Vorlage, und die Versand-Unterdomain
+     für das Formular ist Pflicht.
+   - **(d) Gibt es einen Wunschtermin für die Umstellung?**
+
+   Der Ein-Rutsch-Grundsatz erlaubt genau EINE Frage-Runde. Was hier nicht
+   gefragt wird, fällt im schlimmsten Fall erst am Umstelltag auf – etwa, dass
+   an derselben Zone die Geschäftspost hängt.
+
 5. **Gewünschte Zusätze:** Pixel/Tracking? Bediente Karte? (Standard: nein → cookiefrei)
 
 Was danach immer noch fehlt, wird NICHT nachgefragt, sondern improvisiert oder als
@@ -426,7 +455,10 @@ wird dabei ersetzt.
   gebaut sind, beide in `src/layouts/RechtsLayout.astro` einbinden (Kopf + Fuss
   um den Textblock, Zurück-Link und Mini-Footer entfernen). Impressum und
   Datenschutz müssen aussehen wie jede andere Unterseite der Website.
-- **Zweisprachiges Design?** So geht es (seit 2026-07-27 durchgetestet):
+- **Zweisprachiges Design? → Die vollständige Liste steht in CLAUDE.md
+  Abschnitt 6d.** Sie dort nachlesen und Punkt für Punkt abarbeiten.
+
+  Kurzfassung des Wegs:
   1. Je Seite eine Datei unter `src/pages/en/…` anlegen.
   2. Darin `<BaseLayout pfad="/kontakt" sprache="en" titel="Contact" beschreibung="…">`
      – `pfad` bleibt der DEUTSCHE Pfad (daraus entstehen Adresse und
@@ -435,9 +467,17 @@ wird dabei ersetzt.
      mitgeben** – ohne sie erbt die englische Seite die deutschen Meta-Texte
      und ist für Google eine Dublette.
   3. Erst danach `sprachen: ['de','en']` setzen.
+
   Niemals `'en'` setzen, ohne die Seiten zu bauen – das Prüf-Tor blockt
   Sprachverweise ins Leere. Für eine Demo reicht `['de']`; die zweite Sprache
   kommt dann als offener Punkt in STAND.md.
+
+  > **Warum die Liste in CLAUDE.md wichtiger ist als diese drei Schritte:** Die
+  > Bausteine liegen längst im Motor – `sprache` am Formular, `labelEn` je Feld,
+  > `faq` je Sprache, der zweisprachige Datenschutz-Baustein, die englischen
+  > Serverantworten. Beim zweiten echten Port hat die Zweisprachigkeit den Port
+  > trotzdem spürbar verlängert, weil jede dieser Stellen einzeln gefunden
+  > werden musste. **Eine fertige Fähigkeit, die niemand kennt, ist keine.**
 
 ---
 
@@ -445,9 +485,9 @@ wird dabei ersetzt.
 > nicht mit `<Image>` – sonst sehen Rechner mit älterem Betriebssystem kein
 > einziges Foto (CLAUDE.md Abschnitt 4a). Logos bleiben `<Image>`.
 
-## Etappe 5 – Die Launch-Prüfung (sechs Stufen, alle Pflicht)
+## Etappe 5 – Die Launch-Prüfung (acht Stufen, alle Pflicht)
 
-**Die sechs Stufen, in dieser Reihenfolge:**
+**Die acht Stufen, in dieser Reihenfolge:**
 
 | | Befehl | prüft |
 | --- | --- | --- |
@@ -455,11 +495,21 @@ wird dabei ersetzt.
 | 2 | `npm run sicht` | echter Browser bei 350/430/768/1440 px + Bögen ansehen |
 | 3 | `npm run interaktion` | jedes Bedienelement wird wirklich geklickt |
 | 4 | `npm run browser` | Browser-Untergrenze + `npm run altgeraet` ansehen |
-| 5 | **`npm run abgleich`** | gebaute Seite gegen die Design-Datei |
-| 6 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Stufe 6 unten) |
+| 5 | `npm run unterlaengen` | abgeschnittene g, j, p, q, y – vor allem bei Verlaufs-Überschriften |
+| 6 | `npm run bildschaerfe` | kommt auf einem feinen Bildschirm (2×) genug Auflösung an? |
+| 7 | **`npm run abgleich`** | gebaute Seite gegen die Design-Datei |
+| 8 | **das eigene Auge** | Design-Datei daneben, Wert für Wert (Stufe 8 unten) |
 
-> Stufe 5 und 6 sind BEIDE Pflicht und ersetzen einander nicht: Das Werkzeug
+> Stufe 7 und 8 sind BEIDE Pflicht und ersetzen einander nicht: Das Werkzeug
 > findet „Block fehlt / Block erfunden", das Auge alles darin.
+
+> **Stufe 5 und 6 treffen fast jedes Claude Design.** Verlaufs-Überschriften
+> sind dort Standard, und bei `background-clip: text` mit enger Zeilenhöhe
+> verschwinden die Unterlängen: Nichts läuft über, nichts meldet sich, und auf
+> einem Bildschirmfoto sieht ein halbes „g" aus wie ein „g". Randlose Banner
+> ebenso – am Handy landen sie sonst bei einem Bruchteil der nötigen Auflösung.
+> Ein NEUNTES Tor (`npm run endpunkt`) läuft erst beim Live-Gang mit, in
+> `npm run check -- --live`.
 
 **Stufe 4 ist `npm run browser`** – sie hält den Build gegen die
 Browser-Untergrenze (CLAUDE.md Abschnitt 4a). Sie kam dazu, weil eine
@@ -475,7 +525,7 @@ Beim Bauen der Seiten deshalb von Anfang an:
 Inhaltsbilder, kein Zerlegen in Klammern in Browser-Code, Ersatzwert vor jedem
 modernen CSS-Merkmal.
 
-> ### Stufe 6: Abgleich mit der Vorlage – **von Hand, und ohne Abkürzung**
+> ### Stufe 8: Abgleich mit der Vorlage – **von Hand, und ohne Abkürzung**
 >
 > **Grüne Technikprüfungen sagen nichts über Design-Treue.** Im Kundenprojekt
 > waren alle Tore grün, während ein Abschlussband die falsche Grundfarbe hatte,
@@ -565,7 +615,7 @@ jede Ausbau-Entscheidung am Motor ist geraten. Deshalb bei JEDEM Port:
 | | |
 | --- | --- |
 | **Start** | Sekunde, in der der Port-Prompt abgeschickt wurde |
-| **Ende** | **Alle sechs Stufen der Etappe 5** sind durch – einschließlich `npm run browser`, der angesehenen Altgerät-Bilder und des Augen-Abgleichs gegen die Design-Datei – **und** STAND.md ist gefüllt. *(Hier standen nur drei der sechs. Wer den Schlussstrich nach dem dritten zieht, misst eine andere Arbeit als die, die Etappe 5 verlangt – und meldet „fertig", bevor die Browser-Untergrenze und die Design-Treue geprüft sind.)* |
+| **Ende** | **Alle acht Stufen der Etappe 5** sind durch – einschließlich `npm run browser`, der angesehenen Altgerät-Bilder, der Unterlängen- und der Schärfe-Messung und des Augen-Abgleichs gegen die Design-Datei – **und** STAND.md ist gefüllt. *(Hier standen einmal nur drei. Wer den Schlussstrich nach dem dritten zieht, misst eine andere Arbeit als die, die Etappe 5 verlangt – und meldet „fertig", bevor die Browser-Untergrenze und die Design-Treue geprüft sind.)* |
 | **Nachbesserungsrunden** | Wie oft musste der Nutzer nachbessern lassen, nachdem du „fertig" gemeldet hattest? |
 | **Wo die Zeit hinging** | Grobe Aufteilung: Inventar / Assets / Config / Seiten bauen / Prüfen |
 
@@ -599,15 +649,30 @@ Dann der Bericht an den Nutzer, kurz und ehrlich:
 
 ## Bei Buchung (Stufe 3)
 
-Zuerst STAND.md lesen – dort steht, was offen ist. Dann nur noch drei Dinge,
-kein Basteln an Technik:
-1. `mode: 'live'` setzen und neu bauen (`vercel.json` entsteht
-   automatisch richtig – nichts von Hand ändern)
+Zuerst STAND.md lesen – dort steht, was offen ist.
+
+**Der vollständige Ablauf steht im `/deploy`-Skill, Weg B.** Hier stand früher
+eine Dreierliste mit dem Zusatz „nur noch drei Dinge, kein Basteln an Technik" –
+und das war schlicht falsch. Der Skill kennt die Versand-Unterdomain samt drei
+DNS-Einträgen, die Region des Versanddienstes (an der ein Rechtstext hängt),
+den Search-Console-Export, den DNS-Export, die Weiterleitungen, die Firewall-
+Regel auf den Formular-Empfänger und die Weiterleitung der Abnahme-Adresse.
+Ein Chat, der dieser Datei folgt statt dem Skill, lässt die Hälfte weg – und
+zwar in dem Moment, in dem laut Text „niemand mehr an der Technik arbeitet".
+
+Läuft unter der Adresse schon eine Website, gilt zusätzlich **`/deploy` Weg B2
+(Relaunch)** und die Vorlage `vorlagen/UMSTELLTAG-VORLAGE.md`.
+
+Die drei, die man sich merken kann, weil ohne sie gar nichts geht:
+
+1. `mode: 'live'` setzen und neu bauen (`vercel.json` entsteht automatisch
+   richtig – nichts von Hand ändern)
 2. Echte **Rechtstexte** (UID, Firmenbuch – Impressumspflicht) + alle offenen
    Punkte aus STAND.md abarbeiten und abhaken
 3. `RESEND_API_KEY` + `CONTACT_FROM` setzen, Domain verbinden
 
-Dann `npm run check -- --live` (blockt bei offenen STAND.md-Punkten) und
+Und der Beweis, dass es gereicht hat: `npm run check -- --live` (blockt bei
+offenen STAND.md-Punkten und ruft den Formular-Empfänger wirklich an), dann
 `npx vercel --prod`. STAND.md-Phase auf „Live" stellen.
 
 ---

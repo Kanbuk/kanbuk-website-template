@@ -15,18 +15,36 @@ neue Lücken eintragen. Ein Chat-Bericht ist nach dem Chat weg – diese Datei n
 > ### Woher die Belege in dieser Datei stammen – einmal ehrlich
 >
 > Dieser Text sagt oft „in einem Kundenprojekt", „im Piloten", „an einer echten
-> Kundenseite belegt". **Das ist bis heute (Stand 03.08.2026) durchgehend
-> DERSELBE eine Port** – ein Autohaus mit Katalog. Dazu kommen ein paar
-> Verkaufs-Demos, die nie live gegangen sind.
+> Kundenseite belegt". **Stand 05.08.2026 stehen dahinter ZWEI vollständig
+> durchgezogene Ports** – dazu ein paar Verkaufs-Demos, die nie live gegangen
+> sind.
 >
-> Warum das hier steht: Die Formulierungen lesen sich wie Erfahrung aus vielen
-> Projekten. Sie sind Erfahrung aus einem. Jede Lehre darin ist echt und teuer
-> bezahlt – aber ob sie beim Wirt, beim Tischler oder in einer Praxis genauso
-> greift, ist **nicht** erwiesen. Wo eine Regel offensichtlich nur zu einem
-> Händler mit Katalog passt, ist sie im Zweifel zu eng formuliert; sag das
-> im Bericht, statt sie stillschweigend zu dehnen.
+> - **Der erste:** ein Händler mit Katalog. Einsprachig, freie Domain, viele
+>   gleichartige Einträge mit eigenen Detailseiten.
+> - **Der zweite:** ein Dienstleistungsbetrieb, **zweisprachig**, **Relaunch
+>   auf eine Adresse mit laufender Geschäftspost**, mit echtem Adressumzug –
+>   und **ohne Katalog**.
 >
-> Umgekehrt gilt: Was bei diesem einen Port SCHIEFGEGANGEN ist, ist kein
+> **Was der zweite Port zum ersten Mal belegt:** dass Zweisprachigkeit
+> funktioniert (und wie viele Stellen dabei einzeln zu finden sind, Abschnitt
+> 6d); dass ein Relaunch eine eigene Disziplin ist, an der die Geschäftspost
+> hängt (7b und `vorlagen/UMSTELLTAG-VORLAGE.md`); und dass der Redaktions-
+> Anschluss an einem echten Dienst läuft (6c).
+>
+> **Was er als zu eng formuliert entlarvt hat:** Regeln, die stillschweigend
+> einen Katalog voraussetzen. Der Merklisten-Absatz der Datenschutzerklärung
+> stand in jedem Klon, auch ohne etwas zum Vormerken. Die Anleitung für den
+> Betrieb kannte nur den Katalogfall. Das Prüf-Tor hielt jedes punktlose Feld
+> für ein Katalogfeld.
+>
+> Warum das hier steht: Zwei Betriebe sind mehr als einer, aber sie sind keine
+> Erfahrung aus vielen Projekten. Jede Lehre darin ist echt und teuer bezahlt –
+> ob sie beim Wirt oder in einer Praxis genauso greift, ist **nicht** erwiesen.
+> Wo eine Regel offensichtlich nur zu einem der beiden Betriebstypen passt, ist
+> sie im Zweifel zu eng formuliert; sag das im Bericht, statt sie
+> stillschweigend zu dehnen.
+>
+> Umgekehrt gilt: Was bei einem dieser Ports SCHIEFGEGANGEN ist, ist kein
 > Einzelfall-Risiko, sondern eine bewiesene Falle des Motors. Diese Sätze
 > gehören nicht abgeschwächt.
 
@@ -310,12 +328,20 @@ Seite, die dem Design nur *ähnelte*.
 
 ### Wenn der Motor dem Design widerspricht
 
-Zwei Motor-Untergrenzen **schlagen das Design**, und zwar ohne Ermessen:
+Drei Motor-Untergrenzen **schlagen das Design**, und zwar ohne Ermessen:
 
 - **Schrift unter 12 px** – die Sichtprüfung lässt sie nicht durch.
 - **Kontrast unter dem WCAG-Wert** – ebenso.
+- **Eingabefelder unter 16 px Schriftgröße.** Darunter zoomt jedes iPhone beim
+  Antippen in die Seite hinein: Der Besucher steht mitten im Formular in einer
+  verschobenen Ansicht und muss erst wieder herausfinden. Designs geben für
+  Felder regelmäßig 14 px vor – das ist der Regelfall, nicht die Ausnahme.
+  Der Motor setzt deshalb `font-size: max(16px, var(--schrift-m))` auf
+  `input, textarea, select` (siehe `global.css`); die Sichtprüfung misst es
+  zusätzlich nach. Betrifft jeden Kunden mit Formular und jeden Besucher mit
+  iPhone, also die Mehrheit der Anfragen – und kein anderes Tor sieht es.
 
-Praktisch jedes Design unterschreitet beides irgendwo (Beschriftungen, Chips,
+Praktisch jedes Design unterschreitet die ersten beiden irgendwo (Beschriftungen, Chips,
 graue Zweittexte auf dunklem Grund). Das ist kein Fehler des Designs und kein
 Fehler des Ports: **Abweichen ist hier Pflicht.** Sie gehört aber begründet in
 den Bericht und in die Abweichungsliste – sonst steht der Inhaber vor dem Kunden
@@ -697,15 +723,53 @@ Seiten samt SEO, Formulare, Preisliste, Rechtstexte, Steuerung (`mode`, `branche
 
 **Mehrsprachigkeit:** `sprachen: ['de','en']` nur setzen, wenn die englischen Seiten
 wirklich als Routen gebaut werden (`src/pages/en/…`) – sonst zeigen die automatischen
-hreflang-Verweise ins Leere. Das Prüf-Tor kontrolliert das.
+hreflang-Verweise ins Leere. Das Prüf-Tor kontrolliert das. Die vollständige
+Liste dessen, was dabei zu tun ist, steht in **Abschnitt 6d**.
 
 **Ausnahme mit Absicht:** Tabellarische Daten, die sich oft ändern (Speisekarte,
 Preisliste), stehen hier – damit eine Preisänderung eine Ein-Datei-Änderung bleibt.
 Bei sehr großen Karten (mehrere Kategorien, hunderte Positionen) in
 `daten/preisliste.ts` auslagern und importieren.
 
+> **Jeder Import, den der SERVER liest, trägt die `.js`-Endung.** Das ist
+> `content.config.ts` und alles, was daran hängt – also auch die ausgelagerte
+> Preisliste: `import { PREISLISTE } from './daten/preisliste.js';`
+>
+> Der Website-Build verzeiht die fehlende Endung, die Serverfunktion nicht:
+> Vercel baut `api/` als Node-ESM, dort ist sie Pflicht. Ohne sie stirbt der
+> Formular-Empfänger beim Einlesen des Moduls – bei komplett grünen Toren, weil
+> alle Tore die gebaute Website ansehen und keines den Server anruft. Genau so
+> ist es in einem Kundenprojekt passiert, und das Werkzeug hat die falsche
+> Schreibweise damals selbst vorgesagt. Das neunte Tor (`npm run endpunkt`)
+> findet es jetzt, aber erst beim Live-Gang.
+
 **Allergene sind in der Gastronomie Pflicht** (österreichische Kennzeichnung A–R),
 sobald Speisen gelistet sind. Feld: `PreisPosition.allergene`.
+
+### Gewerbeangaben kommen aus dem amtlichen Auszug – nie aus Ableitung
+
+Behörde, Gewerbewortlaut und Gewerbeart werden **wortgleich aus dem amtlichen
+Gewerbeauszug (GISA)** übernommen oder bleiben `PLATZHALTER`. Sie werden nie
+aus Adresse, Branche oder Tätigkeit abgeleitet.
+
+In einem Kundenprojekt standen drei abgeleitete Werte im Impressum – falsche
+Behörde, falscher Gewerbewortlaut, erfundene Kammer-Zuordnung. Alle drei sahen
+aus wie geprüfte Angaben; erst der amtliche Auszug hat sie korrigiert. Es ist
+derselbe Fehlertyp, den Abschnitt 0 für Paragraphenangaben und fremde
+Menüpunkte längst verbietet („entweder belegt nachgeschlagen oder weggelassen") –
+nur an der Stelle mit dem höchsten Haftungsrisiko.
+
+Drei Dinge, die dabei regelmäßig schiefgehen:
+
+- **Kammer und Gewerbebezeichnung sind zwei Felder** (`kammer`, `gewerbe`).
+  § 5 Abs. 1 Z 6 ECG verlangt beides nebeneinander. Standen sie in einem Feld,
+  löschte der sorgfältige Kunde beim Eintragen des Registerwortlauts die Kammer.
+- **Wer § 25 Mediengesetz zitiert, muss den Unternehmensgegenstand liefern.**
+  Feld: `unternehmensgegenstand`. Eine Pflichtnorm zu nennen und nicht zu
+  erfüllen ist schlechter, als sie gar nicht zu nennen.
+- **Name und Geburtsdatum der gewerberechtlichen Person werden NICHT
+  übernommen.** Für ein Einzelunternehmen verlangt § 5 ECG den Firmenwortlaut,
+  nicht die Privatperson.
 
 ---
 
@@ -818,6 +882,38 @@ Drittanbieter, er selbst). Davon hängt ab, was auf der Seite stehen darf.
 zwischen Seite und AGB löste sich in einem Kundenprojekt auf, sobald der Kunde
 gefragt wurde – die Seite hatte recht. AGB sind Vertragsrecht; wer sie
 „glattzieht", ändert einen Vertrag.
+
+### Ein Pflicht-Häkchen, das Dokumente nennt, muss sie verlinken
+
+„Ich habe die Datenschutzerklärung und die AGB gelesen" verlangt eine
+Bestätigung über etwas, das an dieser Stelle nicht zu öffnen ist. Nachlesen
+hieße: scrollen, wegklicken, halb ausgefülltes Formular verlieren. Und in den
+AGB steht meist eine Stornogebühr – genau dort zählt die zumutbare
+Kenntnisnahme.
+
+Dafür gibt es `labelLinks` am Feld (`content.config.ts → FormularFeld`):
+
+```ts
+label: 'Ich habe die Datenschutzerklärung und die AGB gelesen.',
+labelLinks: [
+  { text: 'Datenschutzerklärung', ziel: '/datenschutz' },
+  { text: 'AGB', ziel: '/agb' },
+],
+```
+
+Der Baustein zerlegt die Beschriftung an den genannten Wortlauten und baut die
+Links selbst – **ausdrücklich kein `set:html` aus der Konfiguration**, das wäre
+ein offenes Tor für jeden Text, den auch ein Redaktionssystem füllt. Kommt der
+Wortlaut nicht vor, hält der Build an: Ein Link, der still nicht entsteht,
+fällt niemandem auf.
+
+Zwei Tore setzen es durch. Das Prüf-Tor misst die **gebaute** Seite (greift
+also auch bei einem handgeschriebenen Formular), das Bedien-Tor klickt mit dem
+Zeiger und misst beides nach: Der Link darf das Häkchen **nicht** setzen –
+eine so erschlichene Zustimmung wäre keine –, und der Text daneben **muss** es
+weiterhin setzen, sonst ist das Häkchen am Handy kaum noch zu treffen. Laut
+Norm fällt die Label-Aktivierung bei verlinktem Inhalt weg; hier wird es
+gemessen statt geglaubt.
 
 **Den Text erfindet der Motor nicht.** AGB sind Vertragsrecht; er kommt vom
 Betrieb (Anwalt, WKO-Muster, Steuerberater). Fehlt er noch:
@@ -953,6 +1049,66 @@ werden beim Einrichten **nachgesehen, nicht geraten** – wer sie aus dem
 Gedächtnis behauptet, kostet den Auftraggeber eine Runde vor dem Bildschirm.
 Gleiche Regel wie überall sonst: keine Befehlszeile, keine Dateipfade.
 
+**Die Ansprache folgt `content.config.ts → ansprache`.** Die Vorlage ist in der
+Sie-Form geschrieben; duzt der Betrieb, wird sie beim Einrichten umgestellt.
+Ein Klon musste sie dafür komplett neu schreiben – ein Blick in die Config
+vorher spart das.
+
+### Was die Redaktion NICHT mitzieht: das Kartenbild
+
+Ändert der Betrieb seine Anschrift über die Eingabemaske, wandern Kartenbild,
+Koordinaten und Kartenlink **nicht** mit. Dafür muss zusätzlich
+`npm run karte -- --adresse "…"` laufen.
+
+Das ist genau der Fehlertyp, gegen den dieser ganze Abschnitt antritt: Der
+Betrieb sieht „veröffentlicht", die Anschrift auf der Seite stimmt – und die
+Anfahrt führt weiter zur alten Adresse. Deshalb steht in der Anleitungs-Vorlage
+die Bitte, sich bei einer Adressänderung kurz zu melden.
+
+---
+
+## 6d. Zweisprachige Seiten – die vollständige Liste
+
+Der Motor kann Zweisprachigkeit. Das Problem war nie das Können, sondern das
+Wissen: Beim zweiten echten Port hat sie den Ablauf spürbar verlängert – nicht
+wegen der Inhalte, sondern weil **jede** dieser Stellen einzeln gefunden werden
+musste. Eine fertige Fähigkeit, die niemand kennt, ist keine.
+
+**Der Weg:** je Seite eine Datei unter `src/pages/en/…`, darin `sprache="en"`
+am Layout, `pfad` bleibt der DEUTSCHE Pfad. Erst danach `sprachen: ['de','en']`
+setzen – nie umgekehrt, sonst zeigen die Sprachverweise ins Leere (das Prüf-Tor
+blockt das).
+
+**Und dann diese Liste, Punkt für Punkt.** Alles darin steht sonst auf Deutsch,
+und zwar unauffällig:
+
+| Stelle | Was zu tun ist |
+| --- | --- |
+| **Formular** | `sprache="en"` an **jedes** `<Formular>` |
+| **Feldbeschriftungen** | `labelEn` an **jedes** Feld in `content.config.ts` |
+| **Zustimmungs-Häkchen** | `labelLinks[].textEn`, wenn der verlinkte Wortlaut anders heißt. Das ZIEL leitet der Motor selbst ab, sobald es die englische Fassung gibt |
+| **FAQ-Schema** | `faq` je Sprache ans `BaseLayout`. Sonst stehen deutsche Fragen im Schema der englischen Seite – genau das, was Google als „Markup, das der Nutzer nicht sieht" verbietet |
+| **Datenschutzerklärung** | eigene Route `src/pages/en/datenschutz.astro`, die `<DatenschutzInhalt sprache="en" />` einbindet. **Keine Kopie der Seite anlegen** – der Text steht einmal im Baustein, in beiden Sprachen (siehe dessen Dateikopf) |
+| **Rechtsseiten allgemein** | `sprache` am `<RechtsLayout>` – erst dadurch stimmen Sprachauszeichnung und Motortexte |
+| **2-Klick-Einbettung** | `sprache="en"` an `<Einbettung>`. Der Hinweistext IST die Einwilligungserklärung für diesen Fall |
+| **Danke- und Fehlerseite** | eigene Routen unter `/en/`, sonst landet ein englischer Absender nach dem Absenden auf einer deutschen Seite |
+| **OG-Bildtext** | `og:image:alt` folgt der Seitensprache |
+
+**Was der Motor von selbst richtig macht** (nichts zu tun): Sprachverweise
+(hreflang) inklusive der Rechtsseiten, `x-default`, der Sprungmarken-Link ganz
+oben, die Antworten des Formular-Servers, die Bestätigungsmail, der Link unter
+dem Zustimmungs-Häkchen. Alle diese Stellen fragen das Verzeichnis
+`src/pages/en/` (`src/lib/sprachrouten.ts`) – sie ziehen nach, sobald die Route
+existiert, und driften nicht.
+
+**Was bewusst einsprachig bleibt:** Impressum und AGB. Das Impressum ist eine
+Pflichtangabe nach österreichischem Recht mit festen Begriffen (Firmenbuch,
+UID, Gewerbe); eine Übersetzung erfindet dafür Wörter, die im Register nicht
+vorkommen. AGB sind Vertragsrecht – eine zweite Sprachfassung wäre eine zweite
+Vertragsgrundlage, und welche gilt, entscheidet dann niemand. Die
+Datenschutzerklärung ist der begründete Sonderfall: Art. 12 Abs. 1 DSGVO
+verlangt die Pflichtinformation in verständlicher Sprache, sobald ein
+englisches Formular personenbezogene Daten erhebt.
 
 ---
 
@@ -1127,6 +1283,24 @@ längst entfernter Einträge, eine davon auf der ersten Ergebnisseite. Das triff
 Objekte, alte Aktionsseiten, abgesagte Termine. Genau die Adressen sind aus der
 Sitemap verschwunden und stehen trotzdem noch bei Google.
 
+> **Der Export gehört ins Repo** (`daten/search-console/`), nicht nur einmal
+> überflogen. Zwei Gründe:
+>
+> **Er ist der Ausgangsstand.** Vier Wochen nach dem Umzug will jemand wissen,
+> ob die Sichtbarkeit gehalten hat. Ohne Vorher-Zahlen ist jede Antwort darauf
+> geraten – und nachträglich ist der Stand nicht wiederherstellbar.
+>
+> **Er entscheidet drei Fragen, die sonst nach Geschmack entschieden werden:**
+>
+> | Frage | Was der Export dazu sagt |
+> | --- | --- |
+> | **www oder Kurzform** als Hauptadresse? | welche der beiden die Klicks hat – das Verhältnis ist meist eindeutig |
+> | Worauf zielt die Sichtprüfung? | der Handy-Anteil |
+> | Welche Sprache steht an der Wurzel? | die Sprache der stärksten Suchanfragen |
+>
+> Bei einer echten Umstellung lag die Vermutung bei der Adressrichtung
+> messbar daneben.
+
 **(c) Die DNS-Zone beim Anbieter EXPORTIEREN, nicht von außen abfragen.** Eine
 Abfrage zeigt, was gerade beantwortet wird; der Export zeigt, was eingetragen
 ist. Im Kundenprojekt: Abfrage sieben Einträge, Export acht. Es fehlte
@@ -1197,6 +1371,25 @@ Immer gleich. Details im `/port`-Skill (`.claude/skills/port/SKILL.md`).
    bleiben, gehört **`(kein Blocker)`** in die Zeile – dann wird daraus ein
    Hinweis. So steht die Entscheidung schriftlich in der Datei, statt dass
    jeder Klon sich eine eigene Handhabung ausdenkt.
+
+   **Dafür gibt es im Lücken-Inventar eine eigene Rubrik:**
+
+   ```markdown
+   ### Nach dem Live-Gang (blockiert nicht)
+   - [ ] Echte Testanfrage über das Formular – und die Mail im Postfach ansehen *(kein Blocker)*
+   - [ ] Firewall-Regel auf /api/contact setzen *(kein Blocker)*
+   - [ ] Abnahme-Vorschau <kunde>.kanbuk.com auf die Kundendomain weiterleiten *(kein Blocker)*
+   - [ ] Neue Sitemap in der Search Console einreichen, alte entfernen *(kein Blocker)*
+   - [ ] Altes Hosting 4–6 Wochen weiterlaufen lassen *(kein Blocker)*
+   - [ ] Vier Wochen den 404-Bericht mitlesen *(kein Blocker)*
+   ```
+
+   Diese sechs Punkte können **naturgemäß erst nach dem Umschalten** passieren.
+   Als normale Häkchen würden sie die Live-Prüfung blockieren – und dann
+   passiert das Erwartbare: Sie werden gestrichen, um grün zu werden. Danach
+   sendet das Formular nachweislich nie eine echte Testanfrage, und die
+   Vorschau-Adresse bleibt als zweite indexierbare Kopie stehen. Die letzten
+   drei Punkte gelten nur bei einem Relaunch.
 6. Committen und pushen (ein Kunde = ein Repo/Branch).
 
 > **Eine Ausnahme im Prüf-Tor, die einen Mangel des MOTORS deckt, ist keine

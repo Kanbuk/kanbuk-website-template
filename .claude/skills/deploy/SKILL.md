@@ -83,9 +83,30 @@ Vor JEDEM Deploy (Demo wie Live) läuft die **komplette Launch-Prüfung**
    und Abschnitte fehlten. Das Werkzeug findet „Block fehlt / Block erfunden",
    das Auge alles darin; beides ist Pflicht. Verbleibende Abweichungen gehören
    begründet in den Bericht (`/port`-Skill, Etappe 5).
+4c. **`npm run unterlaengen` grün** (siebtes Tor). Findet abgeschnittene
+   g, j, p, q, y – der Klassiker bei Überschriften mit Farbverlauf. Nichts
+   läuft dabei über, nichts meldet sich in der Konsole, und auf einem
+   Bildschirmfoto sieht ein halbes „g" aus wie ein „g". Trifft fast jedes
+   Claude Design, weil Verlaufs-Überschriften dort Standard sind.
+4d. **`npm run bildschaerfe` grün** (achtes Tor). Misst, ob auf einem Gerät mit
+   doppelter Punktdichte – also auf praktisch jedem Handy – genug Auflösung
+   ankommt. Randlose Banner sind der Regelfall dafür.
 5. Beim Live-Gang zusätzlich: `npm run check -- --live` (Platzhalter, offene
    STAND.md-Punkte, Sitemap) und `npm audit --omit=dev` – Funde mit Schweregrad
-   high/critical stoppen den Launch (dem Nutzer melden)
+   high/critical stoppen den Launch (dem Nutzer melden).
+
+   **In `check -- --live` läuft das NEUNTE Tor mit: `npm run endpunkt`.** Es
+   ruft den Formular-Empfänger wirklich an (GET muss 405 antworten, POST mit
+   falschem Format 415) und verschickt dabei nichts. Warum es das gibt: In
+   einem Kundenprojekt war der Empfänger **dreimal** tot, jedes Mal bei
+   komplett grünen Toren – einmal durch einen Import ohne `.js`-Endung, zweimal
+   durch `import.meta.glob` im Serverbündel. Beides stört den Website-Build
+   nicht und lässt die Serverfunktion bei jedem Aufruf abstürzen. Alle übrigen
+   Tore sehen sich die gebaute Website an und rufen nie den Server an.
+
+   Die Besucherin sieht in dem Fall „Danke", und die Anfrage ist weg. Das ist
+   der einzige Fehler, der den Betrieb direkt Geld kostet und den niemand
+   bemerkt – er fällt erst dadurch auf, dass wochenlang keine Anfrage kommt.
 
 ---
 
@@ -358,9 +379,25 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    verbinden, dann deployt jeder `git push` automatisch neu.)
 6. **Echte Kunden-Domain verbinden:** `npx vercel domains add <kundendomain> <projektname>`.
    Zeigt die Ausgabe nötige DNS-Einträge, dem Nutzer eine einfache
-   Klick-Anleitung für den Domain-Anbieter des Kunden mitgeben. Die
-   `<kunde>.kanbuk.com`-Abnahme-Adresse kann bleiben oder entfernt werden.
-7. **Nur bei Redaktionssystem** (`redaktion/dienst.json` vorhanden, CLAUDE.md 6c):
+   Klick-Anleitung für den Domain-Anbieter des Kunden mitgeben.
+
+   **Ist die Adresse schon in Benutzung, gilt stattdessen B2 unten** – das ist
+   der häufigere Fall.
+
+6a. **Die Abnahme-Vorschau `<kunde>.kanbuk.com` WEITERLEITEN, nicht entfernen.**
+   Der Abnahme-Link ist verschickt und liegt in der Ablage des Kunden; entfernt
+   man die Adresse, läuft er ins Leere. Im Vercel-Dashboard des Projekts die
+   Kanbuk-Unterdomain als Weiterleitung auf die Kundendomain stellen.
+
+   **Warum das kein Schönheitsschritt ist:** Die noindex-Sperre hängt am `mode`,
+   nicht an der Adresse. Ab `live` ist sie für ALLE Adressen des Projekts weg –
+   ohne Weiterleitung steht derselbe Inhalt zweimal offen im Netz, und Google
+   entscheidet selbst, welche der beiden es zeigt.
+7. **Nur bei bestehender Vorgänger-Website:** die Weiterleitungen von Hand
+   nachfahren – drei bis fünf alte Adressen aufrufen und sehen, wo sie landen.
+   `vercel.json` entsteht beim Bauen aus `weiterleitungen` (CLAUDE.md 7b); dass
+   die Einträge da sind, heißt nicht, dass sie treffen.
+8. **Nur bei Redaktionssystem** (`redaktion/dienst.json` vorhanden, CLAUDE.md 6c):
    die nächtliche Sicherung scharfstellen. **Das ist kein Zubehör** – ohne sie
    driftet der eingecheckte Stand ab dem ersten Tag ab, an dem der Betrieb
    selbst pflegt, und die Zusage „die Website läuft auch ohne den Dienst
@@ -380,7 +417,88 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
      wirkt statt erst in der Nacht (Adresse in `redaktion/README.md`).
    - Aus `redaktion/ANLEITUNG-VORLAGE.md` die fertige Anleitung für den Betrieb
      machen: die `<…>`-Lücken **am echten Bildschirm nachsehen**, nicht raten.
-8. Live-URL an den Nutzer.
+9. **Bremse auf den Formular-Empfänger setzen** (Firewall des Hosters).
+
+   Der Motor zählt Sendungen nur im Arbeitsspeicher **einer einzelnen**
+   Serverinstanz – bei mehreren Instanzen zählt jede für sich, und nach einer
+   Ruhepause fängt die Zählung bei null an. Das ist ein Notnagel, keine Bremse.
+
+   Regel im Vercel-Dashboard des Projekts (Firewall → eigene Regel):
+
+   > Pfad `/api/contact` **UND** Methode `POST` → Rate Limit, festes Fenster
+   > **60 Sekunden**, **5 Anfragen je IP** → danach **Deny (403) für 15 Minuten**.
+
+   Drei Dinge, die in keiner Oberfläche stehen und die es zu wissen lohnt:
+
+   - **Die 15-Minuten-Sperre gilt für die GANZE Seite**, nicht nur für den
+     Formularpfad – auch `robots.txt` antwortet dann mit 403. Das ist ein
+     bewusster Handel und gehört dem Kunden gesagt.
+   - **Rate-Limit-Regeln lassen sich NICHT in `vercel.json` hinterlegen**
+     (dort gibt es nur „deny" und „challenge"). Also je Projekt von Hand,
+     keine Kopierfunktion.
+   - Die Kosten sind vernachlässigbar – blockierte Anfragen sind gratis.
+
+   **Nachmessen ohne Mailversand:** unvollständige Anfragen schicken (ohne
+   Pflichtfelder). 1–5 kommen durch, ab der 6. kommt 403. So wird keine Mail
+   ausgelöst. Und: Ein 403 auf der Startseite direkt nach so einer Prüfschleife
+   ist der Schutz des Hosters, kein kaputter Deploy.
+
+   **Warum das ein Ablaufschritt ist und keine Empfehlung:** Ohne die Regel
+   kommt ein Angreifer dauerhaft auf 5 Mails pro Minute. Der teure Ausgang ist
+   nicht der volle Posteingang, sondern die Absender-Domain des Betriebs auf
+   einer Sperrliste – danach kommt auch seine normale Geschäftspost nicht mehr
+   an.
+10. Live-URL an den Nutzer.
+
+---
+
+## B2) Relaunch: die Adresse ist schon in Benutzung
+
+Der häufigere Fall. Dort läuft eine Website, und an derselben DNS-Zone hängt
+meist die **Geschäftspost**. Die vollständige Schritt-für-Schritt-Vorlage steht
+in **`vorlagen/UMSTELLTAG-VORLAGE.md`** – sie wird zu Beginn in den
+Kundenordner kopiert und dort mit den echten Werten gefüllt.
+
+Was hier stehen muss, weil es die Reihenfolge entscheidet:
+
+**1. Erst umschalten und prüfen, DANN die Adresse umhängen.**
+`mode: 'live'` setzen, committen, deployen, und auf der **Vorschau-Adresse**
+gegenprüfen: kein `noindex`, `robots.txt` frei, Sitemap da, Canonical nennt die
+Kundendomain. Wer zuerst die Adresse umhängt, veröffentlicht eine noch auf
+`noindex` stehende Seite unter der Kundendomain – also genau die Sichtbarkeit,
+für die die Weiterleitungen gebaut wurden.
+
+**2. Das Umschalten ist ein COMMIT, kein lokales Deploy.** Sonst fällt die Seite
+beim nächsten Build (Redaktionssystem, Sicherung) lautlos in den
+Vorschau-Betrieb zurück – mit `noindex`, und niemand merkt es.
+
+**3. Vorlaufzeit.** Am Vorabend die Gültigkeitsdauer der DNS-Einträge (TTL) auf
+300 Sekunden senken und die **komplette Zone exportieren** – das ist der
+Wiederherstellungspunkt. Manche Anbieter-Masken bieten gar keine
+TTL-Einstellung an; dann läuft der Umzug ohne gesenkte Gültigkeitsdauer, und
+der Rückweg dauert statt fünf Minuten bis zu einer Stunde. Das gehört vorher
+gesagt, nicht am Morgen entdeckt.
+
+**4. Nur die Web-Einträge ändern. Nichts löschen, keinen Typ wechseln.**
+Unangetastet bleiben: alle MX-Einträge, SPF, DKIM-Schlüssel, DMARC, die
+Versand-Unterdomain und alles, was nach Postfach aussieht (`imap.`, `mail.`,
+`smtp.`, `ftp.`) samt Bestätigungszeilen.
+
+> **Zwei Angebote ausschlagen:**
+> - Vercels Vorschlag, die **Nameserver zu übernehmen**, NICHT annehmen. Das
+>   nimmt dem Betrieb die E-Mail.
+> - Den Knopf **„Standardwerte wiederherstellen"** beim Domain-Anbieter nie
+>   drücken. Er löscht genau die Einträge aus dem Kasten oben.
+
+**5. Gegenprüfen an den Zwischenspeichern vorbei.** Der eigene Rechner kennt
+nach dem Umhängen noch bis zu eine Stunde die alte Adresse. Wer normal im
+Browser nachsieht, liest den Titel der ALTEN Seite und hält den Umzug
+fälschlich für gescheitert.
+
+**6. Der Rückweg hat zwei Voraussetzungen.** Das alte Hosting muss 4–6 Wochen
+weiterlaufen. Und: Die Seite gibt eine Zwei-Jahres-Zusage auf verschlüsselte
+Verbindungen (HSTS) ab – ein Rückweg funktioniert deshalb nur, wenn die alte
+Seite ebenfalls verschlüsselt erreichbar ist.
 
 ---
 
