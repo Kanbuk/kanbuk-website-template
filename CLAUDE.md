@@ -111,6 +111,38 @@ das Template frisch klont?"**
 Ein Klon bekommt keine Template-Updates — die Meldung ist der einzige Weg, auf dem
 ein Fix ins Template zurückfindet.
 
+### Wer darf woran arbeiten – drei harte Grenzen
+
+Diese drei Sätze regeln, **wer was anfassen darf**. Sie sind nicht verhandelbar,
+weil jede Verletzung leise passiert und sich erst Wochen später zeigt.
+
+**1. Eine Demo ändert NIE etwas am Motor.**
+Eine Verkaufs-Demo ist Wegwerf-Ware für einen Lead, der meist nicht kauft. Was
+dort auffällt, gehört als Meldung notiert – nicht ins Template geschrieben. Der
+Motor darf nicht von einer Seite verändert werden, die es in vier Wochen nicht
+mehr gibt.
+
+**2. Ein Kundenprojekt wird AUS dem Template gebaut, nicht am Template
+entlang.** Der Klon nimmt, was das Template hergibt. Was fehlt oder falsch ist,
+kommt als **Liste** zurück (Motor-Meldungen in seiner STAND.md), damit es
+jemand am Template behebt und **alle** künftigen Kunden es bekommen.
+
+> Am Klon selbst wird nur repariert, was den Kunden **blockiert** – dann aber
+> zusätzlich gemeldet, nie nur lokal. Ein Fix, der nur im Klon steht, ist beim
+> nächsten Kunden wieder weg, und niemand weiß, dass er einmal existierte.
+
+**3. An einer abgenommenen oder laufenden Seite wird nichts mehr geändert –
+außer es ist kritisch.**
+„Kritisch" heißt: rechtlich, sicherheitsrelevant, oder die Seite ist kaputt.
+Nicht kritisch sind: ein neuer Motor-Baustein, eine schönere Lösung, ein
+nachgezogener Fix aus dem Template.
+
+> **Warum das eine Regel ist und keine Vorsicht:** Der Betrieb hat diese Seite
+> abgenommen. Er kennt sie, er hat sie vielleicht schon jemandem gezeigt. Jede
+> Änderung daran ist ein Risiko ohne Auftrag – und wenn sie schiefgeht, fällt
+> es an einer Seite auf, die niemand mehr beobachtet. Verbesserungen gehören
+> ins Template und wirken beim nächsten Kunden.
+
 ### Vier Regeln, die in Kundenprojekten Geld gekostet haben
 
 **1. Eine Suchanfrage ist kein Beweis, dass sie dem Kunden gehört.**
@@ -295,6 +327,36 @@ Die Texte kommen meist aus dem Design. Wenn du welche schreibst oder korrigierst
 > dass es eine andere Seite ist.
 >
 > „1:1 nachbauen" ist ein **Auftrag**, keine Anregung.
+>
+> ### Und der Umkehrschluss: Was das Design mitbringt, wird NICHT nachgebaut
+>
+> Der Vorrang gilt in beide Richtungen. Er sagt nicht nur „übernimm die Werte
+> des Designs", sondern auch: **Bau nichts, was schon dasteht.**
+>
+> Das trifft vor allem das, was sich BEWEGT. Ein Claude Design bringt seine
+> Übergänge mit – wie ein Akkordeon aufgeht, wie ein Slider gleitet, wie ein
+> Knopf reagiert. Der Motor bringt für dieselben Bausteine eigene Übergänge
+> mit. Werden beide angeschlossen, gewinnt irgendeiner – und das Ergebnis ist
+> weder das eine noch das andere.
+>
+> > **Die Arbeitsteilung, noch einmal scharf:** Der Motor liefert die
+> > **Mechanik** – welches Feld auf welches Panel zeigt, was die Tastatur tut,
+> > was ohne JavaScript passiert, welche ARIA-Angaben gesetzt werden. Das
+> > Design liefert den **Lack** – Farben, Abstände, Radien **und die
+> > Bewegung**. Dauer, Kurve und Art des Übergangs sind Lack, nicht Mechanik.
+>
+> **Praktisch heißt das beim Port:** Zuerst im Design nachsehen, ob es für
+> diesen Baustein eine Bewegung vorgibt. Gibt es eine, wird sie übernommen und
+> die Motor-Vorgabe im Klon überschrieben. Gibt es keine, bleibt der
+> Motor-Rückfall stehen – der ist bewusst neutral gehalten.
+>
+> **Warum das hier steht:** „Da gab es Probleme im Bau, obwohl im Claude Design
+> alles bereits super ausgesehen hat." Genau das ist der Fall – nicht ein
+> schlechtes Design und kein kaputter Baustein, sondern zwei Antworten auf
+> dieselbe Frage. Beim zweiten echten Port gingen rund **10 Prozent
+> Nacharbeit** auf Abweichungen dieser Art zurück, „ohne sichtlichen Grund" –
+> darunter eine Fußzeile, die statt des Rechts-Menüs des Designs noch einmal
+> das Kopf-Menü zeigte.
 
 ### Zwei Dateien, zwei Fragen – beide verbindlich
 
