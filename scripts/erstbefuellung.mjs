@@ -41,8 +41,9 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { register } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { KATALOG } from '../redaktion/felder.mjs';
+import { KATALOG, lies } from '../redaktion/felder.mjs';
 import {
+  DOKUMENTE,
   DIENST_DATEI,
   abfrage,
   abfrageAdresse,
@@ -99,11 +100,20 @@ try {
 }
 
 const eintraege = site.katalog?.eintraege ?? [];
-if (eintraege.length === 0) {
+
+/* KEIN ABBRUCH NUR WEGEN EINES FEHLENDEN KATALOGS.
+   Hier stand `if (eintraege.length === 0) raus(...)`. Damit brach die
+   Erstbefüllung bei jedem Betrieb OHNE Katalog sofort ab – und das ist beim
+   Kleinbetrieb der Normalfall: Friseur, Wirt, Installateur, Studio haben
+   keinen. Betriebsdaten und Impressum gehören aber sehr wohl hinein.
+
+   Abgebrochen wird jetzt nur noch, wenn es NIRGENDS etwas zu befüllen gibt. */
+const einzelDokumente = DOKUMENTE.filter((d) => d.einzeln);
+if (eintraege.length === 0 && einzelDokumente.length === 0) {
   raus(
-    'In content.config.ts steht kein Katalog mit Einträgen.',
-    'Die Erstbefüllung bringt den VORHANDENEN Bestand in den Dienst. Gibt es keinen,\n' +
-      'legt der Betrieb seine Einträge direkt im Studio an – dann ist hier nichts zu tun.',
+    'In content.config.ts gibt es nichts, was sich in den Dienst bringen liesse.',
+    'Weder Katalog-Einträge noch Einzeldokumente (Betriebsdaten, Impressum).\n' +
+      'Dann legt der Betrieb seine Inhalte direkt im Studio an.',
   );
 }
 
@@ -259,6 +269,46 @@ for (const [i, eintrag] of eintraege.entries()) {
       wert: String(wert),
     }));
   }
+}
+
+/* ---------------------------------------------------------------------------
+   BETRIEBSDATEN UND IMPRESSUM – der Teil, der bisher ganz fehlte.
+   ---------------------------------------------------------------------------
+   Die Erstbefüllung lud ausschliesslich Katalog-Einträge hoch. Die Maske bietet
+   danach über dreissig Felder an, von denen nur die Katalogfelder gefüllt sind.
+   Der Betrieb bekommt sein Studio übergeben mit den Worten „ab jetzt können Sie
+   selbst pflegen", öffnet die Öffnungszeiten und findet ein leeres Feld – und
+   tippt sie neu, im besten Fall gleich, im schlechteren anders als auf der
+   Seite. Beim nächsten Abruf überschreibt genau das die Konfiguration.
+
+   Gelesen wird über dieselbe Feldliste, aus der auch Maske und Abfrage
+   entstehen (redaktion/felder.mjs). Ein Feld, das dort fehlt, kann also gar
+   nicht erst entstehen – und eines, das dort steht, kommt zwingend mit.
+
+   `_key` JE LISTENELEMENT IST PFLICHT, nicht Feinschliff: Der Dienst nimmt
+   Listen von Objekten (Öffnungszeiten, Sonderzeiten) sonst nicht an. */
+for (const dok of einzelDokumente) {
+  const inhalt = { _type: dok.typ, _id: dok.typ };
+  let gefuellt = 0;
+  for (const feld of dok.felder) {
+    const wert = lies(site, feld.pfad);
+    if (wert === undefined || wert === null || wert === '') continue;
+    if (Array.isArray(wert) && wert.length === 0) continue;
+    if (Array.isArray(wert)) {
+      inhalt[feldName(feld)] = wert.map((w, i) =>
+        w && typeof w === 'object' && !Array.isArray(w) ? { _key: `${feldName(feld)}${i}`, ...w } : w,
+      );
+    } else {
+      inhalt[feldName(feld)] = wert;
+    }
+    gefuellt++;
+  }
+  if (gefuellt === 0) {
+    console.log(`  ! ${dok.titel}: nichts in content.config.ts gefunden – übersprungen.`);
+    continue;
+  }
+  dokumente.push(inhalt);
+  console.log(`  ${dok.titel}: ${gefuellt} Feld(er) übernommen.`);
 }
 
 console.log(`\n  ${dokumente.length} Dokument(e) vorbereitet, ${bildVerweise.size} Bild(er) verknüpft.`);

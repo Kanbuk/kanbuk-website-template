@@ -86,7 +86,18 @@ jobs:
         if: steps.pruefung.outputs.vorhanden == 'ja'
         env:
           REDAKTION_TOKEN: ${{ secrets.REDAKTION_TOKEN }}
-        run: node scripts/inhalte.mjs | tee -a "$GITHUB_STEP_SUMMARY"
+        # `set -o pipefail` IST DIE GANZE ZUSAGE.
+        # Ohne diese Zeile ist der Rückgabewert einer Rohrleitung der des
+        # LETZTEN Befehls – also der von `tee`, und der gelingt immer.
+        # Scheitert der Abruf (Token abgelaufen, Datensatz nachträglich auf
+        # privat gestellt, Dienst nicht erreichbar), läuft der Schritt trotzdem
+        # grün durch, es gibt nichts einzuchecken, und der Ablauf meldet Erfolg.
+        # Die Sicherung sichert dann monatelang nichts, ohne dass es jemand
+        # erfährt – und genau auf ihr beruht die Zusage an den Kunden, dass ein
+        # gekündigtes Redaktionskonto der Website nichts wegnimmt.
+        run: |
+          set -o pipefail
+          node scripts/inhalte.mjs | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Nur bei Änderung einchecken
         if: steps.pruefung.outputs.vorhanden == 'ja'

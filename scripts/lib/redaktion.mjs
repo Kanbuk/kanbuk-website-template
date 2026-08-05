@@ -151,9 +151,33 @@ export function abfrage() {
        Text arbeitet, hat ihn damit schon veroeffentlicht. Genau umgekehrt zu
        dem, was der Betrieb erwartet, wenn er auf "Speichern" statt auf
        "Veroeffentlichen" drueckt. */
-    `"betrieb": *[_type == "betrieb" && !(_id in path("drafts.**"))][0]{${teil(betrieb)}},` +
-    `"impressum": *[_type == "impressum" && !(_id in path("drafts.**"))][0]{${teil(impressum)}},` +
-    `"eintraege": *[_type == "eintrag" && !(_id in path("drafts.**"))]{${teil(eintrag)}}` +
+    /* JEDE TEILABFRAGE NUR, WENN ES IHRE GRUPPE WIRKLICH GIBT.
+       Hier wurden die drei Teile fest aneinandergehängt. Nimmt ein Klon eine
+       Gruppe aus DOKUMENTE heraus – und „kein Katalog" ist beim Kleinbetrieb
+       der NORMALFALL, nicht die Ausnahme: Friseur, Wirt, Installateur, Studio
+       haben keinen –, liefert `find()` `undefined`, und die Abfrage wird mit
+       dem Wort „undefined" weitergebaut. Der ganze Abruf geht dann leer aus,
+       und die Fehlermeldung lautet „Dienst antwortet nicht", obwohl der
+       Dienst einwandfrei läuft.
+
+       SORTIERT WIRD BEWUSST NACH `_createdAt`. Was aus dem Dienst kommt,
+       ersetzt `katalog.eintraege` vollständig – ohne `order()` steht die Liste
+       danach in der Reihenfolge des Dienstes. In einem Kundenprojekt standen
+       die Einträge nach der Erstbefüllung alphabetisch statt in der gesetzten
+       Reihenfolge; fachlich falsch und in keiner Prüfung sichtbar, weil ja
+       alle da waren. Die Anlagereihenfolge ist die einzige Ordnung, die der
+       Motor branchenneutral kennen kann – eine Sortierung nach Preis oder
+       Titel wäre für den einen Betrieb richtig und für den nächsten falsch.
+       Wer es anders will, sortiert im Design. */
+    [
+      betrieb && `"betrieb": *[_type == "betrieb" && !(_id in path("drafts.**"))][0]{${teil(betrieb)}}`,
+      impressum &&
+        `"impressum": *[_type == "impressum" && !(_id in path("drafts.**"))][0]{${teil(impressum)}}`,
+      eintrag &&
+        `"eintraege": *[_type == "eintrag" && !(_id in path("drafts.**"))] | order(_createdAt asc){${teil(eintrag)}}`,
+    ]
+      .filter(Boolean)
+      .join(',') +
     '}'
   );
 }
@@ -211,8 +235,24 @@ export function schreibAdresse(dienst, was) {
 export function abfrageAdresse(dienst, groq) {
   const version = dienst.apiVersion ?? '2024-01-01';
   const datensatz = dienst.datensatz ?? 'production';
-  // apicdn = die zwischengespeicherte Fassung: schneller und belastbarer.
-  const basis = dienst.basis ?? `https://${dienst.projekt}.apicdn.sanity.io`;
+  /* NICHT ÜBER DEN ZWISCHENSPEICHER LESEN.
+     Hier stand `apicdn` mit der Begründung „schneller und belastbarer". Der
+     Abruf läuft aber nur nachts oder direkt nach einem „Veröffentlichen" – ein
+     paar hundert Millisekunden spielen keine Rolle, Richtigkeit schon.
+
+     Zwei Fehlschläge an einem Tag in einem Kundenprojekt, beide sahen nach
+     Erfolg aus:
+       1. Direkt nach der Erstbefüllung lieferte der Zwischenspeicher noch die
+          leere Antwort von davor; das Werkzeug meldete „unverändert".
+       2. Ein Text wurde im Studio geändert und Sekunden später zurückgesetzt.
+          Der Bau danach holte den zwischengespeicherten Stand VON DAVOR und
+          buk den Probetext fest ein. Danach löst nichts mehr einen Bau aus –
+          die verworfene Fassung bleibt bis zur nächsten Nacht online.
+
+     Der zweite Fall trifft den Normalbetrieb: Wer eine Kleinigkeit ändert und
+     gleich korrigiert, veröffentlicht sonst genau die Fassung, die er
+     zurückgenommen hat. `dienst.basis` überschreibt das weiterhin. */
+  const basis = dienst.basis ?? `https://${dienst.projekt}.api.sanity.io`;
   return `${basis}/v${version}/data/query/${datensatz}?query=${encodeURIComponent(groq)}`;
 }
 
