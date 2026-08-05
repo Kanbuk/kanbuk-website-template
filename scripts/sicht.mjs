@@ -509,7 +509,40 @@ for (const seite of seiten) {
           funde.push(`${kennung}: ${v.toFixed(2)}:1 bei ${px.toFixed(0)}px (nötig ${noetig}) – „${text.slice(0, 30)}"`);
         }
       }
-      return { kontrast: funde.slice(0, 6), zuKlein: zuKlein.slice(0, 4), unmessbar };
+      /*
+       * EINGABEFELDER UNTER 16 PX – EINE EIGENE REGEL, KEINE ERWEITERUNG.
+       *
+       * Die Kleinschrift-Regel oben kann das nicht mitmachen, aus zwei
+       * Gründen: Sie springt erst unter 12 px an, und sie läuft ausschliesslich
+       * über Elemente mit EIGENEM Textknoten. Ein leeres Eingabefeld hat
+       * keinen – es wurde also bisher überhaupt nie gemessen.
+       *
+       * Die Schwelle ist hier auch nicht Lesbarkeit, sondern eine harte Regel
+       * von Safari auf iOS: Unter 16 px zoomt es beim Antippen hinein und
+       * bleibt so. Der Besucher füllt den Rest des Formulars in einer
+       * verrutschten Ansicht aus – genau dort, wo Anfragen abgebrochen werden.
+       */
+      const felderZuKlein = [];
+      for (const el of document.querySelectorAll('input,textarea,select')) {
+        const st = getComputedStyle(el);
+        if (st.visibility === 'hidden' || st.display === 'none') continue;
+        if (el.type === 'hidden' || el.type === 'checkbox' || el.type === 'radio') continue;
+        const px = parseFloat(st.fontSize);
+        if (!(px < 16)) continue;
+        const kennung =
+          el.tagName.toLowerCase() +
+          (el.name ? `[${el.name}]` : el.className ? '.' + String(el.className).split(' ')[0] : '');
+        if (!felderZuKlein.some((z) => z.startsWith(kennung))) {
+          felderZuKlein.push(`${kennung}: ${px.toFixed(1)}px`);
+        }
+      }
+
+      return {
+        kontrast: funde.slice(0, 6),
+        zuKlein: zuKlein.slice(0, 4),
+        felderZuKlein: felderZuKlein.slice(0, 4),
+        unmessbar,
+      };
     });
 
     const name = `${(seite === '/' ? 'start' : seite.replace(/^\//, '').replace(/\//g, '-'))}-${breite}px.png`;
@@ -624,6 +657,14 @@ for (const seite of seiten) {
         `${kennung}: SCHRIFT ZU KLEIN -> ${z}\n      Mindestens 12px; Pflichtangaben (Allergene, Preise, Rechtshinweise) besser 13–14px.`,
       );
     }
+    for (const z of lesbarkeit.felderZuKlein ?? []) {
+      probleme.push(
+        `${kennung}: EINGABEFELD UNTER 16px -> ${z}\n` +
+          '      Safari auf iOS zoomt beim Antippen hinein und bleibt so – der Besucher füllt\n' +
+          '      den Rest des Formulars in einer verrutschten Ansicht aus.\n' +
+          '      Abhilfe: font-size: max(16px, var(--schrift-m)) (steht so in global.css).',
+      );
+    }
     if (lcp?.lazy) {
       probleme.push(
         `${kennung}: GRÖSSTES BILD LÄDT VERZÖGERT -> ${lcp.datei} (LCP nach ${lcp.zeit} ms)\n` +
@@ -658,7 +699,7 @@ for (const seite of seiten) {
       );
     }
 
-    console.log(`  ${ueberlauf || jsFehler.length || kaputt.length || matschig.length || lcp?.lazy || lesbarkeit.kontrast.length || lesbarkeit.zuKlein.length ? '✗' : '✓'} ${kennung}  → pruefung/${name}`);
+    console.log(`  ${ueberlauf || jsFehler.length || kaputt.length || matschig.length || lcp?.lazy || lesbarkeit.kontrast.length || lesbarkeit.zuKlein.length || (lesbarkeit.felderZuKlein ?? []).length ? '✗' : '✓'} ${kennung}  → pruefung/${name}`);
     await kontext.close();
   }
 }

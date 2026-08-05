@@ -223,6 +223,37 @@ button {
   color: inherit;
 }
 
+/*
+ * EINGABEFELDER NIE UNTER 16 PIXEL – SONST ZOOMT JEDES IPHONE HINEIN.
+ *
+ * Safari auf iOS zoomt beim Antippen automatisch heran, sobald die Schrift in
+ * einem Eingabefeld kleiner als 16 px ist – und bleibt so. Der Besucher füllt
+ * den Rest des Formulars in einer verrutschten Ansicht aus, also genau an der
+ * Stelle, an der Anfragen abgebrochen werden. Ausgerechnet auf dem Gerät, über
+ * das die meisten Anfragen kommen.
+ *
+ * DIE FALLE SCHNAPPT BEI JEDEM KLON ZU, DER ALLES RICHTIG MACHT: Der eigene
+ * Token `--schrift-m` ist `clamp(0.9375rem, …)` und liegt am Handy bei rund
+ * 15 px. Wer ihn korrekt benutzt, ist betroffen – nicht wer etwas falsch
+ * macht. Designs setzen Formularfelder außerdem gern auf 14 px, weil es am
+ * Schreibtisch besser aussieht.
+ *
+ * `max()` statt einer festen Größe, damit am Laptop nichts kleiner wird: Dort
+ * ist der Token ohnehin größer und gewinnt. Die Regel kostet also nur dort
+ * etwas, wo sie gebraucht wird.
+ *
+ * Kein Tor hat das je gesehen: Es läuft nichts über, es gibt keine Meldung,
+ * und auf einem Screenshot ist nichts zu erkennen. Seit 05.08.2026 misst es
+ * `npm run sicht` nach.
+ *
+ * `button` ist bewusst NICHT dabei – ein Knopf öffnet keine Tastatur.
+ */
+input,
+textarea,
+select {
+  font-size: max(16px, var(--schrift-m));
+}
+
 button {
   cursor: pointer;
   background: none;
