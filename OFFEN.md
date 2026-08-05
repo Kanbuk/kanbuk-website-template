@@ -198,7 +198,36 @@ holen, bauen.
 
 ---
 
-## Reihenfolge
+## Der Weg zum fertigen Motor (Stand 05.08.2026)
+
+**Ziel:** Der Motor gibt das Aussehen ab. Dann ein Restaurant-Port als Pilot 3
+— und die Zahl der Motor-Meldungen sagt, ob es gewirkt hat (Port 1: 19,
+Port 2: 30).
+
+Sieben Pakete, jedes einzeln mit Gegenprobe, in dieser Reihenfolge. Grundlage
+ist `ZUSTAENDIGKEIT.md`.
+
+| # | Paket | warum in dieser Reihenfolge |
+| --- | --- | --- |
+| **1** | **Spezifität** — `scopedStyleStrategy` setzen, damit Motor-Regeln nicht mehr schwerer wiegen als Design-Regeln | **Muss zuerst.** Solange Motor-Stile eine Klasse mehr wiegen, ist jede weitere Änderung wirkungslos — das Design kann sie gar nicht überschreiben. |
+| **2** | **Token** — Werte kommen aus dem Design, in beiden Lieferformen (benannt oder literal) | Der größte Brocken. Die Motor-Skala wird zum Rückfall für Stellen, an denen das Design schweigt. |
+| **3** | **Bewegung** — Akkordeon, Slider und Einblendung geben ihre Werte ab | Erst nach 1 wirksam. Beseitigt die doppelten Animationen. |
+| **4** | **Rahmen** — Kopf und Fuß zerlegbar machen, Rechtslinks platzierbar | Der Fußzeilen-Fall kann danach nicht wiederkehren. |
+| **5** | **Design-Tor reparieren** — Rahmenvergleich ist tot, zweite Export-Form (eine Datei je Seite) fehlt | **Muss vor dem Piloten.** Sonst ist beim Restaurant-Port genau die Prüfung blind, um die es geht. |
+| **6** | **Offene Fehler** — Slider-ARIA (falsche Rollen), doppelte Verpixelungs-Regel raus, `stock.mjs` raus, `karte.mjs` reparieren | Kleinkram, aber echte Fehler. |
+| **7** | **Pilot 3: Restaurant** | Die Messung. Wenn kaum noch Nacharbeit anfällt, ist der Motor fertig. |
+
+**Was der Inhaber dabei tut:** nichts lesen. Nach jedem Paket sieht er das
+Ergebnis an der Referenzseite oder am Port, nicht im Code. Zwei bis drei echte
+Entscheidungen kommen als einzelne Frage in normaler Sprache.
+
+**Arbeitsregel, aus dem 05.08. gelernt:** ein Paket, eine Gegenprobe, ein
+Commit. An diesem Tag entstanden in einem Rutsch neun halbe Sachen, die eine
+Nachprüfung erst finden musste.
+
+---
+
+## Reihenfolge (Restbestand der Gesamtprüfung)
 
 1. ~~**Die 7 schweren aus A**~~ — erledigt am 03.08.2026.
 2. ~~**Die mittleren und leichten aus A**~~ — erledigt am 03.08.2026 abends,
