@@ -34,40 +34,69 @@ Drei Regeln dahinter:
 Ordnername, Projektname ohne Präfix, Subdomain ohne Präfix. Auch `package.json`
 trägt den Namen inklusive Präfix, also wie das Repo.
 
-### Ein Betrieb, ein Ordner – auch beim Übergang vom Demo zum Port
+### Der Trichter – wann welcher Ordner entsteht
 
-**Die Regel ist einfach: Am Ende trägt jeder Betrieb genau EINEN Ordner.**
-Alles andere ist Übergang und wird aufgeräumt.
+Damit die Tabelle oben nicht falsch gelesen wird: **Ein Betrieb hat zu jedem
+Zeitpunkt genau EINEN Ordner.** Nacheinander, nicht nebeneinander.
 
-Der Weg erzeugt nacheinander drei Dinge, aber nur eines davon bleibt:
+| Stufe | Ordner | was drin liegt | Aufwand |
+| --- | --- | --- | --- |
+| **Lead will eine Demo** | `kanbuk-demos/<betrieb>` | Standalone-HTML aus Claude Design (`npm run demo`), deployt auf `demo-<betrieb>.kanbuk.com` | ~20–30 min |
+| **Lead zahlt** | `kanbuk-kunden/<betrieb>` | der gebaute Klon, Design in seinem `design/` | ~40–50 min |
+| Lead zahlt NICHT | – | Demo-Ordner löschen, Vercel-Projekt löschen | – |
 
-| Ding | wo es hingehört | Lebensdauer |
-| --- | --- | --- |
-| Verkaufs-Demo (standalone, `npm run demo`) | `kanbuk-demos/<betrieb>` | bis der Klon steht |
-| Design-Quelle (`.dc.html` + `assets/`) | **`design/` IM Klon** | dauerhaft, im Klon |
-| gebauter Klon | `kanbuk-demos/<betrieb>` | bleibt (bei Buchung nach `kanbuk-kunden/`) |
+**Portiert wird erst nach der Zahlung.** Das spart bei jedem Lead, der nicht
+kauft, den ganzen Port – und das sind die meisten. Die Demo ist das
+Verkaufsmittel, der Klon das Produkt.
 
-Die Design-Quelle bekommt **keinen eigenen Ordner** – sie gehört in den Klon.
-Das sechste Tor sucht sie dort und nirgends sonst (`design/<Projekt>.dc.html`).
+> **Ausnahme: ein Testlauf des Motors.** Wird ohne Zahlung portiert, um den
+> Motor zu prüfen, liegt der Klon in `kanbuk-demos/<betrieb>` (kein
+> Kundenprojekt, kein Repo). Dann kollidiert er mit dem Demo-Ordner, und die
+> Demo bekommt vorübergehend den Zusatz `-verkaufsdemo`. Das ist der
+> Sonderfall, nicht der Weg.
 
-**Die einzige echte Kollision:** Demo und Klon wollen beide
-`kanbuk-demos/<betrieb>`. Sie überschneiden sich aber nur für die Dauer des
-Ports. Also:
+### Zahlt der Kunde: NEU bauen, nicht den Demo-Ordner umbauen
 
-1. Vor dem Port: die Demo einmal umbenennen auf `<betrieb>-verkaufsdemo`.
-   Die `.vercel`-Verknüpfung liegt IM Ordner, das bricht nichts.
-2. Port läuft, Klon entsteht unter `<betrieb>`, Design landet in seinem
-   `design/`.
-3. **Danach aufräumen:** Steht die Abnahme-Vorschau auf
-   `<betrieb>.kanbuk.com`, ist die Standalone-Demo überflüssig – der Klon kann
-   alles besser. Ordner löschen und `demo-<betrieb>.kanbuk.com` im Dashboard
-   auf die neue Vorschau weiterleiten (nicht entfernen: Der verschickte
-   Verkaufslink soll weiter irgendwo ankommen – dieselbe Regel wie bei der
-   Abnahme-Adresse in Schritt 6a).
+Die naheliegende Abkürzung ist, den Demo-Ordner nach `kanbuk-kunden/` zu
+schieben und dort weiterzumachen. **Das ist die falsche Richtung**, und die
+Ersparnis ist ein Deploy von zwei Minuten.
 
-> Wer Schritt 3 auslässt, hat für jeden Lead dauerhaft zwei Ordner und zwei
-> Vercel-Projekte, die dasselbe zeigen – und in einem Jahr weiß niemand mehr,
-> welcher der beiden Stände der aktuelle ist.
+Was der Umbau mitschleppt: `index.html` (die Standalone-Fassung), `support.js`,
+`image-slot.js`, `.image-slots.state.json`, dazu ein `vercel.json` und eine
+`robots.txt`, die der Motor beide selbst erzeugt. Alles davon landet im ersten
+Commit des Kundenprojekts und bleibt dort. `degit` verweigert außerdem ein
+nicht leeres Ziel.
+
+**Und die eigentliche Gefahr steckt in `.vercel`:** Die Verknüpfung liegt IM
+Ordner und zeigt auf das DEMO-Projekt. Wer sie mitnimmt, deployt die
+Kundenseite in das Demo-Projekt – und sobald `mode: 'live'` steht, fällt die
+noindex-Sperre für **alle** Adressen dieses Projekts. Dann steht die
+Kundenseite offen unter `demo-<betrieb>.kanbuk.com` im Netz.
+
+**Der richtige Ablauf, in dieser Reihenfolge:**
+
+1. `kanbuk-kunden/<betrieb>` frisch aus dem Template klonen (`degit`).
+2. **Design aus dem Demo-Ordner hinüberholen** – die `.dc.html` nach `design/`,
+   die Bilder nach `fotos/`.
+
+   > **Das ist der Schritt, der nicht schiefgehen darf.** Die Design-Quelle
+   > liegt im Demo-Ordner. Wer den zuerst löscht, hat sie verloren – und mit
+   > ihr das sechste Tor für immer, denn `npm run abgleich` braucht
+   > `design/<Projekt>.dc.html` bei jedem künftigen Lauf.
+
+3. Portieren (`/port`).
+4. **Erst wenn die Abnahme-Vorschau auf `<betrieb>.kanbuk.com` steht:**
+   Demo-Ordner löschen und `demo-<betrieb>.kanbuk.com` auf die neue Vorschau
+   weiterleiten (nicht entfernen – der verschickte Verkaufslink soll ankommen).
+
+   Bis dahin läuft die Demo weiter. Das ist gewollt: Der Kunde, der gerade
+   bezahlt hat, sieht weiter, was er gekauft hat, statt auf eine Baustelle zu
+   blicken.
+
+Vorteil gegenüber dem Umbau: Der Klon ist von der ersten Zeile an ein
+Kundenprojekt – Ordner, Repo `kunde-<betrieb>` und Vercel-Projekt
+`kunde-<betrieb>` stimmen sofort, es wird nichts umbenannt, und Etappe 0 des
+`/port`-Skills (Motor-Gedächtnis ausräumen) läuft wie vorgesehen.
 
 **Vercel-Realität (im Piloten gelernt, alle drei Punkte prüfen):**
 - Zugang: `npx vercel whoami` – falls nicht eingeloggt, den Nutzer durch
@@ -237,21 +266,30 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
 > Im Kundenprojekt stand der Auftraggeber vor einer Maske und suchte eine
 > Option, die es dort nicht gibt. Siehe CLAUDE.md Abschnitt 0.
 
-0. **Vom Demo zum Kundenprojekt umziehen** (einmalig, sobald der Vertrag steht).
-   Aus `demo-` wird `kunde-`, der Bezeichner `<betrieb>` bleibt derselbe:
-   - Ordner verschieben: `kanbuk-demos/<betrieb>` → `kanbuk-kunden/<betrieb>`
-     (der Ordnername ändert sich nicht, nur der Elternordner).
-   - Vercel-Projekt umbenennen: `demo-<betrieb>` → `kunde-<betrieb>`. Das geht
-     in den Einstellungen des Projekts beim Hoster, im allgemeinen Bereich (der
-     Menüpfad steht hier absichtlich nicht – siehe Kasten oben). Risikofrei:
-     Domains, Umgebungsvariablen und Deploy-Verlauf hängen an der Projekt-ID,
-     nicht am Namen.
+0. **Das Kundenprojekt NEU anlegen** (einmalig, sobald der Vertrag steht).
+
+   > **Hier stand „Ordner verschieben: `kanbuk-demos/<betrieb>` →
+   > `kanbuk-kunden/<betrieb>`".** Das setzte voraus, dass im Demo-Ordner
+   > bereits ein gebauter Klon liegt. Im Regelweg liegt dort aber die
+   > **Standalone-Demo** – portiert wird erst nach der Zahlung. Warum Umbauen
+   > die falsche Richtung ist (mitgeschleppte Demo-Dateien, und vor allem die
+   > `.vercel`-Verknüpfung auf das Demo-Projekt), steht oben unter „Zahlt der
+   > Kunde: NEU bauen".
+
+   - **Frisch klonen:** `npx degit Kanbuk/kanbuk-website-template kanbuk-kunden/<betrieb>`
+   - **Design aus dem Demo-Ordner hinüberholen**, BEVOR dieser gelöscht wird:
+     `.dc.html` nach `design/`, Bilder nach `fotos/`. Ohne die Design-Datei
+     gibt es das sechste Tor nie wieder.
    - `package.json` → `"name": "kunde-<betrieb>"`.
-   - Adresse eine Stufe weiterschalten (Adress-Stufen, CLAUDE.md Abschnitt 7):
-     `npx vercel domains add <betrieb>.kanbuk.com kunde-<betrieb>` – aus der
-     Verkaufs-Demo `demo-<betrieb>.kanbuk.com` wird die Abnahme-Vorschau
-     `<betrieb>.kanbuk.com` ohne Präfix. Die alte Demo-Adresse kann bleiben
-     oder entfernt werden; sie war nur für den Lead gedacht.
+   - Portieren (`/port`), dann Vercel-Projekt `kunde-<betrieb>` anlegen und die
+     Abnahme-Vorschau schalten:
+     `npx vercel domains add <betrieb>.kanbuk.com kunde-<betrieb>`
+     (Adress-Stufen, CLAUDE.md Abschnitt 7 – als **Projekt-Domain**, nie per
+     `alias set`).
+   - **Erst wenn diese Adresse steht:** Demo-Ordner löschen und
+     `demo-<betrieb>.kanbuk.com` auf die neue Vorschau weiterleiten. Bis dahin
+     läuft die Demo weiter – der Kunde, der gerade bezahlt hat, soll nicht auf
+     eine Baustelle blicken.
    - **Privates Repo anlegen und hochladen – JETZT, nicht am Live-Tag.**
      ```bash
      git init -b main   # falls noch kein Repo
@@ -269,10 +307,13 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
    - Im eigenen Projektverzeichnis (Notion o. ä.) den Lead als gewonnen und das
      Projekt als Kundenprojekt kennzeichnen. Wie die Felder dort genau heißen,
      weiß nur das jeweilige Verzeichnis – hier nicht aus dem Gedächtnis nennen.
-   Läuft daneben ein Claude-Code-Verlauf für den Ordner, wandert er NICHT automatisch
-   mit: Claude leitet den Verlaufspfad aus dem Ordnerpfad ab. Vor dem Verschieben in
-   `~/.claude/projects/` nachsehen und den passenden Ordner mitbenennen, sonst sind
-   Verlauf und Projektgedächtnis nicht mehr erreichbar (gelöscht sind sie nicht).
+   Der Claude-Code-Verlauf des Demo-Ordners bleibt beim Demo-Ordner – der
+   Verlaufspfad wird aus dem Ordnerpfad abgeleitet. Beim Neuanlegen ist das
+   richtig so: Das Kundenprojekt fängt mit leerem Gedächtnis an, und die
+   Gesprächsreste aus dem Verkauf gehören nicht hinein. (Wird ein Ordner doch
+   einmal verschoben, in `~/.claude/projects/` nachsehen und den passenden
+   Ordner mitbenennen – gelöscht ist der Verlauf nie, nur nicht mehr
+   auffindbar.)
 
 0a. **Auftragsverarbeitungsvertrag mit dem Kunden – vor dem Umschalten.**
 
