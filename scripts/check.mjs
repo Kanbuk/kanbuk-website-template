@@ -1026,6 +1026,46 @@ for (const feld of ['name', 'claim', 'kurzbeschreibung', 'email', 'domain']) {
   if (re.test(configWerte)) fehler(`content.config.ts: Feld "${feld}" ist leer`);
 }
 
+/* LIEGEN DESIGN-TOKEN DA, DIE NIEMAND EINGEBUNDEN HAT?
+   ---------------------------------------------------------------------------
+   Bringt ein Design-Projekt eigene Token-Dateien mit (`design/tokens/*.css`),
+   sind das die Werte, in denen die ganze Seite geschrieben ist – Farben,
+   Schriftgrößen, Abstände, Radien, Schatten, Bewegung. Sie gehören
+   unverändert eingebunden (`src/styles/design.css`), nicht abgetippt und
+   nicht auf die Motor-Stufen gerundet.
+
+   WAS SONST PASSIERT, ist an einer echten Kundenseite gemessen: Der Port
+   übersetzt von Hand, dabei geht Auflösung verloren (neun Radien auf einen),
+   und es entsteht eine zweite, leicht abweichende Wahrheit. Genau daraus
+   entstanden dort rund zehn Prozent Nacharbeit „ohne sichtlichen Grund".
+
+   Auffallen kann es sonst niemandem: Die Seite sieht fertig aus, alle Tore
+   sind grün, und dass acht Zwischenstufen fehlen, sieht man erst neben der
+   Design-Datei.
+
+   Warnung, kein Fehler: Vielleicht liegen die Dateien nur zum Nachschlagen
+   da. Aber gesagt gehört es. */
+{
+  const tokenOrdner = join(WURZEL, 'design', 'tokens');
+  if (existsSync(tokenOrdner)) {
+    const tokenDateien = readdirSync(tokenOrdner).filter((f) => f.endsWith('.css'));
+    const slot = join(WURZEL, 'src', 'styles', 'design.css');
+    const inhalt = existsSync(slot) ? ohneKommentare(readFileSync(slot, 'utf-8')) : '';
+    const eingebunden = /@import|--[a-z]/i.test(inhalt);
+    if (tokenDateien.length > 0 && !eingebunden) {
+      warnung(
+        [
+          `design/tokens/ enthält ${tokenDateien.length} Token-Datei(en), aber src/styles/design.css ist leer.`,
+          `    (${tokenDateien.join(', ')})`,
+          '    Das sind die Werte, in denen das Design geschrieben ist. Werden sie nicht',
+          '    eingebunden, übersetzt der Port sie von Hand – und dabei geht Auflösung',
+          '    verloren, ohne dass es jemandem auffällt. Einbinden statt abtippen.',
+        ].join('\n'),
+      );
+    }
+  }
+}
+
 /* SIND ALLE FEIERTAGE UND BETRIEBSURLAUBE SCHON VORBEI?
    ---------------------------------------------------------------------------
    Eine Liste, in der jeder Eintrag abgelaufen ist, ist eine tote Liste: Der

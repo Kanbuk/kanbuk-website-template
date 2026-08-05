@@ -14,6 +14,10 @@
  */
 import '../styles/fonts.css';
 import '../styles/global.css';
+/* NACH global.css – damit die Werte des Designs die Motor-Skala schlagen,
+   ohne Tricks. Im Template ist die Datei leer; der Klon füllt sie. Warum es
+   sie gibt, steht in ihrem Kopf und in CLAUDE.md 4aa. */
+import '../styles/design.css';
 // Rohtext der Schriften-Deklarationen – fürs Vorladen unten ausgewertet.
 import fontsCssRoh from '../styles/fonts.css?raw';
 import { site, jsonLdTyp } from '../../content.config';

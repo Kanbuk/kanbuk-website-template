@@ -1,0 +1,55 @@
+/* ===========================================================================
+   HIER KOMMEN DIE WERTE DES DESIGNS HINEIN – im Template leer, im Klon voll.
+   ===========================================================================
+
+   WOZU DIESE DATEI DA IST
+
+   Der Motor bringt eine eigene Skala mit (`--raum-*`, `--schrift-*`,
+   `--radius` …). Sie ist der RÜCKFALL für Stellen, an denen das Design
+   schweigt – nicht die Zielsprache. Übersetzt wird nichts.
+
+   Warum das eine eigene Datei bekommt: Gemessen an einer echten Kundenseite
+   kamen die Motor-Token `--raum-*` und `--schrift-*` **null Mal** vor, die
+   Farbtoken des Designs dagegen 99 Mal und seine Radien 41 Mal. Das Design
+   hatte längst gewonnen – nur musste jeder Port sich seinen Weg dorthin selbst
+   bauen. Ab jetzt gibt es einen.
+
+   Diese Datei wird NACH `global.css` geladen. Was hier steht, gewinnt deshalb
+   gegen die Motor-Skala, ohne Tricks und ohne `!important`.
+
+   ---------------------------------------------------------------------------
+   FALL 1 · Es gibt ein Design-System (`tokens/*.css` liegt dabei)
+
+   Die Dateien unverändert nach `src/styles/design/` legen und hier einbinden:
+
+       @import './design/colors.css';
+       @import './design/typography.css';
+       @import './design/spacing.css';
+       @import './design/radius.css';
+       @import './design/shadows.css';
+       @import './design/motion.css';
+
+   NICHT abschreiben, nicht umbenennen, nicht auf die Motor-Stufen runden.
+   Abtippen ist die Fehlerquelle: In einem Port fehlte danach eine Schrift in
+   der Rückfallkette, und niemand hat es je bemerkt.
+
+   ---------------------------------------------------------------------------
+   FALL 2 · Es gibt nur das Webdesign (der Regelfall bei Demos)
+
+   Dann bringt das Design keine benannten Werte mit – gemessen an einem echten
+   Projekt: null `:root`-Variablen, dafür 22 Farben und 21 Schriftgrößen
+   literal im Markup. Die Werte werden übernommen, wie sie dastehen.
+
+   Wo derselbe Wert mehrfach vorkommt, darf er hier einen Namen bekommen –
+   das ist Ordnung, keine Übersetzung. Verboten bleibt das Runden auf die
+   nächste Motor-Stufe.
+
+   ---------------------------------------------------------------------------
+   WAS HIER NICHT HINEINGEHÖRT
+
+   Aussehen einzelner Bausteine. Das gehört in die Design-Dateien des Klons.
+   Hier stehen nur die WERTE – die Sprache, in der der Rest geschrieben wird.
+   =========================================================================== */
+
+/* Im Template bewusst leer. Der Motor läuft ohne diese Datei genauso –
+   sie ist der Platz, nicht die Pflicht. */

@@ -174,6 +174,25 @@ die Referenzdaten aus der Config raus sind. Vorher wäre Rot kein Signal.)
 > welcher Adresse gehört. Diese Zuordnung einmal durchsehen und ergänzen, sonst
 > vergleicht das Tor die falschen Seiten miteinander.
 >
+> **Die Token-Dateien werden EINGEBUNDEN, nicht abgetippt.** Liegen
+> `tokens/*.css` dabei, wandern sie unverändert nach `src/styles/design/` und
+> werden in `src/styles/design.css` per `@import` eingebunden. Diese Datei wird
+> nach `global.css` geladen – die Werte des Designs schlagen die Motor-Skala
+> damit ohne Tricks. Das Prüf-Tor meldet es, wenn Token-Dateien daliegen und
+> die Einbindung fehlt.
+>
+> Kommt das Design **ohne** Token-Dateien (der Regelfall bei Demos), stehen
+> seine Werte literal in der `.dc.html`. Dann werden sie so übernommen, wie sie
+> dastehen – kein Runden auf die nächste Motor-Stufe. Wo derselbe Wert
+> mehrfach vorkommt, darf er in `design.css` einen Namen bekommen; das ist
+> Ordnung, keine Übersetzung.
+>
+> **Warum das keine Fleißaufgabe ist:** An einer echten Kundenseite gemessen,
+> kamen die Motor-Token `--raum-*` und `--schrift-*` **null Mal** vor, die
+> Farbtoken des Designs 99 Mal. Wer trotzdem übersetzt, verliert Auflösung –
+> neun Radien auf einen –, und niemand sieht es, weil die Seite fertig
+> aussieht.
+>
 > Aus dem Bundle die Style-Objekte **jeder verwendeten** Komponente
 > herausziehen und als Merkzettel speichern. **Erst danach anfangen zu bauen.**
 >
