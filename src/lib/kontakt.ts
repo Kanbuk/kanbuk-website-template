@@ -334,6 +334,26 @@ export async function verarbeiteKontakt(
             subject: bestaetigungBetreff(sprache),
             text: bestaetigungText(formular, daten, sprache),
             html: bestaetigungHtml(formular, daten, sprache),
+            /* HIER KOMMEN KEINE `List-Unsubscribe`-KOPFZEILEN HIN.
+               ===============================================================
+               Sie sehen nach Sorgfalt aus und sind an dieser Stelle das
+               Gegenteil. Die Kopfzeilen stufen eine Mail als MASSENVERSAND
+               ein – eine Bestätigung ist aber die Quittung für eine einzelne
+               Handlung, die der Empfänger gerade selbst ausgelöst hat.
+
+               In einem Kundenprojekt landete die Bestätigungsmail deshalb im
+               Spam, während die Anmelde-Mail an dieselbe Adresse durchkam.
+               *(Ursache beobachtet, nicht bewiesen – die Beobachtung ist
+               eindeutig, der Beweis wäre ein Blick in fremde Filterregeln.)*
+
+               DIE REGEL GILT NICHT ALLGEMEIN, sondern für TRANSAKTIONSmails:
+               Empfangsbestätigung, Anmelde-Mail, Terminbestätigung. Für ein
+               echtes Rundschreiben sind die Kopfzeilen PFLICHT, und grosse
+               Anbieter verlangen sie. Dort setzt sie der Versanddienst selbst,
+               weil ein Rundschreiben über seine Verteilerliste hinausgeht.
+
+               Der sichtbare Abmeldelink IM Text bleibt davon unberührt – er
+               steht in jeder Mail an eine Verteilerliste. */
           }),
         });
         /* AUCH HIER MUSS DER GRUND INS PROTOKOLL.

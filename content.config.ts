@@ -435,6 +435,52 @@ export interface Formular {
   bezeichnung?: string;
   felder: FormularFeld[];
   /**
+   * DIE ADRESSE KOMMT IN EINE VERTEILERLISTE (Newsletter, Vormerkliste).
+   *
+   * Ohne diese Angabe wandert **keine** Adresse in eine Liste – auch dann
+   * nicht, wenn beim Versanddienst eine Liste eingerichtet ist. Das ist der
+   * Unterschied zwischen einer Anmeldeliste und einem gesammelten
+   * Adressbestand: Wer einem Handwerker eine Frage schickt, hat damit keiner
+   * Rundmail zugestimmt. Läge er hinterher in der Liste, sähe es so aus, als
+   * hätte er.
+   *
+   * Ist die Angabe gesetzt, passiert dreierlei von selbst: Die Adresse wird
+   * eingetragen, jede Mail an sie bekommt einen Abmeldelink, und die
+   * Datenschutzerklärung beschreibt beides.
+   *
+   * Braucht `RESEND_AUDIENCE_ID`. Fehlt die, bleibt es bei der
+   * Benachrichtigung an den Betrieb – der Live-Check sagt es.
+   */
+  inVerteilerliste?: boolean;
+  /**
+   * DOPPELTE ANMELDUNG (Double Opt-in) – für Anmeldelisten Pflicht.
+   *
+   * Ohne sie nimmt der Motor eine Adresse entgegen und trägt sie sofort ein.
+   * Für ein Kontaktformular ist das richtig, für eine Anmeldeliste dreimal
+   * falsch:
+   *
+   * 1. NACHWEIS. Art. 7 Abs. 1 DSGVO verlangt, dass die Einwilligung
+   *    nachweisbar ist. Ein Häkchen auf einer Website beweist, dass jemand es
+   *    gesetzt hat – nicht, dass es der Inhaber der Adresse war.
+   * 2. FREMDE ADRESSEN. Ohne zweiten Schritt trägt jeder eine beliebige
+   *    Adresse ein. Der echte Besitzer bekommt ungefragt Post und beschwert
+   *    sich beim Betrieb.
+   * 3. ZUSTELLBARKEIT. Tippfehler und Wegwerfadressen bleiben dauerhaft in
+   *    der Liste. Genug davon, und die Domain steht auf einer Sperrliste –
+   *    dann kommt auch die normale Geschäftspost des Betriebs nicht mehr an.
+   *    **Das ist der teure Ausgang, nicht der volle Posteingang.**
+   *
+   * Der Ablauf: Abschicken → *nur* eine Mail an die eingetippte Adresse. Kein
+   * Listeneintrag, keine Benachrichtigung an den Betrieb. Erst der Klick
+   * trägt ein, benachrichtigt und schickt die Bestätigung mit Abmeldelink.
+   *
+   * NUR FÜR REINE ANMELDEFORMULARE. Alle anderen Felder sind beim zweiten
+   * Schritt weg – sie werden bewusst nirgends zwischengespeichert. Der Build
+   * hält deshalb an, wenn hier `true` steht und das Formular mehr als
+   * E-Mail-Feld und Häkchen hat.
+   */
+  doppelteAnmeldung?: boolean;
+  /**
    * MEHRSTUFIG (Assistent) – optional. Titel der Schritte, z. B.
    * `['Ihr Anliegen', 'Termin', 'Kontakt']`. Jedes Feld bekommt dann
    * `schritt: 1|2|3`. Der Motor zeigt immer nur einen Schritt, prüft ihn vor

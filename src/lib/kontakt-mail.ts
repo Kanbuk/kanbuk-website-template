@@ -125,7 +125,18 @@ function pflichtangaben(): string {
        Doppelt erscheint dabei nichts: Sind Anzeigename und Firmenwortlaut
        gleich, fällt der Wortlaut hier weg. */
     r.firmenwortlaut !== site.betrieb.name ? r.firmenwortlaut : '',
-    r.rechtsform,
+    /* DIE RECHTSFORM NUR BEI EINEM EINGETRAGENEN UNTERNEHMEN.
+       Sie stand im Fuß JEDER Mail, auch bei einer Privatperson. § 14 UGB gilt
+       für eingetragene Unternehmen; wer keines ist, gibt hier keine
+       Rechtsform an – der Wert wäre dann keine Rechtsformangabe, sondern eine
+       Selbstbeschreibung („Einzelperson"), und die gehört nicht in einen
+       Block, der sich auf eine Pflichtnorm beruft.
+
+       Woran der Motor es erkennt: an einer Firmenbuchnummer. Wer eine hat,
+       ist eingetragen; wer keine hat, ist es nicht. Das ist die einzige
+       Angabe, die ohne Rückfrage beim Betrieb sicher unterscheidet – und sie
+       steht ohnehin schon in der Config. */
+    r.firmenbuchnummer ? r.rechtsform : '',
     r.sitz && `Sitz: ${r.sitz}`,
     r.firmenbuchnummer && `Firmenbuch ${r.firmenbuchnummer}`,
     r.firmenbuchgericht,
@@ -254,6 +265,53 @@ const SCHRIFT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif
  */
 const BASIS = (site.mode === 'demo' ? (site.vorschauDomain ?? site.domain) : site.domain).replace(/\/$/, '');
 
+/**
+ * DER MARKENKOPF JEDER MAIL – eine Stelle, nicht drei.
+ * ===========================================================================
+ * Er lag zuletzt dreimal fast gleich im Code, und eine der drei Mails hatte
+ * gar keinen. Sobald es mehr als eine Mail gibt, driftet das garantiert
+ * auseinander – und niemand liest drei Mail-Vorlagen gegeneinander.
+ *
+ * ZWEI FALLEN STECKEN DARIN, beide in echten Postfächern aufgelaufen:
+ *
+ * 1. DIE FARBE AM `<img>` IST DIE FARBE DES ALTERNATIVTEXTES.
+ *    Blockierte Bilder sind beim ersten Öffnen der Normalfall. Stand die
+ *    Farbe auf der hellen Schrift der farbigen Kopfleiste, war der Name auf
+ *    dem hellen Ersatzkasten eines blockierenden Programms **unsichtbar** –
+ *    die Mail begann mit einer leeren Fläche. Mittleres Grau ist der
+ *    Kompromiss; auf beiden Untergründen perfekt geht nicht.
+ *
+ * 2. EIN NAME, DER WIE EINE DOMAIN AUSSIEHT, WIRD VON GMAIL SELBST VERLINKT –
+ *    blau und unterstrichen, mitten im Markenauftritt. Dagegen hilft nur, ihn
+ *    selbst zu verlinken; ein eigener Link gewinnt gegen die Erkennung.
+ *    Betrifft jeden Betrieb mit einem Punkt im Namen („Muster.Studio").
+ *
+ * Die Schriftangaben stehen AN DER ZELLE UND AM BILD: Outlook zieht sie von
+ * der Zelle, andere Programme vom Bild.
+ */
+function markenKopf(logo?: string): string {
+  const name = sicher(site.betrieb.name);
+  /* Sieht der Name wie eine Domain aus? Dann selbst verlinken. */
+  const wieDomain = /\.[a-z]{2,}(\s|$)/i.test(site.betrieb.name);
+  const stil = `font-family:${SCHRIFT};font-size:18px;font-weight:700;`;
+
+  if (logo) {
+    return (
+      `<img src="${BASIS}/${String(logo).replace(/^\//, '')}" alt="${name}" width="180" ` +
+      `style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:180px;` +
+      /* Grau, NICHT die helle Schriftfarbe der Kopfleiste – siehe Falle 1. */
+      `${stil}color:#6b7280;">`
+    );
+  }
+  if (wieDomain) {
+    return (
+      `<a href="${BASIS}" style="${stil}color:${F.aufPrimaer};text-decoration:none;">` +
+      `${name}</a>`
+    );
+  }
+  return `<span style="${stil}color:${F.aufPrimaer};">${name}</span>`;
+}
+
 export function bestaetigungHtml(
   formular: Formular,
   daten: Record<string, string>,
@@ -262,16 +320,7 @@ export function bestaetigungHtml(
   const angaben = einstellung.angabenWiederholen ? ausgefuellt(formular, daten, sprache) : [];
   const pflicht = pflichtangaben();
 
-  /* Der Kopf: Logo, wenn eines eingetragen ist – sonst der Name als Text.
-     Die Schriftangaben stehen AN DER ZELLE UND AM BILD: Outlook zieht sie von
-     der Zelle, andere Programme vom Bild. Blockierte Bilder sind beim ersten
-     Öffnen der Normalfall, und dann muss der Alternativtext wie eine Wortmarke
-     aussehen statt wie ein kaputtes Bild. */
-  const kopf = einstellung.logo
-    ? `<img src="${BASIS}/${String(einstellung.logo).replace(/^\//, '')}" alt="${sicher(b.name)}" width="180" ` +
-      `style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:180px;` +
-      `font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.aufPrimaer};">`
-    : `<span style="font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.aufPrimaer};">${sicher(b.name)}</span>`;
+  const kopf = markenKopf(einstellung.logo);
 
   const angabenBlock = angaben.length
     ? `<tr><td style="padding:0 28px 8px;font-family:${SCHRIFT};font-size:14px;color:${F.text};">
