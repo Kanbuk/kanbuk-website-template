@@ -236,6 +236,48 @@ einen Betriebstyp. Wer weiterbaut, braucht sie alle:
    Interessent überhaupt bekommt; beim Standardfall `ansprache: 'sie'` ist
    das falsch.
 
+### Die restlichen Funde – bewusst NICHT gebaut, mit Auslöser
+
+**Entscheidung vom 06.08.2026:** Sie bleiben liegen, bis ein echter Kunde sie
+auslöst. Dieselbe Handhabung wie bei den Gesundheitsberufen weiter unten –
+und aus demselben Grund: Ein Baustein, den niemand braucht, ist keine
+Vorsorge, sondern Ballast, den jeder künftige Klon mitschleppt.
+
+**Nachgemessen, bevor entschieden wurde** (drei galten als „billig und
+sofort machbar"):
+
+| | Befund am Template |
+| --- | --- |
+| Fund 4 (doppelter Datenschutz-Hinweis) | **Nicht reproduzierbar.** Im gebauten Formular steht der Satz genau einmal. Der Klon hatte eine eigene Konstellation. |
+| Fund 3 (Icon-Absendeknopf) | **Unbelegt.** Kein Tor prüft heute den vorlesbaren Namen eines Knopfes – die Behauptung „jede Behelfslösung fällt durch" liess sich nicht nachstellen. |
+| Fund 5 (Erfolgsmeldung je Formular) | **Real, aber halb erledigt.** Der gefährliche Teil (Opt-in-Meldung) ist gebaut und wird abgeleitet. Der Rest ist Bequemlichkeit. |
+
+**Der Auslöser je Fund – erst dann bauen:**
+
+- [ ] **Fund 1** (einsprachig englische Website): ein Kunde, der nur auf
+      Englisch auftritt. *(kein Blocker)*
+- [ ] **Fund 2 + 10** (Rechtslinks nur deutsch): der nächste ZWEISPRACHIGE
+      Kunde. Hängt am selben Bau wie die drei Zeit-Bausteine und der
+      Einwilligungs-Banner – zusammen machen, nicht einzeln. *(kein Blocker)*
+- [ ] **Fund 3** (Icon-Absendeknopf): ein Design, das einen verlangt. Dann
+      zuerst nachstellen, was wirklich scheitert. *(kein Blocker)*
+- [ ] **Fund 4** (doppelter Hinweis): erst wieder aufgreifen, wenn er in
+      einem Klon auftritt – im Template gibt es ihn nicht. *(kein Blocker)*
+- [ ] **Fund 5** (Erfolgsmeldung je Formular): wenn ein Kunde zwei Formulare
+      mit verschiedenen Meldungen braucht. *(kein Blocker)*
+- [ ] **Fund 6** (Privatperson statt Betrieb): ein Künstler, Autor, Coach
+      oder Vereinsobmann. Grösster der acht – Config, JSON-LD und Impressum.
+      *(kein Blocker)*
+- [ ] **Fund 7** (Zweck, Rechtsgrundlage, Speicherdauer je Formular):
+      **Auslöser ist die doppelte Anmeldung.** Sobald ein Kunde sie benutzt,
+      hat er zwei Formulare mit verschiedener Rechtsgrundlage (Anfrage:
+      Art. 6 Abs. 1 lit. b, Anmeldung: lit. a) – und die Erklärung behauptet
+      für beide dasselbe. Vorher nicht nötig, dann sofort. *(kein Blocker)*
+
+**Und das eigentliche Abbruchkriterium:** Der Pilot entscheidet. Wenn er über
+einen dieser Punkte stolpert, ist er bewiesen und wird gebaut. Stolpert er
+nicht, war das Bauen auf Verdacht richtig unterlassen.
+
 ### Die restlichen Funde (hängen an Betriebstypen)
 
 - [ ] **Fund 1:** Eine **einsprachig englische** Website ist nicht baubar –
