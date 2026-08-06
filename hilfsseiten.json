@@ -1,0 +1,49 @@
+{
+  "_was": "Seiten, die bewusst NICHT in Google stehen sollen. Eine Liste, zwei Leser.",
+
+  "_warum": [
+    "Diese Namen brauchten bisher zwei Eintraege an zwei Stellen: die Sitemap-Filterzeile",
+    "in astro.config.ts und die Ausnahmeliste in scripts/check.mjs. Der Kommentar an beiden",
+    "Stellen sagte ausdruecklich 'wer eine ergaenzt, muss BEIDE anfassen' - und genau das",
+    "ging trotzdem zweimal schief: einmal beim Bau der Anfrage-Fehlerseite, einmal beim",
+    "Live-Gang eines zweisprachigen Kundenprojekts.",
+    "",
+    "Ein Kommentar, der zur Sorgfalt mahnt, ist kein Mechanismus. Jetzt steht die Liste",
+    "einmal hier - wie browser-untergrenze.json, aus demselben Grund."
+  ],
+
+  "_wie": [
+    "Ein Eintrag ist der NAME der Seite, ohne Sprachpraefix und ohne Schraegstriche.",
+    "'danke' deckt damit /danke UND /en/danke ab.",
+    "",
+    "Genau daran ist die alte Liste zerbrochen: Sie pruefte den PFADANFANG, und",
+    "'/en/danke' beginnt nun einmal mit 'en'. Wirkung: Das Pruef-Tor meldete auf JEDER",
+    "zweisprachigen Seite beim Live-Gang einen Fehler fuer eine Seite, die der Motor",
+    "selbst absichtlich auf noindex baut. Der Live-Gang war damit blockiert, ohne dass",
+    "irgendetwas kaputt war - und der einzige Ausweg sah wie ein Trick aus."
+  ],
+
+  "_wer_liest_das": [
+    "astro.config.ts  - filtert sie aus der Sitemap",
+    "scripts/check.mjs - laesst ihnen das noindex durch, auch im Live-Modus"
+  ],
+
+  "_beim_ergaenzen": [
+    "Baut ein Klon eine weitere Seite, die auf noindex stehen soll, gehoert ihr Name",
+    "HIER hinein - und nur hier. Beide Leser ziehen von selbst nach.",
+    "",
+    "Die vier Antwortseiten der doppelten Anmeldung stehen bereits drin, auch wenn ein",
+    "Klon sie nicht baut: Ein Name in dieser Liste, zu dem es keine Seite gibt, tut",
+    "nichts. Ein fehlender Name blockiert den Live-Gang."
+  ],
+
+  "pfade": [
+    "404",
+    "danke",
+    "anfrage-fehler",
+    "angemeldet",
+    "anmeldung-fehler",
+    "abgemeldet",
+    "abmelden-fehler"
+  ]
+}

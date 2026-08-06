@@ -23,6 +23,26 @@ const DIST = join(WURZEL, 'dist');
 const CONFIG = join(WURZEL, 'content.config.ts');
 const nurLive = process.argv.includes('--live');
 
+/* Die noindex-Hilfsseiten: EINE Liste, zwei Leser (hier und astro.config.ts).
+   Die Begründung steht in hilfsseiten.json – sie ist teuer bezahlt. */
+const HILFSSEITEN = (() => {
+  const p = join(WURZEL, 'hilfsseiten.json');
+  if (!existsSync(p)) {
+    /* Klartext statt Stapelabzug – dieselbe Handschrift wie bei der
+       Browser-Untergrenze in astro.config.ts. Abgebrochen wird trotzdem:
+       Ohne die Liste würde der Live-Gang jeder Seite mit Danke-Seite still
+       blockiert, und niemand wüsste warum. */
+    console.error(
+      '\n✗ hilfsseiten.json fehlt. Darin steht, welche Seiten bewusst nicht in\n' +
+        '  Google stehen sollen (Danke-Seite, Fehlerseite …). Ohne sie meldet das\n' +
+        '  Tor beim Live-Gang Fehler für Seiten, die absichtlich gesperrt sind.\n' +
+        '  Datei aus dem Template zurückholen.',
+    );
+    process.exit(1);
+  }
+  return JSON.parse(readFileSync(p, 'utf-8')).pfade;
+})();
+
 /** Läuft der Check im Template selbst? Dann sind die Referenzdaten Absicht.
     Der /port-Skill trägt beim Kunden einen eigenen Namen ein -> ab dann streng. */
 const pkg = existsSync(join(WURZEL, 'package.json'))
@@ -791,14 +811,23 @@ for (const f of htmlDateien) {
      Danke-Seite. Beide stehen nicht in der Seiten-Config, gehören also gar
      nicht in Googles Index – eine Danke-Seite im Suchergebnis nützt niemandem
      und erscheint ohne Zusammenhang. */
-  /* `anfrage-fehler` gehört seit 30.07.2026 dazu und stand hier NICHT: Beim Bau
-     der Seite wurde die Sitemap-Filterzeile ergänzt (astro.config.ts), diese
-     Ausnahmeliste aber vergessen. Wirkung: Sobald ein Klon auf `mode: 'live'`
-     steht, meldet das Tor einen FEHLER für eine Seite, die der Motor selbst
-     absichtlich auf noindex baut – bei jedem Klon, bei jedem Live-Gang, ohne
-     dass irgendetwas kaputt wäre. Wer eine noindex-Hilfsseite ergänzt, muss
-     BEIDE Stellen anfassen. */
-  const istHilfsseite = /^(404|danke|anfrage-fehler)/.test(kurz(f));
+  /* WELCHE SEITEN DAS SIND, STEHT IN `hilfsseiten.json` – einmal, nicht
+     zweimal. Hier stand die Liste ein zweites Mal, mit dem Kommentar „wer eine
+     ergänzt, muss BEIDE Stellen anfassen". Das ging zweimal schief:
+
+     Beim ersten Mal fehlte `anfrage-fehler` – die Sitemap-Filterzeile wurde
+     ergänzt, diese Liste vergessen.
+
+     Beim zweiten Mal war es schlimmer und traf JEDEN zweisprachigen Klon: Die
+     Prüfung sah den PFADANFANG an, und `/en/danke` beginnt nun einmal mit
+     `en`. Damit meldete das Tor beim Live-Gang einen Fehler für eine Seite,
+     die der Motor selbst absichtlich auf noindex baut – der Live-Gang war
+     blockiert, ohne dass irgendetwas kaputt war.
+
+     Verglichen wird deshalb der LETZTE Pfadteil, nicht der Anfang. */
+  const teile = kurz(f).replace(/\.html$/, '').split('/').filter(Boolean);
+  const letztes = teile[teile.length - 1] === 'index' ? teile[teile.length - 2] : teile[teile.length - 1];
+  const istHilfsseite = Boolean(letztes) && HILFSSEITEN.includes(String(letztes));
   if (istLive && noindex && !istHilfsseite) {
     fehler(`${kurz(f)}: mode ist 'live', aber die Seite steht auf noindex`);
   }
@@ -1885,8 +1914,24 @@ if (istLive || nurLive) {
     );
   }
 
-  if (!/uid:\s*'AT[UO]\d/.test(configWerte)) {
-    warnung('Rechtstexte: UID-Nummer sieht nicht nach einer echten österreichischen UID aus');
+  /* EINE WARNUNG, DIE MAN NICHT ERFÜLLEN KANN, BRINGT MAN SICH BEI ZU
+     ÜBERLESEN – und danach überliest man auch die anderen.
+
+     Hier stand `if (!/uid:\s*'AT[UO]\d/…)`. Die Warnung feuerte also auch bei
+     `uid: ''` – und das ist der RICHTIGE Wert für jeden ohne Gewerbe:
+     Privatperson, Verein, Kleinunternehmer ohne UID. Der einzige Weg, sie
+     abzustellen, war eine erfundene Nummer im Impressum. Genau das, was
+     CLAUDE.md an anderer Stelle verbietet.
+
+     Jetzt gilt: Leer ist in Ordnung. Steht etwas da, muss es aussehen wie
+     eine österreichische UID. */
+  const uidWert = configWerte.match(/uid:\s*['"]([^'"]*)['"]/)?.[1]?.trim() ?? '';
+  if (uidWert && !/^AT[UO]\d/.test(uidWert)) {
+    warnung(
+      `Rechtstexte: „${uidWert}" sieht nicht nach einer österreichischen UID aus (ATU… oder ATO…).\n` +
+        `    Wer keine hat – Privatperson, Verein, Kleinunternehmer –, lässt das Feld LEER.\n` +
+        `    Eine erfundene Nummer im Impressum ist schlechter als keine.`,
+    );
   }
   const sitemapDatei = join(DIST, 'sitemap-0.xml');
   if (!existsSync(join(DIST, 'sitemap-index.xml')) && !existsSync(sitemapDatei)) {

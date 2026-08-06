@@ -30,6 +30,35 @@ try {
 }
 
 /**
+ * Die noindex-Hilfsseiten stehen in EINER Datei, nicht zweimal.
+ *
+ * Dieselbe Begruendung wie oben, nur teurer bezahlt: Die Liste stand hier
+ * (Sitemap-Filter) UND in `scripts/check.mjs` (Ausnahme im Live-Tor). Beide
+ * Kommentare mahnten "wer eine ergaenzt, muss BEIDE anfassen" - und genau das
+ * ging zweimal schief. Beim zweiten Mal blockierte das Pruef-Tor den
+ * Live-Gang JEDER zweisprachigen Seite.
+ *
+ * Ein Kommentar, der zur Sorgfalt mahnt, ist kein Mechanismus.
+ */
+const HILFSSEITEN: string[] = JSON.parse(
+  readFileSync(new URL('./hilfsseiten.json', import.meta.url), 'utf-8'),
+).pfade;
+
+/**
+ * Ist diese Adresse eine der Hilfsseiten?
+ *
+ * Verglichen wird der LETZTE Pfadteil, nicht der Anfang. Der Anfang war der
+ * Fehler: `/en/danke` beginnt mit `en`, also fiel jede englische Hilfsseite
+ * durch die Ausnahme - und der Live-Gang war blockiert.
+ */
+function istHilfsseite(adresse: string): boolean {
+  const teile = adresse.replace(/[?#].*$/, '').split('/').filter(Boolean);
+  const letztes = teile[teile.length - 1];
+  if (!letztes) return false;
+  return HILFSSEITEN.includes(letztes.replace(/\.html$/, ''));
+}
+
+/**
  * Nur ECHTE Browsernamen weitergeben - und die Version richtig codieren.
  *
  * Zwei Fallen steckten hier, beide still:
@@ -268,14 +297,10 @@ export default defineConfig({
        der Search Console der rote Fehler „Übermittelte URL als ‚noindex'
        gekennzeichnet" – ausgerechnet dann, wenn der Inhaber das erste Mal
        hinsieht und wissen will, ob der Umzug geklappt hat.
-       Beim Ergänzen einer weiteren noindex-Seite gehört sie hier dazu. */
-    ...(istLive
-      ? [
-          sitemap({
-            filter: (seite) => !/\/(danke|anfrage-fehler)\/?$/.test(seite),
-          }),
-        ]
-      : []),
+       WELCHE SEITEN DAS SIND, STEHT IN `hilfsseiten.json` – einmal, nicht
+       zweimal. Beim Ergänzen einer weiteren noindex-Seite gehört sie DORT
+       hinein; diese Zeile und das Prüf-Tor ziehen von selbst nach. */
+    ...(istLive ? [sitemap({ filter: (seite) => !istHilfsseite(seite) })] : []),
     auslieferungsRegeln(),
   ],
   /**
