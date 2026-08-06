@@ -1099,6 +1099,36 @@ export interface SiteConfig {
   rechtstexte: Rechtstexte;
 
   /**
+   * DÜRFEN KI-CRAWLER DIE SEITE LESEN? (Vorgabe: `'erlaubt'`)
+   *
+   * Der Motor kümmert sich um Google. Für ChatGPT, Perplexity, Claude, Gemini
+   * und Meta AI gab es bisher **keine Zeile** – die robots.txt sagte
+   * `User-agent: *`, und damit durfte jeder KI-Crawler, ohne dass irgendwer
+   * das entschieden hätte. Für einen Kleinbetrieb verschiebt sich dorthin ein
+   * wachsender Teil der Suche; beide Antworten sind legitim, eine
+   * Nicht-Entscheidung ist es nicht.
+   *
+   *   'erlaubt'    Nichts wird gesperrt. Der Betrieb ist in KI-Antworten
+   *                auffindbar, und seine Texte können ins Training gehen.
+   *
+   *   'nur-suche'  Training gesperrt, KI-Suche und Abruf im Chat erlaubt.
+   *                **Das ist meist die gemeinte Wahl:** sichtbar sein, ohne
+   *                dass die eigenen Texte, Bilder und Preise Trainingsmaterial
+   *                werden. Möglich ist sie nur, weil die Anbieter dafür eigene
+   *                Kennungen führen (siehe ki-crawler.json).
+   *
+   *   'gesperrt'   Alle KI-Crawler werden gebeten, draußen zu bleiben.
+   *                Kostet Sichtbarkeit in KI-Antworten.
+   *
+   * WAS DAS NICHT IST: eine Sperre. robots.txt ist eine Bitte, an die sich die
+   * genannten Anbieter nach eigener Aussage halten – erzwingen lässt sie sich
+   * nicht. Und die Google-SUCHE bleibt davon unberührt: Google-Extended
+   * steuert nur Gemini und Vertex AI, nicht das Ranking und nicht die
+   * AI Overviews.
+   */
+  kiSuche?: 'erlaubt' | 'nur-suche' | 'gesperrt';
+
+  /**
    * Externe Dienste (Pixel/Tracking). LEER = cookiefrei, kein Banner.
    * Nur auf ausdrücklichen Kundenwunsch befüllen.
    */
@@ -1237,6 +1267,9 @@ export function aufloesen(k: KundenKonfig): SiteConfig {
     // Standard: keine Dienste -> cookiefrei, kein Banner. Das ist Absicht.
     dienste: k.dienste ?? [],
     weiterleitungen: k.weiterleitungen ?? [],
+    /* Vorgabe ausdruecklich hier, nicht erst beim Lesen: Sonst haengt die
+       Voreinstellung an jeder Stelle einzeln, die sie abfragt. */
+    kiSuche: k.kiSuche ?? 'erlaubt',
   });
 }
 
@@ -1453,6 +1486,9 @@ const konfig = {
 
   branche: 'sonstiges',
   mode: 'demo',
+  /* Vorgabe. Wer die Texte seines Betriebs nicht als Trainingsmaterial sehen
+     will, aber in KI-Antworten vorkommen möchte, setzt 'nur-suche'. */
+  kiSuche: 'erlaubt',
   ansprache: 'sie',
   sprachen: ['de'],
   domain: 'https://muster-betrieb.example',

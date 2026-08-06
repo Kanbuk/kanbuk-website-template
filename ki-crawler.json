@@ -1,0 +1,85 @@
+{
+  "_was": "Die Kennungen der KI-Crawler. Eine Datei, mit Datum - wie browser-untergrenze.json.",
+
+  "_warum_mit_datum": [
+    "Diese Zeichenketten aendern sich, und eine falsch geschriebene Kennung sperrt nichts",
+    "und erlaubt nichts - sie tut einfach gar nichts, ohne Fehlermeldung. Deshalb steht",
+    "hinter jedem Eintrag die Anbieter-Seite, auf der er nachgesehen wurde, und oben das",
+    "Datum. Wer die Liste auffrischt, hebt beides.",
+    "",
+    "NICHT aus dem Gedaechtnis ergaenzen. Kennungen aus Blogartikeln oder Crawler-",
+    "Verzeichnissen Dritter gehoeren nicht hierher - siehe _bewusst_nicht_drin."
+  ],
+
+  "_die_drei_zwecke": [
+    "Der Befund, der den Schalter erst sinnvoll macht: Die grossen Anbieter trennen ihre",
+    "Crawler nach Zweck. Ein Betrieb kann deshalb SICHTBAR IN DER KI-SUCHE sein und",
+    "trotzdem KEIN TRAININGSMATERIAL - das ist keine Halbheit, sondern die Wahl, die die",
+    "meisten Betriebe eigentlich meinen.",
+    "",
+    "training  - die Seite wird Trainingsmaterial fuer ein Sprachmodell",
+    "suche     - die Seite kann in KI-Antworten auftauchen und wird verlinkt",
+    "abruf     - ein Nutzer fragt im Chat danach, dann wird die Seite geholt",
+    "werbung   - prueft Anzeigen-Zielseiten; kein Training, keine KI-Suche"
+  ],
+
+  "_was_der_schalter_macht": [
+    "content.config.ts -> kiSuche steuert daraus die robots.txt:",
+    "",
+    "  'erlaubt'   (Vorgabe) - nichts wird gesperrt. Der Betrieb ist in KI-Antworten",
+    "                          auffindbar und seine Texte koennen ins Training gehen.",
+    "  'nur-suche'           - Training gesperrt, Suche und Abruf erlaubt. Sichtbar,",
+    "                          aber kein Trainingsmaterial.",
+    "  'gesperrt'            - alle vier Zwecke gesperrt.",
+    "",
+    "Wichtig: Das ist eine BITTE, keine Sperre. robots.txt ist eine Anweisung, an die",
+    "sich die genannten Anbieter nach eigener Aussage halten - technisch erzwingen laesst",
+    "sie sich nicht. Wer das braucht, braucht eine Sperre am Server."
+  ],
+
+  "nachgesehen": "2026-08-06",
+
+  "crawler": [
+    { "kennung": "GPTBot", "anbieter": "OpenAI", "zweck": "training", "quelle": "https://developers.openai.com/api/docs/bots" },
+    { "kennung": "OAI-SearchBot", "anbieter": "OpenAI", "zweck": "suche", "quelle": "https://developers.openai.com/api/docs/bots" },
+    { "kennung": "ChatGPT-User", "anbieter": "OpenAI", "zweck": "abruf", "quelle": "https://developers.openai.com/api/docs/bots" },
+    { "kennung": "OAI-AdsBot", "anbieter": "OpenAI", "zweck": "werbung", "quelle": "https://developers.openai.com/api/docs/bots" },
+
+    { "kennung": "ClaudeBot", "anbieter": "Anthropic", "zweck": "training", "quelle": "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler" },
+    { "kennung": "Claude-SearchBot", "anbieter": "Anthropic", "zweck": "suche", "quelle": "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler" },
+    { "kennung": "Claude-User", "anbieter": "Anthropic", "zweck": "abruf", "quelle": "https://support.claude.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler" },
+
+    { "kennung": "PerplexityBot", "anbieter": "Perplexity", "zweck": "suche", "quelle": "https://docs.perplexity.ai/docs/resources/perplexity-crawlers" },
+    { "kennung": "Perplexity-User", "anbieter": "Perplexity", "zweck": "abruf", "quelle": "https://docs.perplexity.ai/docs/resources/perplexity-crawlers" },
+
+    { "kennung": "Google-Extended", "anbieter": "Google", "zweck": "training", "quelle": "https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers", "hinweis": "Reines robots.txt-Signal ohne eigene Kopfzeile. Steuert Training und Grounding in Gemini und Vertex AI - NICHT die AI Overviews der Google-Suche, die haengen am normalen Googlebot. Sperren beeinflusst die Google-Suche nicht." },
+    { "kennung": "Google-CloudVertexBot", "anbieter": "Google", "zweck": "abruf", "quelle": "https://developers.google.com/search/docs/crawling-indexing/google-common-crawlers" },
+
+    { "kennung": "Meta-ExternalAgent", "anbieter": "Meta", "zweck": "training", "quelle": "https://developers.facebook.com/docs/sharing/webmasters/web-crawlers" },
+    { "kennung": "Meta-WebIndexer", "anbieter": "Meta", "zweck": "suche", "quelle": "https://developers.facebook.com/docs/sharing/webmasters/web-crawlers" },
+    { "kennung": "Meta-ExternalFetcher", "anbieter": "Meta", "zweck": "abruf", "quelle": "https://developers.facebook.com/docs/sharing/webmasters/web-crawlers" },
+    { "kennung": "Meta-ExternalAds", "anbieter": "Meta", "zweck": "werbung", "quelle": "https://developers.facebook.com/docs/sharing/webmasters/web-crawlers" },
+
+    { "kennung": "Applebot-Extended", "anbieter": "Apple", "zweck": "training", "quelle": "https://support.apple.com/en-us/119829", "hinweis": "Nur die TRAINING-Sperre. Applebot selbst versorgt Siri, Spotlight und die Safari-Suche und wird hier bewusst nicht gesperrt - er ist kein KI-Crawler, sondern eine Suchmaschine." },
+
+    { "kennung": "CCBot", "anbieter": "Common Crawl", "zweck": "training", "quelle": "https://commoncrawl.org/ccbot", "hinweis": "Baut einen offenen Web-Datensatz, aus dem sich viele Modelle bedienen. Wer Training sperren will, muss ihn mitsperren - sonst kommt der Inhalt auf dem Umweg doch an." },
+
+    { "kennung": "Amazonbot", "anbieter": "Amazon", "zweck": "training", "quelle": "https://developer.amazon.com/amazonbot" },
+    { "kennung": "Amzn-SearchBot", "anbieter": "Amazon", "zweck": "suche", "quelle": "https://developer.amazon.com/amazonbot" },
+    { "kennung": "Amzn-User", "anbieter": "Amazon", "zweck": "abruf", "quelle": "https://developer.amazon.com/amazonbot" },
+
+    { "kennung": "MistralAI-Training", "anbieter": "Mistral AI", "zweck": "training", "quelle": "https://docs.mistral.ai/robots" },
+    { "kennung": "MistralAI-Index", "anbieter": "Mistral AI", "zweck": "suche", "quelle": "https://docs.mistral.ai/robots" },
+    { "kennung": "MistralAI-User", "anbieter": "Mistral AI", "zweck": "abruf", "quelle": "https://docs.mistral.ai/robots" }
+  ],
+
+  "_bewusst_nicht_drin": [
+    "Drei viel genannte Kennungen fehlen hier mit Absicht: Sie haben KEINE auffindbare",
+    "Dokumentation beim Anbieter selbst, sondern kursieren nur in Crawler-Verzeichnissen",
+    "Dritter. Eine Kennung, die man nicht belegen kann, gehoert nicht in eine Datei, die",
+    "als belegt gilt - sie waere genau die Zeile, die spaeter jemand fuer geprueft haelt.",
+    "",
+    "Betroffen sind unter anderem ByteDance, You.com und Cohere. Wer sie braucht, sucht",
+    "sie beim Anbieter nach und traegt sie MIT Quelle nach."
+  ]
+}
