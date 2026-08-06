@@ -182,6 +182,71 @@ Phasen: `Vorlage → Portiert (Vorschau) → Beim Kunden vorgestellt → Gebucht
 
 - *(wird beim Port gefüllt)*
 
+## Offen aus dem Rückfluss vom 06.08.2026
+
+Die Reihenfolge stammt aus der Rückmeldung selbst. Punkt 1, 3 und 5 sind
+erledigt (siehe Verlauf); das hier ist der Rest.
+
+### Der grosse Punkt: doppelte Anmeldung (Double Opt-in)
+
+- [ ] **Fertig bauen.** Gebaut ist `src/lib/mail-links.ts` – Signaturen für
+      Abmelde- und Bestätigungslink, mit Bordmitteln, ohne neues Paket.
+      Es fehlen: die zwei Endpunkte (`api/bestaetigen.ts`, `api/abmelden.ts`),
+      der Abzweig in `kontakt.ts`, die Opt-in-Mail, die Antwortseiten, die
+      Auswertung in der Datenschutzerklärung und die Erweiterung des neunten
+      Tores. *(kein Blocker für einen Betrieb ohne Anmeldeliste)*
+
+**Sieben Stellen, an denen die Klon-Lösung zu eng war** – sie kannte genau
+einen Betriebstyp. Wer weiterbaut, braucht sie alle:
+
+1. **Der Endpunkt nahm `formulare[0]`.** Ein Betrieb mit Kontakt- *und*
+   Anmeldeformular bestätigt damit das falsche. Die Formular-Kennung gehört
+   in den Link **und in die Signatur** – sonst lässt sie sich tauschen.
+   *(erledigt in `mail-links.ts`)*
+2. **Der Bestätigungslink lief nie ab.** Wer ihn in einem weitergeleiteten
+   Mailverlauf findet, kann die Adresse erneut eintragen. Vierzehn Tage.
+   Der **Abmeldelink** bleibt ausdrücklich unbegrenzt – ein abgelaufener
+   wäre ein Rechtsproblem. *(erledigt in `mail-links.ts`)*
+3. **Der Listeneintrag hing allein an der Umgebungsvariablen.** Damit landet
+   jeder, der ein Kontaktformular ausfüllt, in der Verteilerliste – und es
+   sieht hinterher so aus, als hätte er zugestimmt. Er gehört an eine
+   ausdrückliche Angabe am Formular (`inVerteilerliste`). *(Feld angelegt)*
+4. **Der Abmeldelink hing an jeder Bestätigungsmail**, auch der eines reinen
+   Kontaktformulars. Von einer Anfrage kann man sich nicht abmelden.
+5. **Die Erfolgsmeldung hing an einem handgesetzten Prop.** Wer ihn vergisst,
+   sagt „gesendet", während nichts passiert ist. Der Standard muss sich aus
+   `doppelteAnmeldung` ableiten, nicht aus Sorgfalt.
+6. **Der Weg OHNE JavaScript ist auch im Klon falsch geblieben:** Er landet
+   auf `/danke`, und dort steht „Wir haben Ihre Anfrage erhalten". Bei einer
+   doppelten Anmeldung ist das die Unwahrheit. Es braucht eine eigene Route
+   (`/postfach-pruefen`) – die Adresszeile kann eine statische Seite nicht
+   lesen.
+7. **Die Opt-in-Mail duzte fest.** Sie ist die erste Mail, die ein
+   Interessent überhaupt bekommt; beim Standardfall `ansprache: 'sie'` ist
+   das falsch.
+
+### Die restlichen Funde (hängen an Betriebstypen)
+
+- [ ] **Fund 1:** Eine **einsprachig englische** Website ist nicht baubar –
+      `sprache="en"` erzwingt ein `/en`-Präfix. *(kein Blocker)*
+- [ ] **Fund 2 + 10:** `<Rechtslinks />` kann nur Deutsch und zielt immer auf
+      die deutschen Rechtsseiten. Steht schon in OFFEN.md. *(kein Blocker)*
+- [ ] **Fund 3:** Ein Formular mit **Icon-Absendeknopf** ist nicht baubar –
+      jede naheliegende Behelfslösung fällt bei einem Tor durch. *(kein Blocker)*
+- [ ] **Fund 4:** Der Datenschutz-Hinweis kann doppelt stehen, im zweiten
+      Fall falsch. *(kein Blocker)*
+- [ ] **Fund 5:** Die Erfolgsmeldung ist nicht je Formular setzbar.
+      *(kein Blocker)*
+- [ ] **Fund 6:** Der Motor kann nur **Betriebe** abbilden, keine
+      Privatpersonen – `LocalBusiness` mit Wohnadresse, Impressum mit
+      Angaben, die auf eine Privatperson nicht anwendbar sind. *(kein Blocker)*
+- [ ] **Fund 7:** Zweck, Rechtsgrundlage und Speicherdauer sind nicht **je
+      Formular** setzbar. Ein Kontaktformular und eine Anmeldeliste haben
+      verschiedene – die Erklärung behauptet für beide dasselbe.
+      *(kein Blocker)*
+- [ ] **Fund 8:** Eine Anmeldeliste ohne Abmeldeweg. Hängt am selben Bau wie
+      die doppelte Anmeldung. *(kein Blocker)*
+
 ## Motor-Meldungen (fürs Master-Template)
 
 <!-- PFLICHT bei Motor-Schwächen (Bug, irreführende Doku, fehlendes Rezept), die
@@ -291,6 +356,66 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-06** – **Rückfluss aus einem abgeschlossenen Kundenprojekt
+  (Künstler/Label, einsprachig englisch, mit Anmeldeliste).** 14 Motor-Funde,
+  ein neuer Baustein und ein Vorschlag zur Auffindbarkeit in KI-Antworten.
+  Motor auf 2026.8.6. **Sechs Punkte eingearbeitet, jeder mit Gegenprobe:**
+
+  **Fund 11 + 12 (blockierten den Live-Gang).** Die Ausnahmeliste für
+  noindex-Hilfsseiten prüfte den *Pfadanfang* – und `/en/danke` beginnt mit
+  `en`. Damit meldete das Prüf-Tor beim Live-Gang **jeder zweisprachigen
+  Seite** einen Fehler für eine Seite, die der Motor selbst absichtlich
+  sperrt. Dieselbe Liste stand zweimal da (Tor + Sitemap-Filter), mit dem
+  Kommentar „wer eine ergänzt, muss BEIDE anfassen" – genau das ging zweimal
+  schief. **Ein Kommentar ist kein Mechanismus:** jetzt `hilfsseiten.json`,
+  eine Liste, zwei Leser, verglichen wird der letzte Pfadteil. Dazu die
+  UID-Warnung, die auch bei leerem Feld feuerte – dem richtigen Wert für
+  jeden ohne Gewerbe. Sie liess sich nur durch eine erfundene Nummer im
+  Impressum abstellen. Warnungen, die man nicht erfüllen kann, bringt man
+  sich bei zu überlesen.
+
+  **Fund 9 – und die zweite Zeitbombe daneben.** Die Jahreszahl der Fusszeile
+  wurde beim Bauen gerechnet; am 1. Jänner steht auf jeder Seite jedes Klons
+  das Vorjahr. Beim Nachsehen fiel eine zweite Stelle derselben Klasse auf,
+  die *nicht* gemeldet war und schwerer wiegt: Ein Datumsfeld mit
+  `minDatum: 'heute'` bekam seine untere Grenze ebenfalls beim Bauen – eine
+  im Juni gebaute Seite liess im Dezember eine Reservierung für einen Tag im
+  Juni zu. Beide ziehen jetzt im Browser nach, in der Zeitzone des Betriebs.
+  Die Referenzseite fährt dafür ein Datumsfeld mit; sonst prüft es kein Tor.
+
+  **Fund 13 + 14 + Markenkopf.** Die Rechtsform stand im Fuss jeder Mail,
+  auch bei einer Privatperson – § 14 UGB gilt für eingetragene Unternehmen.
+  Erkannt wird es jetzt an der Firmenbuchnummer. Dazu ein Kommentar an der
+  Stelle, an der `List-Unsubscribe`-Kopfzeilen sonst landen: Sie stufen eine
+  Mail als Massenversand ein, während eine Bestätigung die Quittung für eine
+  einzelne Handlung ist; in einem Kundenprojekt landete sie deshalb im Spam.
+  Der Kommentar nennt ausdrücklich **beide** Fälle – für ein echtes
+  Rundschreiben sind die Kopfzeilen Pflicht. Und der Markenkopf der Mails
+  liegt jetzt an einer Stelle statt an dreien, mit den zwei Fallen, die in
+  echten Postfächern aufliefen (die Farbe am Bild ist die Farbe des
+  *Alternativtextes*; ein Name, der wie eine Domain aussieht, wird von Gmail
+  selbst verlinkt).
+
+  **Fund 2a – der KI-Schalter.** `robots.txt` schrieb `User-agent: *`: Jeder
+  KI-Crawler durfte, ohne dass es jemand entschieden hätte. Jetzt
+  `ki-crawler.json` mit 24 Kennungen, jede bei ihrem Anbieter nachgesehen und
+  mit Quelle und Datum hinterlegt. **Drei Stufen statt der vorgeschlagenen
+  zwei:** Beim Nachschlagen kam heraus, dass die Anbieter ihre Crawler nach
+  Zweck trennen. Damit wird `kiSuche: 'nur-suche'` möglich – sichtbar in
+  KI-Antworten, aber kein Trainingsmaterial. Das ist die Wahl, die die
+  meisten Betriebe eigentlich meinen.
+
+  **Fund 2b – `llms.txt`.** Gebaut und ehrlich eingeordnet: **Kein grosser
+  Anbieter sagt zu, sie zu lesen**, Google hat sich ausdrücklich dagegen
+  geäussert, und die grosse Mehrheit der vorhandenen Dateien sieht null
+  Abrufe. Sie kostet nichts und ist da, falls sich das ändert – der
+  Dateikopf sagt in dieser Deutlichkeit, dass die Wirkung unbelegt ist.
+
+  **Der grosse Punkt ist NICHT fertig:** die doppelte Anmeldung. Gebaut ist
+  bisher nur der Baustein für die signierten Links (`src/lib/mail-links.ts`,
+  Bordmittel, kein neues Paket) – mit drei Verallgemeinerungen gegenüber dem
+  Klon, der nur einen Betriebstyp kannte. Was noch fehlt, steht unten unter
+  „Motor-Meldungen".
 - **2026-08-05** – **Unabhängige Nachprüfung der Grenze Design/Motor.** Sechs
   Prüfer je eine Dimension, danach je ein Skeptiker gegen ihre Funde. Ergebnis:
   Die unsichtbare Schicht ist vollständig, die Design-Werte kommen an und
