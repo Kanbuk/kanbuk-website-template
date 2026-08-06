@@ -1,0 +1,28 @@
+---
+/**
+ * Jahr – die aktuelle Jahreszahl, z. B. für „© 2026 Muster Betrieb".
+ *
+ * Der Wert im Markup ist das BAUJAHR und nur der Rückfall; im Browser setzt
+ * `src/lib/verhalten/jahr.ts` die echte Jahreszahl. Warum es beides braucht,
+ * steht ausführlich im Kopf jener Datei.
+ *
+ * Kurz: Beim Bauen gerechnet friert die Zahl ein (CLAUDE.md Abschnitt 5).
+ * Eine statische Seite wird nach dem Live-Gang oft monatelang nicht neu
+ * gebaut – am 1. Jänner steht dann auf jeder Seite das Vorjahr, ohne dass
+ * etwas kaputt aussieht.
+ *
+ * Verwendung:  © <Jahr /> {site.betrieb.name}
+ *
+ * Das Design darf ihn anmalen: `<Jahr class="fuss__jahr" />`.
+ */
+interface Props {
+  class?: string;
+}
+const { class: klasse, ...rest } = Astro.props;
+
+/* Das Baujahr. Es steht ausdrücklich NICHT als „die" Jahreszahl da, sondern
+   als das, was ein Besucher ohne JavaScript sieht. */
+const baujahr = new Date().getFullYear();
+---
+
+<span class={klasse} {...rest} data-jahr>{baujahr}</span>

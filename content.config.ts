@@ -1383,6 +1383,13 @@ const konfig = {
         { name: 'name', label: 'Name', typ: 'text', pflicht: true, autocomplete: 'name' },
         { name: 'email', label: 'E-Mail', typ: 'email', pflicht: true, autocomplete: 'email' },
         { name: 'telefon', label: 'Telefon', typ: 'tel', autocomplete: 'tel' },
+        /* Ein Datumsfeld mit `minDatum: 'heute'` fährt die Referenzseite
+           ebenfalls mit Absicht. Es sichert eine Zeitbombe ab: Die untere
+           Grenze wurde beim BAUEN gerechnet, also lässt eine im Juni gebaute
+           Seite im Dezember eine Anfrage für einen Tag im Juni zu. Ohne ein
+           solches Feld auf der Referenzseite prüft es kein Tor – genau die
+           Lehre aus dem Slider, der jahrelang unter „NICHT GEPRÜFT" stand. */
+        { name: 'wunschtermin', label: 'Wunschtermin (optional)', typ: 'datum', minDatum: 'heute' },
         { name: 'nachricht', label: 'Nachricht', typ: 'textarea', pflicht: true },
         /* Die Referenzseite fährt das Zustimmungs-Häkchen samt Link mit
            Absicht: Sonst bliebe der Weg ungetestet, bis ihn der erste Kunde

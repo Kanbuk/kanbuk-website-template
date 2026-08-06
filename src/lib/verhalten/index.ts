@@ -33,6 +33,7 @@ import { zeitenzeileStarten } from './zeitenzeile';
 import { abweichendeZeitenStarten } from './abweichende-zeiten';
 import { dialogStarten } from './dialog';
 import { merklisteStarten } from './merkliste';
+import { jahrStarten } from './jahr';
 
 export { bewegungReduziert } from './hilfen';
 export { erlaubt, beiFreigabe, widerrufen } from './einwilligung';
@@ -68,4 +69,5 @@ export function verhaltenStarten(): void {
   /* Merkliste NACH dem Filter: Sie meldet ihren Zustand per Ereignis, der
      Filter hört darauf – so bleiben beide widerspruchsfrei. */
   merklisteStarten();
+  jahrStarten();
 }

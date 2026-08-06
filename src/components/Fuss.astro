@@ -36,13 +36,13 @@ import { site } from '../../content.config';
 import SocialLinks from './SocialLinks.astro';
 import Signatur from './Signatur.astro';
 import Rechtslinks from './Rechtslinks.astro';
+import Jahr from './Jahr.astro';
 
 interface Props {
   class?: string;
 }
 const { class: klasse, ...rest } = Astro.props;
 
-const jahr = new Date().getFullYear();
 const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
 ---
 
@@ -51,7 +51,11 @@ const rechtsname = site.rechtstexte?.firmenwortlaut || site.betrieb.name;
     <slot />
 
     <div class="fuss__unten">
-      <p class="fuss__recht-inhaber">© {jahr} {rechtsname}</p>
+      {/* Die Jahreszahl kommt aus <Jahr />, nicht aus `new Date()` beim Bauen.
+          Hier stand `{jahr}`: Am 1. Jänner zeigte damit jede Seite jedes Klons
+          das Vorjahr – bis zufällig jemand etwas anderes änderte. Ein Bau
+          entsteht nur aus einer Änderung, nie aus dem Verstreichen von Zeit. */}
+      <p class="fuss__recht-inhaber">© <Jahr /> {rechtsname}</p>
       <SocialLinks />
       <Rechtslinks />
       <Signatur />

@@ -59,6 +59,13 @@ interface Props {
    * nicht hierher.
    */
   pflichtMarkierung?: 'optional' | 'pflicht';
+  /**
+   * Zeitzone des BETRIEBS – nur für Datumsfelder mit `minDatum: 'heute'`.
+   * Wie bei <Oeffnungszeiten> und <Zeitenzeile>: Ein Besucher aus Tokio ist
+   * schon einen Tag weiter und dürfte sonst einen Tag nicht buchen, den es
+   * beim Betrieb noch gibt.
+   */
+  zeitzone?: string;
 }
 const {
   id,
@@ -66,8 +73,25 @@ const {
   bezug,
   sprache = 'de',
   pflichtMarkierung = 'optional',
+  zeitzone = 'Europe/Vienna',
   ...rest
 } = Astro.props;
+
+/* DER RÜCKFALL FÜR `minDatum: 'heute'` – und ausdrücklich nur der.
+   Hier stand `new Date().toISOString()` direkt am Feld. Das ist der BAUTAG:
+   Eine im Juni gebaute Seite liess im Dezember eine Reservierung fuer einen
+   Tag im Juni zu – der Betrieb bekam eine Anfrage fuer ein laengst
+   vergangenes Datum, und der Besucher hatte nichts falsch gemacht.
+
+   Den echten Wert setzt `src/lib/verhalten/jahr.ts` im Browser, in der
+   Zeitzone des Betriebs. Ohne JavaScript bleibt der Bautag stehen – eine
+   Grenze von gestern ist besser als gar keine. */
+const heuteBeimBauen = new Intl.DateTimeFormat('en-CA', {
+  timeZone: zeitzone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
 
 const formular = site.formulare.find((f) => f.id === id);
 if (!formular) {
@@ -339,7 +363,10 @@ if (leer) {
                 inputmode={f.tastatur === 'dezimal' ? 'decimal' : f.tastatur === 'tel' ? 'tel' : undefined}
                 pattern={f.typ === 'zahl' || f.typ === 'datum' || f.typ === 'zeit' ? undefined : f.muster}
                 placeholder={f.platzhalter}
-                min={f.typ === 'datum' && f.minDatum === 'heute' ? new Date().toISOString().slice(0, 10) : (f.minDatum ?? f.min)}
+                {...(f.typ === 'datum' && f.minDatum === 'heute'
+                  ? { 'data-min-heute': zeitzone }
+                  : {})}
+                min={f.typ === 'datum' && f.minDatum === 'heute' ? heuteBeimBauen : (f.minDatum ?? f.min)}
                 max={f.max}
               />
             )}
