@@ -1263,6 +1263,88 @@ if (istTemplate) {
 }
 
 // ---------------------------------------------------------------------------
+//  7b. DOPPELTE ANMELDUNG – die Grenzen durchsetzen statt dokumentieren
+//
+//  Drei Fallen, alle unsichtbar, wenn man sie nur aufschreibt:
+//
+//  (1) `doppelteAnmeldung` an einem Formular mit mehr als E-Mail und Haekchen.
+//      Beim zweiten Schritt sind ALLE anderen Felder weg - sie werden bewusst
+//      nirgends zwischengespeichert. Ein Kontaktformular mit Name, Telefon und
+//      Nachricht verloere unter dieser Angabe alles ausser der Adresse, und
+//      zwar lautlos.
+//  (2) Die Endpunkte da, die Antwortseiten nicht. Der Servercode leitet auf
+//      Pfade um, die als Zeichenkette dort stehen; wer eine Seite umbenennt,
+//      merkt nichts - der Bau bleibt gruen, und der Besucher sieht eine 404
+//      an der Stelle, an der seine Anmeldung erst gueltig wird.
+//  (3) Eine Verteilerliste zusagen, ohne eine zu haben. Dann ist die "Liste"
+//      wieder ein Posteingang, und der Abmeldeweg laeuft ins Leere.
+// ---------------------------------------------------------------------------
+{
+  /* (1) DER STILLE DATENVERLUST. Beim zweiten Schritt sind alle Felder ausser
+     der Adresse weg – sie werden bewusst nirgends zwischengespeichert. Ein
+     Formular mit Name, Telefon und Nachricht verloere sie lautlos.
+
+     Gelesen wird der Config-TEXT, nicht das Modul: Dieses Tor fuehrt
+     content.config.ts nie aus. Ein Formular reicht von seiner `id:` bis zur
+     naechsten. */
+  const bloecke = configWerte.split(/\bid:\s*'/).slice(1);
+  for (const block of bloecke) {
+    if (!/doppelteAnmeldung:\s*true/.test(block)) continue;
+    const kennung = (block.match(/^([^']+)'/) || [])[1] || '(ohne Kennung)';
+    const typen = [...block.matchAll(/typ:\s*'([a-z]+)'/g)].map((m) => m[1]);
+    const stoerend = typen.filter((x) => x !== 'email' && x !== 'haekchen');
+    if (stoerend.length > 0) {
+      fehler(
+        `Formular „${kennung}" traegt „doppelteAnmeldung", hat aber weitere Felder: ${stoerend.join(', ')}.\n` +
+          `    Die doppelte Anmeldung ist fuer eine reine Anmeldeliste gedacht. Beim zweiten\n` +
+          `    Schritt sind alle Felder ausser der Adresse WEG – sie werden bewusst nirgends\n` +
+          `    zwischengespeichert. Der Betrieb bekaeme die Anmeldung ohne diese Angaben, und\n` +
+          `    zwar ohne Meldung. Entweder die Felder entfernen oder „doppelteAnmeldung" weglassen.`,
+      );
+    }
+  }
+
+  const mitOptIn = configWerte.includes('doppelteAnmeldung: true');
+  const mitListe = configWerte.includes('inVerteilerliste: true');
+
+  if (mitOptIn) {
+    /* (2) Die vier Antwortseiten muessen im Build liegen. */
+    for (const noetig of ['postfach-pruefen', 'angemeldet', 'anmeldung-fehler']) {
+      const da = htmlDateien.some((f) => kurz(f).startsWith(noetig + '/') || kurz(f) === noetig + '.html');
+      if (!da) {
+        fehler(
+          `Ein Formular traegt „doppelteAnmeldung", aber die Seite /${noetig} fehlt im Build.
+` +
+            `    Der Servercode leitet dorthin um – ohne die Seite sieht der Anmelder eine 404
+` +
+            `    an genau der Stelle, an der seine Anmeldung erst gueltig wird.`,
+        );
+      }
+    }
+    /* (2b) Die Endpunkte muessen da sein. */
+    if (!existsSync(join(WURZEL, 'api', 'bestaetigen.ts'))) {
+      fehler(
+        'Ein Formular traegt „doppelteAnmeldung", aber api/bestaetigen.ts fehlt.\n' +
+          '    Ohne den zweiten Schritt geht die Opt-in-Mail raus und der Klick darin ins Leere.',
+      );
+    }
+  }
+
+  if (mitListe || mitOptIn) {
+    if (!existsSync(join(WURZEL, 'api', 'abmelden.ts'))) {
+      fehler(
+        'Ein Formular traegt Adressen in eine Verteilerliste ein, aber api/abmelden.ts fehlt.\n' +
+          '    Eine Liste ohne Abmeldeweg ist ein Rechtsproblem – und die Mail verspricht ihn.',
+      );
+    }
+    for (const noetig of ['abgemeldet', 'abmelden-fehler']) {
+      const da = htmlDateien.some((f) => kurz(f).startsWith(noetig + '/') || kurz(f) === noetig + '.html');
+      if (!da) fehler(`Verteilerliste konfiguriert, aber die Seite /${noetig} fehlt im Build.`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 //  7c. EIN BAUSTEIN, DER EINE KLASSE ANNIMMT, MUSS SICH AUCH ANMALEN LASSEN
 //
 //  Astro grenzt Stile über ein Attribut ab. Ein Baustein, der `class` nur

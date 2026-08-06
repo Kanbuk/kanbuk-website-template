@@ -1,0 +1,55 @@
+---
+/**
+ * Postfach pruefen – das Ziel nach einer ANMELDUNG ohne JavaScript.
+ *
+ * Sie ist noetig, weil `/danke` hier die Unwahrheit saegte: Dort steht „Wir
+ * haben Ihre Anfrage erhalten" – angekommen ist zu diesem Zeitpunkt aber
+ * gar nichts. Die Adresse steht nirgends, bis der Klick in der Mail erfolgt.
+ * Wer die Mail uebersieht, bliebe sonst ueberzeugt, angemeldet zu sein, und
+ * fehlt dann in der Liste.
+ *
+ * Wird bewusst NICHT indexiert (steht in `hilfsseiten.json`): Eine
+ * Antwortseite in den Suchergebnissen ist fuer niemanden nuetzlich und wuerde
+ * ohne Zusammenhang angezeigt.
+ *
+ * Das Design des Klons malt sie an oder baut sie neu – der Motor liefert nur
+ * den Ruecktfall, damit der Weg nie ins Leere laeuft.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/postfach-pruefen"
+  titel={duzen ? 'Schau in dein Postfach' : 'Schauen Sie in Ihr Postfach'}
+  beschreibung={duzen ? 'Fast geschafft: Eine E-Mail wartet auf dich. Erst der Klick darin schliesst die Anmeldung ab.' : 'Fast geschafft: Eine E-Mail wartet auf Sie. Erst der Klick darin schliesst die Anmeldung ab.'}
+  noindex
+>
+  <Kopf aktuell="/postfach-pruefen" />
+  <main id="inhalt" class="meldung">
+    <div class="container container--schmal">
+      <h1>{duzen ? 'Fast geschafft!' : 'Fast geschafft!'}</h1>
+      <p>{duzen ? 'In deinem Postfach liegt eine E-Mail von uns. Erst der Klick darin schliesst die Anmeldung ab – vorher ist deine Adresse nirgends gespeichert.' : 'In Ihrem Postfach liegt eine E-Mail von uns. Erst der Klick darin schliesst die Anmeldung ab – vorher ist Ihre Adresse nirgends gespeichert.'}</p>
+      <p>{duzen ? 'Nichts angekommen? Sieh auch im Spam-Ordner nach.' : 'Nichts angekommen? Sehen Sie auch im Spam-Ordner nach.'}</p>
+
+      <p><a class="knopf" href="/">{duzen ? 'Zurueck zur Startseite' : 'Zurueck zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<style>
+  .meldung {
+    padding-block: var(--raum-2xl);
+  }
+  .meldung h1 {
+    margin-bottom: var(--raum-s);
+  }
+  .meldung p {
+    margin-bottom: var(--raum-s);
+  }
+</style>

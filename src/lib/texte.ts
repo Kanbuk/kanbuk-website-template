@@ -15,6 +15,19 @@ export interface MotorTexte {
   einwilligung: string;
   sendet: string;
   erfolg: string;
+  /**
+   * Die Erfolgsmeldung bei DOPPELTER ANMELDUNG – eine andere Wahrheit.
+   *
+   * „Ihre Nachricht wurde gesendet" ist dort falsch: Gesendet wurde eine Mail
+   * an den Absender, angekommen ist beim Betrieb nichts, und die Adresse steht
+   * nirgends. Wer die Mail übersieht, bliebe überzeugt, angemeldet zu sein –
+   * und fehlt dann in der Liste.
+   *
+   * Sie hängt bewusst NICHT an einer Angabe, die jemand setzen muss: Der
+   * Motor leitet sie aus `doppelteAnmeldung` ab. Ein Feld, das man vergessen
+   * kann, wäre hier die Falle, nicht die Lösung.
+   */
+  erfolgOptIn: string;
   fehler: string;
   verbindungsfehler: string;
   pflichtfelder: string;
@@ -32,6 +45,8 @@ const SIE: MotorTexte = {
     'Ihre Angaben verwenden wir ausschließlich, um diese Anfrage zu beantworten. Mehr dazu in der ',
   sendet: 'Wird gesendet …',
   erfolg: 'Vielen Dank! Ihre Nachricht wurde gesendet.',
+  erfolgOptIn:
+    'Fast geschafft: In Ihrem Postfach liegt eine E-Mail. Erst der Klick darin schließt die Anmeldung ab.',
   fehler: 'Das hat leider nicht geklappt. Bitte versuchen Sie es per E-Mail.',
   verbindungsfehler: 'Verbindung fehlgeschlagen. Bitte versuchen Sie es per E-Mail.',
   pflichtfelder: 'Bitte füllen Sie die Pflichtfelder aus.',
@@ -47,6 +62,8 @@ const DU: MotorTexte = {
     'Deine Angaben verwenden wir ausschließlich, um diese Anfrage zu beantworten. Mehr dazu in der ',
   sendet: 'Wird gesendet …',
   erfolg: 'Danke! Deine Nachricht wurde gesendet.',
+  erfolgOptIn:
+    'Fast geschafft: In deinem Postfach liegt eine E-Mail. Erst der Klick darin schließt die Anmeldung ab.',
   fehler: 'Das hat leider nicht geklappt. Bitte versuch es per E-Mail.',
   verbindungsfehler: 'Verbindung fehlgeschlagen. Bitte versuch es per E-Mail.',
   pflichtfelder: 'Bitte füll die Pflichtfelder aus.',
@@ -69,6 +86,8 @@ const EN: MotorTexte = {
   einwilligung: 'We use your details solely to answer this enquiry. More on this in our ',
   sendet: 'Sending …',
   erfolg: 'Thank you! Your message has been sent.',
+  erfolgOptIn:
+    'Almost done: an email is waiting in your inbox. Only the click inside it completes your sign-up.',
   fehler: 'That did not work, unfortunately. Please try by email.',
   verbindungsfehler: 'Connection failed. Please try by email.',
   pflichtfelder: 'Please fill in the required fields.',

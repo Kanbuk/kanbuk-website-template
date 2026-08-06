@@ -121,7 +121,7 @@ function antwort(status: number, json: Record<string, unknown>): Response {
  * hier laeuft Node ohne Bau-Werkzeug. Es sind genau zwei feste Ziele, keine
  * Adresse aus der Anfrage; ein manipuliertes `en=1` kann hoechstens auf die
  * englische Fehlerseite desselben Projekts fuehren. */
-function zielSeite(pfad: '/danke' | '/anfrage-fehler', enSeiten: boolean): string {
+function zielSeite(pfad: '/danke' | '/anfrage-fehler' | '/postfach-pruefen', enSeiten: boolean): string {
   return enSeiten ? `/en${pfad}` : pfad;
 }
 
@@ -219,6 +219,10 @@ export async function POST(request: Request): Promise<Response> {
     {
       RESEND_API_KEY: process.env.RESEND_API_KEY,
       CONTACT_FROM: process.env.CONTACT_FROM,
+      /* Optional. Ohne sie gibt es keine Verteilerliste und keinen
+         Abmeldelink – der Normalfall. */
+      RESEND_AUDIENCE_ID: process.env.RESEND_AUDIENCE_ID,
+      LINK_GEHEIMNIS: process.env.LINK_GEHEIMNIS,
     },
     sprache,
   );
@@ -241,7 +245,19 @@ export async function POST(request: Request): Promise<Response> {
        bei einem Wirt harmlos, bei einer Praxis stünde dort das Thema der
        Anfrage. Auch das ist mit der eigenen Route erledigt: Es steht nichts
        mehr in der Adresse.) */
-    const ziel = zielSeite(ok ? '/danke' : '/anfrage-fehler', enSeiten);
+    /* DER WEG OHNE JAVASCRIPT BRAUCHT EINE EIGENE SEITE.
+       Bei doppelter Anmeldung wäre `/danke` die Unwahrheit – dort steht „Wir
+       haben Ihre Anfrage erhalten", und angekommen ist zu diesem Zeitpunkt
+       gar nichts: Die Adresse steht nirgends, bis der Klick im Postfach
+       erfolgt. Wer die Mail übersieht, bliebe überzeugt, angemeldet zu sein.
+
+       Warum eine ROUTE und kein Zusatz an der Adresszeile: Diesen Weg gehen
+       ausschliesslich Besucher OHNE Skript – und eine statische Seite kann die
+       Adresszeile nicht lesen. Dieselbe Lehre wie bei /anfrage-fehler. */
+    const ziel = zielSeite(
+      ok ? (json?.bestaetigungNoetig ? '/postfach-pruefen' : '/danke') : '/anfrage-fehler',
+      enSeiten,
+    );
     return new Response(null, { status: 303, headers: { Location: ziel } });
   }
 

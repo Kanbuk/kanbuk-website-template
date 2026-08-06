@@ -189,12 +189,23 @@ erledigt (siehe Verlauf); das hier ist der Rest.
 
 ### Der grosse Punkt: doppelte Anmeldung (Double Opt-in)
 
-- [ ] **Fertig bauen.** Gebaut ist `src/lib/mail-links.ts` – Signaturen für
-      Abmelde- und Bestätigungslink, mit Bordmitteln, ohne neues Paket.
-      Es fehlen: die zwei Endpunkte (`api/bestaetigen.ts`, `api/abmelden.ts`),
-      der Abzweig in `kontakt.ts`, die Opt-in-Mail, die Antwortseiten, die
-      Auswertung in der Datenschutzerklärung und die Erweiterung des neunten
-      Tores. *(kein Blocker für einen Betrieb ohne Anmeldeliste)*
+**Gebaut am 06.08.2026** – der Weg läuft vollständig: Signaturen
+(`src/lib/mail-links.ts`), beide Endpunkte (`api/bestaetigen.ts`,
+`api/abmelden.ts`), der Abzweig in `kontakt.ts`, die Opt-in-Mail, der
+Listeneintrag samt Abmeldelink, fünf Antwortseiten und drei Sicherungen im
+Prüf-Tor. Kein neues Paket – `node:crypto` reicht.
+
+**Zwei Reste, beide klein:**
+
+- [ ] **Die Datenschutzerklärung beschreibt die Verteilerliste noch nicht von
+      selbst.** Trägt ein Formular Adressen ein, müssten zwei Sätze automatisch
+      entstehen: dass die Adresse an einen Versanddienst geht, und wie man sich
+      abmeldet. Heute müsste ein Port sie tippen – also wieder ein Handschalter,
+      und genau die hat der Motor bei Diensten und Einbettungen längst
+      abgeschafft. *(kein Blocker, solange kein Kunde eine Liste führt)*
+- [ ] **Das neunte Tor kennt die zwei neuen Endpunkte nicht.** Es ruft nur
+      `/api/contact` an. Beide neuen liessen sich nebenwirkungsfrei prüfen:
+      ohne gültige Signatur passiert nichts. *(kein Blocker)*
 
 **Sieben Stellen, an denen die Klon-Lösung zu eng war** – sie kannte genau
 einen Betriebstyp. Wer weiterbaut, braucht sie alle:

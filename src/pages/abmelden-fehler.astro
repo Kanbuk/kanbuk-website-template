@@ -1,0 +1,61 @@
+---
+/**
+ * Abmeldung fehlgeschlagen – und das heisst wirklich: nicht abgemeldet.
+ *
+ * Der Endpunkt zeigt diese Seite erst, wenn AUCH der Rueckfall (eine Mail an
+ * den Betrieb) gescheitert ist. So steht nie „abgemeldet" da, wenn nichts
+ * passiert ist – das waere der teure Fehler, denn niemand meldet sich
+ * zweimal ab.
+ *
+ * Wird bewusst NICHT indexiert (steht in `hilfsseiten.json`): Eine
+ * Antwortseite in den Suchergebnissen ist fuer niemanden nuetzlich und wuerde
+ * ohne Zusammenhang angezeigt.
+ *
+ * Das Design des Klons malt sie an oder baut sie neu – der Motor liefert nur
+ * den Ruecktfall, damit der Weg nie ins Leere laeuft.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/abmelden-fehler"
+  titel={duzen ? 'Abmeldung hat nicht geklappt' : 'Abmeldung hat nicht geklappt'}
+  beschreibung={duzen ? 'Die Abmeldung ist nicht durchgegangen – die Adresse steht also noch auf der Liste. Eine kurze Nachricht genuegt, dann tragen wir sie von Hand aus.' : 'Die Abmeldung ist nicht durchgegangen – die Adresse steht also noch auf der Liste. Eine kurze Nachricht genuegt, dann tragen wir sie von Hand aus.'}
+  noindex
+>
+  <Kopf aktuell="/abmelden-fehler" />
+  <main id="inhalt" class="meldung">
+    <div class="container container--schmal">
+      <h1>{duzen ? 'Das hat nicht geklappt' : 'Das hat nicht geklappt'}</h1>
+      <p>{duzen ? 'Die Abmeldung ist nicht durchgegangen – du stehst also noch auf der Liste. Schreib uns kurz, wir tragen dich von Hand aus.' : 'Die Abmeldung ist nicht durchgegangen – Sie stehen also noch auf der Liste. Schreiben Sie uns kurz, wir tragen Sie von Hand aus.'}</p>
+      {/* Der Kontaktweg im Fehlerfall. Die Telefonnummer ist KEIN Pflichtfeld
+          (CLAUDE.md Abschnitt 6) – sie erscheint nur, wenn es sie gibt. */}
+      <p>
+        {duzen ? 'Schreib uns einfach direkt: ' : 'Schreiben Sie uns einfach direkt: '}
+        <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
+        {site.betrieb.telefon ? ' · ' : ''}
+        {site.betrieb.telefon}
+      </p>
+
+      <p><a class="knopf" href="/">{duzen ? 'Zurueck zur Startseite' : 'Zurueck zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<style>
+  .meldung {
+    padding-block: var(--raum-2xl);
+  }
+  .meldung h1 {
+    margin-bottom: var(--raum-s);
+  }
+  .meldung p {
+    margin-bottom: var(--raum-s);
+  }
+</style>

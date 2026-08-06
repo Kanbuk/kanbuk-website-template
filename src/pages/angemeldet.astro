@@ -1,0 +1,49 @@
+---
+/**
+ * Angemeldet – das Ziel nach dem Klick auf den Bestaetigungslink.
+ *
+ * Wird bewusst NICHT indexiert (steht in `hilfsseiten.json`): Eine
+ * Antwortseite in den Suchergebnissen ist fuer niemanden nuetzlich und wuerde
+ * ohne Zusammenhang angezeigt.
+ *
+ * Das Design des Klons malt sie an oder baut sie neu – der Motor liefert nur
+ * den Ruecktfall, damit der Weg nie ins Leere laeuft.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/angemeldet"
+  titel={duzen ? 'Anmeldung bestaetigt' : 'Anmeldung bestaetigt'}
+  beschreibung={duzen ? 'Deine Anmeldung ist bestaetigt.' : 'Die Anmeldung ist bestaetigt – die Adresse ist eingetragen, und eine Bestaetigung liegt im Postfach. Abmelden geht jederzeit mit einem Klick.'}
+  noindex
+>
+  <Kopf aktuell="/angemeldet" />
+  <main id="inhalt" class="meldung">
+    <div class="container container--schmal">
+      <h1>{duzen ? 'Anmeldung bestaetigt' : 'Anmeldung bestaetigt'}</h1>
+      <p>{duzen ? 'Danke – deine Adresse ist jetzt eingetragen. Eine Bestaetigung liegt in deinem Postfach.' : 'Danke – Ihre Adresse ist jetzt eingetragen. Eine Bestaetigung liegt in Ihrem Postfach.'}</p>
+      <p>{duzen ? 'Abmelden kannst du dich jederzeit mit dem Link am Ende jeder Mail.' : 'Abmelden koennen Sie sich jederzeit mit dem Link am Ende jeder Mail.'}</p>
+
+      <p><a class="knopf" href="/">{duzen ? 'Zurueck zur Startseite' : 'Zurueck zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<style>
+  .meldung {
+    padding-block: var(--raum-2xl);
+  }
+  .meldung h1 {
+    margin-bottom: var(--raum-s);
+  }
+  .meldung p {
+    margin-bottom: var(--raum-s);
+  }
+</style>

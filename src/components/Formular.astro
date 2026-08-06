@@ -93,6 +93,17 @@ const heuteBeimBauen = new Intl.DateTimeFormat('en-CA', {
   day: '2-digit',
 }).format(new Date());
 
+/* DIE ERFOLGSMELDUNG MUSS BEI DOPPELTER ANMELDUNG MITSCHALTEN.
+   Sie sagte „Ihre Nachricht wurde gesendet" – bei doppelter Anmeldung ist das
+   falsch: Gesendet wurde eine Mail an den ABSENDER, angekommen ist beim
+   Betrieb nichts, und die Adresse steht nirgends. Wer die Mail übersieht,
+   bleibt überzeugt, angemeldet zu sein, und fehlt dann in der Liste.
+
+   ABGELEITET, nicht als Angabe zum Setzen: Im Ursprungsprojekt hing sie an
+   einem handgesetzten Wert – und wer den vergisst, sagt „gesendet", während
+   nichts passiert ist. Ein Feld, das man vergessen kann, wäre hier die Falle
+   und nicht die Lösung. */
+
 const formular = site.formulare.find((f) => f.id === id);
 if (!formular) {
   throw new Error(
@@ -101,6 +112,7 @@ if (!formular) {
 }
 
 const t = motorTexte(site.ansprache, sprache);
+const erfolgsMeldung = formular.doppelteAnmeldung ? t.erfolgOptIn : t.erfolg;
 const b = motorBeschriftungen(sprache);
 const istDemo = site.mode === 'demo';
 
@@ -230,7 +242,7 @@ if (leer) {
     data-formular-id={formular.id}
     data-assistent={istAssistent ? '' : undefined}
     data-text-sendet={t.sendet}
-    data-text-erfolg={t.erfolg}
+    data-text-erfolg={erfolgsMeldung}
     data-text-fehler={t.fehler}
     data-text-verbindungsfehler={t.verbindungsfehler}
     data-text-vorschau={t.formularDemo}

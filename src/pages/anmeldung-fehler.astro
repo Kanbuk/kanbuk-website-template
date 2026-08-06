@@ -1,0 +1,60 @@
+---
+/**
+ * Anmeldung fehlgeschlagen – eigene Route, kein Zusatz an der Adresse.
+ *
+ * Gruende: abgelaufener Link (14 Tage), veraenderter Link, oder die
+ * Verteilerliste war nicht erreichbar. In JEDEM dieser Faelle ist die
+ * Adresse NICHT eingetragen – deshalb darf hier nichts anderes stehen.
+ *
+ * Wird bewusst NICHT indexiert (steht in `hilfsseiten.json`): Eine
+ * Antwortseite in den Suchergebnissen ist fuer niemanden nuetzlich und wuerde
+ * ohne Zusammenhang angezeigt.
+ *
+ * Das Design des Klons malt sie an oder baut sie neu – der Motor liefert nur
+ * den Ruecktfall, damit der Weg nie ins Leere laeuft.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/anmeldung-fehler"
+  titel={duzen ? 'Anmeldung hat nicht geklappt' : 'Anmeldung hat nicht geklappt'}
+  beschreibung={duzen ? 'Der Bestaetigungslink hat nicht funktioniert – er ist entweder aelter als 14 Tage oder unterwegs veraendert worden. Die Adresse ist nicht eingetragen.' : 'Der Bestaetigungslink hat nicht funktioniert – er ist entweder aelter als 14 Tage oder unterwegs veraendert worden. Die Adresse ist nicht eingetragen.'}
+  noindex
+>
+  <Kopf aktuell="/anmeldung-fehler" />
+  <main id="inhalt" class="meldung">
+    <div class="container container--schmal">
+      <h1>{duzen ? 'Das hat nicht geklappt' : 'Das hat nicht geklappt'}</h1>
+      <p>{duzen ? 'Der Link ist entweder aelter als 14 Tage oder unterwegs veraendert worden. Deine Adresse ist NICHT eingetragen – am einfachsten meldest du dich noch einmal an.' : 'Der Link ist entweder aelter als 14 Tage oder unterwegs veraendert worden. Ihre Adresse ist NICHT eingetragen – am einfachsten melden Sie sich noch einmal an.'}</p>
+      {/* Der Kontaktweg im Fehlerfall. Die Telefonnummer ist KEIN Pflichtfeld
+          (CLAUDE.md Abschnitt 6) – sie erscheint nur, wenn es sie gibt. */}
+      <p>
+        {duzen ? 'Schreib uns einfach direkt: ' : 'Schreiben Sie uns einfach direkt: '}
+        <a href={`mailto:${site.betrieb.email}`}>{site.betrieb.email}</a>
+        {site.betrieb.telefon ? ' · ' : ''}
+        {site.betrieb.telefon}
+      </p>
+
+      <p><a class="knopf" href="/">{duzen ? 'Zurueck zur Startseite' : 'Zurueck zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<style>
+  .meldung {
+    padding-block: var(--raum-2xl);
+  }
+  .meldung h1 {
+    margin-bottom: var(--raum-s);
+  }
+  .meldung p {
+    margin-bottom: var(--raum-s);
+  }
+</style>

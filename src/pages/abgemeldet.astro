@@ -1,0 +1,48 @@
+---
+/**
+ * Abgemeldet – das Ziel nach dem Klick auf den Abmeldelink.
+ *
+ * Wird bewusst NICHT indexiert (steht in `hilfsseiten.json`): Eine
+ * Antwortseite in den Suchergebnissen ist fuer niemanden nuetzlich und wuerde
+ * ohne Zusammenhang angezeigt.
+ *
+ * Das Design des Klons malt sie an oder baut sie neu – der Motor liefert nur
+ * den Ruecktfall, damit der Weg nie ins Leere laeuft.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Kopf from '../components/Kopf.astro';
+import Fuss from '../components/Fuss.astro';
+import { site } from '../../content.config';
+
+const duzen = site.ansprache === 'du';
+---
+
+<BaseLayout
+  pfad="/abgemeldet"
+  titel={duzen ? 'Abgemeldet' : 'Abgemeldet'}
+  beschreibung={duzen ? 'Du bekommst keine weitere Post von uns.' : 'Die Abmeldung ist erledigt – es kommt keine weitere Post. Wer es sich anders ueberlegt, kann sich jederzeit wieder anmelden.'}
+  noindex
+>
+  <Kopf aktuell="/abgemeldet" />
+  <main id="inhalt" class="meldung">
+    <div class="container container--schmal">
+      <h1>{duzen ? 'Abgemeldet' : 'Abgemeldet'}</h1>
+      <p>{duzen ? 'Erledigt – du bekommst keine weitere Post von uns. Wenn du es dir anders ueberlegst, kannst du dich jederzeit neu anmelden.' : 'Erledigt – Die Abmeldung ist erledigt – es kommt keine weitere Post. Wer es sich anders ueberlegt, kann sich jederzeit wieder anmelden. Wenn Sie es sich anders ueberlegen, koennen Sie sich jederzeit neu anmelden.'}</p>
+
+      <p><a class="knopf" href="/">{duzen ? 'Zurueck zur Startseite' : 'Zurueck zur Startseite'}</a></p>
+    </div>
+  </main>
+  <Fuss />
+</BaseLayout>
+
+<style>
+  .meldung {
+    padding-block: var(--raum-2xl);
+  }
+  .meldung h1 {
+    margin-bottom: var(--raum-s);
+  }
+  .meldung p {
+    margin-bottom: var(--raum-s);
+  }
+</style>

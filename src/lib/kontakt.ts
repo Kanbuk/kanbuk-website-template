@@ -10,11 +10,36 @@
 // .js-Endung Pflicht (Node-ESM im Serverless-Bundle, s. api/contact.ts).
 import { site } from '../../content.config.js';
 // .js-Endung ebenfalls Pflicht – siehe Hinweis darüber.
-import { bestaetigungBetreff, bestaetigungHtml, bestaetigungText } from './kontakt-mail.js';
+import {
+  bestaetigungBetreff,
+  bestaetigungHtml,
+  bestaetigungText,
+  optInBetreff,
+  optInHtml,
+  optInText,
+} from './kontakt-mail.js';
+import { abmeldeLink, anmeldeLink, linkGeheimnis } from './mail-links.js';
 
 export interface KontaktEnv {
   RESEND_API_KEY?: string;
   CONTACT_FROM?: string;
+  /**
+   * Kennung der Verteilerliste beim Versanddienst – OPTIONAL.
+   *
+   * Ohne sie gibt es keine Liste und damit keinen Abmeldelink. Das ist der
+   * Normalfall: Die meisten Betriebe sammeln keine Adressen. Gesetzt wird sie
+   * nur, wenn ein Formular `inVerteilerliste` oder `doppelteAnmeldung` trägt.
+   */
+  RESEND_AUDIENCE_ID?: string;
+  /**
+   * Eigenes Geheimnis für die signierten Links – OPTIONAL.
+   *
+   * Ohne Angabe dient der Versand-Schlüssel als Geheimnis. Das spart eine
+   * Variable, die jemand vergessen kann. Wer den Versand-Schlüssel aber
+   * regelmässig tauscht, macht damit alle offenen Bestätigungslinks ungültig,
+   * ohne dass es auffällt – dann gehört hier ein eigener Wert hin.
+   */
+  LINK_GEHEIMNIS?: string;
 }
 
 export interface KontaktErgebnis {
@@ -259,6 +284,74 @@ export async function verarbeiteKontakt(
     zeilen.push(`${f.label}: ${wert ? saeubern(wert) : '–'}`);
   }
 
+  /* ==========================================================================
+     DER ABZWEIG DER DOPPELTEN ANMELDUNG – VOR jedem Versand.
+     ==========================================================================
+     Trägt das Formular `doppelteAnmeldung`, geht hier NUR eine Mail an die
+     eingetippte Adresse raus. Kein Listeneintrag, keine Benachrichtigung an
+     den Betrieb. Erst der Klick im Postfach macht daraus eine Anmeldung.
+
+     DIE POSITION IST NICHT GESCHMACKSSACHE. Stünde dieser Block weiter unten,
+     wäre die Benachrichtigung an den Betrieb schon draussen – dann steht die
+     unbestätigte Adresse in seinem Postfach, und die ganze Übung ist wertlos.
+
+     Warum das der Motor tut und nicht der Betrieb: Art. 7 Abs. 1 DSGVO
+     verlangt eine nachweisbare Einwilligung. Ein Häkchen beweist, dass jemand
+     es gesetzt hat – nicht, dass es der Inhaber der Adresse war.
+     ========================================================================== */
+  if (formular.doppelteAnmeldung) {
+    if (!antwortAdresse) {
+      /* Ohne Adresse gibt es nichts zu bestätigen. Das kann nur passieren,
+         wenn das Formular kein E-Mail-Feld hat – der Vorcheck hält das an. */
+      console.error('[kontakt] doppelteAnmeldung ohne E-Mail-Feld:', formular.id);
+      return { status: 400, json: { fehler: sagt('email') } };
+    }
+    const basis = site.mode === 'demo' ? (site.vorschauDomain ?? site.domain) : site.domain;
+    const bestaetigen = anmeldeLink(
+      basis,
+      antwortAdresse,
+      linkGeheimnis(env),
+      formular.id,
+      sprache === 'en',
+    );
+    try {
+      const antwort = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: absender,
+          to: [antwortAdresse],
+          reply_to: site.betrieb.email,
+          subject: optInBetreff(sprache),
+          text: optInText(bestaetigen, sprache),
+          html: optInHtml(bestaetigen, sprache),
+          /* KEIN List-Unsubscribe – siehe die ausführliche Begründung weiter
+             unten an der Bestätigungsmail. Eine Opt-in-Mail ist erst recht
+             kein Massenversand: Sie geht an eine einzige Adresse, weil dort
+             gerade jemand ein Formular abgeschickt hat. */
+        }),
+      });
+      if (!antwort.ok) {
+        console.error(
+          '[kontakt] Opt-in-Mail wurde abgelehnt:',
+          antwort.status,
+          await antwort.text().catch(() => ''),
+        );
+        return { status: 502, json: { fehler: sagt('versand') } };
+      }
+    } catch (e) {
+      console.error('[kontakt] Opt-in-Mail fehlgeschlagen:', e);
+      return { status: 502, json: { fehler: sagt('versand') } };
+    }
+    /* `bestaetigungNoetig` sagt dem Endpunkt, dass er NICHT auf /danke
+       umleiten darf – dort stünde „Wir haben Ihre Anfrage erhalten", und das
+       ist zu diesem Zeitpunkt die Unwahrheit. */
+    return { status: 200, json: { ok: true, bestaetigungNoetig: true } };
+  }
+
   try {
     const antwort = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -284,6 +377,65 @@ export async function verarbeiteKontakt(
          kommen). Im Vercel-Protokoll ist die Zeile jetzt auffindbar. */
       console.error('[kontakt] Resend hat abgelehnt:', antwort.status, await antwort.text().catch(() => ''));
       return { status: 502, json: { fehler: sagt('versand') } };
+    }
+
+    /* ========================================================================
+       DIE ADRESSE IN DIE VERTEILERLISTE – nur wenn das FORMULAR es sagt.
+       ========================================================================
+       Nicht allein, weil eine Liste eingerichtet ist. Wer einem Handwerker
+       eine Frage schickt, hat damit keiner Rundmail zugestimmt; läge er
+       hinterher in der Liste, sähe es hinterher so aus, als hätte er. Das ist
+       der Unterschied zwischen einer Anmeldeliste und einem gesammelten
+       Adressbestand.
+
+       ERST DIE ANFRAGE ZUSTELLEN, DANN EINTRAGEN. Stünde dieser Block vor der
+       Hauptmail, kippte ein Ausfall der Listen-Schnittstelle die ganze
+       Anfrage – dann ginge eine echte Kundenanfrage verloren, weil ein
+       Nebenschritt klemmt. Ein Fehler hier wird protokolliert und sonst
+       übergangen. */
+    let abmeldeUrl: string | undefined;
+    const gehoertInListe = Boolean(formular.inVerteilerliste || formular.doppelteAnmeldung);
+    if (env.RESEND_AUDIENCE_ID && antwortAdresse && gehoertInListe) {
+      try {
+        const eintrag = await fetch('https://api.resend.com/contacts', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            audience_id: env.RESEND_AUDIENCE_ID,
+            email: antwortAdresse,
+            unsubscribed: false,
+          }),
+        });
+        if (!eintrag.ok) {
+          /* Klartext statt Schweigen: Ohne diese Zeile sucht beim nächsten Klon
+             jemand eine halbe Stunde, warum die Liste leer bleibt. Ein
+             Geheimnis steht hier nicht drin. */
+          console.error(
+            '[kontakt] Verteilerliste hat abgelehnt:',
+            eintrag.status,
+            await eintrag.text().catch(() => ''),
+            '\n    Mögliche Gründe: (1) stimmt RESEND_AUDIENCE_ID?' +
+              '\n    (2) darf der Schlüssel Kontakte schreiben?' +
+              '\n    (3) erwartet die Schnittstelle die Liste inzwischen im Pfad statt im Rumpf?',
+          );
+        }
+      } catch (e) {
+        console.error('[kontakt] Verteilerliste nicht erreichbar:', e);
+      }
+      /* Der Abmeldelink gehört NUR an eine Mail, deren Adresse wirklich in
+         einer Liste steht. An einer Anfrage-Bestätigung wäre er falsch: Von
+         einer Anfrage kann man sich nicht abmelden. */
+      const basis = site.mode === 'demo' ? (site.vorschauDomain ?? site.domain) : site.domain;
+      abmeldeUrl = abmeldeLink(
+        basis,
+        antwortAdresse,
+        linkGeheimnis(env),
+        formular.id,
+        sprache === 'en',
+      );
     }
 
     /* Bestätigung an den ABSENDER – nur wenn eine E-Mail-Adresse vorliegt.
@@ -332,8 +484,8 @@ export async function verarbeiteKontakt(
                in sein Postfach, in genau dem Moment, in dem er gerade seine
                Telefonnummer und persönliche Angaben hinterlassen hat. */
             subject: bestaetigungBetreff(sprache),
-            text: bestaetigungText(formular, daten, sprache),
-            html: bestaetigungHtml(formular, daten, sprache),
+            text: bestaetigungText(formular, daten, sprache, abmeldeUrl),
+            html: bestaetigungHtml(formular, daten, sprache, abmeldeUrl),
             /* HIER KOMMEN KEINE `List-Unsubscribe`-KOPFZEILEN HIN.
                ===============================================================
                Sie sehen nach Sorgfalt aus und sind an dieser Stelle das

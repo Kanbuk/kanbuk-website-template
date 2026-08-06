@@ -180,6 +180,7 @@ export function bestaetigungText(
   formular: Formular,
   daten: Record<string, string>,
   sprache: Sprache = 'de',
+  abmeldeUrl?: string,
 ): string {
   const zeilen: string[] = [
     satz('Danke für deine Anfrage!', 'Vielen Dank für Ihre Anfrage!', 'Thank you for your enquiry!', sprache),
@@ -225,6 +226,22 @@ export function bestaetigungText(
     b.telefon,
     b.email,
   );
+
+  /* Der Abmeldelink NUR, wenn die Adresse wirklich in eine Liste geht.
+     An einer Anfrage-Bestätigung wäre er falsch: Von einer Anfrage kann man
+     sich nicht abmelden, und der Link trüge eine Adresse aus einer Liste aus,
+     in der sie nie war. */
+  if (abmeldeUrl) {
+    zeilen.push(
+      '',
+      satz(
+        `Du willst keine Post mehr? Mit einem Klick abmelden: ${abmeldeUrl}`,
+        `Sie wollen keine Post mehr? Mit einem Klick abmelden: ${abmeldeUrl}`,
+        `No longer want our emails? Unsubscribe with one click: ${abmeldeUrl}`,
+        sprache,
+      ),
+    );
+  }
 
   const pflicht = pflichtangaben();
   if (pflicht) zeilen.push('', pflicht);
@@ -316,6 +333,7 @@ export function bestaetigungHtml(
   formular: Formular,
   daten: Record<string, string>,
   sprache: Sprache = 'de',
+  abmeldeUrl?: string,
 ): string {
   const angaben = einstellung.angabenWiederholen ? ausgefuellt(formular, daten, sprache) : [];
   const pflicht = pflichtangaben();
@@ -387,11 +405,171 @@ export function bestaetigungHtml(
         ${sicher(b.telefon)} · ${sicher(b.email)}
       </td></tr>
 
+      ${abmeldeUrl
+        ? `<tr><td style="padding:0 28px 20px;font-family:${SCHRIFT};font-size:13px;line-height:1.6;color:${F.text};">
+             <a href="${abmeldeUrl}" style="color:${F.text};">${satz(
+               'Mit einem Klick abmelden',
+               'Mit einem Klick abmelden',
+               'Unsubscribe with one click',
+               sprache,
+             )}</a>
+           </td></tr>`
+        : ''}
+
       ${pflicht
         ? `<tr><td style="padding:12px 28px 24px;font-family:${SCHRIFT};font-size:11px;line-height:1.5;color:${F.text};opacity:.6;">
              ${sicher(pflicht)}
            </td></tr>`
         : ''}
+
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
+
+/* ===========================================================================
+   DIE OPT-IN-MAIL – Schritt eins der doppelten Anmeldung
+   ===========================================================================
+   Sie ist die ERSTE Nachricht, die ein Interessent überhaupt bekommt. Zu
+   diesem Zeitpunkt steht seine Adresse nirgends: nicht in der Verteilerliste,
+   nicht im Postfach des Betriebs. Erst der Klick macht daraus eine Anmeldung.
+
+   DESHALB DARF SIE NICHTS BEHAUPTEN. Kein „Sie sind vorgemerkt", kein
+   „Danke für Ihre Anmeldung" – beides wäre zu diesem Zeitpunkt unwahr, und
+   wer die Mail übersieht, bliebe in dem Glauben.
+
+   ANSPRACHE über `satz()` wie überall. Ein fest verdrahtetes Du wäre beim
+   Standardfall `ansprache: 'sie'` falsch – und zwar in der allerersten Mail.
+   =========================================================================== */
+
+export function optInBetreff(sprache: Sprache = 'de'): string {
+  if (sprache === 'en') return `Please confirm your sign-up – ${b.name}`;
+  return duzen ? `Bestätige deine Anmeldung – ${b.name}` : `Bestätigen Sie Ihre Anmeldung – ${b.name}`;
+}
+
+export function optInText(bestaetigenUrl: string, sprache: Sprache = 'de'): string {
+  const zeilen = [
+    satz('Fast geschafft!', 'Fast geschafft!', 'Almost done!', sprache),
+    '',
+    satz(
+      'Bitte bestätige, dass diese Adresse dir gehört. Erst dann tragen wir dich ein:',
+      'Bitte bestätigen Sie, dass diese Adresse Ihnen gehört. Erst dann tragen wir Sie ein:',
+      'Please confirm that this address belongs to you. Only then will we add you:',
+      sprache,
+    ),
+    '',
+    bestaetigenUrl,
+    '',
+    satz(
+      'Der Link gilt 14 Tage. Warst du das nicht, ignoriere diese Nachricht – ohne den Klick passiert nichts.',
+      'Der Link gilt 14 Tage. Waren Sie das nicht, ignorieren Sie diese Nachricht – ohne den Klick passiert nichts.',
+      'The link is valid for 14 days. If this was not you, simply ignore this message – nothing happens without the click.',
+      sprache,
+    ),
+    '',
+    b.name,
+    anschrift,
+  ];
+  const pflicht = pflichtangaben();
+  if (pflicht) zeilen.push('', pflicht);
+  return zeilen.join('\n');
+}
+
+export function optInHtml(bestaetigenUrl: string, sprache: Sprache = 'de'): string {
+  const pflicht = pflichtangaben();
+  return `<!doctype html><html lang="${sprache}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:${F.grund};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${F.grund};">
+  <tr><td align="center" style="padding:24px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;">
+
+      <tr><td style="padding:20px 28px;background:${F.primaer};">
+        ${markenKopf(einstellung.logo)}
+      </td></tr>
+
+      <tr><td style="padding:28px 28px 8px;font-family:${SCHRIFT};font-size:20px;font-weight:700;color:${F.text};">
+        ${satz('Fast geschafft!', 'Fast geschafft!', 'Almost done!', sprache)}
+      </td></tr>
+
+      <tr><td style="padding:0 28px 20px;font-family:${SCHRIFT};font-size:15px;line-height:1.6;color:${F.text};">
+        ${satz(
+          'Bitte bestätige, dass diese Adresse dir gehört. Erst dann tragen wir dich ein.',
+          'Bitte bestätigen Sie, dass diese Adresse Ihnen gehört. Erst dann tragen wir Sie ein.',
+          'Please confirm that this address belongs to you. Only then will we add you.',
+          sprache,
+        )}
+      </td></tr>
+
+      <tr><td style="padding:0 28px 24px;">
+        <a href="${bestaetigenUrl}" style="display:inline-block;padding:12px 22px;border-radius:6px;background:${F.primaer};color:${F.aufPrimaer};font-family:${SCHRIFT};font-size:15px;font-weight:700;text-decoration:none;">
+          ${satz('Anmeldung bestätigen', 'Anmeldung bestätigen', 'Confirm sign-up', sprache)}
+        </a>
+      </td></tr>
+
+      <tr><td style="padding:0 28px 24px;font-family:${SCHRIFT};font-size:13px;line-height:1.6;color:${F.text};opacity:.75;">
+        ${satz(
+          'Der Link gilt 14 Tage. Warst du das nicht, ignoriere diese Nachricht – ohne den Klick passiert nichts.',
+          'Der Link gilt 14 Tage. Waren Sie das nicht, ignorieren Sie diese Nachricht – ohne den Klick passiert nichts.',
+          'The link is valid for 14 days. If this was not you, simply ignore this message – nothing happens without the click.',
+          sprache,
+        )}
+      </td></tr>
+
+      ${pflicht
+        ? `<tr><td style="padding:12px 28px 24px;font-family:${SCHRIFT};font-size:11px;line-height:1.5;color:${F.text};opacity:.6;">
+             ${sicher(pflicht)}
+           </td></tr>`
+        : ''}
+
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+}
+
+/**
+ * DIE BENACHRICHTIGUNG AN DEN BETRIEB – gestaltet statt nackt.
+ *
+ * Bei der doppelten Anmeldung geht sie erst NACH dem Klick raus. Bis dahin
+ * weiss der Betrieb nichts von der Adresse, und das ist der Punkt: Eine
+ * unbestätigte Anmeldung im Postfach sieht erledigt aus und ist es nicht.
+ */
+export function benachrichtigungHtml(
+  formular: Formular,
+  daten: Record<string, string>,
+  sprache: Sprache = 'de',
+): string {
+  const angaben = ausgefuellt(formular, daten, sprache);
+  return `<!doctype html><html lang="${sprache}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:${F.grund};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${F.grund};">
+  <tr><td align="center" style="padding:24px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;">
+
+      <tr><td style="padding:20px 28px;background:${F.primaer};">
+        ${markenKopf(einstellung.logo)}
+      </td></tr>
+
+      <tr><td style="padding:28px 28px 12px;font-family:${SCHRIFT};font-size:18px;font-weight:700;color:${F.text};">
+        ${sicher(formular.bezeichnung ?? formular.betreff)}
+      </td></tr>
+
+      <tr><td style="padding:0 28px 24px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          ${angaben
+            .map(
+              (z) =>
+                `<tr><td style="padding:4px 0;font-family:${SCHRIFT};font-size:14px;color:${F.text};">
+                   <strong>${sicher(z.label)}:</strong> ${sicher(z.wert)}
+                 </td></tr>`,
+            )
+            .join('')}
+        </table>
+      </td></tr>
 
     </table>
   </td></tr>
