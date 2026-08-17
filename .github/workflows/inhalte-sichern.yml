@@ -102,8 +102,48 @@ jobs:
       - name: Nur bei Änderung einchecken
         if: steps.pruefung.outputs.vorhanden == 'ja'
         run: |
+          # -----------------------------------------------------------------
+          #  DIE SICHERUNG SCHREIBT AUF EINEN EIGENEN ZWEIG, NICHT AUF main.
+          #
+          #  WARUM, an einem Kundenprojekt gemessen (12.–17.08.2026):
+          #  Vercel liefert bei einem PRIVATEN Repo nur Commits von
+          #  Team-Mitgliedern aus. `github-actions[bot]` ist keines – solche
+          #  Commits landen im Zustand BLOCKED. Stumm: keine Mail, kein roter
+          #  Haken, nur ein Eintrag in einer Oberfläche, die niemand ansieht.
+          #
+          #  Und es traf nicht nur die Sicherung. Der Auslöser des
+          #  Redaktionssystems deployt IMMER den letzten Commit. War der vom
+          #  Bot – und das war er nach jeder Nacht mit Änderungen –, wurde
+          #  JEDE Veröffentlichung des Betriebs blockiert. Fünf Tage lang hat
+          #  ein Händler Fotos hochgeladen, die nie online gingen.
+          #
+          #  Über zwanzig Deploys hinweg ausnahmslos:
+          #      Autor = Bot     ->  BLOCKED
+          #      Autor = Mensch  ->  READY
+          #
+          #  Ein Sicherungsvorgang, der die Website anhalten kann, ist falsch
+          #  gebaut. Auf einem eigenen Zweig kann er weder einen Live-Gang
+          #  auslösen noch blockieren – unabhängig vom Absender.
+          #
+          #  Der Zweig wird bei jedem Lauf NEU aus dem gerade ausgecheckten
+          #  Stand erzeugt: immer „main plus ein Inhalts-Commit". Wiederher-
+          #  stellen ist damit ein glatter Vorlauf:
+          #      git fetch origin
+          #      git merge --ff-only origin/inhalte-sicherung
+          #
+          #  DAZU GEHÖRT ZWINGEND in der erzeugten vercel.json:
+          #      git: { deploymentEnabled: { 'inhalte-sicherung': false, '*': true } }
+          #  Sonst baut Vercel für diesen Zweig jedes Mal eine Vorschau.
+          # -----------------------------------------------------------------
+          #  DIE ADRESSE darf KEINEM GitHub-Konto entsprechen. Vorher stand
+          #  hier `…@users.noreply.github.com` – GitHub löst so etwas auf einen
+          #  echten Benutzer auf, und genau daran hing das Blockieren.
+          #  `.example` ist reserviert und kann nie jemandem gehören. Sie darf
+          #  so stehen bleiben: Der Commit geht auf einen Zweig, der nie
+          #  ausgeliefert wird.
           git config user.name  "Inhalte-Sicherung"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "sicherung@muster-betrieb.example"
+          ZWEIG=inhalte-sicherung
           # Die Bilder MÜSSEN mit: Wer nur die Texte sichert, sichert eine
           # Website ohne Bestand. Genau daran ist es in einem Kundenprojekt
           # gescheitert.
@@ -118,7 +158,15 @@ jobs:
           if git diff --cached --quiet; then
             echo "Nichts geändert – kein Einchecken, keine Veröffentlichung." >> "$GITHUB_STEP_SUMMARY"
           else
-            git commit -m "Inhalte vom Betrieb gesichert (automatisch)"
-            git push
-            echo "Neuer Stand eingecheckt – die Website wird neu veröffentlicht." >> "$GITHUB_STEP_SUMMARY"
+            git checkout -B "$ZWEIG"
+            git commit -m "Inhalte vom Betrieb gesichert (automatisch)
+
+          Wiederherstellen auf main:
+              git fetch origin
+              git merge --ff-only origin/inhalte-sicherung"
+            # --force ist hier richtig: Der Zweig ist eine Momentaufnahme,
+            # kein Verlauf. Auf main wird nie mit Gewalt geschrieben.
+            git push --force origin "$ZWEIG"
+            echo "Neuer Stand auf Zweig '$ZWEIG' gesichert." >> "$GITHUB_STEP_SUMMARY"
+            echo "Wiederherstellen: git merge --ff-only origin/$ZWEIG" >> "$GITHUB_STEP_SUMMARY"
           fi

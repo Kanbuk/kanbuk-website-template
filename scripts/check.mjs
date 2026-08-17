@@ -1033,7 +1033,7 @@ if (existsSync(vercelDatei)) {
     }
     // Vercel prüft die Datei gegen ein Schema und lehnt JEDES unbekannte Feld
     // ab. Ein Kommentarfeld hier lässt jeden Deploy scheitern.
-    const erlaubt = new Set(['$schema', 'headers', 'redirects', 'cleanUrls', 'trailingSlash', 'rewrites', 'regions', 'framework', 'buildCommand', 'outputDirectory', 'installCommand', 'devCommand', 'github', 'functions', 'crons', 'images']);
+    const erlaubt = new Set(['$schema', 'headers', 'redirects', 'cleanUrls', 'trailingSlash', 'rewrites', 'regions', 'framework', 'buildCommand', 'outputDirectory', 'installCommand', 'devCommand', 'github', 'git', 'functions', 'crons', 'images']);
     for (const schluessel of Object.keys(vercelJson)) {
       if (!erlaubt.has(schluessel)) {
         fehler(`vercel.json enthält das unbekannte Feld "${schluessel}" – Vercel lehnt den Deploy damit komplett ab`);

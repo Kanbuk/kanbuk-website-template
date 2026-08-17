@@ -101,10 +101,31 @@ datei(
       version: '1.0.0',
       type: 'module',
       scripts: { dev: 'sanity dev', build: 'sanity build', deploy: 'sanity deploy' },
+      /*
+       * NUR EIN BODEN, NICHT DIE FASSUNG. Die echten Fassungen holt der
+       * `npm install`-Schritt weiter unten mit `@latest`; npm schreibt sie
+       * danach hier hinein.
+       *
+       * WARUM DAS SO SEIN MUSS: Hier stand `sanity: '^3'` und `react: '^18'`.
+       * Damit bekam JEDES Studio Hauptversion 3 – auch eines, das man heute
+       * frisch anlegt. Bei zwei Kundenprojekten lief die Eingabemaske deshalb
+       * wochenlang auf Sanity 3.99, während 6.9 aktuell war.
+       *
+       * Das war nicht nur „alt": In 3.99 überlebte von 18 gleichzeitig
+       * hochgeladenen Fotos genau EINES – jeder fertige Upload schrieb die
+       * ganze Liste zurück, der letzte gewann. Der Betrieb hielt das für eine
+       * Obergrenze („ich kann nur 7 Fotos hinzufügen") und meldete es erst
+       * nach Wochen. Ab Sanity 4 verlangt das Studio ausserdem React 19; mit
+       * `^18` liesse sich gar nicht mehr aktualisieren.
+       *
+       * Ein festgenagelter Hauptversions-Bereich in einer VORLAGE altert
+       * zwangsläufig – die Vorlage wird jahrelang benutzt. Deshalb: Boden
+       * hier, `@latest` beim Anlegen, `autoUpdates` danach.
+       */
       dependencies: {
-        sanity: '^3',
-        react: '^18',
-        'react-dom': '^18',
+        sanity: '^6',
+        react: '^19',
+        'react-dom': '^19',
         'styled-components': '^6',
       },
     },
@@ -159,6 +180,28 @@ export default {
    * Browser speichert. Ein neuer Name heisst ein totes Lesezeichen.
    */
   studioHost: '${studioName}',
+
+  /**
+   * AUTOMATISCHE AKTUALISIERUNG – die wichtigste Zeile in dieser Datei.
+   *
+   * Ohne sie friert die Eingabemaske auf dem Stand ein, der am Tag der
+   * Veröffentlichung installiert war. Sie holt sich danach NIE wieder etwas,
+   * auch keine Fehlerbehebungen.
+   *
+   * Was das anrichtet, an zwei Kundenprojekten gemessen: Beide liefen
+   * wochenlang auf Sanity 3.99, während 6.9 aktuell war. In 3.99 überlebte von
+   * 18 gleichzeitig hochgeladenen Fotos genau eines – der Betrieb hielt das
+   * für eine Obergrenze und meldete es erst nach Wochen.
+   *
+   * Neu angelegte Studios bringen diese Zeile seit Sanity 3.57 von selbst
+   * mit. Diese Vorlage tat es nicht, und deshalb erbte sie jeder Klon.
+   *
+   * Der eigene Code hier bleibt davon unberührt – aktualisiert wird nur der
+   * Kern des Studios.
+   */
+  deployment: {
+    autoUpdates: true,
+  },
 };
 `,
 );
@@ -228,14 +271,31 @@ console.log(`\n  ${angelegt} Datei(en) angelegt, ${vorhanden} unverändert gelas
    ABHÄNGIGKEITEN HOLEN – der Klon macht das, nicht der Nutzer.
    Sie landen im NACHBARORDNER, nicht im Website-Projekt; die Website bleibt
    abhängigkeitsfrei. Mit `--ohne-install` überspringbar, etwa ohne Netz.
+
+   AUSDRÜCKLICH `@latest`, NICHT NUR `npm install`.
+
+   `npm install` würde die Bereiche aus package.json auflösen – und die sind in
+   einer VORLAGE zwangsläufig irgendwann alt. Genau daran lag es, dass zwei
+   Kundenprojekte mit Sanity 3 aufgesetzt wurden, als längst 6 aktuell war.
+   Mit `@latest` bekommt jedes neue Studio den heutigen Stand, npm schreibt
+   ihn in package.json, und `deployment.autoUpdates` hält ihn danach frisch.
+
+   DIE VIER PAKETE GEHÖREN ZUSAMMEN: Ab Sanity 4 ist React 19 Voraussetzung.
+   Nur `sanity@latest` zu holen und React auf 18 zu lassen, ergibt ein Studio,
+   das sich nicht starten lässt.
    --------------------------------------------------------------------------- */
+const PAKETE = ['sanity@latest', 'react@latest', 'react-dom@latest', 'styled-components@latest'];
+
 if (process.argv.includes('--ohne-install')) {
   console.log('\n  (--ohne-install: Abhängigkeiten nicht geholt.)');
+  console.log('     Die Fassungen in package.json sind nur ein Boden. Vor dem');
+  console.log('     Veröffentlichen einmal nachholen:');
+  console.log(`     npm install ${PAKETE.join(' ')}`);
 } else if (existsSync(join(ordner, 'node_modules'))) {
   console.log('\n  Abhängigkeiten liegen schon im Ordner.');
 } else {
   console.log('\n  Abhängigkeiten holen (das dauert ein bis zwei Minuten) …');
-  const lauf = spawnSync('npm', ['install'], { cwd: ordner, stdio: 'inherit', shell: process.platform === 'win32' });
+  const lauf = spawnSync('npm', ['install', ...PAKETE], { cwd: ordner, stdio: 'inherit', shell: process.platform === 'win32' });
   if (lauf.status !== 0) {
     console.error(
       `\n  ! "npm install" im Studio-Ordner ist fehlgeschlagen (Code ${lauf.status}).\n` +

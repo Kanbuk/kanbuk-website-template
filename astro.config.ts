@@ -212,6 +212,29 @@ function auslieferungsRegeln() {
            * fra1 = Frankfurt, der nächste EU-Standort zu Österreich.
            */
           regions: ['fra1'],
+          /*
+           * DER SICHERUNGS-ZWEIG WIRD NICHT GEBAUT.
+           *
+           * `.github/workflows/inhalte-sichern.yml` legt die nächtliche Kopie
+           * der gepflegten Inhalte auf dem Zweig `inhalte-sicherung` ab –
+           * bewusst nicht auf `main`, damit eine Sicherung nie einen Live-Gang
+           * auslösen oder blockieren kann (die Begründung steht dort).
+           *
+           * Ohne diese Zeile erzeugt Vercel für jeden dieser Commits ein
+           * Vorschau-Deployment: Bauzeit für etwas, das niemand ansieht – und
+           * weil der Absender bewusst kein Team-Mitglied ist, stünde es
+           * ohnehin nur auf „blockiert" und würde die Liste zumüllen.
+           *
+           * `'*': true` ist PFLICHT. Ohne den Stern-Eintrag schaltet Vercel
+           * die Auslieferung für ALLE Zweige ab – auch für `main`. Dann geht
+           * gar nichts mehr live, und zwar ohne Fehlermeldung.
+           */
+          git: {
+            deploymentEnabled: {
+              'inhalte-sicherung': false,
+              '*': true,
+            },
+          },
           /* Eine Seite, eine Adresse: /speisekarte/ wird per 308 auf
              /speisekarte umgeleitet. Ohne das antworten beide Schreibweisen
              mit 200, und Google zählt sie als zwei Seiten mit gleichem Inhalt

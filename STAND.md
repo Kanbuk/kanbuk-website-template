@@ -409,6 +409,64 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
+  bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
+  Motor auf 2026.8.17.
+
+  **1. Das Eingabe-Studio fror auf der Fassung des Anlegetages ein.**
+  `scripts/studio.mjs` schrieb `sanity: '^3'`, `react: '^18'` in die
+  package.json und erzeugte eine `sanity.cli.ts` **ohne**
+  `deployment.autoUpdates`. Folge: Ein heute frisch angelegtes Studio bekam
+  Hauptversion 3, obwohl 6 aktuell war – und holte danach nie wieder etwas.
+  Bei beiden Kunden lief die Maske wochenlang auf Sanity 3.99.
+
+  Das war nicht kosmetisch. In 3.99 überlebte von **18 gleichzeitig
+  hochgeladenen Fotos genau eines** – jeder fertige Upload schrieb die ganze
+  Liste zurück, der letzte gewann. Zusätzlich wurden dabei sieben bereits
+  vorhandene Fotos überschrieben. Der Betrieb hielt das für eine Obergrenze
+  („ich kann nur 7 Fotos hinzufügen") und meldete es erst nach Wochen.
+
+  **Behoben:** Boden auf `^6`/`^19` gehoben, der Anlege-Schritt installiert
+  ausdrücklich `sanity@latest react@latest react-dom@latest
+  styled-components@latest`, und die erzeugte `sanity.cli.ts` enthält jetzt
+  `deployment: { autoUpdates: true }`. **Gegenprobe gefahren:** Das Skript in
+  einer Wegwerf-Kopie mit Musterdaten laufen lassen und die erzeugten Dateien
+  angesehen – `autoUpdates` steht drin.
+  *Warum ein fester Bereich in einer Vorlage grundsätzlich falsch ist: Die
+  Vorlage wird jahrelang benutzt. Jede eingefrorene Zahl altert mit ihr.*
+
+  **2. Die nächtliche Sicherung konnte den Live-Gang blockieren.**
+  Sie committete als `github-actions[bot]` auf `main`. Vercel liefert bei
+  einem **privaten** Repo nur Commits von Team-Mitgliedern aus; alles andere
+  landet stumm im Zustand BLOCKED. Über zwanzig Deploys hinweg ausnahmslos:
+  Autor Bot → BLOCKED, Autor Mensch → READY.
+
+  Schlimmer als „die Sicherung deployt nicht": Der Auslöser des
+  Redaktionssystems deployt **immer den letzten Commit**. War der vom Bot –
+  und das war er nach jeder Nacht mit Änderungen –, wurde JEDE
+  Veröffentlichung des Betriebs blockiert. Fünf Tage lang hat ein Händler
+  Fotos hochgeladen, die nie online gingen. Keine Mail, kein roter Haken.
+
+  **Behoben:** Die Sicherung schreibt auf den Zweig `inhalte-sicherung`
+  (neutrale, reservierte Absenderadresse), und die erzeugte `vercel.json`
+  enthält `git.deploymentEnabled` mit `'inhalte-sicherung': false` und
+  `'*': true`. Damit kann eine Sicherung weder einen Live-Gang auslösen noch
+  blockieren. Wiederherstellen bleibt ein Befehl:
+  `git merge --ff-only origin/inhalte-sicherung`.
+  Das Prüf-Tor kennt jetzt das vercel.json-Feld `git` – vorher hätte es den
+  Deploy als „unbekanntes Feld" abgelehnt.
+
+  **Die gemeinsame Lehre beider Funde:** Beides waren Vorgänge, die MELDEN,
+  dass sie erfolgreich waren, während sie nichts oder das Falsche taten. Ein
+  grüner Haken über einer Sicherung, die nichts sichert, und eine Maske, die
+  Fotos annimmt und wegwirft. **Wo etwas automatisch läuft, muss der
+  Fehlerfall lauter sein als der Erfolgsfall.**
+
+  **Noch offen (Vorschlag, nicht gebaut):** Ein blockierter Deploy ist völlig
+  stumm. Es braucht eine Überwachung, die meldet, wenn der letzte
+  Production-Deploy nicht READY ist – sonst fällt die nächste Variante
+  desselben Musters wieder erst nach Tagen auf.
+
 - **2026-08-06** – **Rückfluss aus einem abgeschlossenen Kundenprojekt
   (Künstler/Label, einsprachig englisch, mit Anmeldeliste).** 14 Motor-Funde,
   ein neuer Baustein und ein Vorschlag zur Auffindbarkeit in KI-Antworten.
