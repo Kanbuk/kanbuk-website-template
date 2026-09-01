@@ -2354,6 +2354,36 @@ if (istLive || nurLive) {
     );
   }
 
+  // --- 3b. Die Sicherung braucht eine echte Absenderadresse ----------------
+  //
+  // Sie schreibt auf `main`, und Vercel liefert bei einem privaten Repo nur
+  // Commits aus, deren AUTOR ein Team-Mitglied ist (`seatBlock`,
+  // `COMMIT_AUTHOR_REQUIRED`). Steht dort noch der Platzhalter, bricht der
+  // Ablauf zwar absichtlich laut ab – aber erst nachts, und dann pflegt der
+  // Betrieb schon. Besser: hier, vor dem Live-Gang.
+  //
+  // Nur beim Live-Gang ein Blocker: In der Vorschau ist das Redaktionssystem
+  // oft noch nicht fertig eingerichtet, und eine Sperre dafür wäre eine Bremse
+  // ohne Anlass. Als Hinweis erscheint es trotzdem schon vorher.
+  if ((hatDienst || hatInhalte) && existsSync('.github/workflows/inhalte-sichern.yml')) {
+    const ablauf = readFileSync('.github/workflows/inhalte-sichern.yml', 'utf-8');
+    const zeile = ablauf.split('\n').find((z) => z.includes('SICHERUNG_MAIL:'));
+    const nochPlatzhalter =
+      !zeile || zeile.includes('PLATZHALTER') || zeile.includes('muster-betrieb.example');
+    if (nochPlatzhalter) {
+      (istLive || nurLive ? fehler : warnung)(
+        [
+          'Die nächtliche Sicherung hat noch keine Absenderadresse.',
+          '    In .github/workflows/inhalte-sichern.yml steht bei SICHERUNG_MAIL noch der',
+          '    Platzhalter. Dort gehört die E-Mail-Adresse des Betreuers hin – desjenigen,',
+          '    der bei Vercel als Mitglied bekannt ist.',
+          '    Sonst blockiert Vercel jeden Commit dieses Ablaufs, und mit ihm JEDE',
+          '    Veröffentlichung, die der Betrieb selbst auslöst. Stumm.',
+        ].join('\n'),
+      );
+    }
+  }
+
   // --- 4. Die erzeugten Dateien müssen wirklich im Projekt liegen ----------
   if (hatInhalte && existsSync('.gitignore')) {
     const ignoriert = readFileSync('.gitignore', 'utf-8');

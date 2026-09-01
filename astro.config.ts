@@ -213,28 +213,25 @@ function auslieferungsRegeln() {
            */
           regions: ['fra1'],
           /*
-           * DER SICHERUNGS-ZWEIG WIRD NICHT GEBAUT.
+           * HIER STAND EIN AUSSCHLUSS FÜR DEN ZWEIG `inhalte-sicherung`.
+           * Entfallen am 01.09.2026, weil es den Zweig nicht mehr gibt.
            *
-           * `.github/workflows/inhalte-sichern.yml` legt die nächtliche Kopie
-           * der gepflegten Inhalte auf dem Zweig `inhalte-sicherung` ab –
-           * bewusst nicht auf `main`, damit eine Sicherung nie einen Live-Gang
-           * auslösen oder blockieren kann (die Begründung steht dort).
+           * Die nächtliche Sicherung schrieb auf einen eigenen Zweig, damit
+           * sie keinen Live-Gang blockieren kann – und dieser Eintrag sorgte
+           * dafür, dass Vercel ihn gar nicht erst baut. Beides zusammen hatte
+           * eine Nebenwirkung, die niemand beabsichtigt hatte: Was der Betrieb
+           * im Redaktionssystem veröffentlichte, erreichte die Website NIE.
+           * Der Lauf war grün, der Commit da, die Seite unverändert.
            *
-           * Ohne diese Zeile erzeugt Vercel für jeden dieser Commits ein
-           * Vorschau-Deployment: Bauzeit für etwas, das niemand ansieht – und
-           * weil der Absender bewusst kein Team-Mitglied ist, stünde es
-           * ohnehin nur auf „blockiert" und würde die Liste zumüllen.
+           * Die Sicherung schreibt jetzt wieder auf `main` und trägt dabei die
+           * Adresse des Betreuers als Autor – daran und nur daran hing das
+           * Blockieren (`.github/workflows/inhalte-sichern.yml` erklärt es).
            *
-           * `'*': true` ist PFLICHT. Ohne den Stern-Eintrag schaltet Vercel
-           * die Auslieferung für ALLE Zweige ab – auch für `main`. Dann geht
-           * gar nichts mehr live, und zwar ohne Fehlermeldung.
+           * WER HIER JE WIEDER EINEN ZWEIG AUSSCHLIESST: `'*': true` ist
+           * PFLICHT. Ohne den Stern-Eintrag schaltet Vercel die Auslieferung
+           * für ALLE Zweige ab – auch für `main`. Dann geht gar nichts mehr
+           * live, und zwar ohne Fehlermeldung.
            */
-          git: {
-            deploymentEnabled: {
-              'inhalte-sicherung': false,
-              '*': true,
-            },
-          },
           /* Eine Seite, eine Adresse: /speisekarte/ wird per 308 auf
              /speisekarte umgeleitet. Ohne das antworten beide Schreibweisen
              mit 200, und Google zählt sie als zwei Seiten mit gleichem Inhalt

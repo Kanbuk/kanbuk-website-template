@@ -15,15 +15,18 @@
 #  dieser Ablauf läuft. Deshalb liefert der Motor ihn mit, statt ihn jedem
 #  Projekt einzeln zu überlassen.
 #
-#  WAS ER TUT: Inhalte UND Bilder holen, und nur dann einchecken, wenn sich
-#  wirklich etwas geändert hat. Der Einchecke-Vorgang stößt bei Vercel
-#  automatisch eine neue Veröffentlichung an – der Betrieb muss nichts tun.
+#  WAS ER TUT: Inhalte, Bilder UND hochgeladene Dateien holen, und nur dann
+#  einchecken, wenn sich wirklich etwas geändert hat. Der Einchecke-Vorgang
+#  stößt bei Vercel eine neue Veröffentlichung an – der Betrieb muss nichts
+#  tun.
 #
 #  EINRICHTEN (einmalig, im Repo unter Settings):
 #    1. Actions → General → Workflow permissions → „Read and write"
 #    2. Secrets and variables → Actions → Secret `REDAKTION_TOKEN`
 #       (nur nötig, wenn der Datensatz privat ist)
-#    3. Im Redaktionsdienst einen Webhook auf GitHub legen, damit
+#    3. >>> DIE ADRESSE WEITER UNTEN EINTRAGEN <<< – ohne sie bricht der
+#       Ablauf mit einer Meldung ab. Warum, steht dort.
+#    4. Im Redaktionsdienst einen Webhook auf GitHub legen, damit
 #       „Veröffentlichen" sofort wirkt statt erst in der Nacht – Anleitung
 #       in redaktion/README.md.
 #
@@ -101,72 +104,111 @@ jobs:
 
       - name: Nur bei Änderung einchecken
         if: steps.pruefung.outputs.vorhanden == 'ja'
+        # ===================================================================
+        #  HIER STEHT DIE ADRESSE DES BETREUERS. Beim Klonen eintragen.
+        #  Die Begründung steht weiter unten im Kasten „Der Autor entscheidet".
+        # ===================================================================
+        env:
+          SICHERUNG_MAIL: 'PLATZHALTER-BETREUER@muster-betrieb.example'
         run: |
           # -----------------------------------------------------------------
-          #  DIE SICHERUNG SCHREIBT AUF EINEN EIGENEN ZWEIG, NICHT AUF main.
+          #  DER AUTOR ENTSCHEIDET, OB DIE WEBSITE ÜBERHAUPT NOCH BAUT
           #
-          #  WARUM, an einem Kundenprojekt gemessen (12.–17.08.2026):
-          #  Vercel liefert bei einem PRIVATEN Repo nur Commits von
-          #  Team-Mitgliedern aus. `github-actions[bot]` ist keines – solche
-          #  Commits landen im Zustand BLOCKED. Stumm: keine Mail, kein roter
+          #  An einem Kundenprojekt gemessen (12.–17.08.2026): Vercel liefert
+          #  bei einem PRIVATEN Repo nur Commits aus, deren AUTOR ein
+          #  Team-Mitglied ist. `github-actions[bot]` ist keines. Solche
+          #  Commits landen stumm im Zustand BLOCKED – keine Mail, kein roter
           #  Haken, nur ein Eintrag in einer Oberfläche, die niemand ansieht.
+          #  Über zwanzig Deploys hinweg ausnahmslos:
           #
-          #  Und es traf nicht nur die Sicherung. Der Auslöser des
+          #      Autor = Bot     ->  BLOCKED
+          #      Autor = Mensch  ->  READY
+          #
+          #  Vercel nennt es `seatBlock` mit `blockCode:
+          #  COMMIT_AUTHOR_REQUIRED` (in der Vercel-API-Referenz nachgesehen
+          #  am 31.08.2026, nicht aus dem Gedächtnis). Es hängt am AUTOR –
+          #  nicht am Zweig, nicht am Auslöser. Ein Deploy-Hook hilft deshalb
+          #  nicht: Er veröffentlicht denselben blockierten Commit.
+          #
+          #  Und es traf nicht nur die Sicherung: Der Auslöser des
           #  Redaktionssystems deployt IMMER den letzten Commit. War der vom
           #  Bot – und das war er nach jeder Nacht mit Änderungen –, wurde
           #  JEDE Veröffentlichung des Betriebs blockiert. Fünf Tage lang hat
           #  ein Händler Fotos hochgeladen, die nie online gingen.
           #
-          #  Über zwanzig Deploys hinweg ausnahmslos:
-          #      Autor = Bot     ->  BLOCKED
-          #      Autor = Mensch  ->  READY
+          #  DER ERSTE AUSWEG WAR FALSCH. Bis 31.08.2026 schrieb dieser Ablauf
+          #  auf einen eigenen Zweig `inhalte-sicherung`, den Vercel nie baute.
+          #  Damit konnte er nichts mehr blockieren – aber auch nichts mehr
+          #  veröffentlichen. Der Betrieb drückt „Veröffentlichen", der Lauf
+          #  ist grün, der Commit entsteht, und die Website ändert sich NIE.
+          #  Das Symptom war weg und der Zweck gleich mit; die Anleitung
+          #  versprach derweil unverändert „wirkt sofort". Genau der
+          #  Fehlertyp, gegen den dieser ganze Baustein antritt.
           #
-          #  Ein Sicherungsvorgang, der die Website anhalten kann, ist falsch
-          #  gebaut. Auf einem eigenen Zweig kann er weder einen Live-Gang
-          #  auslösen noch blockieren – unabhängig vom Absender.
+          #  DESHALB: auf `main`, mit der Adresse des Betreuers – also
+          #  desjenigen, der ohnehin jeden anderen Commit dieses Repos macht
+          #  und bei Vercel als Mitglied bekannt ist. Der NAME sagt trotzdem
+          #  klar, dass die Automatik geschrieben hat; im Verlauf soll niemand
+          #  glauben, hier hätte ein Mensch getippt.
           #
-          #  Der Zweig wird bei jedem Lauf NEU aus dem gerade ausgecheckten
-          #  Stand erzeugt: immer „main plus ein Inhalts-Commit". Wiederher-
-          #  stellen ist damit ein glatter Vorlauf:
-          #      git fetch origin
-          #      git merge --ff-only origin/inhalte-sicherung
-          #
-          #  DAZU GEHÖRT ZWINGEND in der erzeugten vercel.json:
-          #      git: { deploymentEnabled: { 'inhalte-sicherung': false, '*': true } }
-          #  Sonst baut Vercel für diesen Zweig jedes Mal eine Vorschau.
+          #  WARUM DER PLATZHALTER LAUT ABBRICHT statt einfach zu committen:
+          #  Eine fremde oder erfundene Adresse bringt das Blockieren zurück,
+          #  und zwar STUMM – der Betrieb pflegt weiter, die Website steht
+          #  still, und niemand sucht danach. Ein abgebrochener Lauf dagegen
+          #  ist rot und der Hoster schickt eine Mail. Lieber gar keine
+          #  Sicherung als eine, die die Veröffentlichung anhält.
           # -----------------------------------------------------------------
-          #  DIE ADRESSE darf KEINEM GitHub-Konto entsprechen. Vorher stand
-          #  hier `…@users.noreply.github.com` – GitHub löst so etwas auf einen
-          #  echten Benutzer auf, und genau daran hing das Blockieren.
-          #  `.example` ist reserviert und kann nie jemandem gehören. Sie darf
-          #  so stehen bleiben: Der Commit geht auf einen Zweig, der nie
-          #  ausgeliefert wird.
-          git config user.name  "Inhalte-Sicherung"
-          git config user.email "sicherung@muster-betrieb.example"
-          ZWEIG=inhalte-sicherung
-          # Die Bilder MÜSSEN mit: Wer nur die Texte sichert, sichert eine
-          # Website ohne Bestand. Genau daran ist es in einem Kundenprojekt
-          # gescheitert.
+          case "$SICHERUNG_MAIL" in
+            *muster-betrieb.example|*PLATZHALTER*|'')
+              echo "::error::In .github/workflows/inhalte-sichern.yml steht noch der Platzhalter statt der E-Mail-Adresse des Betreuers. Ohne sie blockiert Vercel jeden Commit dieses Ablaufs - und damit auch jede Veroeffentlichung des Betriebs. Eintragen unter SICHERUNG_MAIL."
+              exit 1
+              ;;
+          esac
+
+          git config user.name  "Inhalte-Sicherung (automatisch)"
+          git config user.email "$SICHERUNG_MAIL"
+
+          # DREI Pfade, jeder für sich. Stehen sie in EINEM `git add` und
+          # einer fehlt noch (ein Betrieb, der bisher nur Texte gepflegt hat,
+          # hat keinen Bildordner), bricht der ganze Aufruf ab – und die
+          # Änderung wird still nicht gesichert. Nachgestellt und gemessen.
           #
-          # ZWEI getrennte Aufrufe, und das ist kein Schönheitsfehler:
-          # Stehen beide Pfade in EINEM `git add` und einer davon existiert
-          # noch nicht (ein Betrieb, der bisher nur Texte gepflegt hat, hat
-          # keinen Bildordner), bricht der ganze Aufruf ab – und die
-          # Textänderung wird still nicht gesichert. Nachgestellt und gemessen.
+          # `public/inhalte` FEHLTE HIER BIS ZUM 31.08.2026 – der zweite Bruch
+          # derselben Kette. Dort landen die hochgeladenen DATEIEN: bei einem
+          # Gastro-Betrieb der Menüplan als PDF, also genau das, wofür das
+          # Redaktionssystem eingerichtet wurde. Gesichert wurde bisher nur
+          # der VERWEIS darauf in daten/inhalte.json. Wirkung: Die Website
+          # zeigt auf /inhalte/<datei>.pdf, während die Datei nirgends liegt –
+          # ein toter Link ANSTELLE eines funktionierenden. Das ist schlimmer
+          # als „tut nichts", weil es aussieht wie eine Änderung.
           git add -A -- daten/inhalte.json 2>/dev/null || true
           git add -A -- fotos/inhalte 2>/dev/null || true
+          git add -A -- public/inhalte 2>/dev/null || true
+
+          # SCHUTZ VOR GENAU DIESEM TOTEN LINK: Jede Datei, auf die
+          # daten/inhalte.json zeigt, muss auch wirklich dort liegen. Lieber
+          # laut abbrechen und gar nicht veröffentlichen als einen Verweis ins
+          # Leere ausliefern.
+          node --input-type=module -e '
+            import { existsSync, readFileSync } from "node:fs";
+            if (!existsSync("daten/inhalte.json")) process.exit(0);
+            const roh = readFileSync("daten/inhalte.json", "utf8");
+            const fehlend = [...roh.matchAll(/"(inhalte\/[^"]+)"/g)]
+              .map(function (t) { return t[1]; })
+              .filter(function (pfad) { return !existsSync("public/" + pfad); });
+            if (fehlend.length) {
+              console.error("ABBRUCH - verwiesene Datei fehlt: " + fehlend.join(", "));
+              process.exit(1);
+            }
+          '
+
           if git diff --cached --quiet; then
             echo "Nichts geändert – kein Einchecken, keine Veröffentlichung." >> "$GITHUB_STEP_SUMMARY"
           else
-            git checkout -B "$ZWEIG"
-            git commit -m "Inhalte vom Betrieb gesichert (automatisch)
-
-          Wiederherstellen auf main:
-              git fetch origin
-              git merge --ff-only origin/inhalte-sicherung"
-            # --force ist hier richtig: Der Zweig ist eine Momentaufnahme,
-            # kein Verlauf. Auf main wird nie mit Gewalt geschrieben.
-            git push --force origin "$ZWEIG"
-            echo "Neuer Stand auf Zweig '$ZWEIG' gesichert." >> "$GITHUB_STEP_SUMMARY"
-            echo "Wiederherstellen: git merge --ff-only origin/$ZWEIG" >> "$GITHUB_STEP_SUMMARY"
+            git commit -m "Inhalte vom Betrieb übernommen (automatisch)"
+            # Kein --force. Kommt der Push nicht durch, weil jemand
+            # gleichzeitig gearbeitet hat, soll der Lauf scheitern statt
+            # fremde Arbeit zu überschreiben.
+            git push origin HEAD:main
+            echo "Neuer Stand auf main – Vercel veröffentlicht ihn." >> "$GITHUB_STEP_SUMMARY"
           fi

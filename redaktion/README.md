@@ -186,8 +186,7 @@ Sie holt Inhalte **und Bilder**, checkt sie **nur bei einer Änderung** ein, und
 der Einchecke-Vorgang stößt bei Vercel automatisch eine neue Veröffentlichung
 an. Sie läuft nachts, auf Knopfdruck und auf den Webhook hin.
 
-**Einmalig im Repo einstellen** – zwei Dinge, beide in den Einstellungen des
-Repos beim Hoster:
+**Einmalig einstellen** – drei Dinge:
 
 1. **Abläufe brauchen Schreibrecht.** In den Einstellungen des Repos gibt es
    einen Bereich für automatische Abläufe und darin die Berechtigung, mit der
@@ -198,6 +197,22 @@ Repos beim Hoster:
    Redaktionsdienstes wird als verschlüsselter Wert im Repo hinterlegt (bei den
    Einstellungen für Abläufe, Abschnitt für Geheimnisse), unter dem Namen
    `REDAKTION_TOKEN`.
+3. **Die Absenderadresse der Sicherung eintragen.** In
+   `.github/workflows/inhalte-sichern.yml` steht bei `SICHERUNG_MAIL` ein
+   Platzhalter. Dort gehört die E-Mail-Adresse des Betreuers hin – desjenigen,
+   der auch sonst die Commits dieses Repos macht und beim Hoster der Website
+   als Mitglied bekannt ist.
+
+   > **Warum das kein Schönheitspunkt ist:** Vercel liefert bei einem privaten
+   > Repo nur Commits aus, deren Autor ein Team-Mitglied ist. Ist er es nicht,
+   > bleibt der Commit stumm liegen – und weil das Redaktionssystem immer den
+   > **letzten** Commit veröffentlicht, hängt danach auch jede Änderung des
+   > Betriebs fest. In einem Kundenprojekt hat ein Händler fünf Tage lang
+   > Fotos hochgeladen, die nie online gingen.
+   >
+   > Solange der Platzhalter steht, **bricht die Sicherung absichtlich mit
+   > einer Fehlermeldung ab** und schickt eine Mail, statt still das Falsche zu
+   > tun. Das Prüf-Tor meldet es zusätzlich vor dem Live-Gang.
 
 > **Warum hier keine Klickpfade stehen** (Regel aus CLAUDE.md Abschnitt 0):
 > Die Menübezeichnungen des Hosters ändern sich, und eine falsche Klickanleitung

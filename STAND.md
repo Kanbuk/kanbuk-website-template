@@ -455,6 +455,38 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   nur an der Stelle mit dem höchsten Haftungsrisiko, weil sie im Rechtstext
   steht und der Betrieb sie im Zweifel gegenüber seinem Gast wiederholt.
 
+  **Behoben: die nächtliche Sicherung veröffentlichte nichts.** Sie schrieb auf
+  einen eigenen Zweig `inhalte-sicherung`, den die erzeugte `vercel.json`
+  ausdrücklich vom Bauen ausschloss. Der Zweig war die Antwort auf ein echtes
+  Problem (Commits eines Bots landen bei einem privaten Repo stumm auf
+  BLOCKED) – er hat aber das Symptom weggeräumt und den Zweck gleich mit:
+  **Der Betrieb drückt „Veröffentlichen", der Lauf ist grün, der Commit
+  entsteht, und die Website ändert sich nie.** Die Anleitung versprach derweil
+  unverändert „wirkt sofort". Genau der Fehlertyp, gegen den der Baustein
+  antritt.
+
+  Das Blockieren hängt am **Autor** des Commits, nicht am Zweig und nicht am
+  Auslöser (`seatBlock` / `COMMIT_AUTHOR_REQUIRED`, in der Vercel-API-Referenz
+  nachgesehen am 31.08.2026). Ein Deploy-Hook hilft deshalb nicht – er
+  veröffentlicht denselben blockierten Commit. Die Sicherung schreibt jetzt
+  wieder auf `main` und trägt die Adresse des Betreuers; der Name sagt
+  weiterhin, dass die Automatik geschrieben hat.
+
+  **Die Adresse steht als Platzhalter im Template und bricht laut ab.**
+  `SICHERUNG_MAIL: 'PLATZHALTER-BETREUER@muster-betrieb.example'` – solange das
+  so dasteht, beendet der Ablauf sich mit einer Meldung, statt still das
+  Falsche zu tun. Eine echte Adresse darf hier nicht stehen (CLAUDE.md 1), eine
+  erfundene wäre schlimmer als keine: Sie bringt das stumme Blockieren zurück.
+  Das Prüf-Tor meldet den Platzhalter zusätzlich – als Hinweis in der Vorschau,
+  als Blocker bei `--live`. In beide Richtungen geprüft.
+
+  Zwei Bruchstellen derselben Kette gleich mit: `public/inhalte` fehlte im
+  Einchecken (dort liegen die hochgeladenen DATEIEN – bei einem Gastro-Betrieb
+  der Menüplan als PDF; gesichert wurde bisher nur der Verweis darauf, also ein
+  toter Link anstelle eines funktionierenden), und es gibt jetzt eine Sperre,
+  die abbricht, wenn `daten/inhalte.json` auf eine Datei zeigt, die nicht da
+  ist.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.

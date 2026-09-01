@@ -3,12 +3,6 @@
   "regions": [
     "fra1"
   ],
-  "git": {
-    "deploymentEnabled": {
-      "inhalte-sicherung": false,
-      "*": true
-    }
-  },
   "trailingSlash": false,
   "headers": [
     {
