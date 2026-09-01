@@ -532,6 +532,95 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   Cookie-Hinweis 31), eine gescheiterte Anfrage war mit der Tastatur also
   praktisch nicht zu wiederholen.
 
+- **2026-09-01 (zweiter Eintrag)** – **Welle 3: was eine adversariale
+  Gegenprüfung des eigenen Neubaus gefunden hat.** Nach dem Einbau des
+  Mess-Bausteins liefen 24 Agenten in fünf Richtungen (Datenschutz,
+  Browser-Untergrenze, Falschzählung, Regressionen, Bericht) gegen die
+  Kundenseite; jeder Fund musste von einem zweiten Agenten zu WIDERLEGEN
+  versucht werden. 19 Behauptungen, 15 bestätigt, 4 widerlegt. Behoben ist
+  alles, was jeden Klon beträfe:
+
+  **1. Der Widerruf hat nie gewirkt.** `widerrufen()` löschte nur den eigenen
+  Speichereintrag. Die Cookies der freigegebenen Dienste blieben liegen – im
+  Browser gemessen mit Ablauf dreizehn Monate in der Zukunft – und gingen bei
+  jedem Aufruf weiter an den eigenen Server mit. Stimmte derselbe Besucher
+  später erneut zu, nahm Google **dieselbe Kennung** wieder auf. Die
+  Datenschutzerklärung verspricht an zwei Stellen etwas anderes.
+
+  > Geräumt werden **alle** Cookies, nicht eine Namensliste: Der Motor setzt
+  > selbst keines (CLAUDE.md 2), also kann dort nur Eingewilligtes liegen. Eine
+  > Liste (`_ga`, `_fbp`, `_hj…`) wäre beim nächsten Dienst wieder
+  > unvollständig, und niemand würde es merken. Je Cookie drei Versuche, weil
+  > ein Cookie nur mit derselben Domain gelöscht werden kann, mit der es gesetzt
+  > wurde – und `document.cookie` verrät die nicht.
+  >
+  > Das Prüf-Tor verbot `document.cookie =` unbedingt und machte den Widerruf
+  > damit strukturell unmöglich. Erlaubt ist jetzt genau die Zuweisung, die ein
+  > Cookie ablaufen lässt (`Max-Age=0`); Setzen bleibt verboten.
+
+  **2. „Alle akzeptieren" akzeptierte nur, was auf DIESER Seite steckt.**
+  `vorhanden` kam aus dem DOM der offenen Seite, die Kästchen des Banners
+  entstehen aber beim Bauen über alle Quelldateien. Wer auf der Startseite
+  alles freigab und zu einer Seite mit eingebetteter Karte ging, sah dort
+  wieder den Platzhalter – und die Messung meldete seine Zustimmung als
+  sparsame Teilauswahl. Die Liste steht jetzt am Banner
+  (`data-einwilligung-kategorien`); die alte DOM-Suche bleibt als Rückfall für
+  Klone, die den Banner selbst bauen.
+
+  **3. Ohne Browser-Speicher wirkte die Einwilligung überhaupt nicht.**
+  Schlägt `localStorage` fehl (privater Modus, blockierte Website-Daten, manche
+  In-App-Browser), wurde der Fehler geschluckt – und die direkt folgende
+  Freigabe fragt den Speicher wieder ab. Der Besucher drückt „Alle
+  akzeptieren", und es passiert sichtbar nichts. **Der Kommentar daneben
+  behauptete seit jeher das Gegenteil** („dann gilt die Wahl nur für diese
+  Sitzung"). Jetzt gilt sie wirklich für die Sitzung.
+
+  **4. Die Datenschutzerklärung nannte nur Seitenaufrufe.** Der Zweck steht im
+  freien Feld `zweck` – bei einem Kunden „welche Seiten aufgerufen werden, wie
+  lange und über welchen Weg". Das war richtig, bis der Motor anfing,
+  Einzelhandlungen zu melden. Der Satz dazu steht jetzt fest im Baustein und
+  erscheint bei jedem Dienst der Kategorie `statistik`: **Was der Motor tut,
+  muss der Motor erklären** – ein Klon kann es nicht vergessen.
+
+  **5. Der Bericht `npm run messung` log an vier Stellen** – und ein Bericht,
+  der Erfundenes auflistet, ist schlechter als keiner:
+  - „Anzulegen im Statistik-Dienst: Nichts". Für die Ereignisse stimmt das, für
+    die **Ereignisparameter** nicht: `stelle`, `kanal`, `lead_source` und die
+    anderen sind benutzerdefinierte Dimensionen. GA4 nimmt sie entgegen und
+    zeigt sie in keinem Bericht, solange niemand sie anlegt – **rückwirkend
+    füllen sie sich nicht**. Da stünde „12 Anrufe" und nirgends, ob aus
+    Kopfleiste oder Fußzeile, also genau die Angabe, wegen der die Messung
+    gebaut wurde.
+  - Für `auswahl` nannte er drei Werte, die nie entstehen können.
+  - „Aus dem Code" war eine fest verdrahtete Dreierliste; `src/` wurde gar
+    nicht durchsucht, und zwei `melden('share', …)` einer Kundenseite fehlten.
+  - `data-messung` wurde nur in Kleinbuchstaben gesucht, obwohl die
+    Laufzeit-Prüfung Ziffern und Großbuchstaben erlaubt.
+
+  **6. Kein Empfänger, kein Kontakt.** Ein Teilen-Knopf (`mailto:?subject=…`,
+  `wa.me/?text=…`) hat keinen Adressaten. Ohne diese Unterscheidung zählt jeder
+  Teilen-Knopf als Kontaktaufnahme – an der Kundenseite auf der
+  meistbesuchten Unterseite.
+
+  **7. Kopien aus dem Cloud-Abgleich (`scripts/lib/doppel.mjs`, neu).** Liegt
+  ein Projekt in einem abgeglichenen Ordner (auf einem Mac sind Schreibtisch
+  und Dokumente das ab Werk), legt der Dienst bei jedem Schreibkonflikt
+  `index 2.html` an – ein Build schreibt hunderte Dateien in Sekunden.
+  Gezählt: **165 Kopien in dist/**. `npm run interaktion` prüfte 23 statt 15
+  Seiten und wurde ROT auf einer Seite, die es nicht gibt. Schlimmer als das
+  rote Tor ist der stille Fall: Eine Kopie ist ein ALTER Stand, und ein Tor
+  darauf meldet grün für eine Seite von vorgestern.
+
+  > Zwei Fälle, verschieden behandelt: In `dist/` räumen die Tore selbst weg
+  > (der Ordner ist erzeugt). In `src/`, `fotos/`, `public/`, `daten/` wird nur
+  > GEMELDET – dort könnte in der Kopie die neuere Arbeit stecken, und das darf
+  > kein Skript entscheiden. In `src/pages/` ist es ein Blocker: Astro baut
+  > daraus eine echte Seite mit eigener Adresse, altem Inhalt und Eintrag in
+  > der Sitemap.
+
+  Alle Tore grün in beiden Ordnern; Widerruf, „Alle akzeptieren" und sämtliche
+  Messpunkte im echten Browser nachgemessen.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.

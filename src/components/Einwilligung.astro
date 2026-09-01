@@ -23,6 +23,16 @@ const kennung = diensteKennung(site);
 const dienste = site.dienste;
 
 /** Kategorien, die tatsächlich vorkommen (ohne "notwendig"). */
+/* `kategorien` GEHT ALS ATTRIBUT AN DEN BANNER (`data-einwilligung-kategorien`).
+   Das Skript braucht die Liste: Sonst müsste es die Kategorien aus dem DOM der
+   gerade offenen Seite zusammensuchen – und dort steckt nur, was zufällig auf
+   DIESER Seite vorkommt.
+
+   WAS DARAUS WURDE, bevor das Attribut da war: „Alle akzeptieren" auf der
+   Startseite speicherte nur die Kategorien der Startseite. Wer eine Karte erst
+   auf der Kontaktseite einbettet, bekam dort trotz „alle" wieder einen
+   Platzhalter – und die Messung meldete die Zustimmung als sparsame
+   Teilauswahl, obwohl der Gast alles freigegeben hatte. */
 const kategorien = [...new Set(dienste.map((d) => d.kategorie))].filter((k) => k !== 'notwendig');
 
 const BESCHRIFTUNG: Record<string, string> = {
@@ -63,6 +73,7 @@ const t =
       aria-modal="false"
       aria-labelledby="einwilligung-titel"
       data-einwilligung-stand={kennung}
+      data-einwilligung-kategorien={kategorien.join(' ')}
     >
       <div class="einwilligung__inhalt">
         <h2 class="einwilligung__titel" id="einwilligung-titel">{t.titel}</h2>

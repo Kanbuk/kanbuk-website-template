@@ -216,6 +216,29 @@ const hatMerkliste =
             <li>
               <strong>{d.name}</strong> – {w('Anbieter:', 'Provider:')} {d.anbieter}.<br />
               {w('Zweck:', 'Purpose:')} {d.zweck}.
+              {/* DIESER SATZ IST PFLICHT, SOBALD GEMESSEN WIRD – und er darf
+                  nicht dem Betrieb überlassen bleiben. `zweck` ist ein freies
+                  Feld; dort stand bei einem Kunden „Reichweitenmessung: welche
+                  Seiten aufgerufen werden, wie lange und über welchen Weg
+                  Besucher kommen". Das war einmal richtig. Seit der Motor den
+                  Mess-Baustein mitbringt, meldet JEDE Seite zusätzlich
+                  Einzelhandlungen – angetippte Telefonnummer, geöffnetes PDF,
+                  abgeschickte Anfrage. Die Erklärung sagte davon nichts, und
+                  der Gast stimmte einem Zweck zu, der enger war als das, was
+                  passiert.
+
+                  Der Text steht deshalb HIER und nicht in der Konfiguration:
+                  Was der Motor tut, muss der Motor erklären. Ein Klon kann es
+                  nicht vergessen. */}
+              {d.kategorie === 'statistik' && (
+                <>
+                  {' '}
+                  {w(
+                    'Dabei wird nicht nur erfasst, welche Seiten aufgerufen werden, sondern auch, welche Kontaktmöglichkeiten angetippt wurden (etwa Telefonnummer, E-Mail-Adresse, Anfahrt), ob ein Dokument geöffnet und ob ein Formular abgeschickt wurde. Übertragen wird dabei nur die Art der Handlung und die Stelle auf der Seite – nie Ihre Eingaben aus einem Formular und nie Ihre Kontaktdaten.',
+                    'This records not only which pages are viewed, but also which contact options were tapped (such as phone number, e-mail address, directions), whether a document was opened and whether a form was submitted. Only the type of action and its position on the page are transmitted – never your form entries and never your contact details.',
+                  )}
+                </>
+              )}
               {d.setztCookies && <> {w('Dieser Dienst setzt Cookies.', 'This service sets cookies.')}</>}
               {' '}{w('Datenschutzerklärung des Anbieters:', "Provider's privacy policy:")}{' '}
               <a href={d.datenschutzUrl} target="_blank" rel="noopener noreferrer">{d.datenschutzUrl}</a>

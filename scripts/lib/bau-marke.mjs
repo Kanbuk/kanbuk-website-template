@@ -15,6 +15,7 @@
  */
 import { readdirSync, statSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { doppelWegraeumen } from './doppel.mjs';
 import { createHash } from 'node:crypto';
 
 /** Alles, was das Bau-Ergebnis beeinflusst. */
@@ -80,6 +81,27 @@ export function schreibeMarke(wurzel) {
  */
 export function verlangeAktuellesDist(wurzel, werkzeug) {
   const dist = join(wurzel, 'dist');
+
+  /* ERST DIE GESPENSTER WEGRÄUMEN, DANN MESSEN.
+     Liegt das Projekt in einem Ordner, den ein Cloud-Dienst abgleicht (auf
+     einem Mac sind Schreibtisch und Dokumente das ab Werk), legt der Dienst
+     bei jedem Schreibkonflikt eine Kopie an – „index 2.html". Ein Build
+     schreibt hunderte Dateien in Sekunden, das ist ein Dauerkonflikt.
+     Gemessen am 01.09.2026 an einem echten Kundenprojekt: 165 solcher Kopien
+     in dist/. `npm run interaktion` prüfte daraufhin 23 statt 15 Seiten und
+     wurde ROT auf einer Seite, die es nicht gibt.
+     Der Ordner ist erzeugt – hier ist Wegräumen richtig. Siehe lib/doppel.mjs
+     für den Fall, in dem es das NICHT ist. */
+  const weggeraeumt = doppelWegraeumen(dist);
+  if (weggeraeumt) {
+    console.log(
+      `  ! ${weggeraeumt} Kopie(n) aus der Datei-Synchronisierung in dist/ entfernt
+` +
+        `    („index 2.html" & Co). ${werkzeug} hätte sie sonst als eigene Seiten gemessen.
+`,
+    );
+  }
+
   if (!existsSync(join(dist, 'index.html'))) {
     console.error(
       `\n✗ dist/ fehlt. ${werkzeug} misst den fertigen Build.\n` +

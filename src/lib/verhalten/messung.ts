@@ -175,10 +175,27 @@ function istErlaubterName(name: string): boolean {
  */
 const ERKANNTE_WEGE: Array<{ name: string; passt: (ziel: string) => boolean }> = [
   { name: 'anruf_getippt', passt: (z) => z.indexOf('tel:') === 0 },
-  { name: 'mail_getippt', passt: (z) => z.indexOf('mailto:') === 0 },
+  /* KEIN EMPFÄNGER, KEIN KONTAKT – die wichtigste Zeile dieser Liste.
+     -----------------------------------------------------------------
+     `mailto:info@betrieb.at` schreibt DEM BETRIEB. `mailto:?subject=…`
+     dagegen öffnet ein leeres Mailfenster, in das der Besucher selbst einen
+     Empfänger einträgt: Das ist ein TEILEN-Knopf, kein Kontaktweg. Genau so
+     bei WhatsApp – `wa.me/4315224280` ruft den Betrieb, `wa.me/?text=…`
+     schickt irgendwem eine Empfehlung.
+
+     Ohne diese Unterscheidung zählt jeder Teilen-Knopf als Kontaktaufnahme.
+     An einer echten Kundenseite (Teilen-Menü der Speisekarte mit WhatsApp,
+     Facebook und Mail) wäre daraus je ein erfundener „Gast will uns
+     erreichen" geworden – und zwar auf der meistbesuchten Unterseite. Der
+     Fehler geht in die andere Richtung als der, gegen den die Erkennung
+     antritt, und ist genauso schlimm: Beide Male glaubt der Betrieb eine
+     Zahl, die es nicht gibt. */
+  { name: 'mail_getippt', passt: (z) => /^mailto:[^?\s]*@/i.test(z) },
   {
     name: 'whatsapp_getippt',
-    passt: (z) => /^https?:\/\/(?:wa\.me|api\.whatsapp\.com)/i.test(z),
+    passt: (z) =>
+      /^https?:\/\/(?:wa\.me|api\.whatsapp\.com)/i.test(z) &&
+      (/wa\.me\/\+?\d/i.test(z) || /[?&]phone=\+?\d/i.test(z)),
   },
   {
     name: 'route_geplant',
@@ -234,8 +251,27 @@ export function messungStarten(): void {
      von dort – die beiden würden sich sonst gegenseitig laden. */
   document.addEventListener('einwilligung:geaendert', () => {
     /* `melden` prüft selbst; nach einem Widerruf geht hier nichts hinaus. */
+
+    /* GEMESSEN WIRD GEGEN DAS, WAS ES AUF DIESER WEBSITE ÜBERHAUPT GIBT –
+       nicht gegen die drei Kategorien, die der Motor kennt.
+
+       Hier stand die feste Liste ['funktional','statistik','marketing'], und
+       „alle" konnte damit nur herauskommen, wenn eine Website zufällig alle
+       drei benutzt. Ein Betrieb mit Statistik und Karte (also zwei
+       Kategorien) bekam für JEDEN Gast, der „Alle akzeptieren" drückte, die
+       Meldung „funktional_statistik" – und im Bericht sah es aus, als hätte
+       niemand alles freigegeben. Eine Zahl, die immer dasselbe Falsche sagt,
+       ist schlimmer als keine.
+
+       Die Liste steht am Banner (`data-einwilligung-kategorien`) und wird
+       beim Bauen über alle Quelldateien gebildet. */
+    const banner = document.querySelector<HTMLElement>('[data-einwilligung-kategorien]');
+    const roh = banner && banner.dataset.einwilligungKategorien;
+    const kategorien: Kategorie[] = roh
+      ? (roh.split(' ').filter(Boolean) as Kategorie[])
+      : ['funktional', 'statistik', 'marketing'];
+
     const gewaehlt: string[] = [];
-    const kategorien: Kategorie[] = ['funktional', 'statistik', 'marketing'];
     for (let i = 0; i < kategorien.length; i++) {
       if (erlaubt(kategorien[i])) gewaehlt.push(kategorien[i]);
     }

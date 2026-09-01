@@ -14,6 +14,7 @@
  *  Rot = die Seite darf nicht raus.
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+import { findeDoppel, doppelWegraeumen } from './lib/doppel.mjs';
 import { join, extname, relative } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ohneKommentare, MARKER, markerGlobal } from './lib/quelltext.mjs';
@@ -73,6 +74,18 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 
+/* Das Prüf-Tor liest dist/ selbst, ohne den Weg über bau-marke.mjs zu gehen –
+   deshalb räumt es die Sync-Kopien auch selbst weg. Ohne das misst es Seiten,
+   die es nicht gibt: „Gleicher <title> auf mehreren Seiten (index 2.html,
+   index.html)" war die erste Meldung, und sie beschreibt einen Fehler, den
+   niemand beheben kann. */
+const kopienWeg = doppelWegraeumen(DIST);
+if (kopienWeg) {
+  console.log(
+    `  ! ${kopienWeg} Kopie(n) aus der Datei-Synchronisierung in dist/ entfernt („index 2.html" & Co).\n`,
+  );
+}
+
 const dateien = alleDateien(DIST);
 const htmlDateien = dateien.filter((f) => extname(f) === '.html');
 const kurz = (f) => relative(DIST, f).replace(/\\/g, '/');
@@ -80,6 +93,48 @@ const kurz = (f) => relative(DIST, f).replace(/\\/g, '/');
 if (htmlDateien.length === 0) {
   console.error('✗ Keine HTML-Seiten in dist/ gefunden.');
   process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+//  0b. KOPIEN AUS DER DATEI-SYNCHRONISIERUNG IM QUELLTEXT
+// ---------------------------------------------------------------------------
+//
+//  Liegt das Projekt in einem Ordner, den ein Cloud-Dienst abgleicht (auf
+//  einem Mac sind Schreibtisch und Dokumente das ab Werk), legt der Dienst bei
+//  jedem Schreibkonflikt eine Kopie mit angehängter Zahl an: „index 2.astro".
+//
+//  In `dist/` räumen die Tore sie selbst weg (scripts/lib/doppel.mjs). HIER
+//  wird nur GEMELDET, nie gelöscht – in der Kopie könnte die neuere Arbeit
+//  stecken, etwa wenn zwei Rechner dieselbe Datei angefasst haben. Diese
+//  Entscheidung gehört einem Menschen.
+//
+//  In `src/pages/` ist es kein Schönheitsfehler, sondern eine Seite: Astro
+//  baut aus `kontakt 2.astro` die echte Adresse `/kontakt 2` – mit altem
+//  Inhalt, ohne Verlinkung, und Google findet sie über die Sitemap.
+// ---------------------------------------------------------------------------
+{
+  const seitenDoppel = findeDoppel(join(WURZEL, 'src/pages'));
+  if (seitenDoppel.length) {
+    fehler(
+      [
+        `${seitenDoppel.length} Kopie(n) aus der Datei-Synchronisierung in src/pages/:`,
+        ...seitenDoppel.slice(0, 8).map((d) => `      ${d}`),
+        '    Daraus baut Astro echte Seiten mit altem Inhalt – mit eigener Adresse und in',
+        '    der Sitemap. Kopie löschen, wenn das Original stimmt; sonst zuerst hineinsehen,',
+        '    welche der beiden die neuere Arbeit enthält. NICHT automatisch entfernt.',
+      ].join('\n'),
+    );
+  }
+  const restDoppel = ['src', 'fotos', 'public', 'daten']
+    .flatMap((o) => findeDoppel(join(WURZEL, o)).map((d) => `${o}/${d}`))
+    .filter((d) => !d.startsWith('src/pages/'));
+  if (restDoppel.length) {
+    warnung(
+      `${restDoppel.length} Kopie(n) aus der Datei-Synchronisierung im Quelltext ` +
+        `(${restDoppel.slice(0, 3).join(', ')}${restDoppel.length > 3 ? ' …' : ''}) – ` +
+        `hineinsehen, welche die neuere ist. Wird nicht automatisch entfernt.`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -230,8 +285,25 @@ for (const f of dateien.filter((f) => extname(f) === '.js')) {
     }
   }
 
-  if (/document\.cookie\s*=/.test(js)) {
-    fehler(`${name}: setzt ein Cookie im JavaScript – die Seite muss cookiefrei bleiben (sonst Banner-Pflicht).`);
+  /* COOKIE SETZEN BLEIBT VERBOTEN – COOKIE LÖSCHEN IST PFLICHT.
+     Die Regel hier verbot beides, weil sie nur nach `document.cookie =` sah.
+     Damit war der Widerruf strukturell unmöglich: Er MUSS die Cookies der
+     freigegebenen Dienste wegräumen, sonst läuft die Wiedererkennung weiter
+     (an einer Kundenseite gemessen: `_ga` lag dreizehn Monate über den
+     Widerruf hinaus auf dem Gerät und lieferte nach erneuter Zustimmung
+     dieselbe Kennung).
+
+     Erlaubt ist deshalb genau die Zuweisung, die ein Cookie SOFORT ABLAUFEN
+     lässt – `Max-Age=0`. Alles andere schlägt weiter an. */
+  for (const m of js.matchAll(/document\.cookie\s*=\s*([^;\n]{0,200})/g)) {
+    const zuweisung = m[1];
+    const istLoeschen = /Max-Age=0|expires=Thu, 01 Jan 1970/i.test(js.slice(m.index, m.index + 300));
+    if (istLoeschen) continue;
+    fehler(
+      `${name}: setzt ein Cookie im JavaScript – die Seite muss cookiefrei bleiben (sonst Banner-Pflicht).\n` +
+        `    Gefunden: document.cookie = ${zuweisung.slice(0, 80)}\n` +
+        `    Erlaubt ist nur das LÖSCHEN (Max-Age=0), etwa beim Widerruf der Einwilligung.`,
+    );
   }
   /* Fremde Server, die erst zur Laufzeit angefragt werden. Der eigene Host und
      bekannte Nicht-Ladeadressen (schema.org als JSON-LD-Kontext, w3.org als
