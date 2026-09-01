@@ -835,11 +835,69 @@ for (const f of htmlDateien) {
     fehler(`${kurz(f)}: mode ist 'demo', aber es fehlt noindex – die Vorschau darf NICHT in Google landen`);
   }
 }
-if (!istLive && !/Disallow:\s*\//.test(robots)) {
+/* ROBOTS.TXT WIRD BLOCKWEISE GELESEN, NICHT ALS EINE FLÄCHE ------------------
+   Eine robots.txt besteht aus Gruppen: Auf eine oder mehrere `User-agent:`
+   -Zeilen folgen die Regeln, die NUR für diese Kennungen gelten. Ein
+   `Disallow: /` sagt für sich genommen gar nichts – entscheidend ist, in
+   welcher Gruppe es steht.
+
+   Hier wurde die Datei als eine einzige Fläche durchsucht
+   (`/Disallow:\s*\/\s*$/m` über alles). Das ist genau so lange richtig, wie
+   die Datei nur eine Gruppe hat.
+
+   DER MOTOR SCHREIBT ABER SELBST WEITERE GRUPPEN: `kiSuche: 'nur-suche'`
+   erzeugt acht Gruppen für KI-Sammler (GPTBot, ClaudeBot, Google-Extended …),
+   jede mit `Disallow: /`. Die Prüfung fand eine davon und meldete „robots.txt
+   sperrt alles" – **beim Live-Gang, an einer Datei, die die Seite in
+   Wahrheit vollständig freigibt.**
+
+   Am 24.08.2026 an einer echten Kundenseite aufgelaufen: `User-agent: *` und
+   `Allow: /` standen oben, die Sitemap war eingetragen, und der Live-Gang war
+   trotzdem blockiert. Das trifft **jeden** Klon, der `kiSuche` nicht auf
+   „alles offen" stehen hat – und die Voreinstellung ist genau das nicht.
+
+   Der naheliegende Ausweg wäre gewesen, `kiSuche` abzuschalten – also einen
+   Mangel des Prüf-Tors mit einer Verschlechterung beim Kunden zu bezahlen.
+   Genau der Fall, den CLAUDE.md Abschnitt 9 verbietet.
+
+   Gelesen wird deshalb nur noch die Gruppe, die für ALLE gilt (`*`). */
+function gruppeFuerAlle(text) {
+  const zeilen = text.split(/\r?\n/).map((z) => z.replace(/#.*$/, '').trim());
+  let inGruppe = false;
+  let letzteWarAgent = false;
+  const regeln = [];
+  for (const z of zeilen) {
+    if (!z) {
+      /* Eine Leerzeile beendet eine Gruppe. */
+      inGruppe = false;
+      letzteWarAgent = false;
+      continue;
+    }
+    const agent = z.match(/^User-agent:\s*(.+)$/i);
+    if (agent) {
+      /* Mehrere User-agent-Zeilen hintereinander teilen sich die Regeln. */
+      if (!letzteWarAgent) inGruppe = false;
+      if (agent[1].trim() === '*') inGruppe = true;
+      letzteWarAgent = true;
+      continue;
+    }
+    letzteWarAgent = false;
+    if (inGruppe) regeln.push(z);
+  }
+  return regeln;
+}
+const regelnFuerAlle = gruppeFuerAlle(robots);
+const sperrtAlles = regelnFuerAlle.some((z) => /^Disallow:\s*\/\s*$/i.test(z));
+const erlaubtEtwas = regelnFuerAlle.some((z) => /^Allow:\s*\//i.test(z)) || !sperrtAlles;
+
+if (!istLive && !sperrtAlles) {
   fehler('robots.txt erlaubt Zugriff, obwohl mode auf "demo" steht');
 }
-if (istLive && /Disallow:\s*\/\s*$/m.test(robots)) {
+if (istLive && sperrtAlles) {
   fehler('robots.txt sperrt alles, obwohl mode auf "live" steht');
+}
+if (istLive && !erlaubtEtwas) {
+  fehler('robots.txt gibt für "User-agent: *" nichts frei, obwohl mode auf "live" steht');
 }
 
 /* MERKLISTE: Sie speichert auf dem Gerät des Besuchers – das MUSS in der

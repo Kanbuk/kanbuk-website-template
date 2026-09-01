@@ -409,6 +409,21 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
 
+- **2026-09-01** – **Rückfluss aus dem ersten komplett neu gebauten Kundenprojekt,
+  Welle 1.** Das Projekt (Wiener Gastronomie, Relaunch auf eine bestehende Adresse,
+  Redaktionssystem, Reichweitenmessung) hat 39 Motor-Meldungen geschrieben. Sie
+  wurden gegen diesen Stand nachgeprüft – das Meiste ist hier noch offen.
+
+  **Behoben: der robots-Fehlalarm beim Live-Gang.** Das Prüf-Tor las die
+  `robots.txt` als eine einzige Fläche. Sie besteht aber aus Gruppen, und der
+  Motor schreibt selbst welche: `kiSuche: 'nur-suche'` erzeugt acht Gruppen für
+  KI-Sammler, jede mit `Disallow: /`. Das Tor fand eine davon und meldete
+  „sperrt alles" – **am Live-Tag, an einer Datei, die alles freigibt.** Der
+  naheliegende Ausweg wäre gewesen, `kiSuche` abzuschalten: ein Mangel des Tors,
+  bezahlt mit einer Verschlechterung beim Kunden (CLAUDE.md 9 verbietet genau
+  das). Jetzt liest ein Gruppen-Leser nur die Gruppe für `*`. An sieben Fällen
+  geprüft, darunter zwei, die weiterhin anschlagen **müssen**.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.
