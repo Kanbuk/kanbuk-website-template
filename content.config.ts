@@ -924,6 +924,20 @@ export interface Dienst {
    */
   speicherdauer?: string;
   /**
+   * Können DRITTE auf die Cookies zugreifen?
+   *
+   * Der EuGH zählt das im Urteilsspruch zu C-673/17 (Planet49) ausdrücklich
+   * zu den Pflichtinformationen – wörtlich „Angaben zur Funktionsdauer der
+   * Cookies und dazu, ob Dritte Zugriff auf die Cookies erhalten können".
+   * Die Funktionsdauer steht als `speicherdauer` daneben; dies ist die
+   * zweite Hälfte desselben Satzes, und sie fehlte.
+   *
+   * `true` bei den üblichen Werkzeugen großer Anbieter (der Anbieter selbst
+   * ist der Dritte). `false` nur, wenn wirklich niemand außer dem Betrieb
+   * herankommt. Beim Anbieter nachsehen, nicht schätzen.
+   */
+  drittzugriff?: boolean;
+  /**
    * Wohin gehen die Daten? PFLICHTANGABE, sobald ein Dienst eingetragen wird.
    *
    *   'keines'  – Anbieter und Server in der EU/im EWR
@@ -1039,6 +1053,31 @@ export interface Rechtstexte {
    * manche freien Berufe haben stattdessen eine eigene Standesvertretung).
    */
   kammer?: string;
+  /**
+   * Der STANDORT DER GEWERBEBERECHTIGUNG – wortgleich aus dem GISA-Auszug.
+   *
+   * WER DAS BRAUCHT: § 63 Abs. 1 GewO 1994 (RIS, nachgeschlagen 01.09.2026,
+   * NOR40168088) verlangt von Gewerbetreibenden, „die natürliche Personen und
+   * keine im Firmenbuch eingetragene Unternehmer sind", auf einer Website
+   * ausdrücklich „ihren Namen und den Standort der Gewerbeberechtigung".
+   * Das ist die Mehrheit der Zielkunden: Wirt, Friseur, viele Handwerker.
+   *
+   * Die gesetzliche Weiche steht im selben Paragrafen (Abs. 3): „Für
+   * Gewerbetreibende, die in das Firmenbuch eingetragene Unternehmer sind,
+   * gelten §§ 14 und 17 bis 37 … UGB." Wer eingetragen ist, fällt also unter
+   * § 14 UGB – wer nicht, unter Abs. 1. Eines von beiden trifft immer zu, und
+   * bisher stand im Motor nur das eine.
+   *
+   * ⚠ NIE AUS DER BETRIEBSADRESSE ABLEITEN. Der Standort der
+   * Gewerbeberechtigung kann davon abweichen – etwa der Wohnsitz als
+   * Standort bei einem Betrieb in einer weiteren Betriebsstätte. Es gilt
+   * dieselbe Regel wie für Behörde und Gewerbewortlaut (Abschnitt 6): aus dem
+   * amtlichen Auszug übernehmen oder `PLATZHALTER` setzen.
+   *
+   * Leer lassen bei eingetragenen Unternehmern und bei Tätigkeiten außerhalb
+   * der Gewerbeordnung (Heilkunde: § 2 Abs. 1 Z 11 GewO).
+   */
+  standortGewerbeberechtigung?: string;
   firmenbuchnummer: string;
   firmenbuchgericht: string;
   /**

@@ -41,23 +41,82 @@ const BESCHRIFTUNG: Record<string, string> = {
   marketing: 'Marketing',
 };
 
+/* =========================================================================
+   DIE ERSTE EBENE MUSS TRAGEN – der Vorgabetext tat es nicht.
+   =========================================================================
+   Hier stand: „Wir verwenden zusätzliche Dienste. Die laden erst, wenn du
+   zustimmst – vorher passiert nichts." Der Satz ist wahr und nennt trotzdem
+   keine einzige der Angaben, die eine Einwilligung wirksam machen: nicht wer
+   fragt, nicht wofür genau, nicht dass sie jederzeit widerrufbar ist und
+   schon gar nicht wo. Ein Klon, der ihn stehen lässt, hat eine unwirksame
+   Einwilligung – und merkt es nie, weil nichts rot wird.
+
+   Der Text baut sich deshalb jetzt SELBST aus der Konfiguration. Das ist der
+   Unterschied zwischen einem Feld, das jemand ausfüllen müsste, und einer
+   Angabe, die nicht fehlen kann: Wer einen Dienst einträgt, bekommt ihn im
+   Banner genannt, ohne etwas zu tun.
+
+   WAS DIE ERSTE EBENE TRÄGT:
+     · WER fragt        → betrieb.name
+     · WOFÜR            → Name und Kategorie jedes eingetragenen Dienstes
+     · RECHTSGRUNDLAGE  → „nur mit deiner Zustimmung"
+     · WIDERRUF und WO  → „jederzeit über Cookie-Einstellungen ganz unten"
+     · Zweite Ebene     → der Link auf die Datenschutzerklärung darunter
+
+   DER TITEL RICHTET SICH DANACH, OB WIRKLICH COOKIES GESETZT WERDEN.
+   „Wir verwenden Cookies" über einem Dienst, der keine setzt, wäre eine
+   falsche Aussage über die eigene Seite – genau der Fehlertyp, den dieser
+   Baustein sonst überall vermeidet.
+
+   ZU DEN KNÖPFEN, und hier ist eine frühere Behauptung zu berichtigen:
+   Im Motor stand als Meldung, die Beschriftung „Nur notwendige" sei ein
+   „verschleiertes Ablehnen" und beanstandet worden. Nachgeschlagen
+   (01.09.2026, VwGH 16.01.2025 Ra 2024/04/0424 samt Vorinstanz W108
+   2284491-1) trifft das NICHT zu: Tragender Grund war dort die KLICKZAHL –
+   „für die Erteilung der Einwilligung sei nur ein Klick erforderlich,
+   wohingegen die Nichtabgabe zumindest zwei Klicks erfordere". Die
+   Beschriftung selbst war nicht der Streitpunkt.
+
+   Was daraus folgt, ist trotzdem hart: Ablehnen muss auf der ERSTEN Ebene mit
+   EINEM Klick gehen. Genau so ist der Banner gebaut, und das darf niemand
+   aufweichen – ein „Einstellungen"-Zwischenschritt zum Ablehnen wäre der
+   Fall aus dem Verfahren. „Alle ablehnen" steht hier trotzdem statt „Nur
+   notwendige": Es ist der wörtliche Gegensatz zu „Alle akzeptieren" und
+   nimmt der Frage jeden Auslegungsspielraum. Das ist eine Vorsichtsmaßnahme,
+   keine Rechtspflicht – und so gehört sie benannt. */
+const kategorieWort: Record<string, string> = {
+  funktional: 'Komfort',
+  statistik: 'Statistik',
+  marketing: 'Marketing',
+};
+const diensteListe = dienste
+  .map((d) => `${d.name} (${kategorieWort[d.kategorie] ?? d.kategorie})`)
+  .join(', ');
+const setztCookies = dienste.some((d) => d.setztCookies);
+
 const t =
   site.ansprache === 'du'
     ? {
-        titel: 'Deine Entscheidung',
-        text: 'Wir verwenden zusätzliche Dienste. Die laden erst, wenn du zustimmst – vorher passiert nichts.',
+        titel: setztCookies ? 'Wir verwenden Cookies' : 'Zusätzliche Dienste',
+        text:
+          `Wir von ${site.betrieb.name} möchten auf dieser Seite zusätzliche Dienste ` +
+          `einsetzen: ${diensteListe}. Sie laden nur mit deiner Zustimmung – ` +
+          `jederzeit widerrufbar über „Cookie-Einstellungen“ ganz unten.`,
         alle: 'Alle akzeptieren',
-        nurNotwendig: 'Nur notwendige',
+        nurNotwendig: 'Alle ablehnen',
         auswahl: 'Auswahl speichern',
-        mehr: 'Details in der Datenschutzerklärung',
+        mehr: 'Datenschutzerklärung',
       }
     : {
-        titel: 'Ihre Entscheidung',
-        text: 'Wir verwenden zusätzliche Dienste. Die laden erst, wenn Sie zustimmen – vorher passiert nichts.',
+        titel: setztCookies ? 'Wir verwenden Cookies' : 'Zusätzliche Dienste',
+        text:
+          `Wir von ${site.betrieb.name} möchten auf dieser Seite zusätzliche Dienste ` +
+          `einsetzen: ${diensteListe}. Sie laden nur mit Ihrer Zustimmung – ` +
+          `jederzeit widerrufbar über „Cookie-Einstellungen“ ganz unten.`,
         alle: 'Alle akzeptieren',
-        nurNotwendig: 'Nur notwendige',
+        nurNotwendig: 'Alle ablehnen',
         auswahl: 'Auswahl speichern',
-        mehr: 'Details in der Datenschutzerklärung',
+        mehr: 'Datenschutzerklärung',
       };
 ---
 

@@ -722,6 +722,81 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   > Das ist noch offen – bis die Gegenlesung dazu vorliegt, wird nichts
   > gebaut. Genau dafür ist die Regel da: erst belegen, dann schreiben.
 
+- **2026-09-01 (vierter Eintrag)** – **Welle 5: die Gegenlesung hat zwei
+  Antworten berichtigt, und beide Berichtigungen sind eingebaut.**
+
+  **§ 63 Abs. 1 GewO 1994 ist bestätigt** – wörtlich: „Gewerbetreibende, die
+  natürliche Personen und keine im Firmenbuch eingetragene Unternehmer sind,
+  … haben auf … einer Website ihren Namen und den Standort der
+  Gewerbeberechtigung anzugeben." (RIS, NOR40168088, abgerufen 01.09.2026.)
+  Neues Feld `standortGewerbeberechtigung`, eigene Zeile im Impressum, und die
+  Offenlegungszeile kennt jetzt **drei** Fälle statt zwei:
+
+  | | genannt wird |
+  | --- | --- |
+  | im Firmenbuch | § 5 ECG, § 14 UGB und § 25 Mediengesetz |
+  | Gewerbe ohne Firmenbuch | § 5 ECG, § 63 GewO 1994 und § 25 Mediengesetz |
+  | weder noch (z. B. Praxis) | § 5 ECG und § 25 Mediengesetz |
+
+  > **Der dritte Fall bekommt bewusst keine dritte Norm.** Die Heilkunde fällt
+  > nach § 2 Abs. 1 Z 11 GewO gar nicht unter die Gewerbeordnung; welche
+  > berufsrechtliche Vorschrift dort an die Stelle tritt, wurde NICHT
+  > nachgeschlagen – also wird auch nichts behauptet. Das ist die Regel aus
+  > Abschnitt 0, angewandt auf die eigene Arbeit.
+  >
+  > Und: Der Standort wird **nie aus der Betriebsadresse abgeleitet**. Er kann
+  > abweichen (Wohnsitz als Standort, Betrieb in einer weiteren
+  > Betriebsstätte). Dieselbe Regel wie für Behörde und Gewerbewortlaut.
+
+  **Der Zugriff Dritter auf die Cookies fehlte.** Der EuGH zählt im
+  Urteilsspruch zu C-673/17 (Planet49) beides zusammen auf: „Angaben zur
+  Funktionsdauer der Cookies **und dazu, ob Dritte Zugriff auf die Cookies
+  erhalten können**". Die Funktionsdauer war seit heute Vormittag drin – die
+  zweite Hälfte desselben Satzes nicht. Neues Feld `drittzugriff`, Ausgabe in
+  der Erklärung, und dasselbe Tor wie bei der Dauer. Auf `true|false` geprüft,
+  nicht auf Wahrheit: `false` ist eine gültige Antwort und darf nicht wie
+  „nicht ausgefüllt" aussehen.
+
+  **Der Banner-Vorgabetext trug nichts.** Er lautete „Wir verwenden
+  zusätzliche Dienste. Die laden erst, wenn du zustimmst – vorher passiert
+  nichts." Wahr, und trotzdem ohne eine einzige der Angaben, die eine
+  Einwilligung wirksam machen. Jetzt baut er sich aus der Konfiguration:
+  Betriebsname, jeder eingetragene Dienst samt Kategorie, die Zustimmung als
+  Grundlage, Widerruf und wo. Damit kann er nicht mehr vergessen werden – wer
+  einen Dienst einträgt, bekommt ihn genannt.
+
+  > Auch der TITEL richtet sich jetzt danach, ob wirklich Cookies gesetzt
+  > werden. „Wir verwenden Cookies" über einem Dienst, der keine setzt, wäre
+  > eine falsche Aussage über die eigene Seite.
+
+  **BERICHTIGUNG EINER FRÜHEREN MOTOR-MELDUNG.** Gemeldet war, die
+  Beschriftung „Nur notwendige" sei ein „verschleiertes Ablehnen" und
+  beanstandet worden. Nachgeschlagen (VwGH 16.01.2025, Ra 2024/04/0424, samt
+  Vorinstanz W108 2284491-1) trifft das **nicht** zu. Tragender Grund war die
+  **Klickzahl**: „für die Erteilung der Einwilligung sei nur ein Klick
+  erforderlich, wohingegen die Nichtabgabe zumindest zwei Klicks erfordere".
+  Die Beschriftung war nicht der Streitpunkt, und ein inhaltliches
+  Höchstgerichts-Urteil zur Optik gibt es bis heute nicht – der Beschluss ist
+  eine Zurückweisung nach § 34 Abs. 1 VwGG.
+
+  > Was daraus wirklich folgt, ist härter als die alte Meldung: **Ablehnen
+  > muss auf der ERSTEN Ebene mit EINEM Klick gehen.** So ist der Banner
+  > gebaut, und das darf niemand aufweichen – ein „Einstellungen"-Zwischen-
+  > schritt zum Ablehnen wäre genau der Fall aus dem Verfahren. Die
+  > Beschriftung heißt trotzdem „Alle ablehnen" statt „Nur notwendige": Das
+  > ist der wörtliche Gegensatz zu „Alle akzeptieren" und nimmt der Frage
+  > jeden Auslegungsspielraum. **Vorsichtsmaßnahme, keine Rechtspflicht** –
+  > und so gehört sie benannt, sonst steht in zwei Jahren wieder eine
+  > Behauptung im Motor, die niemand belegt hat.
+
+  **Und was NICHT gebaut wurde, obwohl es empfohlen war:** eine
+  Cookie-Tabelle mit vier Pflichtfeldern je einzelnem Cookie. Für einen
+  Baukasten, dessen Normalfall cookiefrei ist, wäre das vier Pflichtangaben
+  je Cookie für den Ausnahmefall – und ein leeres Pflichtfeld blockiert jeden
+  Live-Gang. Dauer und Drittzugriff je DIENST decken den belegten Kern ab;
+  wenn ein Kunde das feiner braucht, ist es eine bewusste Entscheidung und
+  keine Vorgabe.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.

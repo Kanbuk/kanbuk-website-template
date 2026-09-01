@@ -37,9 +37,21 @@ const hatTelefon = Boolean(site.betrieb.telefon);
    weiter unten schon, ob die Zeile „Firmenbuchnummer" überhaupt erscheint –
    sie stimmt also mit dem überein, was auf der Seite steht. */
 const imFirmenbuch = Boolean(site.rechtstexte.firmenbuchnummer);
+
+/* DREI FÄLLE, NICHT ZWEI – und die dritte Norm wird nicht erfunden.
+   § 63 Abs. 1 GewO 1994 trifft den nicht eingetragenen Gewerbetreibenden
+   („ihren Namen und den Standort der Gewerbeberechtigung" auf der Website).
+   Wer weder eingetragen ist noch ein Gewerbe ausübt – eine Praxis etwa fällt
+   nach § 2 Abs. 1 Z 11 GewO gar nicht unter die Gewerbeordnung –, bekommt
+   KEINE dritte Norm untergeschoben. Welche berufsrechtliche Vorschrift dort
+   an die Stelle tritt, ist nicht nachgeschlagen und wird deshalb auch nicht
+   behauptet (CLAUDE.md Abschnitt 0). */
+const istGewerbe = Boolean(site.rechtstexte.gewerbe);
 const offenlegung = imFirmenbuch
   ? '§ 5 ECG, § 14 UGB und § 25 Mediengesetz'
-  : '§ 5 ECG und § 25 Mediengesetz';
+  : istGewerbe
+    ? '§ 5 ECG, § 63 GewO 1994 und § 25 Mediengesetz'
+    : '§ 5 ECG und § 25 Mediengesetz';
 const telVerlinkt = site.mode === 'live';
 const telHref = 'tel:' + (site.betrieb.telefon ?? '').replace(/[^+0-9]/g, '');
 ---
@@ -83,6 +95,14 @@ const telHref = 'tel:' + (site.betrieb.telefon ?? '').replace(/[^+0-9]/g, '');
     {/* „Inhaber" gibt es bei OG, KG und GmbH nicht – dort vertritt jemand. */}
     {r.vertretungsbefugt && <li>Vertretungsbefugt: {r.vertretungsbefugt}</li>}
     {r.uid && <li>UID-Nummer: {r.uid}</li>}
+    {/* Pflichtangabe des NICHT eingetragenen Gewerbetreibenden (§ 63 Abs. 1
+        GewO). Sie steht bewusst neben – nicht statt – der geografischen
+        Anschrift aus § 5 Abs. 1 Z 2 ECG: Der Standort der Gewerbeberechtigung
+        kann ein anderer sein als die Adresse, unter der der Betrieb zu finden
+        ist. */}
+    {!imFirmenbuch && r.standortGewerbeberechtigung && (
+      <li>Standort der Gewerbeberechtigung: {r.standortGewerbeberechtigung}</li>
+    )}
     {r.firmenbuchnummer && <li>Firmenbuchnummer: {r.firmenbuchnummer}</li>}
     {r.firmenbuchgericht && <li>Firmenbuchgericht: {r.firmenbuchgericht}</li>}
     {/* § 5 Abs. 1 Z 6 ECG verlangt Kammer UND Gewerbebezeichnung nebeneinander.

@@ -263,6 +263,24 @@ const hatMerkliste =
                   stand nur „Dieser Dienst setzt Cookies." – ein Satz, der sich
                   vollständig liest und es nicht ist. */}
               {d.speicherdauer && <> {w('Speicherdauer:', 'Storage period:')} {d.speicherdauer}</>}
+              {/* Die zweite Hälfte des EuGH-Satzes aus C-673/17: „Angaben zur
+                  Funktionsdauer der Cookies UND dazu, ob Dritte Zugriff auf
+                  die Cookies erhalten können". Die Dauer stand darüber, dies
+                  fehlte. */}
+              {d.drittzugriff !== undefined && (
+                <>
+                  {' '}
+                  {d.drittzugriff
+                    ? w(
+                        'Der Anbieter kann als Dritter auf diese Cookies zugreifen.',
+                        'The provider can access these cookies as a third party.',
+                      )
+                    : w(
+                        'Dritte können auf diese Cookies nicht zugreifen.',
+                        'Third parties cannot access these cookies.',
+                      )}
+                </>
+              )}
               {' '}{w('Datenschutzerklärung des Anbieters:', "Provider's privacy policy:")}{' '}
               <a href={d.datenschutzUrl} target="_blank" rel="noopener noreferrer">{d.datenschutzUrl}</a>
             </li>

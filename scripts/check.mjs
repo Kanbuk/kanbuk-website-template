@@ -1723,6 +1723,11 @@ if (istTemplate) {
      dieselbe Handschrift wie bei `drittland` darüber. */
   const anzahlCookies = (diensteRoh.match(/\bsetztCookies:\s*true/g) ?? []).length;
   const anzahlSpeicherdauer = (diensteRoh.match(/\bspeicherdauer:\s*(?:['"`]|\n)/g) ?? []).length;
+  /* Die zweite Hälfte desselben EuGH-Satzes (C-673/17): „Angaben zur
+     Funktionsdauer der Cookies UND dazu, ob Dritte Zugriff auf die Cookies
+     erhalten können". Auf `true|false` geprüft und nicht auf Wahrheit: `false`
+     ist eine gültige Antwort und darf nicht wie „nicht ausgefüllt" aussehen. */
+  const anzahlDrittzugriff = (diensteRoh.match(/\bdrittzugriff:\s*(?:true|false)/g) ?? []).length;
   if (anzahlCookies > anzahlSpeicherdauer) {
     (istLive || nurLive ? fehler : warnung)(
       [
@@ -1732,6 +1737,18 @@ if (istTemplate) {
         '    Wortlaut beim Anbieter nachsehen, nicht schätzen. Beispiel (Google Analytics 4,',
         '    nachgesehen 31.08.2026): „Cookies mit einer Laufzeit von bis zu 2 Jahren; die vom',
         '    Anbieter gespeicherten Nutzungsdaten werden nach maximal 14 Monaten gelöscht."',
+      ].join('\n'),
+    );
+  }
+  if (anzahlCookies > anzahlDrittzugriff) {
+    (istLive || nurLive ? fehler : warnung)(
+      [
+        `content.config.ts: ${anzahlCookies - anzahlDrittzugriff} cookiesetzende(r) Dienst(e) ohne \`drittzugriff\`.`,
+        '    Der EuGH zählt es im Urteilsspruch zu C-673/17 ausdrücklich zu den Pflichtangaben:',
+        '    „Angaben zur Funktionsdauer der Cookies UND dazu, ob Dritte Zugriff auf die Cookies',
+        '    erhalten können". Die Dauer steht schon da, dies ist die zweite Hälfte des Satzes.',
+        '    `true` bei den üblichen Werkzeugen großer Anbieter, `false` nur, wenn wirklich',
+        '    niemand außer dem Betrieb herankommt. Beim Anbieter nachsehen, nicht schätzen.',
       ].join('\n'),
     );
   }
