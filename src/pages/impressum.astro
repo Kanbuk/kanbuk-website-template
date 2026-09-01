@@ -8,6 +8,38 @@ const r = site.rechtstexte;
    „Angaben, die eine schnelle elektronische Kontaktaufnahme ermöglichen";
    die E-Mail-Adresse erfüllt das, eine leere Telefonzeile erfüllt gar nichts. */
 const hatTelefon = Boolean(site.betrieb.telefon);
+
+/* § 14 UGB GILT NICHT FÜR JEDEN – und stand hier trotzdem unbedingt.
+   ==========================================================================
+   Im RIS nachgelesen (01.09.2026, Fassung ab 01.01.2025, BGBl. I Nr.
+   133/2024). Der Paragraf beginnt wörtlich:
+
+       „(1) In das Firmenbuch eingetragene Unternehmer haben auf allen
+       Geschäftsbriefen und Bestellscheinen … sowie auf ihren Webseiten die
+       Firma, die Rechtsform, den Sitz und die Firmenbuchnummer … anzugeben."
+
+   Er bindet also NUR eingetragene Unternehmer. Die Mehrheit der Zielkunden
+   ist es nicht: Wirt, Friseur, viele Handwerker sind nicht eingetragene
+   Einzelunternehmer. Bei denen nannte die Zeile „Offenlegung gemäß § 5 ECG,
+   § 14 UGB und § 25 Mediengesetz" eine Norm, deren Pflichten den Betrieb gar
+   nicht treffen – und sie stand zusätzlich in Titel und Description, also
+   auch im Google-Treffer.
+
+   Das ist derselbe Fehlertyp, den CLAUDE.md Abschnitt 0 für Paragraphen-
+   angaben längst verbietet: Eine falsche Fundstelle sieht geprüft aus, und
+   der Inhaber zitiert sie im Zweifel gegenüber seinem Kunden weiter.
+
+   § 5 ECG und § 25 Mediengesetz gelten unabhängig vom Firmenbuch und bleiben
+   in beiden Fällen richtig.
+
+   ERKENNUNGSMERKMAL ist die Firmenbuchnummer selbst: Wer eingetragen ist,
+   hat eine; wer keine einträgt, ist es nicht. Dieselbe Bedingung entscheidet
+   weiter unten schon, ob die Zeile „Firmenbuchnummer" überhaupt erscheint –
+   sie stimmt also mit dem überein, was auf der Seite steht. */
+const imFirmenbuch = Boolean(site.rechtstexte.firmenbuchnummer);
+const offenlegung = imFirmenbuch
+  ? '§ 5 ECG, § 14 UGB und § 25 Mediengesetz'
+  : '§ 5 ECG und § 25 Mediengesetz';
 const telVerlinkt = site.mode === 'live';
 const telHref = 'tel:' + (site.betrieb.telefon ?? '').replace(/[^+0-9]/g, '');
 ---
@@ -15,9 +47,9 @@ const telHref = 'tel:' + (site.betrieb.telefon ?? '').replace(/[^+0-9]/g, '');
 <RechtsLayout
   titel="Impressum"
   pfad="/impressum"
-  beschreibung={`Impressum und Offenlegung von ${site.betrieb.name} gemäß § 5 ECG, § 14 UGB und § 25 Mediengesetz: Medieninhaber, Unternehmensdaten, Kontakt und Aufsichtsbehörde.`}
+  beschreibung={`Impressum und Offenlegung von ${site.betrieb.name} gemäß ${offenlegung}: Medieninhaber, Unternehmensdaten, Kontakt und Aufsichtsbehörde.`}
 >
-  <p>Offenlegung gemäß § 5 ECG, § 14 UGB und § 25 Mediengesetz.</p>
+  <p>Offenlegung gemäß {offenlegung}.</p>
 
   {/* GENAU EIN MEDIENINHABER. § 25 MedienG verlangt eine eindeutige Angabe.
       Stünde hier oben die Gesellschaft und weiter unten noch eine Person als

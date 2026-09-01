@@ -110,6 +110,25 @@ const einbettungsAnbieter = [
    USA-Absatz allein daraus, DASS überhaupt ein Dienst eingetragen war. Bei
    einem europäischen Werkzeug behauptete die Erklärung damit eine
    Übermittlung, die es gar nicht gibt – samt falscher Rechtsgrundlage. */
+/* LÄDT EINE EINBETTUNG AUCH OHNE KLICK?
+   Mit `auto` lädt sie zusätzlich von selbst, sobald der Besucher im Banner
+   zugestimmt hat (src/lib/verhalten/einbettung.ts). Der Absatz unten sagte
+   dann trotzdem „erst geladen, wenn Sie darauf klicken" und „beim Klick
+   werden Ihre IP-Adresse … übertragen" – er nannte also nur einen der beiden
+   Wege. Falsch war er nicht (vor JEDER Einwilligung geht nichts hinaus),
+   aber unvollständig, und zwar an der Stelle, an der die Erklärung genau
+   beschreiben muss, wodurch die Übertragung ausgelöst wird.
+
+   `format="auto"` darf dabei nicht mitzählen: Gesucht wird ein
+   ALLEINSTEHENDES `auto`, also eines, dem kein `="` vorausgeht. */
+const einbettungsTags = Object.entries(seitenQuellen)
+  .filter(([pfad]) => !/DatenschutzInhalt\.astro$|Einbettung\.astro$/.test(pfad))
+  .flatMap(([, quelle]) => [...String(quelle).matchAll(/<Einbettung\b([^>]*)>/g)].map((m) => m[1]));
+
+const einbettungLaedtAuto = einbettungsTags.some((attribute) =>
+  /(^|\s)auto(\s|$|=\{?true)/.test(attribute),
+);
+
 /* Ein Dienst OHNE `drittland`-Angabe taucht hier bewusst nirgends auf: Die
    Erklärung darf nichts behaupten, was niemand eingetragen hat. Dass die
    Angabe fehlt, meldet das Prüf-Tor (scripts/check.mjs) – dort gehört sie hin,
@@ -240,6 +259,10 @@ const hatMerkliste =
                 </>
               )}
               {d.setztCookies && <> {w('Dieser Dienst setzt Cookies.', 'This service sets cookies.')}</>}
+              {/* Art. 13 Abs. 2 lit. a DSGVO verlangt die Speicherdauer. Hier
+                  stand nur „Dieser Dienst setzt Cookies." – ein Satz, der sich
+                  vollständig liest und es nicht ist. */}
+              {d.speicherdauer && <> {w('Speicherdauer:', 'Storage period:')} {d.speicherdauer}</>}
               {' '}{w('Datenschutzerklärung des Anbieters:', "Provider's privacy policy:")}{' '}
               <a href={d.datenschutzUrl} target="_blank" rel="noopener noreferrer">{d.datenschutzUrl}</a>
             </li>
@@ -287,20 +310,34 @@ const hatMerkliste =
   <>
     <h2>{w('Eingebettete Inhalte (Zwei-Klick-Lösung)', 'Embedded content (two-click solution)')}</h2>
     <p
-      set:html={w(
-        'An einzelnen Stellen binden wir Inhalte fremder Anbieter ein. Sie werden <strong>erst geladen, wenn Sie darauf klicken</strong> – vorher wird nichts übertragen. Der Klick ist Ihre Einwilligung für diesen Fall (Art. 6 Abs. 1 lit. a DSGVO).',
-        'In a few places we embed content from third-party providers. It is <strong>only loaded once you click on it</strong> – nothing is transferred before that. The click is your consent for that individual case (Art. 6(1)(a) GDPR).',
-      )}
+      set:html={
+        einbettungLaedtAuto
+          ? w(
+              'An einzelnen Stellen binden wir Inhalte fremder Anbieter ein. Sie werden <strong>erst nach Ihrer Einwilligung geladen</strong> – vorher wird nichts übertragen. Der Klick ist Ihre Einwilligung für diesen Fall (Art. 6 Abs. 1 lit. a DSGVO).',
+              'In a few places we embed content from third-party providers. It is <strong>only loaded after you have consented</strong> – nothing is transferred before that. The click is your consent for that individual case (Art. 6(1)(a) GDPR).',
+            )
+          : w(
+              'An einzelnen Stellen binden wir Inhalte fremder Anbieter ein. Sie werden <strong>erst geladen, wenn Sie darauf klicken</strong> – vorher wird nichts übertragen. Der Klick ist Ihre Einwilligung für diesen Fall (Art. 6 Abs. 1 lit. a DSGVO).',
+              'In a few places we embed content from third-party providers. It is <strong>only loaded once you click on it</strong> – nothing is transferred before that. The click is your consent for that individual case (Art. 6(1)(a) GDPR).',
+            )
+      }
     />
     <ul>
       {einbettungsAnbieter.map((anbieter) => (
         <li>
           <strong>{anbieter}</strong>{' '}
           <span
-            set:html={w(
-              '– beim Klick werden Ihre <strong>IP-Adresse</strong> und Angaben zu Ihrem Browser an diesen Anbieter übertragen. Es gelten dann zusätzlich dessen Datenschutzbestimmungen.',
-              "– on clicking, your <strong>IP address</strong> and details about your browser are transferred to this provider. That provider's privacy terms then apply in addition.",
-            )}
+            set:html={
+              einbettungLaedtAuto
+                ? w(
+                    '– sobald der Inhalt geladen wird, werden Ihre <strong>IP-Adresse</strong> und Angaben zu Ihrem Browser an diesen Anbieter übertragen. Es gelten dann zusätzlich dessen Datenschutzbestimmungen.',
+                    "– as soon as the content is loaded, your <strong>IP address</strong> and details about your browser are transferred to this provider. That provider's privacy terms then apply in addition.",
+                  )
+                : w(
+                    '– beim Klick werden Ihre <strong>IP-Adresse</strong> und Angaben zu Ihrem Browser an diesen Anbieter übertragen. Es gelten dann zusätzlich dessen Datenschutzbestimmungen.',
+                    "– on clicking, your <strong>IP address</strong> and details about your browser are transferred to this provider. That provider's privacy terms then apply in addition.",
+                  )
+            }
           />
         </li>
       ))}
@@ -326,13 +363,17 @@ const hatMerkliste =
   </>
 ) : null}
 
-<h2>{w('Server-Logfiles (Hosting)', 'Server log files (hosting)')}</h2>
-<p
-  set:html={w(
-    'Beim Aufruf der Website werden durch den Hosting-Anbieter automatisch technische Daten (z. B. IP-Adresse, Datum und Uhrzeit, aufgerufene Seite, Browsertyp) in sogenannten Server-Logfiles gespeichert. Diese Verarbeitung dient dem sicheren und stabilen Betrieb (Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden nicht mit anderen Quellen zusammengeführt.',
-    'When the website is accessed, the hosting provider automatically stores technical data (e.g. IP address, date and time, page requested, browser type) in what are called server log files. This processing serves secure and stable operation (Art. 6(1)(f) GDPR). The data is not combined with other sources.',
-  )}
-/>
+{/* HIER STAND EIN ZWEITER ABSATZ ÜBER SERVER-PROTOKOLLE – „Server-Logfiles
+    (Hosting)", generisch formuliert, ohne den Anbieter zu nennen und ohne
+    Aufbewahrungsdauer. Weiter unten steht derselbe Sachverhalt noch einmal,
+    diesmal mit Anbieter, Rechtsgrundlage, Auftragsverarbeitungsvertrag,
+    Standardvertragsklauseln UND Löschfrist.
+
+    Zwei Absätze über dieselbe Verarbeitung sind kein Formfehler: Der Leser
+    kann nicht wissen, welcher gilt, und der ausführlichere widerspricht dem
+    kürzeren an der Stelle, die zählt (Art. 13 Abs. 2 lit. a DSGVO verlangt
+    die Speicherdauer – der generische Absatz nannte keine). Der schwächere
+    ist entfallen; siehe „Hosting" weiter unten. */}
 
 {/* Die aufgezählten Daten kommen aus den ECHTEN Formularfeldern. Vorher stand
     hier eine feste Liste (Name, E-Mail, Telefon, Nachricht) – bei einem

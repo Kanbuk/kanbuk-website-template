@@ -263,6 +263,33 @@ export interface Betrieb {
    */
   sonderzeiten?: Sonderzeit[];
   socialLinks: SocialLink[];
+  /**
+   * Weitere PROFILE des Betriebs, die keine sozialen Netzwerke sind – allen
+   * voran das **Google-Unternehmensprofil** (der Karteneintrag).
+   *
+   * Sie landen zusammen mit `socialLinks` unter `sameAs` im Google-Datenblock.
+   * Damit sagt die Website Google: „Dieser Karteneintrag und diese Website
+   * sind derselbe Betrieb." Ohne das muss Google es raten – und bei einem
+   * Lokal, das in Verzeichnissen unter mehreren Namensvarianten geführt wird,
+   * rät es gelegentlich falsch. **Für einen Lokalbetrieb ist das der
+   * wichtigste `sameAs`-Eintrag überhaupt**, und er fehlte bisher, weil es
+   * gar kein Feld dafür gab.
+   *
+   * WARUM EIN EIGENES FELD und nicht `socialLinks`: Dessen Einträge gibt
+   * `<SocialLinks />` auch als sichtbare Symbolreihe aus, und `plattform`
+   * kennt nur soziale Netzwerke. Ein Karteneintrag ist keines und hat als
+   * Symbol in der Fußzeile nichts verloren – er soll nur Google erreichen.
+   *
+   * ⚠ **Nur eintragen, was BELEGT dem Betrieb gehört.** Ein Treffer mit
+   * passendem Namen reicht nicht (CLAUDE.md Abschnitt 0, erste der vier
+   * Regeln – dort ist genau dieser Fehler einmal Geld wert gewesen). Bei
+   * einem Kunden lagen zwei Facebook-Seiten mit demselben Namen vor. Der
+   * Beleg ist einfach zu führen: Die Kennung des Profils muss mit Anschrift
+   * und Telefonnummer des Betriebs antworten.
+   *
+   * Beispiel: `['https://maps.google.com/?cid=1234567890']`
+   */
+  profile?: string[];
   /** Dateiname in fotos/. */
   logo?: string;
   /**
@@ -878,6 +905,24 @@ export interface Dienst {
   skript?: string;
   /** Setzt der Dienst Cookies? Für die Datenschutzerklärung. */
   setztCookies?: boolean;
+  /**
+   * Wie lange die Cookies bzw. die erhobenen Daten aufbewahrt werden.
+   *
+   * WARUM DAS FELD ES GEBEN MUSS: Art. 13 Abs. 2 lit. a DSGVO verlangt die
+   * Speicherdauer – oder, wenn sie sich nicht angeben lässt, die Kriterien
+   * für ihre Festlegung. Das Feld fehlte, und die Datenschutzerklärung schrieb
+   * bei einem cookiesetzenden Dienst nur „Dieser Dienst setzt Cookies." Damit
+   * war sie bei JEDEM Klon mit Tracking unvollständig, und zwar unsichtbar:
+   * Der Satz liest sich vollständig.
+   *
+   * Der Wortlaut kommt vom ANBIETER, nicht aus dem Gedächtnis – er ändert ihn
+   * gelegentlich. Beispiel für Google Analytics 4 (nachgesehen 31.08.2026):
+   * „Cookies mit einer Laufzeit von bis zu 2 Jahren; die vom Anbieter
+   * gespeicherten Nutzungsdaten werden nach maximal 14 Monaten gelöscht."
+   * Die 14 Monate sind dort einstellbar – also beim Freischalten nachsehen,
+   * welcher Wert wirklich eingestellt ist, statt den Vorgabewert abzuschreiben.
+   */
+  speicherdauer?: string;
   /**
    * Wohin gehen die Daten? PFLICHTANGABE, sobald ein Dienst eingetragen wird.
    *

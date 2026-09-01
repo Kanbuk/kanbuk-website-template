@@ -73,6 +73,22 @@ const { class: klasse, label = 'Rechtliches', ...rest } = Astro.props;
    eine nicht gebaute Adresse wäre ein toter Link in JEDER Fußzeile – und damit
    auf jeder einzelnen Seite der Website. */
 const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
+
+/* DER WIDERRUF GEHÖRT HIERHER, NICHT NUR IN DIE DATENSCHUTZERKLÄRUNG.
+
+   Art. 7 Abs. 3 DSGVO verlangt, dass der Widerruf so einfach ist wie die
+   Erteilung. Erteilt wird er mit EINEM Klick auf einem Hinweis, der von
+   selbst über der Seite liegt. Widerrufen ließ er sich dagegen nur über
+   einen Knopf mitten in der Datenschutzerklärung – also hinter Seitenwechsel,
+   Hinscrollen und Suchen. Das ist nicht dasselbe, und es trifft jeden Klon
+   mit `dienste`.
+
+   Kein `href`, sondern ein Knopf: Er führt nirgendwohin, er löscht die
+   gespeicherte Entscheidung und lädt neu – dann fragt der Hinweis wieder.
+   Angeschlossen wird er von `einwilligung.ts` über das Attribut; ohne
+   JavaScript erscheint er trotzdem, tut aber nichts. Das ist richtig so:
+   Ohne JavaScript wurde auch nie eine Einwilligung gespeichert. */
+const hatDienste = (site.dienste ?? []).length > 0;
 ---
 
 <nav
@@ -84,6 +100,11 @@ const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
   <a href="/impressum">Impressum</a>
   <a href="/datenschutz">Datenschutz</a>
   {hatAgb && <a href="/agb">AGB</a>}
+  {hatDienste && (
+    <button type="button" class="rechtslinks__cookies" data-einwilligung-widerruf>
+      Cookie-Einstellungen
+    </button>
+  )}
 </nav>
 
 <style>
@@ -96,10 +117,27 @@ const hatAgb = (site.rechtstexte?.agb ?? []).length > 0;
     flex-wrap: wrap;
     column-gap: var(--raum-s);
   }
-  .rechtslinks a {
-    /* 44px Fingerfläche – die Rechtslinks sind am Handy sonst kaum zu treffen. */
+  /* 44px Fingerfläche – die Rechtslinks sind am Handy sonst kaum zu treffen.
+     Der Cookie-Knopf ist ein <button>, kein <a>; ohne ihn hier zu nennen,
+     bleibt genau er zu klein und Lighthouse meldet „Berührungsziel zu klein".
+     Betrifft jeden Klon mit `dienste`. */
+  .rechtslinks a,
+  .rechtslinks__cookies {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
+  }
+  /* Sieht aus wie die Links daneben – ein Knopf, der sich als Link tarnt,
+     wäre hier falsch herum gedacht: Er TUT etwas (löscht die Entscheidung),
+     also ist er ein Knopf. Aussehen und Fingerfläche gleichen sich den
+     Nachbarn an, damit die Fußzeile nicht auseinanderfällt. */
+  .rechtslinks__cookies {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
   }
 </style>

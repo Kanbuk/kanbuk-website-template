@@ -1710,6 +1710,31 @@ if (istTemplate) {
   })();
   const anzahlDienste = (diensteRoh.match(/\bid:\s*['"`]/g) ?? []).length;
   const anzahlDrittland = (diensteRoh.match(/\bdrittland:\s*['"`]/g) ?? []).length;
+
+  /* WER COOKIES SETZT, MUSS SAGEN, WIE LANGE SIE BLEIBEN.
+     Art. 13 Abs. 2 lit. a DSGVO verlangt die Speicherdauer oder die Kriterien
+     ihrer Festlegung. Die Erklärung schrieb bei einem cookiesetzenden Dienst
+     lange nur „Dieser Dienst setzt Cookies." – ein Satz, der sich vollständig
+     liest und es nicht ist.
+
+     Und ohne diese Regel bliebe das Feld eine Attrappe: Ein Feld, das niemand
+     füllt, weil nichts danach fragt, ist genau der Fall, vor dem CLAUDE.md 6c
+     warnt. Gezählt wird ohne JSON-Parser, weil die Config TypeScript ist –
+     dieselbe Handschrift wie bei `drittland` darüber. */
+  const anzahlCookies = (diensteRoh.match(/\bsetztCookies:\s*true/g) ?? []).length;
+  const anzahlSpeicherdauer = (diensteRoh.match(/\bspeicherdauer:\s*(?:['"`]|\n)/g) ?? []).length;
+  if (anzahlCookies > anzahlSpeicherdauer) {
+    (istLive || nurLive ? fehler : warnung)(
+      [
+        `content.config.ts: ${anzahlCookies - anzahlSpeicherdauer} cookiesetzende(r) Dienst(e) ohne \`speicherdauer\`.`,
+        '    Art. 13 Abs. 2 lit. a DSGVO verlangt sie – sonst steht in der Erklärung nur',
+        '    „Dieser Dienst setzt Cookies.", und das ist unvollständig.',
+        '    Wortlaut beim Anbieter nachsehen, nicht schätzen. Beispiel (Google Analytics 4,',
+        '    nachgesehen 31.08.2026): „Cookies mit einer Laufzeit von bis zu 2 Jahren; die vom',
+        '    Anbieter gespeicherten Nutzungsdaten werden nach maximal 14 Monaten gelöscht."',
+      ].join('\n'),
+    );
+  }
   if (anzahlDienste > anzahlDrittland) {
     warnung(
       [

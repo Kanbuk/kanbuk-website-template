@@ -448,9 +448,21 @@ const jsonLd = {
   ...(site.betrieb.preisniveau && { priceRange: site.betrieb.preisniveau }),
   ...(oeffnungszeitenLd.length > 0 && { openingHoursSpecification: oeffnungszeitenLd }),
   ...(sonderzeitenLd.length > 0 && { specialOpeningHoursSpecification: sonderzeitenLd }),
-  ...(site.betrieb.socialLinks.length > 0 && {
-    sameAs: site.betrieb.socialLinks.map((s) => s.url),
-  }),
+  /* `sameAs` aus BEIDEN Quellen: den sozialen Netzwerken (die auch sichtbar
+     als Symbole erscheinen) und den übrigen Profilen des Betriebs, allen
+     voran dem Google-Unternehmensprofil. Ein Karteneintrag ist kein soziales
+     Netzwerk und gehört nicht in die Fußzeile – erreichen soll er nur Google.
+     Begründung ausführlich bei `betrieb.profile` in content.config.ts.
+
+     Hier stand nur `socialLinks`, und damit fehlte bei jedem Lokalbetrieb der
+     wichtigste Eintrag: die Verbindung zwischen Website und Karteneintrag. */
+  ...(() => {
+    const profile = [
+      ...site.betrieb.socialLinks.map((s) => s.url),
+      ...(site.betrieb.profile ?? []),
+    ];
+    return profile.length > 0 ? { sameAs: profile } : {};
+  })(),
   ...menuLd,
 };
 ---

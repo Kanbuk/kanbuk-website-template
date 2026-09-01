@@ -648,6 +648,80 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   Messgerät** – dieselbe Lehre wie beim `dataLayer`-Fehlschlag am Vortag, nur
   in die andere Richtung.
 
+- **2026-09-01 (dritter Eintrag)** – **Welle 4, Rechtsblock: fünf von sechs
+  Punkten, jeder Paragraf im RIS nachgeschlagen und von einem zweiten Agenten
+  gegengelesen.**
+
+  **§ 14 UGB gilt nicht für jeden – stand aber unbedingt im Impressum.** Im
+  RIS geholt (01.09.2026, Fassung ab 01.01.2025, BGBl. I Nr. 133/2024,
+  NOR40263725): Der Paragraf beginnt wörtlich mit „In das Firmenbuch
+  eingetragene Unternehmer haben …". Die Mehrheit der Zielkunden ist das
+  nicht – Wirt, Friseur, viele Handwerker sind nicht eingetragene
+  Einzelunternehmer. Bei denen nannte die Offenlegungszeile eine Norm, deren
+  Pflichten den Betrieb gar nicht treffen, **und sie stand zusätzlich in
+  Titel und Description**, also im Google-Treffer. Jetzt hängt sie an der
+  Firmenbuchnummer – derselben Bedingung, die weiter unten schon entscheidet,
+  ob die Zeile „Firmenbuchnummer" überhaupt erscheint. In beide Richtungen
+  gebaut und gemessen.
+
+  > Der Gegenleser hat zusätzlich die Vorgängerfassung (NOR40069786, gültig
+  > bis 31.12.2024) geholt und verglichen: Adressatenkreis, Erstreckung auf
+  > Webseiten und Katalog der Pflichtangaben sind wortgleich geblieben.
+  > Und er hat die gesetzliche Weiche belegt – § 63 Abs. 3 GewO 1994:
+  > „Für Gewerbetreibende, die in das Firmenbuch eingetragene Unternehmer
+  > sind, gelten §§ 14 und 17 bis 37 … des Unternehmensgesetzbuches".
+
+  **Speicherdauer bei cookiesetzenden Diensten** – neues Feld `speicherdauer`,
+  Ausgabe in der Erklärung, und das Prüf-Tor erzwingt es (Hinweis in der
+  Vorschau, Blocker bei `--live`). Ohne die Regel wäre das Feld eine Attrappe
+  geblieben. Belegt durch Art. 13 Abs. 2 lit. a DSGVO **und** § 165 Abs. 3
+  TKG 2021 – letzterer ist der Nachfolger des früher überall zitierten § 96
+  Abs. 3 TKG 2003, was für sich schon ein Fund ist. Dazu EuGH C-673/17
+  (Planet49), der die „Funktionsdauer der Cookies" ausdrücklich zu den
+  Pflichtangaben zählt.
+
+  **Der doppelte Server-Protokoll-Absatz** ist zusammengeführt. Es standen
+  zwei Absätze über dieselbe Verarbeitung da: ein generischer ohne Anbieter
+  und ohne Frist, und weiter unten derselbe Sachverhalt mit Anbieter,
+  Rechtsgrundlage, Auftragsverarbeitungsvertrag, Standardvertragsklauseln und
+  Löschfrist. Der Leser konnte nicht wissen, welcher gilt.
+
+  **Der Widerruf steht jetzt in jeder Fußzeile.** Art. 7 Abs. 3 DSGVO
+  verlangt, dass er so einfach ist wie die Erteilung – und die ist ein Klick
+  auf einem Hinweis, der von selbst über der Seite liegt. Widerrufen ließ er
+  sich nur über einen Knopf mitten in der Datenschutzerklärung, also hinter
+  Seitenwechsel, Hinscrollen und Suchen. `<Rechtslinks>` führt
+  „Cookie-Einstellungen" jetzt selbst, sobald `dienste` gefüllt ist – samt
+  44-px-Fingerfläche, die dem `<button>` sonst fehlt, während die `<a>`
+  daneben sie haben.
+
+  **Beide Ladewege der 2-Klick-Einbettung** werden beschrieben. Mit
+  `<Einbettung auto>` lädt der Inhalt auch durch die Zustimmung im Banner;
+  der Absatz sagte trotzdem nur „erst geladen, wenn Sie darauf klicken".
+  Falsch war das nicht – vor jeder Einwilligung geht nichts hinaus –, aber
+  unvollständig an genau der Stelle, an der die Erklärung sagen muss, wodurch
+  die Übertragung ausgelöst wird.
+
+  **Feld `betrieb.profile`** für Profile, die keine sozialen Netzwerke sind –
+  allen voran das Google-Unternehmensprofil. `sameAs` speiste sich nur aus
+  `socialLinks`, und dessen `plattform` kennt keinen Karteneintrag. Damit
+  fehlte bei jedem Lokalbetrieb der wichtigste `sameAs`-Eintrag überhaupt: die
+  Verbindung zwischen Website und Karteneintrag.
+
+  > **Und ein Befund, der eine Motor-Meldung UMDREHT.** Gemeldet war „der
+  > Motor kennt kein GISA-Feld". Nachgeschlagen ergibt: **Die GISA-Zahl ist
+  > keine Pflichtangabe.** § 5 Abs. 1 ECG zählt sieben Angaben auf, sie ist
+  > nicht darunter, und in der geltenden Gewerbeordnung gibt es keine
+  > Bestimmung, die zu ihrer Veröffentlichung verpflichtet. Ein Pflichtfeld
+  > dafür wäre eine erfundene Anforderung gewesen – und ein leeres
+  > Pflichtfeld hätte jeden Live-Gang blockiert.
+  >
+  > Die echte Lücke liegt woanders: § 63 Abs. 1 GewO 1994 verlangt von
+  > Gewerbetreibenden, die natürliche Personen und **nicht** im Firmenbuch
+  > eingetragen sind, den Namen und den **Standort der Gewerbeberechtigung**.
+  > Das ist noch offen – bis die Gegenlesung dazu vorliegt, wird nichts
+  > gebaut. Genau dafür ist die Regel da: erst belegen, dann schreiben.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.
