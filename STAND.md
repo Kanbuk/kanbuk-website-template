@@ -9,6 +9,134 @@
 
 ---
 
+## ⟶ ÜBERGABE an die nächste Arbeitssitzung (Stand 01.09.2026, abends)
+
+> Geschrieben, weil der vorige Chat sehr lang war und ein neuer bei null
+> anfängt. **Der Meldungsstand weiter unten wurde am 01.09.2026 Datei für
+> Datei am Code nachgesehen**, nicht aus dem Gedächtnis geschrieben. Trotzdem
+> gilt: Bevor du einen Punkt als erledigt behandelst, sieh in der Datei nach.
+
+**Ordner ist sauber und mit GitHub gleich.** Version `2026.9.1`.
+
+### Woher der Rückfluss kommt
+
+Aus `../kunde-kriterium` – dem ersten zahlenden Kunden, dessen Seite
+vollständig neu entstanden ist. Dessen STAND.md enthält unter
+„Motor-Meldungen (fürs Master-Template)" **39 nummerierte Meldungen**. Sie
+werden in Wellen zurückgetragen; am 01.09.2026 liefen die Wellen 1a bis 5.
+
+### Was am 01.09.2026 in den Motor kam
+
+| Welle | Inhalt |
+| --- | --- |
+| **1a** | robots-Fehlalarm des Prüf-Tors (schlug genau am Live-Tag zu) |
+| **1b** | Drei Rechtstext-Zusagen, die nicht stimmten (`versandRegion` entfernt, Löschversprechen, Drittland-Widerspruch) |
+| **1c** | Die nächtliche Sicherung sicherte, veröffentlichte aber nie |
+| **2** | Mess-Baustein `messung.ts` mit Selbsterkennung, `npm run messung`, Formular tritt nach dem Absenden ab |
+| **3** | 15 Befunde einer adversarialen Gegenprüfung – Widerruf löschte keine Cookies, „Alle akzeptieren" galt nur seitenweise, Bericht verschwieg die Ereignisparameter, `scripts/lib/doppel.mjs` gegen Cloud-Kopien |
+| **4** | Rechtsblock: § 14 UGB nur bei Firmenbuch, Feld `speicherdauer` + Tor, doppelter Server-Protokoll-Absatz weg, Widerruf in jede Fußzeile, beide Ladewege der Einbettung, Feld `betrieb.profile` |
+| **5** | § 63 GewO + Feld `standortGewerbeberechtigung`, Feld `drittzugriff` + Tor, Banner-Text baut sich aus der Konfiguration |
+
+### Wie in diesen Wellen gearbeitet wurde – bitte beibehalten
+
+1. **Jeder Paragraf wird nachgeschlagen, nicht erinnert.** Vier Rechtsfragen
+   liefen über je einen recherchierenden und einen gegenlesenden Agenten, der
+   die Fundstellen selbst im RIS geholt hat. Zwei Antworten wurden dabei
+   berichtigt – und **eine Motor-Meldung stellte sich als sachlich falsch
+   heraus** (siehe Meldung 22 und 26 unten).
+2. **Was gemessen werden kann, wird gemessen.** Der Mess-Baustein wurde am
+   echten Netzverkehr der Live-Seite geprüft, nicht an einer Warteschlange.
+   Zweimal irrte dabei der Messaufbau und nicht die Seite; beide Male stand
+   ein Fehlerbericht kurz bevor, den es nicht gab.
+3. **Jede neue Prüf-Regel wird in BEIDE Richtungen geprüft** – einmal muss
+   sie anschlagen, einmal schweigen.
+
+### Was als Nächstes vorgesehen war
+
+**Block 2 – Tippflächen am Handy.** Nach der Prüfung unten sind davon noch
+offen: **5** (Link im Banner 20 px hoch) und **10** (Kategorie-Kästchen
+13 × 13 px), dazu **14** teilweise (`Rechtslinks.astro:126-130` setzt die
+44 px ohne Medienabfrage, also auch am Zeigegerät).
+
+> **11 (Signatur) ist im Template bereits behoben** – anders als im Klon, über
+> ein Pseudo-Element in `global.css:478-504`. Ich hatte sie in einem früheren
+> Bericht als offen genannt; die Prüfung hat das berichtigt. Genau dafür
+> steht die Tabelle unten hier.
+
+---
+
+## Stand der 39 Motor-Meldungen (geprüft am 01.09.2026)
+
+> **Wie diese Tabelle entstanden ist:** Sechs Agenten haben je eine Gruppe von
+> Meldungen übernommen, die Meldung im Klon gelesen und dann **im Template die
+> Datei geöffnet**, um festzustellen, ob die Ursache dort weg ist. Nicht im
+> Klon – der hat vieles lokal gelöst, und genau das zählt hier nicht. Jede
+> Zeile trägt einen Beleg im Ergebnisprotokoll des Laufs.
+>
+> **Sie ist ein Wegweiser, kein Beweis.** Bevor du einen Punkt anfasst, sieh in
+> der Datei nach – die Lage kann sich seit dem 01.09.2026 geändert haben.
+>
+> Verteilung: **13 behoben · 5 teilweise · 19 offen · 2 hinfällig**
+
+| Nr. | Stand | Meldung | Was noch fehlt |
+| --- | --- | --- | --- |
+| 1 | ✅ behoben | Vorlage lieferte erzeugte redaktion/maske.js mit - Klon sofort rot |  |
+| 2 | ⬜ offen | interaktion.mjs fuellt Zahl- und Datumsfelder mit "Probe" | Im Template fehlt weiterhin ein gueltiger Wert je Feldtyp (number, date, tel, url) und das Mitnehmen von min. Grep nach 'number'/'date'/'tel'/'url' in scripts/interaktion.mjs liefert keinen Treffer. |
+| 3 | ⬜ offen | altgeraet zeigt die ersten sechs Seiten - meist nur Hilfsseiten | Hilfsseiten aus hilfsseiten.json nach hinten sortieren; ausserdem nennt Zeile 165 nur die Anzahl ("die ersten 6 werden gezeigt"), nicht die Namen der gezeigten Seiten. |
+| 4 | ⬜ offen | Fuenf Motor-Seiten mit ASCII-Umschriften statt Umlauten | Nichts davon ist im Template korrigiert - weder die Umschriften im sichtbaren Text und in den Descriptions noch der dreifach verdoppelte Satz in abgemeldet.astro:30. |
+| 5 | ⬜ offen | Link im Einwilligungs-Banner ist am Handy nur 20 px hoch | Die 44-px-Mindesthoehe fuer .einwilligung__mehr fehlt im Template vollstaendig. Zum Vergleich: fuer .signatur/.fehler__link gibt es die Loesung bereits in global.css:478-505. |
+| 6 | ⬜ offen | Absende-Knopf traegt fest "Senden" - kein sendenText | Eigenschaft sendenText fehlt im Template. Ein Design mit eigener Knopfbeschriftung muss den Motor-Knopf weiterhin verstecken und verliert dabei den Zustand "Wird gesendet ...". |
+| 7 | 🟡 teilweise | Sechstes Tor kennt den Demo-Weg nicht - kein Abgleich gegen Demo | Der Kern der Meldung fehlt: kein Werkzeug, das die gebaute Seite gegen die beim Kunden abgenommene Standalone-Demo haelt. Punkt 3c der Definition of Done bleibt fuer den Regelweg Design -> Demo -> Abnahme ->… |
+| 8 | ⬜ offen | Einwilligungs-Banner kennt die Einbettungen nicht | Der Klon-Fix (Quelltext nach Einbettung-Tags durchsuchen, wie DatenschutzInhalt.astro:92-131 es kann) fehlt im Template ganz. Offen: kein Kaestchen fuer eine Einbettungs-Kategorie, also nicht getrennt erlaub… |
+| 9 | ✅ behoben | Bei auto beschrieb die Datenschutzerklaerung nur den Klick-Weg | Rest nur kosmetisch: der auto-Zweig endet weiterhin mit 'Der Klick ist Ihre Einwilligung fuer diesen Fall', obwohl bei auto auch die Banner-Zustimmung ausloest. Die beanstandeten Saetze stehen nur noch im Ni… |
+| 10 | ⬜ offen | Kategorie-Kaestchen des Banners sind 13 x 13 px | Kaestchen weiterhin in Browser-Standardgroesse, keine 44er-Trefferflaeche. Faellt im Template selbst nie auf, weil die Referenz-Config keine dienste hat und der Banner darum gar nicht gerendert wird. |
+| 11 | ✅ behoben | Kanbuk-Signatur nur 22 px hoch | Anders geloest als im Klon (Pseudo-Element in global.css statt min-height in Signatur.astro), deckt aber die gemessenen Breiten ab: scripts/sicht.mjs:251 misst Tippflaechen nur bei Breite <= 500 px. |
+| 12 | ⬜ offen | Menu-Schema klopft Gruppen flach und verliert Groessen | Unveraendert. Zu tun: je Gruppe eine eigene MenuSection ausgeben und varianten zu mehreren offers (mit Groessenangabe) machen. |
+| 13 | ⬜ offen | Weitere ASCII-Umschriften in vier Motor-Seiten | Alles im sichtbaren Text sowie in Titel und Description. Auch Meldung 4 ist im Template noch offen: abgemeldet.astro:30 traegt weiterhin den dreifach verdoppelten Satz und 'ueberlegt/koennen', und 'Zurueck z… |
+| 14 | 🟡 teilweise | Tippziele 44 px auch am Zeigegeraet | Die Signatur-Haelfte trifft im Template nicht zu (dort kommt die 44er-Flaeche nur am Handy ueber global.css:478-504). Offen bleibt Rechtslinks.astro:126-130: die Rechtslinks und der Cookie-Knopf sind auf jed… |
+| 15 | ⬜ offen | Vorschau-Hinweis im Formular ist weiterhin fest verdrahtet | Die im Klon gebauten Eigenschaften hinweisTitel/hinweisText fehlen im Template vollstaendig (Volltextsuche ueber src, scripts, redaktion, content.config.ts, CLAUDE.md: null Treffer). Der Text kommt unveraend… |
+| 16 | ⬜ offen | scroll-padding-top und scroll-margin-top addieren sich unbemerkt | Beide vorgeschlagenen Wege fehlen: kein Satz an den beiden Stellen, dass sich die Werte addieren, und kein benannter Wert fuer 'was ausser dem Kopf noch klebt' (Suche nach klebe/haftend/sticky-hoehe/zusatz-h… |
+| 17 | ⬜ offen | Schriftwechsel verschiebt den Text - kein massangeglichener Rueckfall | Der Generator schreibt weiterhin ausschliesslich die echten @font-face-Regeln nach src/styles/fonts.css; ein zweites @font-face auf Arial mit size-adjust und den Override-Werten wird nicht erzeugt, und der S… |
+| 18 | ⬜ offen | Adresse im JS-Buendel: erlaubt oder nicht je nach Dateigroesse | Die Asymmetrie besteht unveraendert: derselbe Code ist eingebettet (<4 KB) gruen und ausgelagert rot. Der im Klon vorgeschlagene Ausweg - eine Adresse, die nur an element.href zugewiesen wird, laedt nichts -… |
+| 19 | ⬜ offen | Redaktions-Baustein kennt keine Dateien, nur Bilder | Im Template ist nichts von der elfteiligen Kette gebaut - auch nicht die Lese-Seite, die der Klon am 22.08.2026 fertiggestellt hat. Der beschriebene Fallstrick besteht damit weiter: Ein Feld mit typ 'datei' … |
+| 20 | ✅ behoben | Naechtliche Sicherung veroeffentlicht nicht - Doku behauptet es | Die von der Meldung geforderte echte Kette (Webhook -> Action -> Commit auf main -> Neubau) ist gebaut, der Zweig inhalte-sicherung existiert nicht mehr. Die Zusage in CLAUDE.md:1296-1297 ('das Einchecken st… |
+| 21 | ⬜ offen | Banner-Position fest verdrahtet, zwei Tore kennen den Hinweis nicht | Beide Teile unveraendert: kein Schalter fuer Leiste oder Dialog (die Position laesst sich nur durch Ueberschreiben der Motor-Regel aendern), und kein Handgriff in interaktion.mjs, der den Hinweis vor dem Pru… |
+| 22 | 🟡 teilweise | Einwilligungs-Hinweis: Pflichtangaben, Ablehn-Wortlaut, Widerruf, Knöpfe | Drei der vier Unterpunkte sind belegt behoben: (a) Der Vorgabetext nennt jetzt Betriebsname, jeden Dienst samt Kategorie, die Zustimmung als Grundlage und den Widerruf samt Ort (Einwilligung.astro:97-120); d… |
+| 23 | ⬜ offen | Einwilligungs-Hinweis bietet keine zweite Ebene | Im Template unverändert: Sobald mehr als eine Kategorie vorkommt, werden alle Kästchen sofort auf der ersten Ebene ausgegeben (:141-150). Es gibt weder einen Einstellungen-Schalter noch ein aria-expanded im … |
+| 24 | ✅ behoben | Datenschutz nennt keine gesetzlichen Aufbewahrungsfristen |  |
+| 25 | ✅ behoben | Cookie-Einstellungen-Knopf ohne 44px-Fingerfläche am Handy | Zusätzlich strenger als gemeldet: Die Regel steht ohne Medienabfrage, gilt also auf jeder Breite. Der Kommentar :120-123 beschreibt genau den gemeldeten Lighthouse-Abzug. |
+| 26 | ⊘ hinfällig | Kein GISA-Feld in rechtstexte - nur Firmenbuch | Ein GISA-Feld gibt es im Template weiterhin NICHT - bewusst und belegt: § 5 Abs. 1 ECG zählt sieben Angaben auf, die GISA-Zahl ist nicht darunter, und in der GewO gibt es keine Veröffentlichungspflicht dafür… |
+| 27 | ✅ behoben | Impressum zitiert § 14 UGB unbedingt - falsch ohne Firmenbuch | Sogar über die Meldung hinaus: Es gibt jetzt drei Fälle statt zwei - im Firmenbuch '§ 5 ECG, § 14 UGB und § 25 Mediengesetz', Gewerbe ohne Firmenbuch '§ 5 ECG, § 63 GewO 1994 und § 25 Mediengesetz', weder no… |
+| 28 | 🟡 teilweise | Drittland-Übersicht unvollständig und widersprüchlich | Behoben ist der Widerspruch: Der Satz 'Alle übrigen genannten Dienste verarbeiten ausschließlich innerhalb der EU/EWR' ist weg und durch einen Satz ersetzt, der Hosting und Formularversand außerhalb der EU a… |
+| 29 | 🟡 teilweise | Keine Speicherdauer fuer cookiesetzende Dienste | Der Feld-Teil ist vollstaendig behoben und sogar durch das Pruef-Tor erzwungen. Der zweite Teil der Meldung nur zur Haelfte: Der doppelte generische Server-Logfile-Absatz ist raus (DatenschutzInhalt.astro:38… |
+| 30 | ⬜ offen | Kein leichter Studio-Weg fuer den Ein-Feld-Redaktionsfall | Im Template unveraendert. Es fehlt komplett: (a) der gehostete MCP-Weg als benannte Option fuer den Ein-Feld-Fall, (b) der Hinweis, dass MCP-Schema und redaktion/felder.mjs dann zwei Quellen derselben Strukt… |
+| 31 | ⊘ hinfällig | Einwilligung reserviert Platz, ohne Verdeckung zu pruefen | Die in der Meldung genannte Ursache existiert im Template nicht und hat dort nie existiert - der Klon hat platzSchaffen() selbst gebaut. Die 470-px-Flaeche kann im Template also nicht entstehen. ACHTUNG, dam… |
+| 32 | ⬜ offen | Verlaufs-Ueberschrift im PDF bei Apple unsichtbar | Alle drei Lehren fehlen im Template: (1) der Satz in CLAUDE.md Abschnitt 4, dass im PDF weder `background-clip: text` noch SVG-Verlaufstext zulaessig ist, sondern nur ein Bild oder einfarbiger Text (samt der… |
+| 33 | ✅ behoben | Pruef-Tor las robots.txt als eine Flaeche und blockte live | Der Kern der Meldung ist im Template vollstaendig umgesetzt, inklusive der Zusatzpruefung. Nicht behoben ist der Unterpunkt, der in der Klon-Datei unten an Meldung 33 haengt (inhaltlich zu 32 gehoerend): 'Ei… |
+| 34 | ✅ behoben | Redaktionskette liefert nie aus - Zweig-Sackgasse | Nur zur Kenntnis: Die STAND.md des Templates traegt in Zeile 889-894 noch den alten Eintrag 'Behoben: Sicherung schreibt auf den Zweig inhalte-sicherung'. Er ist durch den neueren Eintrag ab Zeile 509 ueberh… |
+| 35 | ✅ behoben | Hochgeladene Dateien wurden nicht mitgesichert | Beides ist in der Vorlage. Zwei Punkte bleiben als Folgearbeit, keiner davon der gemeldete Fehler selbst: (a) Die drei Pfade stehen weiterhin handgepflegt im Ablauf (Zeilen 184-186), die von der Meldung gewu… |
+| 36 | ✅ behoben | Formular bleibt nach dem Absenden stehen, Dank kaum sichtbar | Vollstaendig im Template, mit Kommentar vom 01.09.2026 (Commit 4044094). Der zweite Teil der Meldung (`.formular__status` aus der gemeinsamen Regel mit `.formular__hinweis` loesen) ist im Template gegenstand… |
+| 37 | ⬜ offen | Demo-Abgleich haengt an absolutem Pfad - Tor lief nur auf einem Geraet | Im Template ist zu diesem Punkt nichts geschehen. Das Werkzeug, um das es geht (Vergleich gegen die abgenommene Demo statt gegen das Design), existiert dort gar nicht - damit fehlt auch die geraeteunabhaengi… |
+| 38 | ✅ behoben | Kein Feld fuers Google-Unternehmensprofil - sameAs unvollstaendig | Auch die geforderte Warnung in der Feldbeschreibung ist uebernommen. Sichtbare Ausgabe erfolgt nicht: grep nach `profile` in src/components/SocialLinks.astro liefert keinen Treffer, der Baustein liest weiter… |
+| 39 | ✅ behoben | versandRegion 'EU' erzeugte falsche Zusage in der Datenschutzerklaerung | Weiter gegangen als die Meldung verlangte: statt nur den Kommentar umzuschreiben, wurde der Schalter ganz entfernt - eine falsche Stellung ist damit gar nicht mehr waehlbar. Der Deploy-Leitfaden, der den Wer… |
+
+**Zwei Meldungen sind HINFÄLLIG, und beide sind eine Lehre:**
+
+- **26 (GISA-Feld)** – nachgeschlagen ergibt: Die GISA-Zahl ist **keine**
+  Pflichtangabe. § 5 Abs. 1 ECG zählt sieben Angaben auf, sie ist nicht
+  darunter. Ein Pflichtfeld dafür wäre eine erfundene Anforderung gewesen, und
+  ein leeres Pflichtfeld blockiert jeden Live-Gang. Die echte Lücke war eine
+  andere Norm (§ 63 Abs. 1 GewO), und die ist jetzt gebaut.
+- **31 (Platz reservieren)** – durch den Umbau des Banners überholt.
+
+> **Deshalb wird eine Meldung geprüft, bevor sie umgesetzt wird.** Eine
+> Meldung ist die Beobachtung eines Klons unter Zeitdruck – wertvoll als
+> Hinweis, nicht als Auftrag. Bei Meldung 22 hat sich zusätzlich ein
+> Teilpunkt als sachlich falsch erwiesen („Nur notwendige" sei beanstandet
+> worden – war es nicht; beanstandet war die Klickzahl).
+
+---
+
 ## Projekt
 
 | | |
