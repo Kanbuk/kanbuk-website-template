@@ -135,7 +135,38 @@ for (const f of htmlDateien) {
    kein Tracking, keine fremden Server" war nur auf dem HTML durchgesetzt, und
    feste Pixelbreiten fielen ausgerechnet dort nicht auf, wo die meisten davon
    stehen. */
-const trackingMusterGlobal = /google-analytics|googletagmanager|gtag\(|fbq\(|_paq\.push|hotjar|clarity\.ms|matomo|plausible\.io|segment\.(?:io|com)|mixpanel|amplitude|tiktok.*pixel|snap.*pixel|linkedin.*insight/i;
+/* DER MESSKANAL – die einzige erlaubte Art, an einen Statistik-Dienst zu melden.
+
+   Ausgangslage: `gtag(` ist im ausgelieferten JavaScript verboten, damit
+   niemand Tracking an der Einwilligung vorbei ausliefert. Diese Regel ist
+   richtig und bleibt.
+
+   Sie hatte nur eine Lücke: Es gab gar keinen erlaubten Weg. Wer wirklich
+   messen wollte, musste die Regel umgehen.
+
+   DER ERSTE UMWEG FUNKTIONIERTE NICHT. Der Mess-Baustein schrieb direkt in
+   `dataLayer` – mit der Begründung, das sei „das, was gtag intern ohnehin
+   tut". Am 01.09.2026 an einer laufenden Seite nachgemessen:
+
+       dataLayer.push(['event', …])   ->  erreicht Google NICHT
+       dataLayer.push(arguments)      ->  erreicht Google NICHT
+       window.gtag('event', …)        ->  gesendet
+
+   Die Begründung war also falsch, und die Messung lief ins Leere: Die
+   Ereignisse lagen in der Warteschlange und wurden nie abgeschickt. Kein Tor
+   hätte das je gemeldet – die Seite war grün, die Zahlen kamen nur nie an.
+
+   DESHALB EINE BEDINGTE ERLAUBNIS statt eines Umwegs: `gtag(` und `dataLayer`
+   sind im Bündel erlaubt, WENN es den Mess-Baustein gibt UND er die
+   Einwilligung abfragt. Alles andere (Analytics-Adressen, fbq, Matomo,
+   Hotjar …) bleibt unbedingt verboten. */
+const MESSBAUSTEIN = 'src/lib/verhalten/messung.ts';
+const messbausteinQuelle = existsSync(MESSBAUSTEIN) ? readFileSync(MESSBAUSTEIN, 'utf-8') : '';
+const messkanalErlaubt = /erlaubt\(\s*'statistik'\s*\)/.test(messbausteinQuelle);
+
+/* Dieselbe Liste ohne die beiden Muster, die der Mess-Baustein braucht. */
+const trackingMusterGlobal =
+  /google-analytics|googletagmanager|fbq\(|_paq\.push|hotjar|clarity\.ms|matomo|plausible\.io|segment\.(?:io|com)|mixpanel|amplitude|tiktok.*pixel|snap.*pixel|linkedin.*insight/i;
 
 /**
  * Feste Breite über 400px – der häufigste Portier-Fehler.
@@ -185,6 +216,20 @@ for (const f of dateien.filter((f) => extname(f) === '.js')) {
         `    Tracking darf nur über content.config.ts -> dienste laufen (dann bleibt es bis zur Einwilligung geparkt).`,
     );
   }
+  if (/gtag\(|dataLayer/.test(js)) {
+    if (!messbausteinQuelle) {
+      fehler(
+        `${name}: meldet an einen Statistik-Dienst, aber ${MESSBAUSTEIN} gibt es nicht.\n` +
+          `    Messung läuft ausschließlich über diesen Baustein – nur er prüft die Einwilligung.`,
+      );
+    } else if (!messkanalErlaubt) {
+      fehler(
+        `${MESSBAUSTEIN}: fragt die Einwilligung nicht ab (erlaubt('statistik')).\n` +
+          `    Ohne diese Prüfung meldet der Baustein auch an Besucher, die abgelehnt haben.`,
+      );
+    }
+  }
+
   if (/document\.cookie\s*=/.test(js)) {
     fehler(`${name}: setzt ein Cookie im JavaScript – die Seite muss cookiefrei bleiben (sonst Banner-Pflicht).`);
   }

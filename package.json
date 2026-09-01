@@ -21,6 +21,7 @@
     "inhalte": "node scripts/inhalte.mjs",
     "interaktion": "node scripts/interaktion.mjs",
     "karte": "node scripts/karte.mjs",
+    "messung": "node scripts/messung.mjs",
     "maillogo": "node scripts/maillogo.mjs",
     "maske": "node scripts/maske.mjs",
     "og": "node scripts/og.mjs",

@@ -870,6 +870,7 @@ bauen – anschließen und im Design anmalen.
 | **Öffnungszeiten** | `<Oeffnungszeiten />` | Wochenzeiten + Feiertage/Betriebsurlaub (`betrieb.sonderzeiten`) |
 | **Öffnungs-Status** | `<Oeffnungsstatus />` | „Jetzt geöffnet · bis 22:00" – rechnet in der Zeitzone des Betriebs |
 | **Zeitenzeile** | `<Zeitenzeile />` | Die Öffnungszeiten als TEXT (Kopfleiste, Fußzeile) – schaltet am Urlaubstag von selbst um |
+| **Messung** | automatisch – Kontaktwege erkennt er selbst; `data-messung` für alles Weitere | Anruf, Mail, WhatsApp, Route, PDF, Formular-Erfolg (Abschnitt 7a) |
 | **Einwilligung** | automatisch, wenn `dienste` gefüllt | Pixel/Tracking (Abschnitt 7a) |
 | **Einbettung** | `<Einbettung url=… />` | Maps/YouTube per 2-Klick (Abschnitt 7a) |
 
@@ -1461,6 +1462,50 @@ Dienst in `content.config.ts → dienste` eintragen – fertig. Automatisch pass
 
 **Nie ein Tracking-Skript direkt ins Markup schreiben.** Das Prüf-Tor blockt es.
 
+### Was gemessen wird – der Motor findet es selbst
+
+Ein eingetragener Statistik-Dienst zählt von sich aus nur Seitenaufrufe. Was
+einen Betrieb wirklich interessiert – wie oft jemand die Nummer antippt, die
+Speisekarte öffnet, das Formular abschickt –, sind eigene Ereignisse.
+
+**Der Motor legt sie selbst an.** `src/lib/verhalten/messung.ts` erkennt die
+Kontaktwege am Markup: `tel:` → `anruf_getippt`, `mailto:` → `mail_getippt`,
+`wa.me` → `whatsapp_getippt`, eine Kartenadresse → `route_geplant`, eine `.pdf`
+→ `dokument_geoeffnet`. Dazu je ein Feld `stelle` (kopfleiste, fusszeile,
+inhalt, fenster), damit ein Betrieb sieht, **wo** getippt wird. Das Formular
+meldet `generate_lead`, sobald der Server die Anfrage angenommen hat – und
+`anfrage_gescheitert`, wenn nicht. Die zweite Zahl ist die einzige, an der
+jemand bemerkt, dass Anfragen verlorengehen.
+
+> **Warum die Erkennung wichtiger ist als das Attribut:** An einer echten
+> Kundenseite standen elf `tel:`-Verweise, fünf davon trugen ein Messattribut.
+> Nicht aus Nachlässigkeit – die Nummer steht in Kopfleiste, Fußzeile,
+> Kontaktblock, Schwebeknopf und auf jeder Unterseite. Beim Nachrüsten von Hand
+> findet man nie alle, und der Betrieb hält die halbe Zahl für die ganze.
+
+**Von Hand** kommt nur dazu, was nur dieser Betrieb kennt – der Knopf „Tisch
+reservieren", eine Kategorie der Karte, eine Anmeldung:
+`data-messung="reservierung_begonnen"` (dazu optional `data-messung-feld` /
+`data-messung-wert`). Ein gesetztes Attribut gewinnt gegen die Erkennung;
+`data-messung-aus` schaltet sie für ein Element und alles darin ab.
+
+**`npm run messung` schreibt die fertige Anlege-Liste** – gelesen aus der
+gebauten Seite, also je Kunde verschieden. Sie sagt auch, welche Ereignisse im
+Dienst als Schlüsselereignis zu markieren sind und dass sie dort erst nach der
+ersten Auslösung auftauchen (bis zu 24 Stunden).
+
+**Gemessen wird nur nach dem Ja** – bei jedem einzelnen Klick neu geprüft, ohne
+Puffer, und übertragen werden ausschließlich feste Wörter: `anruf_getippt`,
+nicht welche Nummer dort steht. Ohne Statistik-Dienst in `dienste` passiert gar
+nichts.
+
+> **Die teuerste Lehre dieses Bausteins:** Er schrieb zuerst in `dataLayer`
+> statt `window.gtag()` aufzurufen. Das erreicht Google **nicht** – die
+> Ereignisse lagen in der Warteschlange und wurden nie abgeschickt. Alle Tore
+> waren grün, jeder Test im eigenen Browser bestand, weil gemessen wurde, ob
+> die Warteschlange sich füllt. **Eine Messung ist erst bewiesen, wenn der
+> Netzverkehr sie zeigt.**
+
 **`drittland` ist Pflicht, sobald ein Dienst eingetragen wird** (`'keines'`,
 `'USA'` oder das Land ausgeschrieben). Der Drittland-Absatz der
 Datenschutzerklärung nennt dann **nur die Dienste, die ihn wirklich brauchen**,
@@ -1791,6 +1836,7 @@ nichts über Design-Treue.
 | `npm run schrift -- --familie "<Name>"` | Google-Schrift lokal einbetten |
 | `npm run icons` | Symbol-Bibliothek neu holen (liegt schon im Repo – nur bei Versionswechsel nötig) |
 | `npm run karte -- --adresse "…"` | Statisches Kartenbild (statt Maps-Embed) |
+| `npm run messung` | Schreibt auf, welche Ereignisse die gebaute Seite meldet – die Anlege-Liste für den Statistik-Dienst (Abschnitt 7a) |
 | `npm run og -- --bild fotos/<hero>.jpg` | OG-Vorschaubild aus echtem Foto (beim Port Pflicht) |
 | `npm run sicht` | **Sichtprüfung im echten Browser** – Screenshots + Überlauf-/Fehler-Messung + `pruefung/texte.md` + Bögen |
 | `npm run interaktion` | **Bedien-Prüfung** – fährt jeden Verhaltens-Baustein real (350 + 1440 px) |

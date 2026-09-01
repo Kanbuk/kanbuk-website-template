@@ -420,6 +420,32 @@ if (leer) {
 )}
 
 <style>
+  /* NACH DEM ABSENDEN TRITT DAS FORMULAR AB.
+     Das Skript setzt `ist-gesendet` auf das <form>; ab da bleibt von dessen
+     Inhalt nur noch die Rückmeldung stehen.
+
+     Das ist MECHANIK und gehört deshalb hierher: Ein Klon, der die Regel
+     vergisst, hätte ein abgesendetes Formular, das unverändert dasteht – der
+     Absender hielte es für nicht abgeschickt und sendete erneut. Genau so
+     aufgelaufen, an einer echten Kundenseite: Vom Erfolg zeugte nur ein
+     kleiner grauer Absatz unter dem Formular, am Handy unterhalb der
+     Bildschirmkante.
+
+     Wie der Dank AUSSIEHT, macht das Design
+     (`.formular.ist-gesendet .formular__status`); ohne dessen Zutun ist er
+     wenigstens das Einzige, was noch da ist.
+
+     `:not()` mit einer einfachen Klasse – bewusst nicht `:is()`/`:where()`,
+     die fallen unterhalb der Browser-Zusage aus und nähmen die ganze Regel
+     mit (CLAUDE.md 4a). */
+  .formular.ist-gesendet > *:not(.formular__status) {
+    display: none;
+  }
+  /* Der Sprung dorthin darf keinen Rahmen des Browsers erzeugen – der Bereich
+     ist keine Bedienstelle, sondern nur das Ziel der Aufmerksamkeit. */
+  .formular__status:focus {
+    outline: none;
+  }
   /* Nur das Nötigste – alles Weitere gestaltet das Design.
      Der Honeypot MUSS unsichtbar bleiben, sonst füllen ihn echte Menschen aus. */
   .formular__honeypot {

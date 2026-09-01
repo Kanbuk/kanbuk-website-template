@@ -18,6 +18,7 @@
  *
  * Zustandsklassen fürs Design: .ist-erfolg / .ist-fehler auf dem Status-Element.
  */
+import { melden } from './messung';
 export function formulareStarten(): void {
   /* VORSCHAU (demo): Das Formular ist sichtbar und bedienbar, aber es darf
      nichts hinausgehen. Die Sperre sitzt strukturell im Markup – kein
@@ -109,17 +110,78 @@ export function formulareStarten(): void {
           form.reset();
           status.textContent = t.textErfolg ?? 'Danke! Ihre Nachricht wurde gesendet.';
           status.classList.add('ist-erfolg');
+
+          /* DAS FORMULAR TRITT AB, DER DANK NIMMT SEINEN PLATZ EIN.
+             (01.09.2026, nach einem echten Test an einer Kundenseite.)
+
+             Vorher blieb das ausgefüllte Formular stehen und darunter erschien
+             ein Absatz in derselben kleinen, grauen Schrift wie der
+             Datenschutz-Hinweis daneben. Am Handy stand er unterhalb der
+             Bildschirmkante. Der Absender sah also: unverändertes Formular,
+             keine sichtbare Reaktion. Das liest sich wie „hat nicht geklappt" –
+             und die naheliegende Handlung ist, noch einmal zu senden.
+
+             Die Klasse hier ist reine Mechanik; das Ausblenden steht in
+             Formular.astro, wie der Dank AUSSIEHT macht das Design
+             (`.formular.ist-gesendet .formular__status`). */
+          form.classList.add('ist-gesendet');
+
+          /* Sehen und gesagt bekommen – zwei getrennte Wege, weil sie
+             verschiedene Menschen erreichen. Der Text steht ohnehin in einem
+             `role="status"`-Bereich und wird vorgelesen; der Sprung dorthin ist
+             für alle, die mit der Tastatur arbeiten. `preventScroll`, weil der
+             Bildlauf gleich darunter gezielt gesetzt wird. */
+          status.setAttribute('tabindex', '-1');
+          status.focus({ preventScroll: true });
+
+          /* Ohne das steht der Besucher unter Umständen vor einer Stelle, an
+             der gerade Inhalt verschwunden ist: Das Formular war lang, die
+             Seite ist schlagartig kürzer. */
+          status.scrollIntoView({ block: 'center' });
+
+          /* ERST HIER, NICHT BEIM ABSENDEN. Gemeldet wird, dass die Anfrage
+             wirklich angekommen ist (Serverantwort ok) – nicht, dass jemand
+             auf Senden gedrückt hat. Die beiden Zahlen weichen zwangsläufig
+             voneinander ab; diese ist die ehrlichere. */
+          melden('generate_lead', { lead_source: form.dataset.formularId ?? 'unbekannt' });
         } else {
           const info = await antwort.json().catch(() => ({}));
           status.textContent = info.fehler ?? t.textFehler ?? 'Das hat leider nicht geklappt.';
           status.classList.add('ist-fehler');
+          /* Die einzige Zahl, an der ein Betrieb sieht, dass ihm Anfragen
+             verlorengehen. Ohne sie fällt monatelanges Schweigen niemandem
+             auf. Kein Text aus der Serverantwort – der könnte Angaben des
+             Absenders tragen. */
+          melden('anfrage_gescheitert', {
+            lead_source: form.dataset.formularId ?? 'unbekannt',
+            grund: 'abgelehnt',
+          });
         }
       } catch {
         status.textContent = t.textVerbindungsfehler ?? 'Verbindung fehlgeschlagen.';
         status.classList.add('ist-fehler');
+        melden('anfrage_gescheitert', {
+          lead_source: form.dataset.formularId ?? 'unbekannt',
+          grund: 'verbindung',
+        });
       } finally {
         absenden.disabled = false;
         absenden.textContent = alterText;
+
+        /* NACH EINEM FEHLSCHLAG DEN FOKUS ZURÜCK AUF DEN KNOPF.
+           Ein abgeschalteter Knopf kann den Fokus nicht halten – mit
+           `disabled = true` weiter oben fällt er auf den Seitenkörper. Beim
+           Wiedereinschalten kommt er nicht von selbst zurück.
+
+           Gemessen an einer gebauten Kontaktseite (Serverantwort 500
+           abgefangen): Danach lagen 27 Tabulator-Schritte zwischen dem
+           Besucher und dem Knopf, den er gerade gedrückt hat – bei offenem
+           Cookie-Hinweis 31. Wer mit der Tastatur arbeitet, kann eine
+           gescheiterte Anfrage also praktisch nicht wiederholen.
+
+           Nur im Fehlerfall: Nach dem Erfolg ist der Knopf ausgeblendet,
+           dort sitzt der Fokus richtigerweise auf der Danke-Tafel. */
+        if (!form.classList.contains('ist-gesendet')) absenden.focus();
       }
     });
   });

@@ -487,6 +487,51 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   die abbricht, wenn `daten/inhalte.json` auf eine Datei zeigt, die nicht da
   ist.
 
+  **Neu: der Mess-Baustein (`src/lib/verhalten/messung.ts`).** Ein eingetragener
+  Statistik-Dienst zählt von sich aus nur Seitenaufrufe. Was einen Betrieb
+  interessiert – wie oft jemand die Nummer antippt, die Karte öffnet, das
+  Formular abschickt – musste bisher jeder Klon selbst bauen, und niemand hat
+  es je gebaut.
+
+  **Er findet die Messpunkte selbst.** `tel:` → `anruf_getippt`, `mailto:` →
+  `mail_getippt`, `wa.me` → `whatsapp_getippt`, Kartenadresse →
+  `route_geplant`, `.pdf` → `dokument_geoeffnet`, dazu je ein Feld `stelle`
+  (kopfleiste, fusszeile, inhalt, fenster). Das Formular meldet
+  `generate_lead` bei angenommener Anfrage und `anfrage_gescheitert`, wenn
+  nicht – die zweite Zahl ist die einzige, an der jemand bemerkt, dass
+  Anfragen verlorengehen. `data-messung` bleibt für alles, was nur ein
+  bestimmter Betrieb kennt.
+
+  Die Selbsterkennung ist der eigentliche Punkt: An der Kundenseite standen
+  **elf `tel:`-Verweise, fünf davon mit Messattribut**. Nicht aus
+  Nachlässigkeit – die Nummer steht in Kopfleiste, Fußzeile, Kontaktblock,
+  Schwebeknopf und auf jeder Unterseite. Von Hand findet man nie alle, und der
+  Betrieb hält die halbe Zahl für die ganze.
+
+  **`npm run messung`** liest die gebaute Seite und schreibt die fertige
+  Anlege-Liste für den Statistik-Dienst – je Kunde verschieden, mit dem
+  Hinweis, welche Ereignisse als Schlüsselereignis zu markieren sind. Kein
+  Tor, nur ein Bericht (die neun Tore bleiben neun).
+
+  **Im echten Browser nachgemessen**, nicht nur gebaut: mit Zustimmung kommen
+  `whatsapp_getippt {stelle: fusszeile}` und `mail_getippt {stelle: inhalt}`
+  an, nach Ablehnung kommt **nichts**. Das ist die Lehre aus dem Fehlschlag
+  desselben Bausteins am Vortag – er schrieb in `dataLayer` statt
+  `window.gtag()` aufzurufen, was Google gar nicht erreicht, und alle Tore
+  waren grün. **Eine Messung ist erst bewiesen, wenn der Netzverkehr sie
+  zeigt.** Das Prüf-Tor erlaubt `gtag(` jetzt bedingt: nur, wenn es diesen
+  Baustein gibt UND er `erlaubt('statistik')` abfragt.
+
+  **Mitgekommen, weil es jeden Klon mit Formular betrifft:** Nach dem
+  Absenden tritt das Formular ab und die Danke-Meldung nimmt seinen Platz ein
+  (`ist-gesendet`). Vorher blieb das ausgefüllte Formular stehen und der
+  Erfolg war ein kleiner grauer Absatz darunter, am Handy unterhalb der
+  Bildschirmkante – der Absender hielt es für gescheitert und schickte noch
+  einmal. Dazu springt der Fokus nach einem Fehlschlag zurück auf den Knopf:
+  gemessen lagen sonst 27 Tabulator-Schritte dazwischen (bei offenem
+  Cookie-Hinweis 31), eine gescheiterte Anfrage war mit der Tastatur also
+  praktisch nicht zu wiederholen.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.

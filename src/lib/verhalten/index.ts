@@ -34,9 +34,11 @@ import { abweichendeZeitenStarten } from './abweichende-zeiten';
 import { dialogStarten } from './dialog';
 import { merklisteStarten } from './merkliste';
 import { jahrStarten } from './jahr';
+import { messungStarten } from './messung';
 
 export { bewegungReduziert } from './hilfen';
 export { erlaubt, beiFreigabe, widerrufen } from './einwilligung';
+export { melden } from './messung';
 
 /** Startet alle Bausteine. Jeder prüft selbst, ob er auf der Seite gebraucht wird. */
 export function verhaltenStarten(): void {
@@ -70,4 +72,11 @@ export function verhaltenStarten(): void {
      Filter hört darauf – so bleiben beide widerspruchsfrei. */
   merklisteStarten();
   jahrStarten();
+  /* ZULETZT, und das ist wichtig: Der Mess-Zuhörer hängt in der
+     Erfassungsphase am Dokument und sieht damit jeden Klick – auch die, die
+     ein anderer Baustein danach abfängt. Wäre er zuerst gestartet, änderte
+     das an der Reihenfolge der Zuhörer nichts, aber ein Fehler beim Starten
+     würde die ganze Kette anhalten. Messung ist das Unwichtigste auf dieser
+     Seite; sie steht deshalb hinten. */
+  messungStarten();
 }
