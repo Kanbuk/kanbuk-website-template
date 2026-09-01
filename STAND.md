@@ -424,6 +424,37 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   das). Jetzt liest ein Gruppen-Leser nur die Gruppe für `*`. An sieben Fällen
   geprüft, darunter zwei, die weiterhin anschlagen **müssen**.
 
+  **Behoben: vier falsche Zusagen in der Datenschutzerklärung.** Sie stehen auf
+  **jeder** ausgelieferten Seite, und sie versprechen etwas, das nicht stimmt:
+
+  1. **Der Schalter `versandRegion` ist ersatzlos entfallen.** Er formulierte
+     den Absatz zum Versanddienst um, sobald beim Freischalten eine EU-Region
+     gewählt war – „die Verarbeitung findet in der Europäischen Union statt".
+     Beim Anbieter nachgelesen (resend.com/security/gdpr, 31.08.2026): Der
+     Nachrichteninhalt liegt **in jedem Fall in den USA**, die Regionswahl
+     steuert nur, von wo aus verschickt wird. Eine Einstellung, die den
+     Speicherort verlegt, gibt es nicht. Der Schalter regelte also nichts,
+     sondern verleitete zu einer falschen Zusage – und der Deploy-Leitfaden
+     forderte ihn ausdrücklich ein. An einer laufenden Kundenseite stand die
+     falsche Angabe wochenlang öffentlich. Jetzt gibt es nur noch die
+     zutreffende Fassung (USA, Standardvertragsklauseln) und nichts mehr
+     einzustellen; der Leitfaden sagt jetzt „EU-Region wählen, am Rechtstext
+     ändert das nichts".
+  2. **Das Löschversprechen kannte keine Aufbewahrungspflicht.** „Wir speichern
+     nur so lange, wie es zur Bearbeitung Ihrer Anfrage erforderlich ist" kann
+     kein Betrieb halten, sobald aus der Anfrage ein Geschäft wird – dann
+     greifen handels- und steuerrechtliche Fristen. Der Nachsatz steht jetzt
+     drin.
+  3. **Der Drittland-Absatz widersprach der eigenen Seite.** Er behauptete
+     „Alle übrigen genannten Dienste verarbeiten ausschließlich innerhalb der
+     EU", während weiter unten Hoster und Versanddienst mit Sitz USA stehen.
+     Jetzt verweist er auf die jeweilige Beschreibung statt zu verallgemeinern.
+
+  Alle drei sind derselbe Fehlertyp: eine Aussage, die geprüft aussieht und es
+  nicht ist (CLAUDE.md 0, „entweder belegt nachgeschlagen oder weggelassen") –
+  nur an der Stelle mit dem höchsten Haftungsrisiko, weil sie im Rechtstext
+  steht und der Betrieb sie im Zweifel gegenüber seinem Gast wiederholt.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.

@@ -387,11 +387,16 @@ bekommt ein neuer Mitarbeiter vom Inhaber).
      Zählserver um. Das widerspricht der cookiefreien Zusage, gehört sonst in die
      Datenschutzerklärung – und macht aus jeder Bestätigungsmail eine Messung.
 
-   **Region festlegen** (im Dienst beim Freischalten): EU oder USA. Danach
-   `versandRegion: 'EU'` bzw. `'USA'` in `content.config.ts` eintragen – die
-   Datenschutzerklärung formuliert den Absatz danach. Ohne diesen Schritt
-   behauptet sie eine Übermittlung in ein Drittland, die es womöglich gar nicht
-   gibt.
+   **Region festlegen** (im Dienst beim Freischalten): Nimm die EU-Region, sie
+   verkürzt den Versandweg. **Am Rechtstext ändert das nichts, und es ist
+   nichts einzutragen.**
+
+   > Hier stand bis 01.09.2026 die Anweisung, danach `versandRegion` in der
+   > Konfiguration zu setzen. Das Feld gibt es nicht mehr: Der Anbieter
+   > speichert Nachrichteninhalte **in jedem Fall in den USA** – die
+   > Regionswahl steuert nur, von wo aus verschickt wird. Wer die EU wählte
+   > und das eintrug, bekam eine Datenschutzerklärung, die eine
+   > EU-Verarbeitung zusicherte, die es nicht gibt.
 
    **Dann die zwei Umgebungsvariablen** im Vercel-Dashboard (bzw.
    `vercel env add`): `RESEND_API_KEY` und `CONTACT_FROM` (Absender auf der

@@ -243,8 +243,14 @@ const hatMerkliste =
         </ul>
         <p>
           {w(
-            'Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a, Art. 49 Abs. 1 lit. a DSGVO). Alle übrigen genannten Dienste verarbeiten ausschließlich innerhalb der EU beziehungsweise des EWR.',
-            'The legal basis is your consent (Art. 6(1)(a), Art. 49(1)(a) GDPR). All other services named process data exclusively within the EU or the EEA.',
+            /* DER ZWEITE SATZ WIDERSPRACH DER EIGENEN SEITE. Hier stand
+               „Alle übrigen genannten Dienste verarbeiten ausschließlich
+               innerhalb der EU" – während der Hosting-Absatz weiter unten den
+               Hoster mit Sitz in den USA nennt und der Formular-Absatz den
+               Versanddienst ebenso. Eine Erklärung, die sich auf derselben
+               Seite selbst widerspricht, ist schlechter als eine knappe. */
+            'Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a, Art. 49 Abs. 1 lit. a DSGVO). Wo darüber hinaus Daten außerhalb der EU verarbeitet werden – etwa beim Hosting oder beim Versand von Formularanfragen –, ist das bei dem jeweiligen Dienst beschrieben und durch die Standardvertragsklauseln der Europäischen Kommission abgesichert.',
+            'The legal basis is your consent (Art. 6(1)(a), Art. 49(1)(a) GDPR). Where data is processed outside the EU beyond this – for example for hosting or for sending form enquiries – this is described with the respective service and safeguarded by the European Commission’s standard contractual clauses.',
           )}
         </p>
       </>
@@ -328,18 +334,43 @@ const hatMerkliste =
               )
         }
       />
-      {site.versandRegion === 'EU'
-        ? w(
-            ' (Resend, Inc.; die Verarbeitung findet in der Europäischen Union statt)',
-            ' (Resend, Inc.; processing takes place within the European Union)',
-          )
-        : w(
-            ' (Resend, Inc., USA – abgesichert über die EU-Standardvertragsklauseln)',
-            ' (Resend, Inc., USA – safeguarded by the EU standard contractual clauses)',
-          )}
+      {/* HIER STAND EIN SCHALTER MIT ZWEI FASSUNGEN, und die EU-Fassung war
+          sachlich falsch. Sie behauptete „die Verarbeitung findet in der
+          Europäischen Union statt", sobald beim Versanddienst eine EU-Region
+          gewählt war.
+
+          Beim Anbieter nachgelesen (resend.com/security/gdpr, abgerufen am
+          31.08.2026):
+
+            „Resend stores customer data in the United States, including
+             message content, delivery logs, webhook payloads, and account
+             records. The region you select when adding a sending domain (for
+             example, eu-west-1) controls where email is routed and sent from.
+             It does not control where data is stored, and there is no setting
+             today that moves stored data to the EU."
+
+          Die Regionswahl bestimmt also nur, von WO AUS verschickt wird – nicht
+          den Speicherort. Der volle Wortlaut jeder Anfrage liegt in den USA
+          und ist im Konto des Anbieters einsehbar.
+
+          Die EU-Fassung ist deshalb ersatzlos entfallen; es gibt nur noch die
+          zutreffende. Ein Schalter, dessen eine Stellung immer falsch ist,
+          gehört nicht abgeschwächt, sondern weg. Gefunden an einer laufenden
+          Kundenseite, die diese Zusage wochenlang öffentlich gemacht hat. */}
       {w(
-        '. Wir geben Ihre Daten nicht ohne Ihre Einwilligung an weitere Dritte weiter und speichern sie nur so lange, wie es zur Bearbeitung Ihrer Anfrage erforderlich ist.',
-        '. We do not pass your data on to further third parties without your consent and store it only as long as is necessary to handle your enquiry.',
+        ' (Resend, Inc., USA – abgesichert über die EU-Standardvertragsklauseln)',
+        ' (Resend, Inc., USA – safeguarded by the EU standard contractual clauses)',
+      )}
+      {w(
+        /* DER NACHSATZ ZU DEN AUFBEWAHRUNGSPFLICHTEN IST PFLICHT, nicht
+           Beiwerk. Hier stand nur „nur so lange, wie es zur Bearbeitung
+           erforderlich ist" – ein Versprechen, das kein Betrieb halten kann,
+           sobald aus einer Anfrage ein Geschäft wird: Beim Wirt die Feier,
+           beim Handwerker der Auftrag. Dann greifen handels- und
+           steuerrechtliche Fristen, und die Website behauptet etwas anderes
+           als das, was tatsächlich passiert. Der Satz stand in jedem Klon. */
+        '. Wir geben Ihre Daten nicht ohne Ihre Einwilligung an weitere Dritte weiter. Nach Erledigung Ihrer Anfrage löschen wir sie, soweit uns keine gesetzliche Aufbewahrungspflicht zur weiteren Speicherung verpflichtet – etwa die handels- und steuerrechtlichen Fristen, wenn aus der Anfrage ein Geschäft geworden ist.',
+        '. We do not pass your data on to further third parties without your consent. Once your enquiry has been dealt with we delete it, unless a statutory retention obligation requires us to keep it – for example commercial and tax law periods where the enquiry has led to a business transaction.',
       )}
     </p>
     {/* HIER STAND DER MAIL-BETREFF – also „Neue Anfrage über <domain>".

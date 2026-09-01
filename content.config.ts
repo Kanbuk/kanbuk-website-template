@@ -1155,25 +1155,25 @@ export interface SiteConfig {
    * stimmt das Bild sofort. Beim Live-Gang wird das Feld schlicht ignoriert.
    */
   vorschauDomain?: string;
-  /**
-   * WO DER VERSANDDIENST DIE MAILS VERARBEITET – 'EU' oder 'USA'.
-   *
-   * WARUM DAS EIN FELD IST: Die Datenschutzerklärung schrieb fest „Resend,
-   * Inc., USA – abgesichert über die EU-Standardvertragsklauseln". Beim
-   * Freischalten wählt man aber eine Region. In einem Kundenprojekt wurde die
-   * EU gewählt (belegt durch den MX-Eintrag der Versand-Unterdomain) – der
-   * Rechtstext behauptete danach eine Übermittlung in ein Drittland, die es
-   * gar nicht gab, samt falscher Rechtsgrundlage.
-   *
-   * Für jeden Klon gibt es daraus nur zwei Ausgänge, und beide sind schlecht:
-   * Entweder die Region wird bewusst gewählt und der Rechtstext ist falsch,
-   * oder niemand wählt sie, weil der Text „USA" suggeriert, es gäbe nichts zu
-   * wählen.
-   *
-   * Also: beim Freischalten festlegen und HIER eintragen. Weglassen = 'USA'
-   * (der Vorgabewert des Dienstes) – dann bleibt der Text wie bisher.
-   */
-  versandRegion?: 'EU' | 'USA';
+  /* HIER STAND `versandRegion?: 'EU' | 'USA'` – ein Schalter, der die
+     Datenschutzerklärung umformulierte, sobald beim Versanddienst eine
+     EU-Region gewählt war. Er ist am 01.09.2026 ersatzlos entfallen.
+
+     GRUND: Seine EU-Stellung war IMMER falsch. Der Anbieter schreibt selbst
+     (resend.com/security/gdpr, abgerufen 31.08.2026), dass Kundendaten
+     einschließlich des Nachrichteninhalts in den USA gespeichert werden und
+     die Regionswahl nur steuert, von wo aus verschickt wird – nicht, wo
+     gespeichert wird. Eine Einstellung, die den Speicherort in die EU
+     verlegt, gibt es nicht.
+
+     Der Schalter hat also nichts geregelt, sondern nur dazu verleitet, eine
+     falsche Zusage zu geben – und der Deploy-Leitfaden forderte ihn
+     ausdrücklich ein. An einer laufenden Kundenseite stand die falsche
+     Angabe wochenlang öffentlich.
+
+     Die Datenschutzerklärung nennt jetzt unbedingt die USA und die
+     EU-Standardvertragsklauseln. Das ist die zutreffende Fassung – und es
+     gibt nichts mehr einzustellen. */
   /** Wie die Bestätigung an den Absender aussieht. Siehe Bestaetigung. */
   bestaetigung?: Bestaetigung;
   /** Globales OG-Bild (in public/), Standard: '/og.jpg'. */
