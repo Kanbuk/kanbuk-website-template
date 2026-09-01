@@ -621,6 +621,33 @@ beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
   Alle Tore grün in beiden Ordnern; Widerruf, „Alle akzeptieren" und sämtliche
   Messpunkte im echten Browser nachgemessen.
 
+  **8. Der Widerruf war trotzdem nur halb – erst an der LIVE-Seite sichtbar.**
+  Lokal war nach dem Widerruf kein Cookie mehr da; an der ausgelieferten Seite
+  blieb `_ga_<Kennung>` liegen. Ursache ist ein Wettlauf, den man nicht
+  gewinnen kann: Zwischen dem Löschen und dem `location.reload()` läuft das
+  Google-Skript noch und schreibt das **Sitzungs**-Cookie einfach neu. Das
+  Kennungs-Cookie wird seltener geschrieben und war deshalb weg. **Ein halber
+  Widerruf sieht aus wie ein ganzer.**
+
+  > Der Motor räumt deshalb ein zweites Mal auf: beim START, wenn keine
+  > Zustimmung vorliegt. Da ist der Wettlauf vorbei – kein Dienst läuft mehr,
+  > der etwas neu setzen könnte. Das deckt zwei weitere Fälle mit ab, die der
+  > Widerruf gar nicht sieht: einen Besucher, der seine Auswahl selbst aus dem
+  > Browser gelöscht hat, und eine Zustimmung, die durch geänderte Dienste
+  > ungültig geworden ist (`standKennung`).
+  >
+  > **Die allgemeine Lehre: Eine Sicherung, die gegen fremden Code antritt,
+  > muss auch NACH ihm noch einmal greifen.** Ein einziger Durchgang im selben
+  > Moment reicht nicht, wenn der andere noch läuft.
+
+  **Zweimal irrte in dieser Sitzung der MESSAUFBAU, nicht die Seite**, und
+  beide Male stand ein gemeldeter Fehler kurz bevor, den es nicht gab: Das
+  Prüfskript las `postData()` statt `postDataBuffer()` (GA4 schickt binär,
+  also kam null zurück), und das Zeitfenster nach einem Klick war kürzer als
+  Googles Bündelung. **Bevor man einen Fehler meldet, prüft man das
+  Messgerät** – dieselbe Lehre wie beim `dataLayer`-Fehlschlag am Vortag, nur
+  in die andere Richtung.
+
 - **2026-08-17** – **Zwei Ursachen behoben, die JEDER Klon geerbt hat.** Beide
   bei zwei laufenden Kundenprojekten gleichzeitig aufgetreten, beide still.
   Motor auf 2026.8.17.

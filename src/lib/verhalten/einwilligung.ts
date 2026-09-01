@@ -243,6 +243,28 @@ export function einwilligungStarten(): void {
   }
 
   const zustand = lesen();
+
+  /* NACHRÄUMEN BEIM START, WENN KEINE ZUSTIMMUNG (MEHR) VORLIEGT.
+     -------------------------------------------------------------------
+     Der Widerruf löscht die Cookies der Dienste sofort – und trotzdem blieb
+     an der Live-Seite genau eines liegen: das Sitzungs-Cookie von Google
+     (`_ga_<Kennung>`). Der Grund ist ein Wettlauf, den man nicht gewinnen
+     kann: Zwischen dem Löschen und dem `location.reload()` läuft das
+     Google-Skript noch und schreibt es einfach neu. Das Kennungs-Cookie
+     (`_ga`) wird seltener geschrieben und war deshalb weg – das eine blieb,
+     das andere nicht. Ein halber Widerruf sieht aus wie ein ganzer.
+
+     Hier ist der Wettlauf vorbei: Die Seite ist neu geladen, es liegt keine
+     Zustimmung vor, also läuft auch kein Dienst mehr, der etwas neu setzen
+     könnte. Was jetzt noch da ist, ist ein Rest von vorher.
+
+     Das deckt zugleich zwei Fälle mit ab, die der Widerruf gar nicht sieht:
+     einen Besucher, der seine Auswahl selbst aus dem Browser gelöscht hat,
+     und eine Zustimmung, die durch geänderte Dienste ungültig geworden ist
+     (`standKennung`). In beiden Fällen wird neu gefragt – und dann dürfen
+     auch keine alten Cookies mehr liegen. */
+  if (!zustand) fremdeCookiesLoeschen();
+
   if (zustand) {
     // Schon entschieden: Banner bleibt weg, erlaubte Skripte starten.
     banner.hidden = true;
