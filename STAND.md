@@ -20,7 +20,7 @@
 
 ### Woher der Rückfluss kommt
 
-Aus `../kunde-kriterium` – dem ersten zahlenden Kunden, dessen Seite
+Aus einem Gastro-Kundenprojekt – dem ersten zahlenden Kunden, dessen Seite
 vollständig neu entstanden ist. Dessen STAND.md enthält unter
 „Motor-Meldungen (fürs Master-Template)" **39 nummerierte Meldungen**. Sie
 werden in Wellen zurückgetragen; am 01.09.2026 liefen die Wellen 1a bis 5.
@@ -536,6 +536,67 @@ ein echtes Sanity-Projekt gelaufen**. Der erste echte Einsatz gehört
 beobachtet – vor allem, ob die Abfragesprache genau so antwortet.
 
 ## Verlauf
+
+- **2026-09-15** – **Der Widerruf war auch mit dem zweiten Durchgang noch nicht
+  dicht – Stilllegen offener Seiten.** An einer laufenden Gastro-Kundenseite mit
+  Reichweitenmessung nachgemessen (Chromium und Firefox, jeder Fall mehrfach,
+  jede Messung von einem zweiten Aufbau gegengeprüft, einmal über einen
+  Browser-Neustart hinweg): Das Sitzungs-Cookie von Google blieb auf zwei
+  alltäglichen Wegen **dauerhaft** liegen, Ablauf gut ein Jahr in der Zukunft.
+
+  1. **Zweiter Tab.** In Tab B widerrufen, danach „Alle ablehnen" oder nur
+     „Komfort". Tab A lief weiter und schrieb das Cookie beim nächsten
+     Seitenwechsel neu.
+  2. **Zurück-Taste.** Der Browser holte eine Seite mit laufendem Dienst aus
+     seinem Zwischenspeicher (bfcache); das Modul lief dabei nicht neu an.
+
+  Dauerhaft wurde es, weil das Nachräumen vom 01.09. nur **ohne** gespeicherte
+  Entscheidung lief – nach „Alle ablehnen" gibt es eine. Dazu ging beim Widerruf
+  selbst noch ein Treffer hinaus (gtag schickt beim Entladen ab, was schon in
+  seiner Warteschlange lag), und das Cookie wurde kurz neu geschrieben.
+
+  **Behoben in `einwilligung.ts`, ohne einen Dienst beim Namen zu kennen:**
+  - **Stilllegen** beim Widerruf (vor dem Löschen) sowie beim `storage`-Ereignis
+    aus einem anderen Tab und bei `pageshow` aus dem Zwischenspeicher – dort
+    nur, wenn eine auf DIESER Seite freigegebene Kategorie ihre Zustimmung
+    verloren hat. Für den Rest der Seite lässt `document.cookie` dann nur noch
+    Löschungen durch, und fetch/sendBeacon gehen nur noch an die eigene
+    Adresse (das Formular an `/api/contact` bleibt frei). Bewusst ohne
+    Neuladen – im anderen Tab kann ein halb ausgefülltes Formular stehen. Eine
+    neue Zustimmung auf so einer Seite gibt keine Skripte mehr frei; sie wirkt
+    ab dem nächsten Seitenaufruf.
+  - **Nachräumen beim Start – und bei `storage`/`pageshow` – auch mit
+    Entscheidung**, sobald keine Kategorie erlaubt ist, in der ein Dienst
+    Cookies setzt. `Einwilligung.astro` schreibt diese Kategorien beim Bauen
+    an den Banner (`data-einwilligung-cookie-kategorien`, aus `setztCookies`;
+    fehlt die Angabe, zählt der Dienst mit). `notwendig` bleibt in der Liste,
+    damit ein notwendiger Cookie-Dienst nach „Alle ablehnen" nicht bei jedem
+    Aufruf seine Cookies verliert.
+  - **Die Wahl im Gedächtnis gilt nur noch bei kaputtem Speicher.** Vorher
+    griff sie auch, wenn der Eintrag bloß gelöscht war – genau das tut der
+    Widerruf. Eine Seite, die danach über die Zurück-Taste kam, hielt ihre
+    alte Zustimmung für gültig und maß weiter (in der Code-Prüfung gefunden,
+    im Browser nachgestellt und behoben).
+
+  Geprüft: eigener Browsertest gegen den Bau einer Kundenseite (Chromium und
+  Firefox; zweiter Tab mit „Alle ablehnen" und mit „nur Komfort", Zurück-Taste
+  mit nachweislich aktivem bfcache, Nachräumen mit gespeicherter Entscheidung,
+  erlaubte Cookies bleiben), drei unabhängige Code-Prüfungen (Logik,
+  Browser-Untergrenze samt Übersetzung und Prüf-Tor, Datenschutz und
+  Nebenwirkungen), Prüf-Tor grün.
+
+  **Grenzen, ehrlich benannt:** Versand per Bild, XMLHttpRequest oder über die
+  eigene Adresse ist nicht gesperrt, `cookieStore.set()` umgeht die
+  Schreibsperre (das Nachräumen beim nächsten Start fängt es auf). Setzen zwei
+  Kategorien Cookies und nur eine ist erlaubt – oder setzt ein notwendiger
+  Dienst Cookies –, wird beim Start nach einer Entscheidung nicht geräumt (der
+  Motor kennt die Namen nicht und würde sonst erlaubte Cookies mitlöschen).
+  Ändert ein Deploy die Dienste, während ein alter Tab offen ist, räumt der
+  alte Tab einmal die Cookies einer frischen Zustimmung weg. Safari und die
+  bfcache-Rückkehr in Firefox sind nicht gemessen.
+
+  Nebenbei: In der Übergabe oben stand der Ordnername des Kundenprojekts – das
+  Prüf-Tor hat es gemeldet, jetzt neutral formuliert.
 
 - **2026-09-01** – **Rückfluss aus dem ersten komplett neu gebauten Kundenprojekt,
   Welle 1.** Das Projekt (Wiener Gastronomie, Relaunch auf eine bestehende Adresse,

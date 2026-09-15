@@ -66,6 +66,17 @@ interface Zustand {
    das, was der Kommentar schon immer versprochen hat. */
 let imGedaechtnis: Zustand | null = null;
 
+/* NUR, WENN DER SPEICHER WIRKLICH NICHT MITSPIELT.
+   Hier stand `if (!z) z = imGedaechtnis` – der Rückfall griff also auch, wenn
+   der Speicher einwandfrei lief und der Eintrag nur GELÖSCHT war. Genau das tut
+   der Widerruf. Eine Seite, die danach über die Zurück-Taste aus dem
+   Zwischenspeicher kam, hielt ihre alte Zustimmung im Gedächtnis für gültig
+   und maß weiter (Code-Prüfung 15.09.2026, nachgestellt). Jetzt zählt das
+   Gedächtnis nur, wenn Lesen oder Schreiben tatsächlich gescheitert ist.
+   Älteres Safari im privaten Modus liest `null` und wirft erst beim
+   Schreiben – deshalb setzt auch `schreiben()` den Merker. */
+let speicherKaputt = false;
+
 function lesen(): Zustand | null {
   let z: Zustand | null = null;
   try {
@@ -73,8 +84,9 @@ function lesen(): Zustand | null {
     if (roh) z = JSON.parse(roh) as Zustand;
   } catch {
     /* siehe oben – dann zählt nur, was in dieser Sitzung entschieden wurde */
+    speicherKaputt = true;
   }
-  if (!z) z = imGedaechtnis;
+  if (!z && speicherKaputt) z = imGedaechtnis;
   if (!z) return null;
   // Dienste haben sich geändert -> die alte Zustimmung gilt nicht mehr.
   if (z.stand !== standKennung()) return null;
@@ -91,6 +103,7 @@ function schreiben(erlaubt: Kategorie[]) {
   try {
     localStorage.setItem(SCHLUESSEL, JSON.stringify(zustand));
   } catch {
+    speicherKaputt = true;
     /* Privater Modus o. Ä. – die Wahl gilt dank `imGedaechtnis` für diese
        Sitzung, aber nicht darüber hinaus. Das ist die richtige Reaktion:
        Ohne Speicher lässt sich eine Entscheidung nicht aufbewahren, und
@@ -124,6 +137,7 @@ function skripteFreigeben() {
     const kategorie = alt.dataset.einwilligung as Kategorie;
     if (!erlaubt(kategorie)) return;
 
+    freigegeben.add(kategorie);
     const neu = document.createElement('script');
     for (const attr of Array.from(alt.attributes)) {
       if (attr.name === 'type' || attr.name === 'data-einwilligung') continue;
@@ -137,7 +151,11 @@ function skripteFreigeben() {
 /** Wahl speichern, Schleuse öffnen, Banner schließen, Rest informieren. */
 function setzen(erlaubteKategorien: Kategorie[]) {
   schreiben(erlaubteKategorien);
-  skripteFreigeben();
+  /* Ist diese Seite stillgelegt (ihre Zustimmung ging in einem anderen Tab
+     verloren), wirkt eine neue Zustimmung erst ab dem nächsten Seitenaufruf:
+     Cookie- und Versandsperre stehen noch, ein jetzt freigegebenes Skript
+     liefe ins Leere. Neu laden wäre schlechter – siehe STILLLEGEN. */
+  if (!stillgelegt) skripteFreigeben();
   document.querySelectorAll('[data-einwilligung-banner]').forEach((b) => ((b as HTMLElement).hidden = true));
   document.dispatchEvent(new CustomEvent('einwilligung:geaendert', { detail: { erlaubt: erlaubteKategorien } }));
 }
@@ -156,6 +174,11 @@ export function widerrufen(): void {
   } catch {
     /* egal */
   }
+  /* ERST STILLLEGEN, DANN LÖSCHEN. Sonst schreibt ein laufender Dienst im
+     Moment zwischen Löschen und Neuladen sein Cookie neu und schickt beim
+     Entladen ab, was noch in seiner Warteschlange lag (gemessen: ein Treffer
+     und ein neu geschriebenes Sitzungs-Cookie, 50–120 ms nach dem Klick). */
+  stilllegen();
   fremdeCookiesLoeschen();
   location.reload();
 }
@@ -215,6 +238,199 @@ function fremdeCookiesLoeschen(): void {
   }
 }
 
+/* ===========================================================================
+   STILLLEGEN – wenn eine OFFENE Seite ihre Zustimmung verliert
+   ===========================================================================
+   Widerruf und Nachräumen beim Start deckten nur den Tab ab, in dem geklickt
+   wurde. An einer laufenden Kundenseite nachgemessen (15.09.2026, Chromium
+   und Firefox, jeder Fall mehrfach und unabhängig gegengeprüft) blieb das
+   Sitzungs-Cookie von Google auf zwei alltäglichen Wegen DAUERHAFT liegen,
+   Ablauf gut ein Jahr in der Zukunft:
+
+   1. Zweiter Tab: In Tab B widerrufen, danach „Alle ablehnen". Tab A lief
+      weiter und schrieb `_ga_<Kennung>` beim nächsten Seitenwechsel neu.
+   2. Zurück-Taste: Der Browser holte eine Seite mit laufendem Dienst fertig
+      aus seinem Zwischenspeicher (bfcache). Dieses Modul lief dabei nicht
+      neu an, also auch kein Nachräumen.
+
+   Dauerhaft wurde es, weil das Nachräumen beim Start nur OHNE gespeicherte
+   Entscheidung lief – nach „Alle ablehnen" gibt es aber eine.
+
+   DIE ANTWORT KENNT KEINEN DIENST BEIM NAMEN. Eine Liste von Adressen oder
+   Cookie-Namen wäre beim nächsten Dienst unvollständig, und das Prüf-Tor
+   verbietet Tracking-Adressen im Bündel ohnehin. Stattdessen gilt für den
+   Rest dieser Seite zweierlei:
+   · Cookies dürfen nur noch GELÖSCHT werden. Der Motor selbst setzt keines
+     (CLAUDE.md Abschnitt 2) – jeder andere Schreibversuch kommt von einem
+     Dienst, dessen Zustimmung gerade weg ist.
+   · Nichts geht mehr per fetch oder sendBeacon an FREMDE Server. Die eigene
+     Adresse bleibt frei: Das Formular sendet an /api/contact und muss auch
+     im anderen Tab weiter funktionieren.
+
+   BEWUSST OHNE NEULADEN: Im anderen Tab kann ein halb ausgefülltes Formular
+   stehen, und ein Neuladen wirft den Text weg. Was die Seite schon geladen
+   hat, läuft ins Leere; die nächste Seite startet sauber.
+
+   NICHT ABGEDECKT, ehrlich benannt:
+   · Versand per Bild, XMLHttpRequest oder über die EIGENE Adresse (etwa eine
+     Messung, die über den eigenen Server läuft) – bis zum nächsten
+     Seitenwechsel.
+   · `cookieStore.set()` (nur Chromium) umgeht die Sperre von
+     `document.cookie`; das Nachräumen beim nächsten Start fängt es auf.
+   · Cookies in eingebetteten Rahmen fremder Anbieter – die liegen auf deren
+     Domain, nicht auf dieser.
+   · Ändert ein Deploy die Dienste, während ein alter Tab offen ist, hält der
+     alte Tab eine frische Zustimmung aus dem neuen für ungültig und räumt
+     einmal deren Cookies weg. Selten, und zur sicheren Seite hin.
+   · Ein gesperrter fetch antwortet mit einer leeren 204. Wer auf einer Seite
+     etwas Legitimes an eine FREMDE Adresse schickt und die Antwort auswertet,
+     hielte das für Erfolg – heute tut das kein Baustein. */
+
+/** Kategorien, deren geparkte Skripte auf DIESER Seite freigegeben wurden. */
+const freigegeben = new Set<Kategorie>();
+let stillgelegt = false;
+
+/**
+ * Lässt eine Cookie-Zuweisung das Cookie sofort ablaufen?
+ *
+ * Nicht einfach nach „1970" suchen: gtag schreibt Zeilen wie
+ * `_ga_X=deleted; expires=Thu, 01 Jan 1970 …; expires=Thu, 14 Sep 2028 …`.
+ * Bei doppelter Angabe gilt die LETZTE – gemessen stand danach ein Cookie mit
+ * dem Wert „deleted" und Ablauf 2028 im Speicher. Max-Age geht Expires vor.
+ */
+function istLoeschung(wert: string): boolean {
+  /* Verankert: `max-age=0abc` ist ungültig, der Browser ignoriert es und legt
+     ein Sitzungs-Cookie an – das darf nicht als Löschung durchgehen. */
+  const maxAlter = wert.match(/;\s*max-age\s*=\s*-?\d+\s*(?=;|$)/gi);
+  if (maxAlter && maxAlter.length > 0) {
+    const letztes = maxAlter[maxAlter.length - 1];
+    return Number(letztes.slice(letztes.indexOf('=') + 1)) <= 0;
+  }
+  const ablauf = wert.match(/;\s*expires\s*=\s*[^;]+/gi);
+  if (ablauf && ablauf.length > 0) {
+    const letztes = ablauf[ablauf.length - 1];
+    const zeit = Date.parse(letztes.slice(letztes.indexOf('=') + 1).trim());
+    return !isNaN(zeit) && zeit <= Date.now();
+  }
+  return false;
+}
+
+/** Ab jetzt lässt `document.cookie` auf dieser Seite nur noch Löschungen durch. */
+function cookieSchreibsperre(): void {
+  try {
+    /* Firefox bis 67 führte `cookie` nur an HTMLDocument (MDN-Kompatibilitätsdaten).
+       Die Untergrenze ist 68 – der Rückfall kostet nichts und hält, falls sie sinkt. */
+    const original =
+      Object.getOwnPropertyDescriptor(Document.prototype, 'cookie') ||
+      (typeof HTMLDocument !== 'undefined'
+        ? Object.getOwnPropertyDescriptor(HTMLDocument.prototype, 'cookie')
+        : undefined);
+    if (!original || !original.get || !original.set) return;
+    const holen = original.get;
+    const ablegen = original.set;
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get() {
+        return holen.call(document);
+      },
+      set(wert: string) {
+        if (istLoeschung(String(wert))) ablegen.call(document, wert);
+      },
+    });
+  } catch {
+    /* Ohne Sperre bleibt das Nachräumen beim nächsten Start das Netz. */
+  }
+}
+
+/** Ab jetzt gehen fetch und sendBeacon auf dieser Seite nur noch an die eigene Adresse. */
+function versandSperren(): void {
+  const fremd = (ziel: unknown): boolean => {
+    try {
+      const roh =
+        ziel && typeof ziel === 'object' && 'url' in (ziel as object)
+          ? (ziel as { url: string }).url
+          : String(ziel);
+      const adresse = new URL(roh, location.href);
+      /* data: und blob: haben keine Herkunft („null") – das sind keine Server. */
+      if (adresse.protocol === 'data:' || adresse.protocol === 'blob:') return false;
+      return adresse.origin !== location.origin;
+    } catch {
+      return false;
+    }
+  };
+  /* Zwei getrennte Versuche: Scheitert einer (etwa weil eine Erweiterung
+     `navigator` eingefroren hat), greift der andere trotzdem. */
+  try {
+    const nav = navigator as unknown as { sendBeacon?: (ziel: unknown, daten?: unknown) => boolean };
+    if (typeof nav.sendBeacon === 'function') {
+      const beacon = nav.sendBeacon.bind(navigator);
+      nav.sendBeacon = (ziel: unknown, daten?: unknown) => (fremd(ziel) ? true : beacon(ziel, daten));
+    }
+  } catch {
+    /* siehe cookieSchreibsperre */
+  }
+  try {
+    const fenster = window as unknown as { fetch?: (ziel: unknown, optionen?: unknown) => Promise<Response> };
+    if (typeof fenster.fetch === 'function') {
+      const netz = fenster.fetch.bind(window);
+      fenster.fetch = (ziel: unknown, optionen?: unknown) =>
+        fremd(ziel) ? Promise.resolve(new Response(null, { status: 204 })) : netz(ziel, optionen);
+    }
+  } catch {
+    /* siehe cookieSchreibsperre */
+  }
+}
+
+function stilllegen(): void {
+  if (stillgelegt) return;
+  stillgelegt = true;
+  cookieSchreibsperre();
+  versandSperren();
+}
+
+/**
+ * Welche Kategorien enthalten einen Dienst, der Cookies setzt?
+ * Der Bau schreibt sie an den Banner (aus `setztCookies`). Fehlt das Attribut
+ * – etwa bei einem selbst gebauten Banner –, gelten vorsichtshalber alle.
+ */
+function cookieKategorien(banner: HTMLElement): Kategorie[] {
+  const roh = banner.dataset.einwilligungCookieKategorien;
+  if (typeof roh === 'string') return roh.split(' ').filter(Boolean) as Kategorie[];
+  const alle = banner.dataset.einwilligungKategorien;
+  return alle ? (alle.split(' ').filter(Boolean) as Kategorie[]) : ['funktional', 'statistik', 'marketing'];
+}
+
+/**
+ * Können hier Cookies ohne Zustimmung liegen? Ja, wenn keine Entscheidung
+ * vorliegt – oder wenn KEINE Kategorie erlaubt ist, in der ein Dienst Cookies
+ * setzt. Dann kann jedes Cookie nur ein Rest sein.
+ *
+ * GRENZE: Setzen zwei Kategorien Cookies und nur eine ist erlaubt, wird nicht
+ * geräumt. Der Motor kennt die Cookie-Namen nicht und würde sonst die Cookies
+ * des erlaubten Dienstes mitlöschen.
+ */
+function restCookiesMoeglich(banner: HTMLElement, zustand: Zustand | null): boolean {
+  if (!zustand) return true;
+  const liste = cookieKategorien(banner);
+  for (let i = 0; i < liste.length; i++) {
+    if (zustand.erlaubt.indexOf(liste[i]) !== -1) return false;
+  }
+  return true;
+}
+
+/** Eine laufende Seite mit der gespeicherten Entscheidung abgleichen. */
+function abgleichen(banner: HTMLElement): void {
+  /* `lesen()` greift nur bei kaputtem Speicher auf das Gedächtnis zurück –
+     sonst überstimmte eine alte Wahl hier den Widerruf aus dem anderen Tab
+     oder von vor der Zurück-Taste. */
+  let verloren = false;
+  freigegeben.forEach((k) => {
+    if (!erlaubt(k)) verloren = true;
+  });
+  if (verloren) stilllegen();
+  if (restCookiesMoeglich(banner, lesen())) fremdeCookiesLoeschen();
+}
+
 /**
  * Startet die Einwilligungs-Verwaltung.
  *
@@ -263,7 +479,21 @@ export function einwilligungStarten(): void {
      und eine Zustimmung, die durch geänderte Dienste ungültig geworden ist
      (`standKennung`). In beiden Fällen wird neu gefragt – und dann dürfen
      auch keine alten Cookies mehr liegen. */
-  if (!zustand) fremdeCookiesLoeschen();
+  /* NICHT NUR OHNE ENTSCHEIDUNG. Hier stand `if (!zustand)`. Nach „Alle
+     ablehnen" gibt es aber einen Zustand – und ein Cookie, das ein zweiter
+     Tab oder eine Seite aus dem Zwischenspeicher danach noch schrieb, blieb
+     für immer liegen (gemessen, siehe STILLLEGEN). Geräumt wird deshalb,
+     sobald keine Kategorie mit cookiesetzendem Dienst erlaubt ist. */
+  if (restCookiesMoeglich(banner, zustand)) fremdeCookiesLoeschen();
+
+  /* Zustimmung, die WÄHREND die Seite offen ist verlorengeht – in einem
+     anderen Tab oder auf dem Weg zurück aus dem Zwischenspeicher. */
+  window.addEventListener('storage', (e) => {
+    if (e.key === SCHLUESSEL || e.key === null) abgleichen(banner);
+  });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) abgleichen(banner);
+  });
 
   if (zustand) {
     // Schon entschieden: Banner bleibt weg, erlaubte Skripte starten.

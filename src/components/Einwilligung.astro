@@ -35,6 +35,21 @@ const dienste = site.dienste;
    Teilauswahl, obwohl der Gast alles freigegeben hatte. */
 const kategorien = [...new Set(dienste.map((d) => d.kategorie))].filter((k) => k !== 'notwendig');
 
+/* Kategorien, in denen ein Dienst Cookies setzt – ebenfalls ans Banner
+   (`data-einwilligung-cookie-kategorien`). Das Skript räumt beim Start nur
+   dann auf, wenn keine davon erlaubt ist; ohne die Angabe müsste es entweder
+   nach „Alle ablehnen" Reste liegen lassen oder erlaubte Cookies mitlöschen.
+   Fehlt `setztCookies`, zählt der Dienst vorsichtshalber mit. Einbettungen
+   gehören nicht dazu: Ihre Cookies liegen auf der Domain des Anbieters. */
+/* `notwendig` bleibt BEWUSST drin: Jede Entscheidung enthält es, also wird
+   dann nicht geräumt. Sonst verlöre ein notwendiger Dienst (Warenkorb,
+   Buchung) nach „Alle ablehnen" bei jedem Aufruf seine Cookies. Preis: Auf
+   so einer Seite räumt der Start nach einer Entscheidung gar nicht mehr –
+   dieselbe Grenze wie bei zwei cookiesetzenden Kategorien. */
+const cookieKategorien = [
+  ...new Set(dienste.filter((d) => d.setztCookies !== false).map((d) => d.kategorie)),
+];
+
 const BESCHRIFTUNG: Record<string, string> = {
   funktional: 'Komfort',
   statistik: 'Statistik',
@@ -133,6 +148,7 @@ const t =
       aria-labelledby="einwilligung-titel"
       data-einwilligung-stand={kennung}
       data-einwilligung-kategorien={kategorien.join(' ')}
+      data-einwilligung-cookie-kategorien={cookieKategorien.join(' ')}
     >
       <div class="einwilligung__inhalt">
         <h2 class="einwilligung__titel" id="einwilligung-titel">{t.titel}</h2>

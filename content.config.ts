@@ -903,7 +903,14 @@ export interface Dienst {
   /** Externe Skript-Adresse ODER Inline-Code. Wird bis zur Zustimmung geparkt. */
   quelle?: string;
   skript?: string;
-  /** Setzt der Dienst Cookies? Für die Datenschutzerklärung. */
+  /**
+   * Setzt der Dienst Cookies? Für die Datenschutzerklärung – UND fürs
+   * Nachräumen: Kategorien mit cookiesetzenden Diensten (fehlt die Angabe,
+   * zählt der Dienst mit) stehen am Banner; ist keine davon erlaubt, löscht
+   * der Motor beim Start alle per JavaScript lesbaren Cookies. Ein fälschlich
+   * mit `false` markierter Dienst verliert seine Cookies deshalb bei jedem
+   * Aufruf – auch mit Zustimmung.
+   */
   setztCookies?: boolean;
   /**
    * Wie lange die Cookies bzw. die erhobenen Daten aufbewahrt werden.
